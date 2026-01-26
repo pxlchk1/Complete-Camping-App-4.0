@@ -1,0 +1,7 @@
+# EAS Build ignore file
+# Everything is included by default (unlike .gitignore)
+# Use this to explicitly exclude files/folders from EAS builds if needed
+
+# Explicitly ensure GoogleService-Info.plist is included
+!ios/CompleteCampingApp/GoogleService-Info.plist
+!GoogleService-Info.plist

@@ -1,0 +1,39 @@
+node_modules
+
+# Ignore Bun lockfiles
+bun.lock
+bun.lockb
+
+# Expo local state
+.expo/
+
+# Build output
+/dist/
+
+# macOS
+.DS_Store
+
+# Environment files - NEVER commit these
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+!.env.example
+
+# Secrets - NEVER commit these
+serviceAccountKey.json
+GoogleService-Info.plist
+!ios/CompleteCampingApp/GoogleService-Info.plist
+google-services.json
+*.pem
+*.p12
+*.key
+
+# Logs
+functions/firebase-debug.log
+*.log
+
+# Scratch scripts (root-level only, not src/scripts which are needed for the app)
+scripts/**
+!scripts/patch-ios-podspecs.js

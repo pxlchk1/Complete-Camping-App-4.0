@@ -1,0 +1,195 @@
+/* ================================
+   Font Imports
+   Using Google Fonts for:
+   - Josefin Slab (display)
+   - Source Sans 3 (body)
+   - Satisfy (accent script)
+   ================================ */
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Slab:wght@400;600;700&family=Source+Sans+3:wght@400;500;600&family=Satisfy&display=swap');
+
+/* ================================
+   Font Variables
+   ================================ */
+:root {
+  --font-display: 'Josefin Slab', 'Times New Roman', serif;
+  --font-body: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-accent: 'Satisfy', 'Brush Script MT', cursive;
+
+  --font-size-base: 16px;
+  --font-size-sm: 14px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+
+  --line-height-tight: 1.1;
+  --line-height-normal: 1.5;
+}
+
+/* ================================
+   Global Defaults
+   ================================ */
+html {
+  font-size: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: #1e2524;
+  background-color: #f4ebd0; /* your parchment vibe */
+}
+
+/* ================================
+   Headings
+   ================================ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: var(--line-height-tight);
+  margin: 0 0 0.5em;
+  color: #485952; /* deep forest */
+}
+
+h1 {
+  font-size: var(--font-size-2xl);
+  letter-spacing: 0.04em;
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+  letter-spacing: 0.03em;
+}
+
+h3 {
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.02em;
+}
+
+/* ================================
+   Body text and links
+   ================================ */
+p {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--font-size-base);
+  margin: 0 0 1em;
+}
+
+small, .text-sm {
+  font-size: var(--font-size-sm);
+}
+
+a {
+  color: #607a77; /* river rock */
+  text-decoration: none;
+}
+
+a:hover, a:focus {
+  text-decoration: underline;
+}
+
+/* ================================
+   Accent Script
+   ================================ */
+.tl-accent-script {
+  font-family: var(--font-accent);
+  font-size: var(--font-size-lg);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+/* ================================
+   Utility Classes
+   These match your app structure
+   ================================ */
+
+/* Big screen titles, like splash or section headers */
+.tl-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--font-size-2xl);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Subtitles or app section labels */
+.tl-subtitle {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Standard body copy */
+.tl-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+}
+
+/* Slightly stronger body text for labels or highlights */
+.tl-body-strong {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: var(--font-size-base);
+}
+
+/* Navigation labels and buttons */
+.tl-nav, .tl-button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Tiny overline label above headings */
+.tl-overline {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Form labels and helper text */
+.tl-label {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tl-helper-text {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 13px;
+  color: #607a77;
+}
+
+/* ================================
+   Responsive tweaks
+   ================================ */
+@media (min-width: 768px) {
+  h1 {
+    font-size: 36px;
+  }
+
+  h2 {
+    font-size: 28px;
+  }
+
+  .tl-title {
+    font-size: 40px;
+  }
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

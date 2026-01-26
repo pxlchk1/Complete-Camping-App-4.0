@@ -1,0 +1,28 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "paths": {
+      "react-native-maps": ["./types/react-native-maps.d.ts"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "nativewind-env.d.ts",
+    "types/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "backend/node_modules",
+    "backend/generated",
+    ".expo",
+    "**/node_modules/**",
+    "node_modules/react-native-maps/**",
+    "src/screens/_archive/**",
+    "scripts/**",
+    "src/scripts/**"
+  ]
+}

@@ -1,0 +1,94 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is admin
+    // Reads from Firestore profiles or users collection
+    function isAdmin() {
+      return isSignedIn() 
+        && (
+          // Check profiles collection
+          (firestore.exists(/databases/(default)/documents/profiles/$(request.auth.uid))
+            && (
+              firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.isAdmin == true ||
+              firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.role == "admin" ||
+              firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.role == "administrator" ||
+              firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.membershipTier == "isAdmin"
+            )
+          ) ||
+          // Check users collection
+          (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid))
+            && (
+              firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true ||
+              firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "admin" ||
+              firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "administrator" ||
+              firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.membershipTier == "isAdmin"
+            )
+          )
+        );
+    }
+    
+    // Stories/Photos - owner-scoped path: stories/{userId}/{photoId}/{fileName}
+    // Owner can read/write/delete their own photos
+    // Admin can read/delete any photo
+    match /stories/{userId}/{photoId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Alternative: stories without nested photoId folder
+    match /stories/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Photo Posts - Community photo uploads: photoPosts/{userId}/{fileName}
+    // Owner can read/write/delete their own photos
+    // Admin can read/delete any photo
+    // All signed-in users can read (for community feed)
+    match /photoPosts/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Gear Closet images - users can only access their own gear photos
+    match /gearCloset/{userId}/{gearId}/{fileName} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // User avatars - owner-scoped
+    match /avatars/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, write, delete: if isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Trip photos - trip member scoped
+    match /trips/{tripId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write, delete: if isSignedIn();
+    }
+    
+    // Gear Review photos - owner-scoped: gearReviews/{userId}/{fileName}
+    // Owner can write, all signed-in users can read (for community display)
+    match /gearReviews/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Default deny for everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

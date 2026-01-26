@@ -1,0 +1,345 @@
+================================================================================
+VERSION 1.1.2 (Build 20) - January 23, 2026
+================================================================================
+
+BUG FIXES & IMPROVEMENTS:
+
+PLAN
+• Fixed "Create Trip" button not responding - trips now create reliably
+
+PARKS  
+• Fixed favorite button not persisting - favorites now save correctly
+
+LEARN
+• Fixed quiz scoring showing 0% when all answers correct - now shows accurate percentage
+• Fixed Leave No Trace text wrapping - content displays properly on all screen sizes
+• Fixed excess spacing above "Your Progress" section
+
+CONNECT
+• Fixed author showing as "Anonymous" on feed cards when handle exists
+• Fixed "Daily Limit Reached" incorrectly blocking Admins and Subscribers
+• Added ability for users to edit their own photo posts
+• Fixed photo upload tags - removed dead dropdown, now shows all selectable system tags
+• Removed "Open" status capsules from feedback post cards
+
+MY CAMPSITE
+• Restored name, handle, and password fields in profile edit screen
+• Updated welcome modal CTA to "Set up my campsite"
+
+GEAR REVIEWS
+• Fixed photo upload errors - photos now upload and persist correctly
+
+================================================================================
+
+- Changes made by agent 2025-11-26T23:45:24Z
+- Changes made by agent 2025-11-27T00:05:56Z
+- Changes made by agent 2025-11-27T00:12:06Z
+- Changes made by agent 2025-11-27T00:18:51Z
+- Changes made by agent 2025-11-27T00:25:22Z
+- Changes made by agent 2025-11-27T00:37:20Z
+- Changes made by agent 2025-11-27T00:49:28Z
+- Changes made by agent 2025-11-27T01:05:59Z
+- Changes made by agent 2025-11-27T01:06:58Z
+- Changes made by agent 2025-11-27T01:08:40Z
+- Changes made by agent 2025-11-27T01:10:16Z
+- Changes made by agent 2025-11-27T01:14:59Z
+- Changes made by agent 2025-11-27T01:18:53Z
+- Changes made by agent 2025-11-27T01:31:32Z
+- Changes made by agent 2025-11-27T01:35:56Z
+- Changes made by agent 2025-11-27T01:52:54Z
+- Changes made by agent 2025-11-27T01:58:59Z
+- Changes made by agent 2025-11-27T02:05:40Z
+- Changes made by agent 2025-11-27T02:22:35Z
+- Changes made by agent 2025-11-27T03:13:20Z
+- Changes made by agent 2025-11-27T03:17:18Z
+- Changes made by agent 2025-11-27T03:21:27Z
+- Changes made by agent 2025-11-27T03:24:36Z
+- Changes made by agent 2025-11-27T03:26:59Z
+- Changes made by agent 2025-11-27T03:28:33Z
+- Changes made by agent 2025-11-27T03:31:49Z
+- Changes made by agent 2025-11-27T03:34:54Z
+- Changes made by agent 2025-11-27T03:38:25Z
+- Changes made by agent 2025-11-27T03:41:51Z
+- Changes made by agent 2025-11-27T03:46:23Z
+- Changes made by agent 2025-11-27T03:51:45Z
+- Changes made by agent 2025-11-27T03:56:06Z
+- Changes made by agent 2025-11-27T03:59:34Z
+- Changes made by agent 2025-11-27T04:03:05Z
+- Changes made by agent 2025-11-27T04:07:50Z
+- Changes made by agent 2025-11-27T04:22:13Z
+- Changes made by agent 2025-11-27T04:38:27Z
+- Changes made by agent 2025-11-27T04:41:10Z
+- Changes made by agent 2025-11-27T04:44:07Z
+- Changes made by agent 2025-11-27T04:48:01Z
+- Changes made by agent 2025-11-27T04:50:58Z
+- Changes made by agent 2025-11-27T04:55:34Z
+- Changes made by agent 2025-11-27T04:57:16Z
+- Changes made by agent 2025-11-27T05:22:53Z
+- Changes made by agent 2025-11-27T05:25:19Z
+- Changes made by agent 2025-11-27T05:38:09Z
+- Changes made by agent 2025-11-27T05:50:35Z
+- Changes made by agent 2025-11-27T06:18:39Z
+- Changes made by agent 2025-11-27T06:41:21Z
+- Changes made by agent 2025-11-27T06:44:57Z
+- Changes made by agent 2025-11-27T06:46:25Z
+- Changes made by agent 2025-11-27T17:52:57Z
+- Changes made by agent 2025-11-27T17:57:19Z
+- Changes made by agent 2025-11-27T18:03:41Z
+- Changes made by agent 2025-11-27T18:05:21Z
+- Changes made by agent 2025-11-27T18:10:35Z
+- Changes made by agent 2025-11-27T18:12:49Z
+- Changes made by agent 2025-11-27T18:13:25Z
+- Changes made by agent 2025-11-27T18:14:16Z
+- Changes made by agent 2025-11-27T18:19:39Z
+- Changes made by agent 2025-11-27T18:29:15Z
+- Changes made by agent 2025-11-27T18:34:47Z
+- Changes made by agent 2025-11-27T18:37:08Z
+- Changes made by agent 2025-11-27T18:42:57Z
+- Changes made by agent 2025-11-27T18:44:44Z
+- Changes made by agent 2025-11-27T18:54:08Z
+- Changes made by agent 2025-11-27T18:58:31Z
+- Changes made by agent 2025-11-27T19:05:18Z
+- Changes made by agent 2025-11-27T19:29:38Z
+- Changes made by agent 2025-11-27T19:34:51Z
+- Changes made by agent 2025-11-27T19:43:39Z
+- Changes made by agent 2025-11-27T19:48:25Z
+- Changes made by agent 2025-11-27T19:50:19Z
+- Changes made by agent 2025-11-27T19:56:17Z
+- Changes made by agent 2025-11-27T20:08:43Z
+- Changes made by agent 2025-11-27T20:10:24Z
+- Changes made by agent 2025-11-27T20:14:13Z
+- Changes made by agent 2025-11-27T20:16:40Z
+- Changes made by agent 2025-11-27T20:19:58Z
+- Changes made by agent 2025-11-27T20:21:10Z
+- Changes made by agent 2025-11-27T20:23:08Z
+- Changes made by agent 2025-11-27T20:26:39Z
+- Changes made by agent 2025-11-27T20:53:18Z
+- Changes made by agent 2025-11-27T21:00:14Z
+- Changes made by agent 2025-11-27T21:07:46Z
+- Changes made by agent 2025-11-27T21:24:43Z
+- Changes made by agent 2025-11-27T21:34:29Z
+- Changes made by agent 2025-11-27T21:47:13Z
+- Changes made by agent 2025-11-27T21:55:34Z
+- Changes made by agent 2025-11-27T22:21:33Z
+- Changes made by agent 2025-11-27T22:25:04Z
+- Changes made by agent 2025-11-27T22:31:40Z
+- Changes made by agent 2025-11-27T22:37:35Z
+- Changes made by agent 2025-11-27T22:40:31Z
+- Changes made by agent 2025-11-27T22:40:56Z
+- Changes made by agent 2025-11-27T22:42:15Z
+- Changes made by agent 2025-11-27T22:43:56Z
+- Changes made by agent 2025-11-27T22:45:50Z
+- Changes made by agent 2025-11-27T22:50:30Z
+- Changes made by agent 2025-11-27T22:59:45Z
+- Changes made by agent 2025-11-27T23:00:31Z
+- Changes made by agent 2025-11-27T23:02:23Z
+- Changes made by agent 2025-11-27T23:06:30Z
+- Changes made by agent 2025-11-28T04:23:48Z
+- Changes made by agent 2025-11-28T04:34:15Z
+- Changes made by agent 2025-11-28T04:45:34Z
+- Changes made by agent 2025-11-28T04:58:33Z
+- Changes made by agent 2025-11-28T05:38:24Z
+- Changes made by agent 2025-11-28T05:50:18Z
+- Changes made by agent 2025-11-28T05:56:43Z
+- Changes made by agent 2025-11-28T15:37:38Z
+- Changes made by agent 2025-11-28T17:20:00Z
+- Changes made by agent 2025-11-28T18:24:30Z
+- Changes made by agent 2025-11-28T19:14:22Z
+- Changes made by agent 2025-11-28T19:18:13Z
+- Changes made by agent 2025-11-28T19:25:50Z
+- Changes made by agent 2025-11-28T19:39:38Z
+- Changes made by agent 2025-11-28T20:06:07Z
+- Changes made by agent 2025-11-28T20:20:00Z
+- Changes made by agent 2025-11-28T20:30:08Z
+- Changes made by agent 2025-11-28T20:31:15Z
+- Changes made by agent 2025-11-28T20:33:04Z
+- Changes made by agent 2025-11-28T20:36:27Z
+- Changes made by agent 2025-11-28T20:36:56Z
+- Changes made by agent 2025-11-28T20:40:17Z
+- Changes made by agent 2025-11-28T20:41:30Z
+- Changes made by agent 2025-11-28T20:42:42Z
+- Changes made by agent 2025-11-28T20:44:49Z
+- Changes made by agent 2025-11-28T20:50:47Z
+- Changes made by agent 2025-11-28T20:54:42Z
+- Changes made by agent 2025-11-28T20:55:41Z
+- Changes made by agent 2025-11-28T21:03:06Z
+- Changes made by agent 2025-11-28T21:27:54Z
+- Changes made by agent 2025-11-28T21:34:04Z
+- Changes made by agent 2025-11-28T21:38:13Z
+- Changes made by agent 2025-11-28T21:42:57Z
+- Changes made by agent 2025-11-28T21:48:56Z
+- Changes made by agent 2025-11-28T21:52:54Z
+- Changes made by agent 2025-11-28T21:55:44Z
+- Changes made by agent 2025-11-28T21:56:24Z
+- Changes made by agent 2025-11-28T22:03:04Z
+- Changes made by agent 2025-11-28T22:06:48Z
+- Changes made by agent 2025-11-28T22:27:07Z
+- Changes made by agent 2025-11-28T22:37:14Z
+- Changes made by agent 2025-11-28T22:51:24Z
+- Changes made by agent 2025-11-28T22:52:49Z
+- Changes made by agent 2025-11-28T22:56:35Z
+- Changes made by agent 2025-11-28T23:10:14Z
+- Changes made by agent 2025-11-28T23:46:58Z
+- Changes made by agent 2025-11-28T23:50:40Z
+- Changes made by agent 2025-11-30T02:54:02Z
+- Changes made by agent 2025-11-30T03:01:53Z
+- Changes made by agent 2025-11-30T03:16:11Z
+- Changes made by agent 2025-11-30T15:19:49Z
+- Changes made by agent 2025-11-30T15:21:10Z
+- Changes made by agent 2025-11-30T15:35:22Z
+- Changes made by agent 2025-11-30T15:38:23Z
+- Changes made by agent 2025-11-30T15:40:42Z
+- Changes made by agent 2025-11-30T15:41:05Z
+- Changes made by agent 2025-11-30T15:43:58Z
+- Changes made by agent 2025-11-30T15:50:49Z
+- Changes made by agent 2025-11-30T15:58:18Z
+- Changes made by agent 2025-11-30T16:02:20Z
+- Changes made by agent 2025-11-30T16:21:07Z
+- Changes made by agent 2025-11-30T16:34:25Z
+- Changes made by agent 2025-11-30T16:50:54Z
+- Changes made by agent 2025-11-30T16:52:16Z
+- Changes made by agent 2025-11-30T16:54:11Z
+- Changes made by agent 2025-11-30T16:59:50Z
+- Changes made by agent 2025-11-30T17:01:51Z
+- Changes made by agent 2025-11-30T17:18:36Z
+- Changes made by agent 2025-11-30T17:40:43Z
+- Changes made by agent 2025-11-30T17:46:14Z
+- Changes made by agent 2025-11-30T17:47:14Z
+- Changes made by agent 2025-11-30T17:55:43Z
+- Changes made by agent 2025-11-30T18:40:42Z
+- Changes made by agent 2025-11-30T18:43:45Z
+- Changes made by agent 2025-11-30T18:45:49Z
+- Changes made by agent 2025-11-30T18:48:04Z
+- Changes made by agent 2025-11-30T18:49:41Z
+- Changes made by agent 2025-11-30T18:53:20Z
+- Changes made by agent 2025-11-30T18:55:30Z
+- Changes made by agent 2025-11-30T19:03:13Z
+- Changes made by agent 2025-11-30T19:07:46Z
+- Changes made by agent 2025-11-30T19:11:15Z
+- Changes made by agent 2025-11-30T19:19:26Z
+- Changes made by agent 2025-11-30T19:25:12Z
+- Changes made by agent 2025-11-30T19:26:46Z
+- Changes made by agent 2025-11-30T19:41:00Z
+- Changes made by agent 2025-11-30T19:43:26Z
+- Changes made by agent 2025-11-30T19:49:20Z
+- Changes made by agent 2025-11-30T19:53:18Z
+- Changes made by agent 2025-11-30T19:56:39Z
+- Changes made by agent 2025-11-30T20:19:06Z
+- Changes made by agent 2025-11-30T20:20:04Z
+- Changes made by agent 2025-11-30T20:34:44Z
+- Changes made by agent 2025-12-01T03:21:12Z
+- Changes made by agent 2025-12-01T03:24:17Z
+- Changes made by agent 2025-12-01T03:29:45Z
+- Changes made by agent 2025-12-01T03:44:20Z
+- Changes made by agent 2025-12-01T03:45:11Z
+- Changes made by agent 2025-12-01T03:47:18Z
+- Changes made by agent 2025-12-01T03:58:42Z
+- Changes made by agent 2025-12-01T04:08:25Z
+- Changes made by agent 2025-12-01T14:22:57Z
+- Changes made by agent 2025-12-01T14:25:27Z
+- Changes made by agent 2025-12-01T14:31:52Z
+- Changes made by agent 2025-12-01T14:45:01Z
+- Changes made by agent 2025-12-01T14:45:59Z
+- Changes made by agent 2025-12-01T15:10:23Z
+- Changes made by agent 2025-12-01T15:12:07Z
+- Changes made by agent 2025-12-01T15:14:24Z
+- Changes made by agent 2025-12-01T15:19:18Z
+- Changes made by agent 2025-12-01T15:23:00Z
+- Changes made by agent 2025-12-01T15:23:32Z
+- Changes made by agent 2025-12-01T15:44:30Z
+- Changes made by agent 2025-12-01T15:45:44Z
+- Changes made by agent 2025-12-01T16:03:34Z
+- Changes made by agent 2025-12-01T16:06:30Z
+- Changes made by agent 2025-12-01T16:09:31Z
+- Changes made by agent 2025-12-01T16:18:54Z
+- Changes made by agent 2025-12-01T16:29:24Z
+- Changes made by agent 2025-12-01T16:31:32Z
+- Changes made by agent 2025-12-01T16:34:07Z
+- Changes made by agent 2025-12-01T16:45:40Z
+- Changes made by agent 2025-12-01T16:49:30Z
+- Changes made by agent 2025-12-01T16:59:24Z
+- Changes made by agent 2025-12-01T17:02:42Z
+- Changes made by agent 2025-12-01T17:10:00Z
+- Changes made by agent 2025-12-01T17:13:16Z
+- Changes made by agent 2025-12-01T17:14:54Z
+- Changes made by agent 2025-12-01T17:19:28Z
+- Changes made by agent 2025-12-01T17:29:09Z
+- Changes made by agent 2025-12-01T17:43:00Z
+- Changes made by agent 2025-12-01T17:54:25Z
+- Changes made by agent 2025-12-01T17:58:37Z
+- Changes made by agent 2025-12-01T18:01:40Z
+- Changes made by agent 2025-12-01T18:04:05Z
+- Changes made by agent 2025-12-01T18:26:14Z
+- Changes made by agent 2025-12-01T19:23:33Z
+- Changes made by agent 2025-12-01T19:34:20Z
+- Changes made by agent 2025-12-01T19:44:11Z
+- Changes made by agent 2025-12-01T19:49:34Z
+- Changes made by agent 2025-12-01T19:53:56Z
+- Changes made by agent 2025-12-01T19:57:54Z
+- Changes made by agent 2025-12-01T19:59:20Z
+- Changes made by agent 2025-12-01T20:01:50Z
+- Changes made by agent 2025-12-01T20:28:10Z
+- Changes made by agent 2025-12-01T20:29:17Z
+- Changes made by agent 2025-12-01T20:30:15Z
+- Changes made by agent 2025-12-01T21:14:41Z
+- Changes made by agent 2025-12-02T03:43:52Z
+- Changes made by agent 2025-12-02T04:05:03Z
+- Changes made by agent 2025-12-02T04:07:23Z
+- Changes made by agent 2025-12-02T04:11:34Z
+- Changes made by agent 2025-12-02T04:12:23Z
+- Changes made by agent 2025-12-02T04:15:11Z
+- Changes made by agent 2025-12-02T04:18:28Z
+- Changes made by agent 2025-12-02T04:19:27Z
+- Changes made by agent 2025-12-02T04:27:42Z
+- Changes made by agent 2025-12-02T04:37:21Z
+- Changes made by agent 2025-12-02T04:54:08Z
+- Changes made by agent 2025-12-02T05:04:52Z
+- Changes made by agent 2025-12-02T05:13:50Z
+- Changes made by agent 2025-12-02T05:18:51Z
+- Changes made by agent 2025-12-02T05:20:46Z
+- Changes made by agent 2025-12-02T05:36:40Z
+- Changes made by agent 2025-12-02T06:34:00Z
+- Changes made by agent 2025-12-02T06:37:16Z
+- Changes made by agent 2025-12-02T15:12:58Z
+- Changes made by agent 2025-12-02T15:18:46Z
+- Changes made by agent 2025-12-02T15:28:50Z
+- Changes made by agent 2025-12-02T15:33:09Z
+- Changes made by agent 2025-12-02T15:36:25Z
+- Changes made by agent 2025-12-02T15:38:01Z
+- Changes made by agent 2025-12-02T15:40:19Z
+- Changes made by agent 2025-12-02T15:46:32Z
+- Changes made by agent 2025-12-02T15:54:26Z
+- Changes made by agent 2025-12-02T16:21:59Z
+- Changes made by agent 2025-12-02T16:58:17Z
+- Changes made by agent 2025-12-02T16:59:23Z
+- Changes made by agent 2025-12-02T17:03:19Z
+- Changes made by agent 2025-12-02T17:10:12Z
+- Changes made by agent 2025-12-02T17:56:55Z
+- Changes made by agent 2025-12-02T19:06:46Z
+- Changes made by agent 2025-12-02T19:12:59Z
+- Changes made by agent 2025-12-02T19:24:08Z
+- Changes made by agent 2025-12-02T19:28:16Z
+- Changes made by agent 2025-12-02T19:31:13Z
+- Changes made by agent 2025-12-02T19:42:10Z
+- Changes made by agent 2025-12-02T19:47:52Z
+- Changes made by agent 2025-12-02T19:54:36Z
+- Changes made by agent 2025-12-02T20:13:03Z
+- Changes made by agent 2025-12-02T20:19:14Z
+- Changes made by agent 2025-12-02T20:20:48Z
+- Changes made by agent 2025-12-02T20:21:43Z
+- Changes made by agent 2025-12-02T20:31:39Z
+- Changes made by agent 2025-12-02T20:32:43Z
+- Changes made by agent 2025-12-02T20:33:39Z
+- Changes made by agent 2025-12-02T20:35:31Z
+- Changes made by agent 2025-12-02T20:40:08Z
+- Changes made by agent 2025-12-02T20:44:01Z
+- Changes made by agent 2025-12-02T20:51:07Z
+- Changes made by agent 2025-12-02T21:18:11Z
+- Changes made by agent 2025-12-02T21:18:54Z
+- Changes made by agent 2025-12-02T21:20:56Z
+- Changes made by agent 2025-12-02T21:21:35Z
+- Changes made by agent 2025-12-02T21:23:01Z
+- Changes made by agent 2025-12-02T21:24:14Z
+- Changes made by agent 2025-12-02T21:36:17Z
+- Changes made by agent 2025-12-02T21:42:56Z
+- Changes made by agent 2025-12-02T21:54:59Z

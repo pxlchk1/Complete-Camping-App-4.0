@@ -1,0 +1,532 @@
+rules_version = '2';
+// Last updated: 2026-01-20
+// Changes: Added userEmailIndex update rule for onboarding re-signup scenarios
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner() {
+      return isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+
+    // Check if user is owner using ownerUid field (for photos/stories)
+    function isOwnerByUid() {
+      return isSignedIn() && (
+        request.auth.uid == resource.data.ownerUid ||
+        request.auth.uid == resource.data.userId ||
+        request.auth.uid == resource.data.authorId
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && (
+          // Check profiles collection
+          (exists(/databases/$(database)/documents/profiles/$(request.auth.uid))
+            && (
+              get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.isAdmin == true ||
+              get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == "admin" ||
+              get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == "administrator" ||
+              get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.membershipTier == "isAdmin"
+            )
+          ) ||
+          // Check users collection
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && (
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin" ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "administrator" ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.membershipTier == "isAdmin"
+            )
+          )
+        );
+    }
+
+    // Check if user is a moderator (can moderate content but not full admin)
+    function isModerator() {
+      return isSignedIn()
+        && (
+          // Check profiles collection
+          (exists(/databases/$(database)/documents/profiles/$(request.auth.uid))
+            && (
+              get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.isModerator == true ||
+              get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == "moderator"
+            )
+          ) ||
+          // Check users collection
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid))
+            && (
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isModerator == true ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "moderator"
+            )
+          )
+        );
+    }
+
+    // Check if user can moderate content (is admin OR moderator)
+    function canModerateContent() {
+      return isAdmin() || isModerator();
+    }
+
+    function isSubscribed() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.subscriptionStatus == 'active';
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isSignedIn() || isAdmin();
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      // Daily Usage subcollection (for photo limits, etc.)
+      match /dailyUsage/{dateId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow create, update: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Favorite Parks subcollection
+      match /favoriteParks/{parkId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow create, update, delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Saved Places subcollection (custom campgrounds)
+      match /savedPlaces/{placeId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow create, update, delete: if isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Trips subcollection
+      match /trips/{tripId} {
+        allow read: if isSignedIn() && request.auth.uid == userId;
+        allow create, update, delete: if isSignedIn() && request.auth.uid == userId;
+        
+        // Packing list subcollection for trips under users
+        match /packingList/{itemId} {
+          allow read, write: if isSignedIn() && request.auth.uid == userId;
+        }
+        
+        // Meals subcollection for trips under users
+        match /meals/{mealId} {
+          allow read, write: if isSignedIn() && request.auth.uid == userId;
+        }
+      }
+    }
+
+    // Profiles collection
+    match /profiles/{userId} {
+      // Allow anyone to read profiles (public profiles)
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update, delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Trips collection
+    // Members (recipients) have READ-ONLY access - only owner can edit
+    match /trips/{tripId} {
+      // Helper function to check if user is the trip owner
+      function isTripOwner() {
+        return isSignedIn() && request.auth.uid == resource.data.userId;
+      }
+      
+      // Helper function to check if user is the trip owner (for subcollections)
+      function isTripOwnerForSubcollection() {
+        return isSignedIn() && get(/databases/$(database)/documents/trips/$(tripId)).data.userId == request.auth.uid;
+      }
+      
+      // Helper function to check if user is a trip member (read-only recipient)
+      function isTripMember() {
+        return isSignedIn() && request.auth.uid in resource.data.memberIds;
+      }
+      
+      // Helper function to check if user can read trip (owner OR member)
+      function canReadTrip() {
+        return isTripOwner() || isTripMember();
+      }
+      
+      // Owner or trip member can read
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.uid in resource.data.memberIds
+      );
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      // Only owner can update or delete - members are READ-ONLY
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+
+      // Participants subcollection - only trip owner can manage
+      match /participants/{participantId} {
+        // Owner and members can read participants
+        allow read: if isSignedIn() && (
+          isTripOwnerForSubcollection() ||
+          request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.memberIds
+        );
+        // Only owner can manage participants
+        allow create, update, delete: if isTripOwnerForSubcollection();
+      }
+
+      // Packing list subcollection - members can READ, only owner can WRITE
+      match /packingList/{itemId} {
+        allow read: if isSignedIn() && (
+          isTripOwnerForSubcollection() ||
+          request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.memberIds
+        );
+        // Only owner can write - members are READ-ONLY
+        allow write: if isTripOwnerForSubcollection();
+      }
+
+      // Meals subcollection - members can READ, only owner can WRITE
+      match /meals/{mealId} {
+        allow read: if isSignedIn() && (
+          isTripOwnerForSubcollection() ||
+          request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.memberIds
+        );
+        // Only owner can write - members are READ-ONLY
+        allow write: if isTripOwnerForSubcollection();
+      }
+
+      // Itinerary Links subcollection - members can READ, only owner can WRITE
+      match /itineraryLinks/{linkId} {
+        allow read: if isSignedIn() && (
+          isTripOwnerForSubcollection() ||
+          request.auth.uid in get(/databases/$(database)/documents/trips/$(tripId)).data.memberIds
+        );
+        // Only owner can write - members are READ-ONLY
+        allow write: if isTripOwnerForSubcollection();
+      }
+    }
+
+    // Tips (legacy)
+    match /tips/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
+      // Owner, admin, or moderator can delete
+      allow delete: if isOwner() || canModerateContent();
+      
+      // Votes subcollection
+      match /votes/{oderId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && request.auth.uid == oderId;
+        allow delete: if isSignedIn() && request.auth.uid == oderId;
+      }
+    }
+
+    // Community Tips (current)
+    match /communityTips/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
+      // Owner, admin, or moderator can delete
+      allow delete: if isOwner() || canModerateContent();
+      
+      // Votes subcollection
+      match /votes/{oderId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && request.auth.uid == oderId;
+        allow delete: if isSignedIn() && request.auth.uid == oderId;
+      }
+    }
+
+    match /tipComments/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      // Owner, admin, or moderator can update/delete
+      allow update, delete: if isOwner() || canModerateContent();
+    }
+
+    // Gear Reviews
+    match /gearReviews/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
+      // Owner, admin, or moderator can delete
+      allow delete: if isOwner() || canModerateContent();
+      
+      // Votes subcollection
+      match /votes/{oderId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && request.auth.uid == oderId;
+        allow delete: if isSignedIn() && request.auth.uid == oderId;
+      }
+    }
+
+
+    // Questions and Answers
+    match /questions/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
+      // Owner, admin, or moderator can delete
+      allow delete: if isOwner() || canModerateContent();
+
+      // Answers subcollection
+      match /answers/{answerId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        // Owner, admin, or moderator can update/delete
+        allow update, delete: if isOwner() || canModerateContent();
+      }
+
+      // Comments subcollection (if used)
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        // Owner, admin, or moderator can update/delete
+        allow update, delete: if isOwner() || canModerateContent();
+      }
+      
+      // Votes subcollection
+      match /votes/{oderId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && request.auth.uid == oderId;
+        allow delete: if isSignedIn() && request.auth.uid == oderId;
+      }
+    }
+
+    match /answers/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      // Owner, admin, or moderator can update/delete
+      allow update, delete: if isOwner() || canModerateContent();
+    }
+
+    // Stories (Photos)
+    match /stories/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
+      // Owner, admin, or moderator can delete (using flexible owner check)
+      allow delete: if isOwnerByUid() || canModerateContent();
+      
+      // Votes subcollection
+      match /votes/{oderId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && request.auth.uid == oderId;
+        allow delete: if isSignedIn() && request.auth.uid == oderId;
+      }
+    }
+
+    // Photos collection (alternate photo storage)
+    match /photos/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
+      // Owner, admin, or moderator can delete
+      allow delete: if isOwnerByUid() || canModerateContent();
+    }
+
+    // Photo Posts collection (enhanced community photos with post types, tags)
+    match /photoPosts/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      allow update: if isSignedIn(); // Allow signed-in users to update (for helpful count)
+      // Owner, admin, or moderator can delete
+      allow delete: if isOwnerByUid() || canModerateContent();
+      
+      // Helpful reactions subcollection
+      match /helpful/{helpfulUserId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && request.auth.uid == helpfulUserId;
+        allow delete: if isSignedIn() && request.auth.uid == helpfulUserId;
+      }
+      
+      // Reddit-style votes subcollection
+      match /votes/{voteUserId} {
+        allow read: if true;
+        allow create, update: if isSignedIn() && request.auth.uid == voteUserId;
+        allow delete: if isSignedIn() && request.auth.uid == voteUserId;
+      }
+      
+      // Comments subcollection (for future use)
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        // Owner, admin, or moderator can update/delete
+        allow update, delete: if isSignedIn() && (request.auth.uid == resource.data.userId || canModerateContent());
+        
+        // Votes on comments (Reddit-style upvote/downvote)
+        match /votes/{voteUserId} {
+          allow read: if true;
+          allow create, update: if isSignedIn() && request.auth.uid == voteUserId;
+          allow delete: if isSignedIn() && request.auth.uid == voteUserId;
+        }
+      }
+    }
+
+    // Moderation logs - admins and moderators can read/create, never modify
+    match /moderationLogs/{id} {
+      allow read: if canModerateContent();
+      allow create: if canModerateContent();
+      allow update, delete: if false; // Immutable audit log
+    }
+
+    match /storyComments/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      // Owner, admin, or moderator can update/delete
+      allow update, delete: if isOwner() || canModerateContent();
+    }
+
+    match /storyVotes/{id} {
+      allow read: if true; // Public read
+      allow create: if isSignedIn();
+      // Owner, admin, or moderator can update/delete
+      allow update, delete: if isOwner() || canModerateContent();
+    }
+
+    // Feedback - READ is public, WRITE requires Pro subscription
+    match /feedbackPosts/{id} {
+      allow read: if true; // Public read - all users can view feedback
+      allow create: if isSubscribed() || isAdmin(); // Only Pro users can create feedback
+      allow update: if isSubscribed() || isAdmin(); // Only Pro users can update (for voting)
+      // Owner, admin, or moderator can delete
+      allow delete: if isOwner() || canModerateContent();
+      
+      // Votes subcollection - requires Pro subscription
+      match /votes/{voterId} {
+        allow read: if true;
+        allow create, update: if (isSubscribed() || isAdmin()) && request.auth.uid == voterId;
+        allow delete: if isSignedIn() && request.auth.uid == voterId;
+      }
+    }
+
+    // Feedback collection (alternate name used by some services)
+    match /feedback/{id} {
+      allow read: if true; // Public read
+      allow create: if isSubscribed() || isAdmin();
+      allow update: if isSubscribed() || isAdmin();
+      // Owner, admin, or moderator can delete
+      allow delete: if isOwner() || canModerateContent();
+      
+      // Votes subcollection - requires Pro subscription
+      match /votes/{voterId} {
+        allow read: if true;
+        allow create, update: if (isSubscribed() || isAdmin()) && request.auth.uid == voterId;
+        allow delete: if isSignedIn() && request.auth.uid == voterId;
+      }
+    }
+
+    match /feedbackComments/{id} {
+      allow read: if true; // Public read - all users can view comments
+      allow create: if isSubscribed() || isAdmin(); // Only subscribed users can comment
+      // Owner, admin, or moderator can update/delete
+      allow update, delete: if isOwner() || canModerateContent();
+    }
+
+    // Parks / Campgrounds (public browsing)
+    match /parks/{id} {
+      allow read: if true; // Public read - anyone can browse parks
+      allow create: if isSignedIn(); // Signed-in users can add parks
+      allow update, delete: if isOwner() || isAdmin();
+    }
+
+    // Campground Contacts (My Campground)
+    match /campgroundContacts/{id} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.ownerId ||
+        request.auth.uid == resource.data.contactUserId
+      );
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.ownerId;
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.ownerId;
+    }
+
+    // Campground Invites (managed by Cloud Functions)
+    // Inviter can read their own invites, recipients can query by token
+    match /campgroundInvites/{id} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.inviterUid ||
+        request.auth.uid == resource.data.acceptedUid
+      );
+      // Write operations are handled by Cloud Functions only
+      allow create, update, delete: if false;
+    }
+
+    // User Gear (Gear Closet)
+    match /userGear/{id} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.ownerId;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.ownerId;
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.ownerId;
+    }
+
+    // Email Subscribers
+    match /emailSubscribers/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // User Email Index (for account lookup/linking)
+    // Doc ID is normalized email, payload must include userId field
+    // SECURITY: userId field is immutable - prevents email index hijacking
+    match /userEmailIndex/{email} {
+      // Create: only if the caller is setting their own userId
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+
+      // Read: allow authenticated users to check if email exists (needed for onboarding)
+      // This reveals only existence, not sensitive data - email index only contains userId, email, createdAt
+      allow read: if request.auth != null;
+
+      // Update: only if caller owns the existing doc AND is not changing userId
+      // This prevents hijacking someone else's email index
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.userId
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.userId == resource.data.userId;
+
+      // Delete: disabled for clients - managed by Cloud Functions or account deletion flows only
+      allow delete: if false;
+    }
+
+    // Push Tokens
+    match /pushTokens/{tokenId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Notification Queue (read by owner, write by functions only)
+    match /notificationQueue/{notificationId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false; // Functions only
+    }
+
+    // ============================================
+    // LEARNING CONTENT COLLECTIONS
+    // ============================================
+
+    // Learning Tracks - publicly readable (gating happens in app), writable by admins
+    match /learningTracks/{trackId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Learning Modules - publicly readable (gating happens in app), writable by admins
+    match /learningModules/{moduleId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // User Learning Progress - stored under users subcollection
+    match /users/{userId}/learningProgress/{docId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Reports collection - users can create, admins/mods can read and manage
+    match /reports/{reportId} {
+      allow read: if canModerateContent();
+      allow create: if isSignedIn();
+      allow update, delete: if canModerateContent();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
