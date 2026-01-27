@@ -7,50 +7,55 @@
  * - Profile photo
  * - Cover photo
  */
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  TextInput,
-  Image,
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Modal,
   Alert,
-  Switch,
+  Image,
+  KeyboardAvoidingView,
   Linking,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
-import { auth, db, storage } from '../config/firebase';
-import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+
+import { useNavigation } from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
 import {
+  EmailAuthProvider,
   deleteUser,
   reauthenticateWithCredential,
-  EmailAuthProvider,
   updatePassword,
 } from 'firebase/auth';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useCurrentUser, useUserStore } from '../state/userStore';
+import { deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+
 import ModalHeader from '../components/ModalHeader';
+import { auth, db, storage } from '../config/firebase';
 import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  TEXT_MUTED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_MUTED,
 } from '../constants/colors';
+import { updateHandle } from '../services/handleService';
+import { useCurrentUser, useUserStore } from '../state/userStore';
 import { CampingStyle } from '../types/camping';
-import { GearCategory, GEAR_CATEGORIES } from '../types/gear';
+import { GEAR_CATEGORIES, GearCategory } from '../types/gear';
 
 const CAMPING_STYLES: {
   value: CampingStyle;
@@ -336,6 +341,20 @@ export default function EditProfileScreen() {
 
     try {
       setSaving(true);
+
+      // Check and claim the new handle (enforces uniqueness)
+      // This will throw if handle is taken by another user
+      try {
+        await updateHandle(cleanHandle, user.uid, currentUser?.handle);
+      } catch (handleError: any) {
+        Alert.alert(
+          'Handle Unavailable',
+          handleError.message ||
+            'This handle is already taken. Please choose a different one.',
+        );
+        setSaving(false);
+        return;
+      }
 
       // Update users collection with account fields
       const userRef = doc(db, 'users', user.uid);

@@ -106,12 +106,12 @@ service cloud.firestore {
       match /trips/{tripId} {
         allow read: if isSignedIn() && request.auth.uid == userId;
         allow create, update, delete: if isSignedIn() && request.auth.uid == userId;
-        
+
         // Packing list subcollection for trips under users
         match /packingList/{itemId} {
           allow read, write: if isSignedIn() && request.auth.uid == userId;
         }
-        
+
         // Meals subcollection for trips under users
         match /meals/{mealId} {
           allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -134,22 +134,22 @@ service cloud.firestore {
       function isTripOwner() {
         return isSignedIn() && request.auth.uid == resource.data.userId;
       }
-      
+
       // Helper function to check if user is the trip owner (for subcollections)
       function isTripOwnerForSubcollection() {
         return isSignedIn() && get(/databases/$(database)/documents/trips/$(tripId)).data.userId == request.auth.uid;
       }
-      
+
       // Helper function to check if user is a trip member (read-only recipient)
       function isTripMember() {
         return isSignedIn() && request.auth.uid in resource.data.memberIds;
       }
-      
+
       // Helper function to check if user can read trip (owner OR member)
       function canReadTrip() {
         return isTripOwner() || isTripMember();
       }
-      
+
       // Owner or trip member can read
       allow read: if isSignedIn() && (
         request.auth.uid == resource.data.userId ||
@@ -208,7 +208,7 @@ service cloud.firestore {
       allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
       // Owner, admin, or moderator can delete
       allow delete: if isOwner() || canModerateContent();
-      
+
       // Votes subcollection
       match /votes/{oderId} {
         allow read: if true;
@@ -224,7 +224,7 @@ service cloud.firestore {
       allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
       // Owner, admin, or moderator can delete
       allow delete: if isOwner() || canModerateContent();
-      
+
       // Votes subcollection
       match /votes/{oderId} {
         allow read: if true;
@@ -247,7 +247,7 @@ service cloud.firestore {
       allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
       // Owner, admin, or moderator can delete
       allow delete: if isOwner() || canModerateContent();
-      
+
       // Votes subcollection
       match /votes/{oderId} {
         allow read: if true;
@@ -280,7 +280,7 @@ service cloud.firestore {
         // Owner, admin, or moderator can update/delete
         allow update, delete: if isOwner() || canModerateContent();
       }
-      
+
       // Votes subcollection
       match /votes/{oderId} {
         allow read: if true;
@@ -303,7 +303,7 @@ service cloud.firestore {
       allow update: if isSignedIn(); // Allow signed-in users to update (for voting)
       // Owner, admin, or moderator can delete (using flexible owner check)
       allow delete: if isOwnerByUid() || canModerateContent();
-      
+
       // Votes subcollection
       match /votes/{oderId} {
         allow read: if true;
@@ -328,28 +328,28 @@ service cloud.firestore {
       allow update: if isSignedIn(); // Allow signed-in users to update (for helpful count)
       // Owner, admin, or moderator can delete
       allow delete: if isOwnerByUid() || canModerateContent();
-      
+
       // Helpful reactions subcollection
       match /helpful/{helpfulUserId} {
         allow read: if true;
         allow create, update: if isSignedIn() && request.auth.uid == helpfulUserId;
         allow delete: if isSignedIn() && request.auth.uid == helpfulUserId;
       }
-      
+
       // Reddit-style votes subcollection
       match /votes/{voteUserId} {
         allow read: if true;
         allow create, update: if isSignedIn() && request.auth.uid == voteUserId;
         allow delete: if isSignedIn() && request.auth.uid == voteUserId;
       }
-      
+
       // Comments subcollection (for future use)
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn();
         // Owner, admin, or moderator can update/delete
         allow update, delete: if isSignedIn() && (request.auth.uid == resource.data.userId || canModerateContent());
-        
+
         // Votes on comments (Reddit-style upvote/downvote)
         match /votes/{voteUserId} {
           allow read: if true;
@@ -387,7 +387,7 @@ service cloud.firestore {
       allow update: if isSubscribed() || isAdmin(); // Only Pro users can update (for voting)
       // Owner, admin, or moderator can delete
       allow delete: if isOwner() || canModerateContent();
-      
+
       // Votes subcollection - requires Pro subscription
       match /votes/{voterId} {
         allow read: if true;
@@ -403,7 +403,7 @@ service cloud.firestore {
       allow update: if isSubscribed() || isAdmin();
       // Owner, admin, or moderator can delete
       allow delete: if isOwner() || canModerateContent();
-      
+
       // Votes subcollection - requires Pro subscription
       match /votes/{voterId} {
         allow read: if true;
@@ -479,6 +479,28 @@ service cloud.firestore {
         && request.resource.data.userId == resource.data.userId;
 
       // Delete: disabled for clients - managed by Cloud Functions or account deletion flows only
+      allow delete: if false;
+    }
+
+    // Handle Index (for username uniqueness enforcement)
+    // Doc ID is normalized handle (lowercase), payload must include userId field
+    // SECURITY: Handles cannot be reused after removal to prevent impersonation
+    match /handleIndex/{handle} {
+      // Create: only if the caller is setting their own userId AND doc doesn't exist
+      // Firestore rules implicitly prevent create if doc exists
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+
+      // Read: allow authenticated users to check if handle exists (for availability check)
+      allow read: if request.auth != null;
+
+      // Update: only if caller owns the existing doc AND is not changing userId
+      // This prevents hijacking someone else's handle
+      allow update: if request.auth != null
+        && request.auth.uid == resource.data.userId
+        && request.auth.uid == request.resource.data.userId
+        && request.resource.data.userId == resource.data.userId;
+
+      // Delete: DISABLED - handles cannot be reused to prevent impersonation
       allow delete: if false;
     }
 
