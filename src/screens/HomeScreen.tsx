@@ -58,7 +58,7 @@ import { createTestUser, useUserStore } from '../state/userStore';
 import { PhotoPost } from '../types/photoPost';
 import { useUserStatus } from '../utils/authHelper';
 // Utils
-import { getWelcomeSubtext, getWelcomeTitle } from '../utils/welcomeCopy';
+import { getWelcomeTitle } from '../utils/welcomeCopy';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -182,14 +182,11 @@ export default function HomeScreen() {
   const userAvatarSource =
     isLoggedIn && currentUser?.photoURL ? { uri: currentUser.photoURL } : LOGOS.APP_ICON;
 
-  // Welcome greeting and message using centralized utility
+  // Welcome greeting using centralized utility
   const welcomeGreeting = getWelcomeTitle(currentUser?.handle, isLoggedIn);
-  const welcomeMessage = getWelcomeSubtext(currentUser?.favoriteCampingStyle, isLoggedIn);
 
   if (__DEV__) {
     console.log('🎯 [HomeScreen] Welcome Greeting:', welcomeGreeting);
-
-    console.log('🎯 [HomeScreen] Welcome Message:', welcomeMessage);
 
     console.log('🎯 [HomeScreen] Current User Display Name:', currentUser?.displayName);
 
@@ -284,18 +281,6 @@ export default function HomeScreen() {
                     }}
                   >
                     {welcomeGreeting}
-                  </Text>
-                  <Text
-                    className="mt-1 text-center"
-                    style={{
-                      fontFamily: 'SourceSans3_400Regular',
-                      color: TEXT_ON_DARK,
-                      textShadowColor: 'rgba(0, 0, 0, 0.5)',
-                      textShadowOffset: { width: 0, height: 1 },
-                      textShadowRadius: 3,
-                    }}
-                  >
-                    {welcomeMessage}
                   </Text>
                 </View>
               </View>
