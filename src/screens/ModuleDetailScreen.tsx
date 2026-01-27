@@ -224,8 +224,10 @@ export default function ModuleDetailScreen() {
   const handleSubmitQuiz = async () => {
     if (!module) return;
 
-    // Check all questions answered
-    const allAnswered = module.quiz.every((q) => quizAnswers[q.id] !== undefined);
+    // Check all questions answered - use index fallback if question.id is missing
+    const allAnswered = module.quiz.every(
+      (q, idx) => quizAnswers[q.id || `q-${idx}`] !== undefined,
+    );
     if (!allAnswered) {
       Alert.alert('Complete the Quiz', 'Please answer all questions before submitting.');
       return;
@@ -235,8 +237,8 @@ export default function ModuleDetailScreen() {
       setSubmittingQuiz(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      // Convert answers to array format
-      const answers = module.quiz.map((q) => quizAnswers[q.id]);
+      // Convert answers to array format - use index fallback if question.id is missing
+      const answers = module.quiz.map((q, idx) => quizAnswers[q.id || `q-${idx}`]);
 
       const result = await submitQuizAnswers(
         module.id,
@@ -355,7 +357,9 @@ export default function ModuleDetailScreen() {
     );
   }
 
-  const allQuestionsAnswered = module.quiz.every((q) => quizAnswers[q.id] !== undefined);
+  const allQuestionsAnswered = module.quiz.every(
+    (q, idx) => quizAnswers[q.id || `q-${idx}`] !== undefined,
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: PARCHMENT_BACKGROUND }}>
@@ -542,7 +546,9 @@ export default function ModuleDetailScreen() {
 
             {/* Questions */}
             {module.quiz.map((question, qIndex) => {
-              const selectedAnswer = quizAnswers[question.id];
+              // Use index fallback if question.id is missing
+              const questionKey = question.id || `q-${qIndex}`;
+              const selectedAnswer = quizAnswers[questionKey];
               // Normalize types to handle Firestore string/number mismatches
               const correctIdx = Number(question.correctAnswerIndex);
               const isCorrect = quizSubmitted && selectedAnswer === correctIdx;
@@ -553,8 +559,8 @@ export default function ModuleDetailScreen() {
 
               return (
                 <View
-                  key={question.id}
-                  style={{
+                  key={questionKey}
+                  style={{{
                     marginBottom: 24,
                     padding: 20,
                     backgroundColor: CARD_BACKGROUND_LIGHT,
@@ -607,7 +613,7 @@ export default function ModuleDetailScreen() {
                     return (
                       <Pressable
                         key={oIndex}
-                        onPress={() => handleAnswerSelect(question.id, oIndex)}
+                        onPress={() => handleAnswerSelect(questionKey, oIndex)}
                         disabled={quizSubmitted}
                         style={{
                           flexDirection: 'row',
