@@ -1,21 +1,20 @@
 /**
  * Generic Votes Service
  * Handles up/down voting for any collection (tips, gearReviews, feedback, stories, questions, etc.)
- * 
+ *
  * Also integrates with moderation service to auto-hide content at downvote threshold.
- * 
+ *
  * Supports both naming conventions:
  * - upvotes/downvotes (standard)
  * - upvoteCount/downvoteCount (some collections use this)
  */
 
-import {
-  doc,
-  getDoc,
-  runTransaction,
-} from 'firebase/firestore';
+import { doc, getDoc, runTransaction } from 'firebase/firestore';
 import { db, auth } from '../../config/firebase';
-import { checkAndApplyAutoHide, AUTO_HIDE_DOWNVOTE_THRESHOLD } from '../moderationService';
+import {
+  checkAndApplyAutoHide,
+  AUTO_HIDE_DOWNVOTE_THRESHOLD,
+} from '../moderationService';
 
 export interface GenericVote {
   userId: string;
@@ -48,46 +47,53 @@ export const genericVotesService = {
    * - If no vote exists, add the vote
    * - If same vote type, remove the vote (toggle off)
    * - If different vote type, switch to new vote
-   * 
+   *
    * Also checks downvote threshold for auto-hide moderation.
    */
-  async vote(collectionPath: string, itemId: string, voteType: 'up' | 'down'): Promise<{ 
-    newScore: number; 
+  async vote(
+    collectionPath: string,
+    itemId: string,
+    voteType: 'up' | 'down',
+  ): Promise<{
+    newScore: number;
     newUserVote: 'up' | 'down' | null;
     wasAutoHidden?: boolean;
   }> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to vote');
-    
+
     const voteDocRef = doc(db, collectionPath, itemId, 'votes', user.uid);
     const itemDocRef = doc(db, collectionPath, itemId);
-    
+
     let finalScore = 0;
     let finalUserVote: 'up' | 'down' | null = null;
     let finalDownvotes = 0;
-    
+
     await runTransaction(db, async (transaction) => {
       const voteSnap = await transaction.get(voteDocRef);
       const itemSnap = await transaction.get(itemDocRef);
-      
+
       if (!itemSnap.exists()) throw new Error('Item not found');
-      
+
       const itemData = itemSnap.data();
       // Support both naming conventions: upvotes/downvotes OR upvoteCount/downvoteCount
       let upvotes = itemData.upvotes ?? itemData.upvoteCount ?? 0;
       let downvotes = itemData.downvotes ?? itemData.downvoteCount ?? 0;
-      
+
       // Determine which field names this collection uses
-      const usesCountSuffix = itemData.upvoteCount !== undefined || itemData.downvoteCount !== undefined;
-      
+      const usesCountSuffix =
+        itemData.upvoteCount !== undefined || itemData.downvoteCount !== undefined;
+
       let prevVote: 'up' | 'down' | null = null;
-      
+
       if (voteSnap.exists()) {
         const voteData = voteSnap.data();
         // Handle both formats: voteType ('up'/'down') or value (1/-1)
-        prevVote = voteData.voteType || (voteData.value === 1 ? 'up' : voteData.value === -1 ? 'down' : null);
+        prevVote =
+          voteData.voteType ||
+          (voteData.value === 1 ? 'up' : voteData.value === -1 ? 'down' : null);
       }
-      
+
       // Toggle behavior: same vote = remove, different vote = switch
       if (prevVote === voteType) {
         // Toggle off - remove vote
@@ -99,36 +105,39 @@ export const genericVotesService = {
         // Remove previous vote effect
         if (prevVote === 'up') upvotes--;
         if (prevVote === 'down') downvotes--;
-        
+
         // Add new vote effect
         if (voteType === 'up') upvotes++;
         if (voteType === 'down') downvotes++;
-        
+
         // Write the vote
-        transaction.set(voteDocRef, { 
-          userId: user.uid, 
+        transaction.set(voteDocRef, {
+          userId: user.uid,
           voteType,
           createdAt: new Date().toISOString(),
         });
         finalUserVote = voteType;
       }
-      
+
       // Update the item's vote counts using the appropriate field names
       if (usesCountSuffix) {
-        transaction.update(itemDocRef, { upvoteCount: upvotes, downvoteCount: downvotes });
+        transaction.update(itemDocRef, {
+          upvoteCount: upvotes,
+          downvoteCount: downvotes,
+        });
       } else {
         transaction.update(itemDocRef, { upvotes, downvotes });
       }
       finalScore = upvotes - downvotes;
       finalDownvotes = downvotes;
     });
-    
+
     // After transaction completes, check if we need to auto-hide
     let wasAutoHidden = false;
     if (finalDownvotes >= AUTO_HIDE_DOWNVOTE_THRESHOLD) {
       wasAutoHidden = await checkAndApplyAutoHide(collectionPath, itemId, finalDownvotes);
     }
-    
+
     return { newScore: finalScore, newUserVote: finalUserVote, wasAutoHidden };
   },
 };

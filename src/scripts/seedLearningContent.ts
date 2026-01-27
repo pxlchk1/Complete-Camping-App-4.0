@@ -1,16 +1,16 @@
 /**
  * Seed Learning Content to Firestore
- * 
+ *
  * Run this script to populate Firestore with initial learning tracks and modules.
  * This converts the local learningStore data to the new Firebase structure.
- * 
+ *
  * Usage: npx ts-node src/scripts/seedLearningContent.ts
- * 
+ *
  * Note: You'll need to be authenticated with Firebase Admin SDK or
  * run this from a Cloud Function context.
  */
 
-import * as admin from "firebase-admin";
+import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin (for local development, use service account)
 // For production, this would be initialized differently
@@ -37,66 +37,66 @@ interface TrackSeed {
 
 const TRACKS: TrackSeed[] = [
   {
-    id: "leave-no-trace",
-    title: "Leave No Trace",
-    description: "Learn the 7 principles that protect the places we love",
-    icon: "leaf",
+    id: 'leave-no-trace',
+    title: 'Leave No Trace',
+    description: 'Learn the 7 principles that protect the places we love',
+    icon: 'leaf',
     order: 0,
-    badgeId: "leave-no-trace",
-    moduleIds: ["lnt-principles"],
+    badgeId: 'leave-no-trace',
+    moduleIds: ['lnt-principles'],
     isActive: true,
   },
   {
-    id: "novice",
-    title: "Weekend Camper",
-    description: "Master the fundamentals of camping",
-    icon: "bonfire",
+    id: 'novice',
+    title: 'Weekend Camper',
+    description: 'Master the fundamentals of camping',
+    icon: 'bonfire',
     order: 1,
-    badgeId: "weekend-camper",
+    badgeId: 'weekend-camper',
     moduleIds: [
-      "first-trip",
-      "choosing-tent",
-      "pitching-tent",
-      "sleep-system",
-      "stay-warm-dry",
-      "camp-kitchen",
-      "pack-smart",
-      "campfire-safety",
-      "first-aid-basics",
-      "navigation-basics",
+      'first-trip',
+      'choosing-tent',
+      'pitching-tent',
+      'sleep-system',
+      'stay-warm-dry',
+      'camp-kitchen',
+      'pack-smart',
+      'campfire-safety',
+      'first-aid-basics',
+      'navigation-basics',
     ],
     isActive: true,
   },
   {
-    id: "intermediate",
-    title: "Trail Leader",
-    description: "Develop advanced outdoor skills to lead groups",
-    icon: "trail-sign",
+    id: 'intermediate',
+    title: 'Trail Leader',
+    description: 'Develop advanced outdoor skills to lead groups',
+    icon: 'trail-sign',
     order: 2,
-    badgeId: "trail-leader",
+    badgeId: 'trail-leader',
     moduleIds: [
-      "multi-day-planning",
-      "terrain-weather",
-      "water-safety",
-      "leading-group",
-      "backcountry-cooking",
-      "risk-management",
+      'multi-day-planning',
+      'terrain-weather',
+      'water-safety',
+      'leading-group',
+      'backcountry-cooking',
+      'risk-management',
     ],
     isActive: true,
   },
   {
-    id: "master",
-    title: "Backcountry Guide",
-    description: "Master wilderness expertise for remote adventures",
-    icon: "compass",
+    id: 'master',
+    title: 'Backcountry Guide',
+    description: 'Master wilderness expertise for remote adventures',
+    icon: 'compass',
     order: 3,
-    badgeId: "backcountry-guide",
+    badgeId: 'backcountry-guide',
     moduleIds: [
-      "advanced-navigation",
-      "wilderness-weather",
-      "advanced-first-aid",
-      "group-dynamics",
-      "search-rescue-basics",
+      'advanced-navigation',
+      'wilderness-weather',
+      'advanced-first-aid',
+      'group-dynamics',
+      'search-rescue-basics',
     ],
     isActive: true,
   },
@@ -132,11 +132,11 @@ const MODULES: ModuleSeed[] = [
   // LEAVE NO TRACE TRACK
   // ============================================
   {
-    id: "lnt-principles",
-    trackId: "leave-no-trace",
-    title: "The 7 Principles of Leave No Trace",
-    description: "Learn how to protect the places we love",
-    icon: "leaf",
+    id: 'lnt-principles',
+    trackId: 'leave-no-trace',
+    title: 'The 7 Principles of Leave No Trace',
+    description: 'Learn how to protect the places we love',
+    icon: 'leaf',
     order: 0,
     estimatedMinutes: 25,
     content: `# Leave No Trace: The 7 Principles
@@ -295,39 +295,60 @@ Ask yourself: "Will this leave the place better or worse for the next visitor—
 That's Leave No Trace.`,
     quiz: [
       {
-        id: "lnt-q1",
-        question: "How far from water should you dig a cathole for human waste?",
-        options: ["50 feet", "100 feet", "200 feet", "500 feet"],
+        id: 'lnt-q1',
+        question: 'How far from water should you dig a cathole for human waste?',
+        options: ['50 feet', '100 feet', '200 feet', '500 feet'],
         correctAnswerIndex: 2,
-        explanation: "Catholes should be dug at least 200 feet (about 70 adult steps) from water sources to prevent contamination.",
+        explanation:
+          'Catholes should be dug at least 200 feet (about 70 adult steps) from water sources to prevent contamination.',
       },
       {
-        id: "lnt-q2",
-        question: "Which surface is most durable for off-trail travel?",
-        options: ["Wet meadow", "Dry grass", "Rock or gravel", "Moss-covered ground"],
+        id: 'lnt-q2',
+        question: 'Which surface is most durable for off-trail travel?',
+        options: ['Wet meadow', 'Dry grass', 'Rock or gravel', 'Moss-covered ground'],
         correctAnswerIndex: 2,
-        explanation: "Rock, sand, and gravel are the most durable surfaces and leave the least impact when you walk on them.",
+        explanation:
+          'Rock, sand, and gravel are the most durable surfaces and leave the least impact when you walk on them.',
       },
       {
-        id: "lnt-q3",
-        question: "What should you do if a wild animal changes its behavior when you approach?",
-        options: ["Move closer for a better photo", "Back away slowly", "Make loud noises to scare it", "Throw food to distract it"],
+        id: 'lnt-q3',
+        question:
+          'What should you do if a wild animal changes its behavior when you approach?',
+        options: [
+          'Move closer for a better photo',
+          'Back away slowly',
+          'Make loud noises to scare it',
+          'Throw food to distract it',
+        ],
         correctAnswerIndex: 1,
-        explanation: "If an animal changes behavior, you're too close. Back away slowly to give it space.",
+        explanation:
+          "If an animal changes behavior, you're too close. Back away slowly to give it space.",
       },
       {
-        id: "lnt-q4",
-        question: "Before building a campfire, what should you check first?",
-        options: ["Wind direction", "If fires are allowed in the area", "How much wood is available", "Time of day"],
+        id: 'lnt-q4',
+        question: 'Before building a campfire, what should you check first?',
+        options: [
+          'Wind direction',
+          'If fires are allowed in the area',
+          'How much wood is available',
+          'Time of day',
+        ],
         correctAnswerIndex: 1,
-        explanation: "Always check local fire regulations first. Many areas have fire bans, especially during dry seasons.",
+        explanation:
+          'Always check local fire regulations first. Many areas have fire bans, especially during dry seasons.',
       },
       {
-        id: "lnt-q5",
-        question: "Which item should you leave in the wilderness?",
-        options: ["A pretty rock for your collection", "Wildflowers to press at home", "An interesting antler", "All of the above—leave everything"],
+        id: 'lnt-q5',
+        question: 'Which item should you leave in the wilderness?',
+        options: [
+          'A pretty rock for your collection',
+          'Wildflowers to press at home',
+          'An interesting antler',
+          'All of the above—leave everything',
+        ],
         correctAnswerIndex: 3,
-        explanation: "Leave what you find. Take only photos so others can enjoy the same discoveries.",
+        explanation:
+          'Leave what you find. Take only photos so others can enjoy the same discoveries.',
       },
     ],
     isActive: true,
@@ -337,11 +358,11 @@ That's Leave No Trace.`,
   // WEEKEND CAMPER TRACK
   // ============================================
   {
-    id: "first-trip",
-    trackId: "novice",
-    title: "How to Plan Your First Camping Trip",
-    description: "Planning makes your first trip feel calm instead of chaotic",
-    icon: "calendar",
+    id: 'first-trip',
+    trackId: 'novice',
+    title: 'How to Plan Your First Camping Trip',
+    description: 'Planning makes your first trip feel calm instead of chaotic',
+    icon: 'calendar',
     order: 0,
     estimatedMinutes: 15,
     content: `# How to Plan Your First Camping Trip
@@ -441,43 +462,62 @@ Don't stress about doing everything perfectly. The goal is to relax, have fun, a
 **Remember:** Every experienced camper was a beginner once. You've got this!`,
     quiz: [
       {
-        id: "first-q1",
-        question: "How long should your first camping trip be?",
-        options: ["One night", "One or two nights", "A full week", "As long as possible"],
+        id: 'first-q1',
+        question: 'How long should your first camping trip be?',
+        options: ['One night', 'One or two nights', 'A full week', 'As long as possible'],
         correctAnswerIndex: 1,
-        explanation: "Start with one or two nights to build confidence without overwhelming yourself.",
+        explanation:
+          'Start with one or two nights to build confidence without overwhelming yourself.',
       },
       {
-        id: "first-q2",
-        question: "When should you test your camping gear?",
-        options: ["At the campsite", "In the parking lot before leaving", "At home before the trip", "You don't need to test it"],
+        id: 'first-q2',
+        question: 'When should you test your camping gear?',
+        options: [
+          'At the campsite',
+          'In the parking lot before leaving',
+          'At home before the trip',
+          "You don't need to test it",
+        ],
         correctAnswerIndex: 2,
-        explanation: "Test your gear at home so you can fix any issues before your trip.",
+        explanation: 'Test your gear at home so you can fix any issues before your trip.',
       },
       {
-        id: "first-q3",
-        question: "What type of campsite is best for beginners?",
-        options: ["Remote backcountry site", "Drive-up site with bathrooms", "Primitive site with no facilities", "Beach camping"],
+        id: 'first-q3',
+        question: 'What type of campsite is best for beginners?',
+        options: [
+          'Remote backcountry site',
+          'Drive-up site with bathrooms',
+          'Primitive site with no facilities',
+          'Beach camping',
+        ],
         correctAnswerIndex: 1,
-        explanation: "Drive-up sites with bathrooms provide comfort and convenience for first-time campers.",
+        explanation:
+          'Drive-up sites with bathrooms provide comfort and convenience for first-time campers.',
       },
       {
-        id: "first-q4",
-        question: "How early should you arrive at your campsite?",
-        options: ["Just before dark for a dramatic setup", "With at least 2 hours of daylight", "Arrival time doesn't matter", "After midnight for fewer crowds"],
+        id: 'first-q4',
+        question: 'How early should you arrive at your campsite?',
+        options: [
+          'Just before dark for a dramatic setup',
+          'With at least 2 hours of daylight',
+          "Arrival time doesn't matter",
+          'After midnight for fewer crowds',
+        ],
         correctAnswerIndex: 1,
-        explanation: "Arrive with plenty of daylight so you can set up camp comfortably and safely.",
+        explanation:
+          'Arrive with plenty of daylight so you can set up camp comfortably and safely.',
       },
     ],
     isActive: true,
   },
 
   {
-    id: "choosing-tent",
-    trackId: "novice",
-    title: "Choosing a Tent",
-    description: "Your tent is your tiny home for the night. A few smart choices make a big difference.",
-    icon: "home",
+    id: 'choosing-tent',
+    trackId: 'novice',
+    title: 'Choosing a Tent',
+    description:
+      'Your tent is your tiny home for the night. A few smart choices make a big difference.',
+    icon: 'home',
     order: 1,
     estimatedMinutes: 12,
     content: `# Choosing a Tent
@@ -587,32 +627,45 @@ Before your first trip, set up your tent in your yard or living room.
 Your tent is where you sleep, escape the rain, and decompress at the end of the day. Choose one that makes camping feel like home.`,
     quiz: [
       {
-        id: "tent-q1",
-        question: "For two people, what tent size is most comfortable?",
-        options: ["1-person", "2-person", "3-person", "4-person"],
+        id: 'tent-q1',
+        question: 'For two people, what tent size is most comfortable?',
+        options: ['1-person', '2-person', '3-person', '4-person'],
         correctAnswerIndex: 2,
-        explanation: "A 3-person tent gives two people room for gear and personal space.",
+        explanation: 'A 3-person tent gives two people room for gear and personal space.',
       },
       {
-        id: "tent-q2",
-        question: "What type of tent is best for most campers?",
-        options: ["Four-season", "Three-season", "Ultralight", "Single-wall"],
+        id: 'tent-q2',
+        question: 'What type of tent is best for most campers?',
+        options: ['Four-season', 'Three-season', 'Ultralight', 'Single-wall'],
         correctAnswerIndex: 1,
-        explanation: "Three-season tents work for spring, summer, and fall—which covers 90% of camping trips.",
+        explanation:
+          'Three-season tents work for spring, summer, and fall—which covers 90% of camping trips.',
       },
       {
-        id: "tent-q3",
-        question: "Why are vestibules useful?",
-        options: ["Extra sleeping space", "Protected storage for muddy boots and gear", "Better ventilation", "Lighter weight"],
+        id: 'tent-q3',
+        question: 'Why are vestibules useful?',
+        options: [
+          'Extra sleeping space',
+          'Protected storage for muddy boots and gear',
+          'Better ventilation',
+          'Lighter weight',
+        ],
         correctAnswerIndex: 1,
-        explanation: "Vestibules provide covered storage outside the tent door for wet or dirty items.",
+        explanation:
+          'Vestibules provide covered storage outside the tent door for wet or dirty items.',
       },
       {
-        id: "tent-q4",
-        question: "What should you do before your first camping trip with a new tent?",
-        options: ["Read the manual at the campsite", "Set it up at home first", "Watch a YouTube video while camping", "Skip practice—it's intuitive"],
+        id: 'tent-q4',
+        question: 'What should you do before your first camping trip with a new tent?',
+        options: [
+          'Read the manual at the campsite',
+          'Set it up at home first',
+          'Watch a YouTube video while camping',
+          "Skip practice—it's intuitive",
+        ],
         correctAnswerIndex: 1,
-        explanation: "Practice at home so you know the setup process and can identify any missing parts.",
+        explanation:
+          'Practice at home so you know the setup process and can identify any missing parts.',
       },
     ],
     isActive: true,
@@ -622,11 +675,11 @@ Your tent is where you sleep, escape the rain, and decompress at the end of the 
   // For brevity, I'm including placeholders for the remaining modules
 
   {
-    id: "pitching-tent",
-    trackId: "novice",
-    title: "Pitching a Tent",
-    description: "Once you learn the pattern, every tent starts to make sense",
-    icon: "construct",
+    id: 'pitching-tent',
+    trackId: 'novice',
+    title: 'Pitching a Tent',
+    description: 'Once you learn the pattern, every tent starts to make sense',
+    icon: 'construct',
     order: 2,
     estimatedMinutes: 15,
     content: `# Pitching a Tent
@@ -734,36 +787,49 @@ Even freestanding tents need stakes for wind.
 The first time takes 20 minutes. By your third trip, you'll be done in 5.`,
     quiz: [
       {
-        id: "pitch-q1",
-        question: "What is the first thing you should lay down when pitching a tent?",
-        options: ["Rainfly", "Footprint/ground cloth", "Tent body", "Sleeping bags"],
+        id: 'pitch-q1',
+        question: 'What is the first thing you should lay down when pitching a tent?',
+        options: ['Rainfly', 'Footprint/ground cloth', 'Tent body', 'Sleeping bags'],
         correctAnswerIndex: 1,
-        explanation: "The footprint protects your tent floor and helps position the tent correctly.",
+        explanation:
+          'The footprint protects your tent floor and helps position the tent correctly.',
       },
       {
-        id: "pitch-q2",
-        question: "Why should you look for level ground?",
-        options: ["Better views", "So you don't roll in your sleep", "Required by park rules", "Easier to find"],
+        id: 'pitch-q2',
+        question: 'Why should you look for level ground?',
+        options: [
+          'Better views',
+          "So you don't roll in your sleep",
+          'Required by park rules',
+          'Easier to find',
+        ],
         correctAnswerIndex: 1,
-        explanation: "Sleeping on a slope means you'll slide to one side all night—not restful!",
+        explanation:
+          "Sleeping on a slope means you'll slide to one side all night—not restful!",
       },
       {
-        id: "pitch-q3",
-        question: "At what angle should you drive tent stakes?",
-        options: ["Straight down (90°)", "Angled away from tent (45°)", "Angled toward tent (45°)", "Horizontally"],
+        id: 'pitch-q3',
+        question: 'At what angle should you drive tent stakes?',
+        options: [
+          'Straight down (90°)',
+          'Angled away from tent (45°)',
+          'Angled toward tent (45°)',
+          'Horizontally',
+        ],
         correctAnswerIndex: 1,
-        explanation: "Stakes hold better when angled away from the tent at about 45 degrees.",
+        explanation:
+          'Stakes hold better when angled away from the tent at about 45 degrees.',
       },
     ],
     isActive: true,
   },
 
   {
-    id: "sleep-system",
-    trackId: "novice",
-    title: "Sleep System Basics",
-    description: "Being warm and comfortable is the key to happy camping",
-    icon: "bed",
+    id: 'sleep-system',
+    trackId: 'novice',
+    title: 'Sleep System Basics',
+    description: 'Being warm and comfortable is the key to happy camping',
+    icon: 'bed',
     order: 3,
     estimatedMinutes: 12,
     content: `# Sleep System Basics
@@ -861,25 +927,34 @@ Keep your bag lofted—shake it out before bed so insulation isn't compressed.
 A good night's sleep makes everything better. Prioritize your sleep system.`,
     quiz: [
       {
-        id: "sleep-q1",
-        question: "What is the most important part of your sleep system?",
-        options: ["Sleeping bag", "Sleeping pad", "Pillow", "Pajamas"],
+        id: 'sleep-q1',
+        question: 'What is the most important part of your sleep system?',
+        options: ['Sleeping bag', 'Sleeping pad', 'Pillow', 'Pajamas'],
         correctAnswerIndex: 1,
-        explanation: "The pad insulates you from the ground, which steals heat faster than cold air.",
+        explanation:
+          'The pad insulates you from the ground, which steals heat faster than cold air.',
       },
       {
-        id: "sleep-q2",
-        question: "If the low temperature will be 40°F, what sleeping bag rating should you choose?",
-        options: ["40°F", "30°F or lower", "50°F", "20°F exactly"],
+        id: 'sleep-q2',
+        question:
+          'If the low temperature will be 40°F, what sleeping bag rating should you choose?',
+        options: ['40°F', '30°F or lower', '50°F', '20°F exactly'],
         correctAnswerIndex: 1,
-        explanation: "Choose a bag rated about 10°F colder than expected temps—so 30°F or lower.",
+        explanation:
+          'Choose a bag rated about 10°F colder than expected temps—so 30°F or lower.',
       },
       {
-        id: "sleep-q3",
-        question: "What should you do before getting into your sleeping bag?",
-        options: ["Breathe into it to warm it up", "Change into dry layers", "Compress the insulation", "Skip socks to let feet breathe"],
+        id: 'sleep-q3',
+        question: 'What should you do before getting into your sleeping bag?',
+        options: [
+          'Breathe into it to warm it up',
+          'Change into dry layers',
+          'Compress the insulation',
+          'Skip socks to let feet breathe',
+        ],
         correctAnswerIndex: 1,
-        explanation: "Dry layers help you stay warm. Wet or sweaty clothes conduct heat away from your body.",
+        explanation:
+          'Dry layers help you stay warm. Wet or sweaty clothes conduct heat away from your body.',
       },
     ],
     isActive: true,
@@ -891,15 +966,15 @@ A good night's sleep makes everything better. Prioritize your sleep system.`,
 // ============================================
 
 async function seedLearningContent() {
-  console.log("🌱 Starting to seed learning content...\n");
+  console.log('🌱 Starting to seed learning content...\n');
 
   const batch = db.batch();
   const now = admin.firestore.Timestamp.now();
 
   // Seed tracks
-  console.log("📚 Seeding tracks...");
+  console.log('📚 Seeding tracks...');
   for (const track of TRACKS) {
-    const trackRef = db.collection("learningTracks").doc(track.id);
+    const trackRef = db.collection('learningTracks').doc(track.id);
     batch.set(trackRef, {
       ...track,
       createdAt: now,
@@ -909,9 +984,9 @@ async function seedLearningContent() {
   }
 
   // Seed modules
-  console.log("\n📖 Seeding modules...");
+  console.log('\n📖 Seeding modules...');
   for (const module of MODULES) {
-    const moduleRef = db.collection("learningModules").doc(module.id);
+    const moduleRef = db.collection('learningModules').doc(module.id);
     batch.set(moduleRef, {
       ...module,
       createdAt: now,
@@ -921,10 +996,10 @@ async function seedLearningContent() {
   }
 
   // Commit batch
-  console.log("\n💾 Committing to Firestore...");
+  console.log('\n💾 Committing to Firestore...');
   await batch.commit();
 
-  console.log("\n✅ Learning content seeded successfully!");
+  console.log('\n✅ Learning content seeded successfully!');
   console.log(`   Tracks: ${TRACKS.length}`);
   console.log(`   Modules: ${MODULES.length}`);
 }
@@ -933,7 +1008,7 @@ async function seedLearningContent() {
 seedLearningContent()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error("❌ Error seeding content:", error);
+    console.error('❌ Error seeding content:', error);
     process.exit(1);
   });
 

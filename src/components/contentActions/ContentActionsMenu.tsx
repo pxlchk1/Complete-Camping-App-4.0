@@ -1,41 +1,49 @@
 /**
  * ContentActionsMenu Component
- * 
+ *
  * Connect-only actions: This component handles Edit/Delete for owners and Remove for admins/mods.
  * ONLY use this component for Connect section content (Questions, Tips, Comments, Answers).
  * Do NOT reuse for Trips, Parks, Reviews, or other non-Connect content.
- * 
+ *
  * Displays a kebab (⋯) menu for content actions:
  * - Owner: Edit / Delete
  * - Admin/Moderator: Remove
- * 
+ *
  * Used across all Connect UGC cards, rows, and comments for consistent action handling.
  */
 
-import React, { useState, useCallback, useMemo } from "react";
-import { View, Pressable, Text, Modal, ActionSheetIOS, Platform, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { useToast } from "../ToastManager";
+import React, { useState, useCallback, useMemo } from 'react';
+import {
+  View,
+  Pressable,
+  Text,
+  Modal,
+  ActionSheetIOS,
+  Platform,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useToast } from '../ToastManager';
 import {
   PARCHMENT,
   BORDER_SOFT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-} from "../../constants/colors";
+} from '../../constants/colors';
 
-export type ContentItemType = 
-  | "comment" 
-  | "question" 
-  | "tip" 
-  | "photo" 
-  | "review" 
-  | "tripPost" 
-  | "feedback"
-  | "answer"
-  | "other";
+export type ContentItemType =
+  | 'comment'
+  | 'question'
+  | 'tip'
+  | 'photo'
+  | 'review'
+  | 'tripPost'
+  | 'feedback'
+  | 'answer'
+  | 'other';
 
-export type RoleLabel = "ADMIN" | "MOD" | null;
+export type RoleLabel = 'ADMIN' | 'MOD' | null;
 
 export interface ConfirmCopy {
   deleteTitle?: string;
@@ -80,12 +88,12 @@ export interface ContentActionsMenuProps {
 }
 
 const DEFAULT_CONFIRM_COPY: Required<ConfirmCopy> = {
-  deleteTitle: "Delete This?",
+  deleteTitle: 'Delete This?',
   deleteBody: "This can't be undone.",
-  deleteConfirm: "Delete",
-  removeTitle: "Remove This?",
+  deleteConfirm: 'Delete',
+  removeTitle: 'Remove This?',
   removeBody: "This removes it for everyone. This can't be undone.",
-  removeConfirm: "Remove",
+  removeConfirm: 'Remove',
 };
 
 export function ContentActionsMenu({
@@ -118,63 +126,61 @@ export function ContentActionsMenu({
   // Memoize copy to prevent dependency changes on every render
   const copy = useMemo(
     () => ({ ...DEFAULT_CONFIRM_COPY, ...confirmCopy }),
-    [confirmCopy]
+    [confirmCopy],
   );
 
   const confirmDelete = useCallback(() => {
-    Alert.alert(
-      copy.deleteTitle,
-      copy.deleteBody,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: copy.deleteConfirm,
-          style: "destructive",
-          onPress: async () => {
-            if (!onRequestDelete) return;
-            setLoading(true);
-            try {
-              await onRequestDelete();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              showSuccess("Deleted");
-            } catch (error) {
-              console.error(`[ContentActions] Delete failed for ${itemType}:${itemId}`, error);
-              showError("Failed to delete");
-            } finally {
-              setLoading(false);
-            }
-          },
+    Alert.alert(copy.deleteTitle, copy.deleteBody, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: copy.deleteConfirm,
+        style: 'destructive',
+        onPress: async () => {
+          if (!onRequestDelete) return;
+          setLoading(true);
+          try {
+            await onRequestDelete();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            showSuccess('Deleted');
+          } catch (error) {
+            console.error(
+              `[ContentActions] Delete failed for ${itemType}:${itemId}`,
+              error,
+            );
+            showError('Failed to delete');
+          } finally {
+            setLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, [onRequestDelete, copy, itemType, itemId, showSuccess, showError]);
 
   const confirmRemove = useCallback(() => {
-    Alert.alert(
-      copy.removeTitle,
-      copy.removeBody,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: copy.removeConfirm,
-          style: "destructive",
-          onPress: async () => {
-            if (!onRequestRemove) return;
-            setLoading(true);
-            try {
-              await onRequestRemove();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              showSuccess("Removed");
-            } catch (error) {
-              console.error(`[ContentActions] Remove failed for ${itemType}:${itemId}`, error);
-              showError("Failed to remove");
-            } finally {
-              setLoading(false);
-            }
-          },
+    Alert.alert(copy.removeTitle, copy.removeBody, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: copy.removeConfirm,
+        style: 'destructive',
+        onPress: async () => {
+          if (!onRequestRemove) return;
+          setLoading(true);
+          try {
+            await onRequestRemove();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            showSuccess('Removed');
+          } catch (error) {
+            console.error(
+              `[ContentActions] Remove failed for ${itemType}:${itemId}`,
+              error,
+            );
+            showError('Failed to remove');
+          } finally {
+            setLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, [onRequestRemove, copy, itemType, itemId, showSuccess, showError]);
 
   const handleEdit = useCallback(() => {
@@ -195,7 +201,7 @@ export function ContentActionsMenu({
   const handleOpenMenu = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    if (Platform.OS === "ios") {
+    if (Platform.OS === 'ios') {
       // Use native ActionSheet on iOS
       const options: string[] = [];
       const destructiveIndex: number[] = [];
@@ -203,26 +209,28 @@ export function ContentActionsMenu({
 
       if (isOwner) {
         if (onRequestEdit) {
-          options.push("Edit");
+          options.push('Edit');
         }
         if (onRequestDelete) {
-          options.push("Delete");
+          options.push('Delete');
           destructiveIndex.push(options.length - 1);
         }
       } else if (canModerate && onRequestRemove) {
-        const removeLabel = roleLabel === "ADMIN" ? "Remove (Admin)" : "Remove (Moderator)";
+        const removeLabel =
+          roleLabel === 'ADMIN' ? 'Remove (Admin)' : 'Remove (Moderator)';
         options.push(removeLabel);
         destructiveIndex.push(options.length - 1);
       }
 
-      options.push("Cancel");
+      options.push('Cancel');
       cancelIndex = options.length - 1;
 
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options,
           cancelButtonIndex: cancelIndex,
-          destructiveButtonIndex: destructiveIndex.length > 0 ? destructiveIndex[0] : undefined,
+          destructiveButtonIndex:
+            destructiveIndex.length > 0 ? destructiveIndex[0] : undefined,
         },
         (buttonIndex) => {
           if (buttonIndex === cancelIndex) return;
@@ -242,13 +250,22 @@ export function ContentActionsMenu({
           } else if (canModerate && onRequestRemove && buttonIndex === 0) {
             confirmRemove();
           }
-        }
+        },
       );
     } else {
       // Use modal on Android
       setShowModal(true);
     }
-  }, [isOwner, canModerate, onRequestEdit, onRequestDelete, onRequestRemove, roleLabel, confirmDelete, confirmRemove]);
+  }, [
+    isOwner,
+    canModerate,
+    onRequestEdit,
+    onRequestDelete,
+    onRequestRemove,
+    roleLabel,
+    confirmDelete,
+    confirmRemove,
+  ]);
 
   // Don't render if deleted or no actions available
   if (isDeleted) return null;
@@ -274,7 +291,7 @@ export function ContentActionsMenu({
       </Pressable>
 
       {/* Android Modal Menu */}
-      {Platform.OS === "android" && (
+      {Platform.OS === 'android' && (
         <Modal
           visible={showModal}
           transparent
@@ -297,10 +314,17 @@ export function ContentActionsMenu({
                       className="flex-row items-center py-4 px-2 border-b"
                       style={{ borderColor: BORDER_SOFT }}
                     >
-                      <Ionicons name="pencil-outline" size={22} color={TEXT_PRIMARY_STRONG} />
+                      <Ionicons
+                        name="pencil-outline"
+                        size={22}
+                        color={TEXT_PRIMARY_STRONG}
+                      />
                       <Text
                         className="ml-4 text-base"
-                        style={{ fontFamily: "SourceSans3_500Medium", color: TEXT_PRIMARY_STRONG }}
+                        style={{
+                          fontFamily: 'SourceSans3_500Medium',
+                          color: TEXT_PRIMARY_STRONG,
+                        }}
                       >
                         Edit
                       </Text>
@@ -314,7 +338,7 @@ export function ContentActionsMenu({
                       <Ionicons name="trash-outline" size={22} color="#DC2626" />
                       <Text
                         className="ml-4 text-base"
-                        style={{ fontFamily: "SourceSans3_500Medium", color: "#DC2626" }}
+                        style={{ fontFamily: 'SourceSans3_500Medium', color: '#DC2626' }}
                       >
                         Delete
                       </Text>
@@ -329,9 +353,9 @@ export function ContentActionsMenu({
                   <Ionicons name="trash-outline" size={22} color="#DC2626" />
                   <Text
                     className="ml-4 text-base"
-                    style={{ fontFamily: "SourceSans3_500Medium", color: "#DC2626" }}
+                    style={{ fontFamily: 'SourceSans3_500Medium', color: '#DC2626' }}
                   >
-                    {roleLabel === "ADMIN" ? "Remove (Admin)" : "Remove (Moderator)"}
+                    {roleLabel === 'ADMIN' ? 'Remove (Admin)' : 'Remove (Moderator)'}
                   </Text>
                 </Pressable>
               ) : null}
@@ -342,7 +366,10 @@ export function ContentActionsMenu({
                 style={{ borderColor: BORDER_SOFT }}
               >
                 <Text
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Cancel
                 </Text>

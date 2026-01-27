@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,70 +10,70 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "../config/firebase";
-import { Ionicons } from "@expo/vector-icons";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../config/firebase';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ForgotPasswordScreen({ navigation }: { navigation: any }) {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
   const handleResetPassword = async () => {
     try {
       setLoading(true);
-      setError("");
+      setError('');
 
       // Validate email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!email.trim()) {
-        setError("Please enter your email address.");
+        setError('Please enter your email address.');
         return;
       }
       if (!emailRegex.test(email.trim())) {
-        setError("Please enter a valid email address.");
+        setError('Please enter a valid email address.');
         return;
       }
 
       // Send password reset email
       await sendPasswordResetEmail(auth, email.trim());
-      
+
       setSuccess(true);
       Alert.alert(
-        "Check Your Email",
+        'Check Your Email',
         "We've sent a password reset link to your email address. Please check your inbox and follow the instructions to reset your password.",
         [
           {
-            text: "OK",
+            text: 'OK',
             onPress: () => navigation.goBack(),
           },
-        ]
+        ],
       );
     } catch (error: any) {
-      console.error("Password Reset Error:", error);
-      
-      if (error.code === "auth/user-not-found") {
+      console.error('Password Reset Error:', error);
+
+      if (error.code === 'auth/user-not-found') {
         // Don't reveal if user exists for security
         setSuccess(true);
         Alert.alert(
-          "Check Your Email",
+          'Check Your Email',
           "If an account exists with this email, we've sent a password reset link.",
           [
             {
-              text: "OK",
+              text: 'OK',
               onPress: () => navigation.goBack(),
             },
-          ]
+          ],
         );
-      } else if (error.code === "auth/invalid-email") {
-        setError("Please enter a valid email address.");
-      } else if (error.code === "auth/too-many-requests") {
-        setError("Too many attempts. Please try again later.");
+      } else if (error.code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else if (error.code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please try again later.');
       } else {
-        setError("Something went wrong. Please try again.");
+        setError('Something went wrong. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -82,13 +82,13 @@ export default function ForgotPasswordScreen({ navigation }: { navigation: any }
 
   return (
     <ImageBackground
-      source={require("../../assets/images/splash-screen.png")}
+      source={require('../../assets/images/splash-screen.png')}
       style={styles.background}
       resizeMode="cover"
     >
-      <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.flex}
         >
           <View style={styles.overlay}>
@@ -109,7 +109,8 @@ export default function ForgotPasswordScreen({ navigation }: { navigation: any }
 
             <View style={styles.content}>
               <Text style={styles.instructionText}>
-                Enter your email address and we&apos;ll send you a link to reset your password.
+                Enter your email address and we&apos;ll send you a link to reset your
+                password.
               </Text>
 
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -158,8 +159,8 @@ export default function ForgotPasswordScreen({ navigation }: { navigation: any }
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    width: "100%",
-    height: "100%",
+    width: '100%',
+    height: '100%',
   },
 
   safeArea: {
@@ -178,16 +179,16 @@ const styles = StyleSheet.create({
   },
 
   titleContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingTop: 20,
     gap: 8,
   },
 
   titleText: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: 'Raleway_700Bold',
     fontSize: 32,
-    color: "#485952",
-    textAlign: "center",
+    color: '#485952',
+    textAlign: 'center',
   },
 
   backButton: {
@@ -204,38 +205,38 @@ const styles = StyleSheet.create({
   },
 
   instructionText: {
-    fontFamily: "SourceSans3_400Regular",
+    fontFamily: 'SourceSans3_400Regular',
     fontSize: 16,
-    color: "#F4EBD0",
-    textAlign: "center",
+    color: '#F4EBD0',
+    textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
   },
 
   input: {
-    backgroundColor: "rgba(244, 235, 208, 0.9)",
+    backgroundColor: 'rgba(244, 235, 208, 0.9)',
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
     marginBottom: 12,
-    fontFamily: "SourceSans3_400Regular",
+    fontFamily: 'SourceSans3_400Regular',
     fontSize: 16,
-    color: "#485952",
+    color: '#485952',
   },
 
   errorText: {
-    fontFamily: "SourceSans3_600SemiBold",
+    fontFamily: 'SourceSans3_600SemiBold',
     fontSize: 14,
-    color: "#ff6b6b",
-    textAlign: "center",
+    color: '#ff6b6b',
+    textAlign: 'center',
     marginBottom: 12,
-    backgroundColor: "rgba(255, 107, 107, 0.1)",
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
     padding: 12,
     borderRadius: 8,
   },
 
   primaryButton: {
-    backgroundColor: "#485952",
+    backgroundColor: '#485952',
     paddingVertical: 14,
     borderRadius: 10,
     marginBottom: 8,
@@ -246,22 +247,22 @@ const styles = StyleSheet.create({
   },
 
   primaryButtonText: {
-    fontFamily: "SourceSans3_600SemiBold",
+    fontFamily: 'SourceSans3_600SemiBold',
     fontSize: 18,
-    color: "#F4EBD0",
-    textAlign: "center",
+    color: '#F4EBD0',
+    textAlign: 'center',
   },
 
   backToSignInButton: {
-    alignSelf: "center",
+    alignSelf: 'center',
     marginTop: 16,
     paddingVertical: 8,
   },
 
   backToSignInText: {
-    fontFamily: "SourceSans3_600SemiBold",
+    fontFamily: 'SourceSans3_600SemiBold',
     fontSize: 14,
-    color: "#F4EBD0",
-    textDecorationLine: "underline",
+    color: '#F4EBD0',
+    textDecorationLine: 'underline',
   },
 });

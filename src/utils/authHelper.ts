@@ -3,13 +3,13 @@
  * Manages the two-gate system: Login Gate → Subscription Gate
  */
 
-import { useAuthStore } from "../state/authStore";
-import { useSubscriptionStore } from "../state/subscriptionStore";
-import { NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../navigation/types";
-import { auth } from "../config/firebase";
-import { sendEmailVerification } from "firebase/auth";
-import { Alert } from "react-native";
+import { useAuthStore } from '../state/authStore';
+import { useSubscriptionStore } from '../state/subscriptionStore';
+import { NavigationProp } from '@react-navigation/native';
+import { RootStackParamList } from '../navigation/types';
+import { auth } from '../config/firebase';
+import { sendEmailVerification } from 'firebase/auth';
+import { Alert } from 'react-native';
 
 /**
  * Get current authenticated user ID
@@ -46,12 +46,13 @@ export const useUserStatus = () => {
   const isLoggedIn = useIsLoggedIn();
   const isPro = useIsPro();
   const isEmailVerified = auth.currentUser?.emailVerified ?? false;
-  
+
   // Apple Sign-In users don't need email verification (Apple handles it)
-  const isAppleUser = auth.currentUser?.providerData?.some(
-    (provider) => provider.providerId === "apple.com"
-  ) ?? false;
-  
+  const isAppleUser =
+    auth.currentUser?.providerData?.some(
+      (provider) => provider.providerId === 'apple.com',
+    ) ?? false;
+
   return {
     isLoggedIn,
     isPro,
@@ -68,12 +69,12 @@ export const useUserStatus = () => {
 export const isEmailVerified = (): boolean => {
   const user = auth.currentUser;
   if (!user) return false;
-  
+
   // Apple users are considered verified (Apple handles email verification)
   const isAppleUser = user.providerData?.some(
-    (provider) => provider.providerId === "apple.com"
+    (provider) => provider.providerId === 'apple.com',
   );
-  
+
   return user.emailVerified || isAppleUser;
 };
 
@@ -82,58 +83,56 @@ export const isEmailVerified = (): boolean => {
  * Shows an alert if not verified and offers to resend verification email
  * Returns true if verified, false if not
  */
-export const requireEmailVerification = async (
-  action?: string
-): Promise<boolean> => {
+export const requireEmailVerification = async (action?: string): Promise<boolean> => {
   const user = auth.currentUser;
-  
+
   if (!user) {
-    console.log("[EmailVerification] No user logged in");
+    console.log('[EmailVerification] No user logged in');
     return false;
   }
-  
+
   // Apple users are considered verified
   const isAppleUser = user.providerData?.some(
-    (provider) => provider.providerId === "apple.com"
+    (provider) => provider.providerId === 'apple.com',
   );
-  
+
   if (user.emailVerified || isAppleUser) {
     return true;
   }
-  
+
   // User not verified - show alert with option to resend
   console.log(`[EmailVerification] Email not verified for: ${action || 'action'}`);
-  
+
   return new Promise((resolve) => {
     Alert.alert(
-      "Email Verification Required",
-      `Please verify your email address to ${action || "use this feature"}. Check your inbox for the verification link.`,
+      'Email Verification Required',
+      `Please verify your email address to ${action || 'use this feature'}. Check your inbox for the verification link.`,
       [
         {
-          text: "Resend Email",
+          text: 'Resend Email',
           onPress: async () => {
             try {
               await sendEmailVerification(user);
               Alert.alert(
-                "Verification Email Sent",
-                "Please check your inbox and click the verification link."
+                'Verification Email Sent',
+                'Please check your inbox and click the verification link.',
               );
             } catch (error) {
-              console.error("[EmailVerification] Failed to resend:", error);
+              console.error('[EmailVerification] Failed to resend:', error);
               Alert.alert(
-                "Error",
-                "Failed to send verification email. Please try again later."
+                'Error',
+                'Failed to send verification email. Please try again later.',
               );
             }
             resolve(false);
           },
         },
         {
-          text: "Cancel",
-          style: "cancel",
+          text: 'Cancel',
+          style: 'cancel',
           onPress: () => resolve(false),
         },
-      ]
+      ],
     );
   });
 };
@@ -144,14 +143,14 @@ export const requireEmailVerification = async (
  */
 export const requireLogin = (
   navigation: NavigationProp<RootStackParamList>,
-  action?: string
+  action?: string,
 ): boolean => {
   const user = useAuthStore.getState().user;
 
   if (!user) {
     // User not logged in - redirect to auth screen
     console.log(`[AuthGate] Login required for: ${action || 'action'}`);
-    navigation.navigate("Auth" as any);
+    navigation.navigate('Auth' as any);
     return false;
   }
 
@@ -164,7 +163,7 @@ export const requireLogin = (
  */
 export const requirePro = (
   navigation: NavigationProp<RootStackParamList>,
-  feature?: string
+  feature?: string,
 ): boolean => {
   // First check login
   if (!requireLogin(navigation, feature)) {
@@ -176,7 +175,7 @@ export const requirePro = (
 
   if (!isPro) {
     console.log(`[ProGate] Pro required for: ${feature || 'feature'}`);
-    navigation.navigate("Paywall" as any);
+    navigation.navigate('Paywall' as any);
     return false;
   }
 
@@ -191,11 +190,11 @@ export const useRequireLogin = () => {
 
   const checkLogin = (
     navigation: NavigationProp<RootStackParamList>,
-    action?: string
+    action?: string,
   ): boolean => {
     if (isGuest) {
       console.log(`[AuthGate] Login required for: ${action || 'action'}`);
-      navigation.navigate("Auth" as any);
+      navigation.navigate('Auth' as any);
       return false;
     }
     return true;
@@ -212,19 +211,19 @@ export const useRequirePro = () => {
 
   const checkPro = (
     navigation: NavigationProp<RootStackParamList>,
-    feature?: string
+    feature?: string,
   ): boolean => {
     // Gate 1: Login
     if (isGuest) {
       console.log(`[AuthGate] Login required for: ${feature || 'feature'}`);
-      navigation.navigate("Auth" as any);
+      navigation.navigate('Auth' as any);
       return false;
     }
 
     // Gate 2: Pro
     if (isFree) {
       console.log(`[ProGate] Pro required for: ${feature || 'feature'}`);
-      navigation.navigate("Paywall" as any);
+      navigation.navigate('Paywall' as any);
       return false;
     }
 

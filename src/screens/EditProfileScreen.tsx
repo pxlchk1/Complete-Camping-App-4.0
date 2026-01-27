@@ -8,7 +8,7 @@
  * - Cover photo
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,17 +23,22 @@ import {
   Alert,
   Switch,
   Linking,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
-import { auth, db, storage } from "../config/firebase";
-import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
-import { deleteUser, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useCurrentUser, useUserStore } from "../state/userStore";
-import ModalHeader from "../components/ModalHeader";
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { auth, db, storage } from '../config/firebase';
+import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  deleteUser,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  updatePassword,
+} from 'firebase/auth';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useCurrentUser, useUserStore } from '../state/userStore';
+import ModalHeader from '../components/ModalHeader';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -43,168 +48,172 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
-} from "../constants/colors";
-import { CampingStyle } from "../types/camping";
-import { GearCategory, GEAR_CATEGORIES } from "../types/gear";
+} from '../constants/colors';
+import { CampingStyle } from '../types/camping';
+import { GearCategory, GEAR_CATEGORIES } from '../types/gear';
 
-const CAMPING_STYLES: { value: CampingStyle; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { value: "CAR_CAMPING", label: "Car camping", icon: "car-outline" },
-  { value: "BACKPACKING", label: "Backpacking", icon: "bag-outline" },
-  { value: "RV", label: "RV camping", icon: "bus-outline" },
-  { value: "HAMMOCK", label: "Hammock camping", icon: "leaf-outline" },
-  { value: "ROOFTOP_TENT", label: "Roof-top tent", icon: "triangle-outline" },
-  { value: "OVERLANDING", label: "Overlanding", icon: "compass-outline" },
-  { value: "BOAT_CANOE", label: "Boat or canoe", icon: "boat-outline" },
-  { value: "BIKEPACKING", label: "Bikepacking", icon: "bicycle-outline" },
-  { value: "WINTER", label: "Winter camping", icon: "snow-outline" },
-  { value: "DISPERSED", label: "Dispersed camping", icon: "map-outline" },
+const CAMPING_STYLES: {
+  value: CampingStyle;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { value: 'CAR_CAMPING', label: 'Car camping', icon: 'car-outline' },
+  { value: 'BACKPACKING', label: 'Backpacking', icon: 'bag-outline' },
+  { value: 'RV', label: 'RV camping', icon: 'bus-outline' },
+  { value: 'HAMMOCK', label: 'Hammock camping', icon: 'leaf-outline' },
+  { value: 'ROOFTOP_TENT', label: 'Roof-top tent', icon: 'triangle-outline' },
+  { value: 'OVERLANDING', label: 'Overlanding', icon: 'compass-outline' },
+  { value: 'BOAT_CANOE', label: 'Boat or canoe', icon: 'boat-outline' },
+  { value: 'BIKEPACKING', label: 'Bikepacking', icon: 'bicycle-outline' },
+  { value: 'WINTER', label: 'Winter camping', icon: 'snow-outline' },
+  { value: 'DISPERSED', label: 'Dispersed camping', icon: 'map-outline' },
 ];
 
 const GEAR_ICONS: Partial<Record<GearCategory, keyof typeof Ionicons.glyphMap>> = {
-  shelter: "home-outline",
-  sleep: "bed-outline",
-  kitchen: "restaurant-outline",
-  clothing: "shirt-outline",
-  lighting: "flashlight-outline",
-  water: "water-outline",
-  tools: "hammer-outline",
-  safety: "medkit-outline",
-  camp_comfort: "happy-outline",
-  campFurniture: "easel-outline",
-  electronics: "phone-portrait-outline",
-  hygiene: "sparkles-outline",
-  documents_essentials: "document-outline",
-  optional_extras: "gift-outline",
-  seating: "resize-outline",
+  shelter: 'home-outline',
+  sleep: 'bed-outline',
+  kitchen: 'restaurant-outline',
+  clothing: 'shirt-outline',
+  lighting: 'flashlight-outline',
+  water: 'water-outline',
+  tools: 'hammer-outline',
+  safety: 'medkit-outline',
+  camp_comfort: 'happy-outline',
+  campFurniture: 'easel-outline',
+  electronics: 'phone-portrait-outline',
+  hygiene: 'sparkles-outline',
+  documents_essentials: 'document-outline',
+  optional_extras: 'gift-outline',
+  seating: 'resize-outline',
 };
 
 // Reserved handles that cannot be used by regular users
 const RESERVED_HANDLES = [
   // Brand and product
-  "tentandlantern",
-  "tentlantern",
-  "tentandlanternapp",
-  "completecampingapp",
-  "completecamping",
-  "thecompletecampingapp",
-  "tentandlanternofficial",
-  "tentandlanternhq",
-  "tentandlanternteam",
-  "tentandlanternsupport",
+  'tentandlantern',
+  'tentlantern',
+  'tentandlanternapp',
+  'completecampingapp',
+  'completecamping',
+  'thecompletecampingapp',
+  'tentandlanternofficial',
+  'tentandlanternhq',
+  'tentandlanternteam',
+  'tentandlanternsupport',
 
   // Variants people will try
-  "tent_and_lantern",
-  "tent_lantern",
-  "complete_camping_app",
-  "complete_camping",
-  "camping_app",
-  "campingapp",
+  'tent_and_lantern',
+  'tent_lantern',
+  'complete_camping_app',
+  'complete_camping',
+  'camping_app',
+  'campingapp',
 
   // Staff and authority impersonation
-  "admin",
-  "administrator",
-  "root",
-  "owner",
-  "moderator",
-  "mod",
-  "staff",
-  "team",
-  "official",
-  "support",
-  "help",
-  "security",
-  "trust",
-  "trustandsafety",
-  "safety",
-  "billing",
-  "payments",
-  "payment",
-  "refund",
-  "refunds",
-  "subscriptions",
-  "subscription",
-  "premium",
-  "pro",
-  "plus",
-  "developer",
-  "dev",
+  'admin',
+  'administrator',
+  'root',
+  'owner',
+  'moderator',
+  'mod',
+  'staff',
+  'team',
+  'official',
+  'support',
+  'help',
+  'security',
+  'trust',
+  'trustandsafety',
+  'safety',
+  'billing',
+  'payments',
+  'payment',
+  'refund',
+  'refunds',
+  'subscriptions',
+  'subscription',
+  'premium',
+  'pro',
+  'plus',
+  'developer',
+  'dev',
 
   // App navigation and core features
-  "plan",
-  "trips",
-  "trip",
-  "newtrip",
-  "packing",
-  "packinglist",
-  "packinglists",
-  "gear",
-  "gearcloset",
-  "mygear",
-  "meal",
-  "meals",
-  "mealplan",
-  "mealplans",
-  "shopping",
-  "shoppinglist",
-  "parks",
-  "park",
-  "campground",
-  "campgrounds",
-  "itinerary",
-  "itinerarylinks",
-  "links",
-  "weather",
-  "learn",
-  "skills",
-  "leavenotrace",
-  "lnt",
-  "connect",
-  "community",
-  "askacamper",
-  "campfire",
-  "mycampsite",
-  "campsite",
-  "profile",
-  "account",
-  "settings",
-  "notifications",
-  "favorites",
-  "favorite",
+  'plan',
+  'trips',
+  'trip',
+  'newtrip',
+  'packing',
+  'packinglist',
+  'packinglists',
+  'gear',
+  'gearcloset',
+  'mygear',
+  'meal',
+  'meals',
+  'mealplan',
+  'mealplans',
+  'shopping',
+  'shoppinglist',
+  'parks',
+  'park',
+  'campground',
+  'campgrounds',
+  'itinerary',
+  'itinerarylinks',
+  'links',
+  'weather',
+  'learn',
+  'skills',
+  'leavenotrace',
+  'lnt',
+  'connect',
+  'community',
+  'askacamper',
+  'campfire',
+  'mycampsite',
+  'campsite',
+  'profile',
+  'account',
+  'settings',
+  'notifications',
+  'favorites',
+  'favorite',
 
   // System and technical words that cause confusion
-  "api",
-  "app",
-  "system",
-  "null",
-  "undefined",
-  "test",
-  "tester",
-  "demo",
-  "staging",
-  "production",
-  "prod",
-  "beta",
-  "qa",
+  'api',
+  'app',
+  'system',
+  'null',
+  'undefined',
+  'test',
+  'tester',
+  'demo',
+  'staging',
+  'production',
+  'prod',
+  'beta',
+  'qa',
 
   // Messaging and contact
-  "email",
-  "mail",
-  "sms",
-  "text",
-  "contact",
-  "press",
-  "media",
-  "partnerships",
-  "partners",
+  'email',
+  'mail',
+  'sms',
+  'text',
+  'contact',
+  'press',
+  'media',
+  'partnerships',
+  'partners',
 
   // Avoid platform brand impersonation
-  "apple",
-  "appstore",
-  "google",
-  "android",
-  "ios",
-  "firebase",
-  "revenuecat",
+  'apple',
+  'appstore',
+  'google',
+  'android',
+  'ios',
+  'firebase',
+  'revenuecat',
 ];
 
 export default function EditProfileScreen() {
@@ -217,12 +226,13 @@ export default function EditProfileScreen() {
   const [uploadingCover, setUploadingCover] = useState(false);
 
   // Form state
-  const [about, setAbout] = useState(currentUser?.about || "");
-  const [favoriteCampingStyle, setFavoriteCampingStyle] = useState<CampingStyle | undefined>(
-    currentUser?.favoriteCampingStyle as CampingStyle | undefined
-  );
+  const [about, setAbout] = useState(currentUser?.about || '');
+  const [favoriteCampingStyle, setFavoriteCampingStyle] = useState<
+    CampingStyle | undefined
+  >(currentUser?.favoriteCampingStyle as CampingStyle | undefined);
   const [favoriteGear, setFavoriteGear] = useState<Record<GearCategory, string>>(
-    (currentUser?.favoriteGear as Record<GearCategory, string>) || {} as Record<GearCategory, string>
+    (currentUser?.favoriteGear as Record<GearCategory, string>) ||
+      ({} as Record<GearCategory, string>),
   );
   const [photoURL, setPhotoURL] = useState(currentUser?.photoURL);
   const [coverPhotoURL, setCoverPhotoURL] = useState(currentUser?.coverPhotoURL);
@@ -232,25 +242,29 @@ export default function EditProfileScreen() {
 
   // Danger Zone state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState('');
   const [deleting, setDeleting] = useState(false);
-  const [optOutNewsletter, setOptOutNewsletter] = useState(currentUser?.emailSubscribed === false);
-  const [optOutNotifications, setOptOutNotifications] = useState(currentUser?.notificationsEnabled === false);
-  
+  const [optOutNewsletter, setOptOutNewsletter] = useState(
+    currentUser?.emailSubscribed === false,
+  );
+  const [optOutNotifications, setOptOutNotifications] = useState(
+    currentUser?.notificationsEnabled === false,
+  );
+
   // Privacy state - default to public (true)
   const [isProfileContentPublic, setIsProfileContentPublic] = useState(
-    currentUser?.isProfileContentPublic !== false
+    currentUser?.isProfileContentPublic !== false,
   );
 
   // Account fields state
-  const [displayName, setDisplayName] = useState("");
-  const [handle, setHandle] = useState("");
-  
+  const [displayName, setDisplayName] = useState('');
+  const [handle, setHandle] = useState('');
+
   // Password change modal state
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [updatingPassword, setUpdatingPassword] = useState(false);
 
   // Load account fields from users collection
@@ -260,14 +274,14 @@ export default function EditProfileScreen() {
       if (!user) return;
 
       try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
-          setDisplayName(data.displayName || "");
-          setHandle(data.handle || "");
+          setDisplayName(data.displayName || '');
+          setHandle(data.handle || '');
         }
       } catch (error) {
-        console.error("[EditProfile] Error loading account fields:", error);
+        console.error('[EditProfile] Error loading account fields:', error);
       }
     };
 
@@ -280,37 +294,43 @@ export default function EditProfileScreen() {
 
     // Validate display name
     if (!displayName.trim()) {
-      Alert.alert("Required Field", "Please enter a display name");
+      Alert.alert('Required Field', 'Please enter a display name');
       return;
     }
 
     if (displayName.length < 1 || displayName.length > 50) {
-      Alert.alert("Invalid Name", "Display name must be between 1 and 50 characters");
+      Alert.alert('Invalid Name', 'Display name must be between 1 and 50 characters');
       return;
     }
 
     // Validate handle
     if (!handle.trim()) {
-      Alert.alert("Required Field", "Please enter a handle");
+      Alert.alert('Required Field', 'Please enter a handle');
       return;
     }
 
     const cleanHandle = handle.trim().toLowerCase();
 
     if (cleanHandle.length < 3 || cleanHandle.length > 30) {
-      Alert.alert("Invalid Handle", "Handle must be between 3 and 30 characters");
+      Alert.alert('Invalid Handle', 'Handle must be between 3 and 30 characters');
       return;
     }
 
     if (!/^[a-z0-9_-]+$/.test(cleanHandle)) {
-      Alert.alert("Invalid Handle", "Handle can only contain lowercase letters, numbers, hyphens, and underscores");
+      Alert.alert(
+        'Invalid Handle',
+        'Handle can only contain lowercase letters, numbers, hyphens, and underscores',
+      );
       return;
     }
 
     // Check reserved handles (allow admin email to use reserved handles)
-    const isAdminEmail = user.email?.toLowerCase() === "alana@tentandlantern.com";
+    const isAdminEmail = user.email?.toLowerCase() === 'alana@tentandlantern.com';
     if (RESERVED_HANDLES.includes(cleanHandle) && !isAdminEmail) {
-      Alert.alert("Reserved Handle", "This handle is reserved. Please choose a different one.");
+      Alert.alert(
+        'Reserved Handle',
+        'This handle is reserved. Please choose a different one.',
+      );
       return;
     }
 
@@ -318,7 +338,7 @@ export default function EditProfileScreen() {
       setSaving(true);
 
       // Update users collection with account fields
-      const userRef = doc(db, "users", user.uid);
+      const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
         displayName: displayName.trim(),
         handle: cleanHandle,
@@ -326,16 +346,19 @@ export default function EditProfileScreen() {
       });
 
       // Update profiles collection with correct field names
-      const profileRef = doc(db, "profiles", user.uid);
-      
+      const profileRef = doc(db, 'profiles', user.uid);
+
       // Filter out empty gear entries
-      const gearToSave = Object.entries(favoriteGear).reduce((acc, [key, value]) => {
-        if (value && value.trim()) {
-          acc[key] = value.trim();
-        }
-        return acc;
-      }, {} as Record<string, string>);
-      
+      const gearToSave = Object.entries(favoriteGear).reduce(
+        (acc, [key, value]) => {
+          if (value && value.trim()) {
+            acc[key] = value.trim();
+          }
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
       await updateDoc(profileRef, {
         about: about.trim() || null,
         favoriteCampingStyle: favoriteCampingStyle || null,
@@ -359,11 +382,14 @@ export default function EditProfileScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowSuccessModal(true);
     } catch (error: any) {
-      console.error("[EditProfile] Error saving:", error);
-      if (error.code === "permission-denied") {
-        Alert.alert("Error", "You do not have permission to update these settings. Please try signing out and back in.");
+      console.error('[EditProfile] Error saving:', error);
+      if (error.code === 'permission-denied') {
+        Alert.alert(
+          'Error',
+          'You do not have permission to update these settings. Please try signing out and back in.',
+        );
       } else {
-        Alert.alert("Error", error.message || "Failed to save profile");
+        Alert.alert('Error', error.message || 'Failed to save profile');
       }
     } finally {
       setSaving(false);
@@ -373,12 +399,12 @@ export default function EditProfileScreen() {
   const handleSelectPhoto = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
+      if (status !== 'granted') {
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "images" as any,
+        mediaTypes: 'images' as any,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.8,
@@ -402,7 +428,7 @@ export default function EditProfileScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
-      console.error("[EditProfile] Error uploading photo:", error);
+      console.error('[EditProfile] Error uploading photo:', error);
     } finally {
       setUploadingPhoto(false);
     }
@@ -411,12 +437,12 @@ export default function EditProfileScreen() {
   const handleSelectCoverPhoto = async () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
+      if (status !== 'granted') {
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "images" as any,
+        mediaTypes: 'images' as any,
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.8,
@@ -432,7 +458,10 @@ export default function EditProfileScreen() {
         const response = await fetch(imageUri);
         const blob = await response.blob();
 
-        const storageRef = ref(storage, `profileBackgrounds/${user.uid}/${Date.now()}.jpg`);
+        const storageRef = ref(
+          storage,
+          `profileBackgrounds/${user.uid}/${Date.now()}.jpg`,
+        );
         await uploadBytes(storageRef, blob);
         const downloadURL = await getDownloadURL(storageRef);
 
@@ -440,7 +469,7 @@ export default function EditProfileScreen() {
         setCoverPhotoURL(downloadURL);
 
         // Auto-save to Firestore immediately so the photo persists
-        const profileRef = doc(db, "profiles", user.uid);
+        const profileRef = doc(db, 'profiles', user.uid);
         await updateDoc(profileRef, {
           backgroundUrl: downloadURL,
           updatedAt: serverTimestamp(),
@@ -454,8 +483,8 @@ export default function EditProfileScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     } catch (error) {
-      console.error("[EditProfile] Error uploading cover photo:", error);
-      Alert.alert("Upload Failed", "Failed to save cover photo. Please try again.");
+      console.error('[EditProfile] Error uploading cover photo:', error);
+      Alert.alert('Upload Failed', 'Failed to save cover photo. Please try again.');
     } finally {
       setUploadingCover(false);
     }
@@ -467,63 +496,72 @@ export default function EditProfileScreen() {
 
     // Verify email matches
     if (deleteConfirmEmail.toLowerCase() !== user.email.toLowerCase()) {
-      Alert.alert("Email Mismatch", "The email you entered doesn't match your account email.");
+      Alert.alert(
+        'Email Mismatch',
+        "The email you entered doesn't match your account email.",
+      );
       return;
     }
 
     Alert.alert(
-      "Final Confirmation",
-      "This action is irreversible. All your data will be permanently deleted. Are you absolutely sure?",
+      'Final Confirmation',
+      'This action is irreversible. All your data will be permanently deleted. Are you absolutely sure?',
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Delete Forever",
-          style: "destructive",
+          text: 'Delete Forever',
+          style: 'destructive',
           onPress: async () => {
             try {
               setDeleting(true);
 
               // Delete user profile from Firestore
-              await deleteDoc(doc(db, "profiles", user.uid));
+              await deleteDoc(doc(db, 'profiles', user.uid));
 
               // Delete the user account
               await deleteUser(user);
 
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert("Account Deleted", "Your account has been permanently deleted.");
-              
+              Alert.alert(
+                'Account Deleted',
+                'Your account has been permanently deleted.',
+              );
+
               setShowDeleteConfirm(false);
             } catch (error: any) {
-              console.error("[EditProfile] Error deleting account:", error);
-              
-              if (error.code === "auth/requires-recent-login") {
+              console.error('[EditProfile] Error deleting account:', error);
+
+              if (error.code === 'auth/requires-recent-login') {
                 Alert.alert(
-                  "Re-authentication Required",
-                  "For security, please sign out and sign back in, then try again."
+                  'Re-authentication Required',
+                  'For security, please sign out and sign back in, then try again.',
                 );
               } else {
-                Alert.alert("Delete Failed", "Unable to delete account. Please contact support.");
+                Alert.alert(
+                  'Delete Failed',
+                  'Unable to delete account. Please contact support.',
+                );
               }
             } finally {
               setDeleting(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
   const handleManageSubscription = async () => {
     try {
       // Open app store subscription management
-      if (Platform.OS === "ios") {
-        await Linking.openURL("https://apps.apple.com/account/subscriptions");
+      if (Platform.OS === 'ios') {
+        await Linking.openURL('https://apps.apple.com/account/subscriptions');
       } else {
-        await Linking.openURL("https://play.google.com/store/account/subscriptions");
+        await Linking.openURL('https://play.google.com/store/account/subscriptions');
       }
     } catch (error) {
-      console.error("[EditProfile] Error opening subscription management:", error);
-      Alert.alert("Error", "Unable to open subscription management.");
+      console.error('[EditProfile] Error opening subscription management:', error);
+      Alert.alert('Error', 'Unable to open subscription management.');
     }
   };
 
@@ -532,14 +570,14 @@ export default function EditProfileScreen() {
     if (!user) return;
 
     setOptOutNewsletter(value);
-    
+
     try {
-      await updateDoc(doc(db, "profiles", user.uid), {
+      await updateDoc(doc(db, 'profiles', user.uid), {
         emailSubscribed: !value,
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error("[EditProfile] Error updating newsletter preference:", error);
+      console.error('[EditProfile] Error updating newsletter preference:', error);
       setOptOutNewsletter(!value); // Revert on error
     }
   };
@@ -549,14 +587,14 @@ export default function EditProfileScreen() {
     if (!user) return;
 
     setOptOutNotifications(value);
-    
+
     try {
-      await updateDoc(doc(db, "profiles", user.uid), {
+      await updateDoc(doc(db, 'profiles', user.uid), {
         notificationsEnabled: !value,
         updatedAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error("[EditProfile] Error updating notifications preference:", error);
+      console.error('[EditProfile] Error updating notifications preference:', error);
       setOptOutNotifications(!value); // Revert on error
     }
   };
@@ -566,21 +604,21 @@ export default function EditProfileScreen() {
     if (!user) return;
 
     setIsProfileContentPublic(isPublic);
-    
+
     try {
-      await updateDoc(doc(db, "profiles", user.uid), {
+      await updateDoc(doc(db, 'profiles', user.uid), {
         isProfileContentPublic: isPublic,
         updatedAt: serverTimestamp(),
       });
-      
+
       // Also update local store
       updateCurrentUser({
         isProfileContentPublic: isPublic,
       });
-      
+
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
-      console.error("[EditProfile] Error updating profile privacy:", error);
+      console.error('[EditProfile] Error updating profile privacy:', error);
       setIsProfileContentPublic(!isPublic); // Revert on error
     }
   };
@@ -588,10 +626,10 @@ export default function EditProfileScreen() {
   const handleViewPublicProfile = () => {
     const user = auth.currentUser;
     if (!user) return;
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Navigate to MyCampsite with the user's own ID to see the "public view"
-    (navigation as any).navigate("MyCampsite", { userId: user.uid, viewAsPublic: true });
+    (navigation as any).navigate('MyCampsite', { userId: user.uid, viewAsPublic: true });
   };
 
   const handleChangePassword = async () => {
@@ -600,27 +638,30 @@ export default function EditProfileScreen() {
 
     // Validate passwords
     if (!currentPassword.trim()) {
-      Alert.alert("Required Field", "Please enter your current password");
+      Alert.alert('Required Field', 'Please enter your current password');
       return;
     }
 
     if (!newPassword.trim()) {
-      Alert.alert("Required Field", "Please enter your new password");
+      Alert.alert('Required Field', 'Please enter your new password');
       return;
     }
 
     if (newPassword.length < 8) {
-      Alert.alert("Weak Password", "Password must be at least 8 characters long");
+      Alert.alert('Weak Password', 'Password must be at least 8 characters long');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert("Passwords Don't Match", "New password and confirmation do not match");
+      Alert.alert("Passwords Don't Match", 'New password and confirmation do not match');
       return;
     }
 
     if (currentPassword === newPassword) {
-      Alert.alert("Same Password", "New password must be different from current password");
+      Alert.alert(
+        'Same Password',
+        'New password must be different from current password',
+      );
       return;
     }
 
@@ -635,27 +676,33 @@ export default function EditProfileScreen() {
       await updatePassword(user, newPassword);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Success", "Your password has been updated successfully");
+      Alert.alert('Success', 'Your password has been updated successfully');
 
       // Close modal and reset fields
       setShowPasswordModal(false);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error: any) {
-      console.error("[EditProfile] Error updating password:", error);
+      console.error('[EditProfile] Error updating password:', error);
 
-      if (error.code === "auth/wrong-password") {
-        Alert.alert("Incorrect Password", "The current password you entered is incorrect");
-      } else if (error.code === "auth/weak-password") {
-        Alert.alert("Weak Password", "Please choose a stronger password");
-      } else if (error.code === "auth/requires-recent-login") {
+      if (error.code === 'auth/wrong-password') {
         Alert.alert(
-          "Re-authentication Required",
-          "For security, please sign out and sign back in, then try again."
+          'Incorrect Password',
+          'The current password you entered is incorrect',
+        );
+      } else if (error.code === 'auth/weak-password') {
+        Alert.alert('Weak Password', 'Please choose a stronger password');
+      } else if (error.code === 'auth/requires-recent-login') {
+        Alert.alert(
+          'Re-authentication Required',
+          'For security, please sign out and sign back in, then try again.',
         );
       } else {
-        Alert.alert("Error", error.message || "Failed to update password. Please try again.");
+        Alert.alert(
+          'Error',
+          error.message || 'Failed to update password. Please try again.',
+        );
       }
     } finally {
       setUpdatingPassword(false);
@@ -665,24 +712,24 @@ export default function EditProfileScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
       <ModalHeader
-          title="Edit Profile"
-          showTitle
-          rightAction={{
-            icon: "checkmark",
-            onPress: handleSave,
-          }}
-        />
+        title="Edit Profile"
+        showTitle
+        rightAction={{
+          icon: 'checkmark',
+          onPress: handleSave,
+        }}
+      />
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
-        >
-          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        className="flex-1"
+      >
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="px-5 pt-5 pb-8">
             {/* Account Section */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               Account
             </Text>
@@ -695,7 +742,10 @@ export default function EditProfileScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Display Name *
                 </Text>
@@ -708,7 +758,7 @@ export default function EditProfileScreen() {
                   style={{
                     backgroundColor: PARCHMENT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
@@ -718,7 +768,10 @@ export default function EditProfileScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Handle *
                 </Text>
@@ -733,13 +786,13 @@ export default function EditProfileScreen() {
                   style={{
                     backgroundColor: PARCHMENT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
                 <Text
                   className="mt-1 text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
                 >
                   Lowercase letters, numbers, hyphens, and underscores only
                 </Text>
@@ -756,13 +809,19 @@ export default function EditProfileScreen() {
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 mr-4">
                     <Text
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Change Password
                     </Text>
                     <Text
                       className="mt-1"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Update your account password
                     </Text>
@@ -781,7 +840,10 @@ export default function EditProfileScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Profile Photo
                 </Text>
@@ -802,7 +864,10 @@ export default function EditProfileScreen() {
                       </View>
                     )}
                     {uploadingPhoto && (
-                      <View className="absolute inset-0 rounded-full items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                      <View
+                        className="absolute inset-0 rounded-full items-center justify-center"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+                      >
                         <ActivityIndicator color={PARCHMENT} />
                       </View>
                     )}
@@ -813,8 +878,10 @@ export default function EditProfileScreen() {
                     style={{ backgroundColor: DEEP_FOREST }}
                     disabled={uploadingPhoto}
                   >
-                    <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
-                      {photoURL ? "Change" : "Upload"}
+                    <Text
+                      style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
+                    >
+                      {photoURL ? 'Change' : 'Upload'}
                     </Text>
                   </Pressable>
                 </View>
@@ -824,7 +891,10 @@ export default function EditProfileScreen() {
               <View>
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Cover Photo
                 </Text>
@@ -845,7 +915,10 @@ export default function EditProfileScreen() {
                       </View>
                     )}
                     {uploadingCover && (
-                      <View className="absolute inset-0 rounded-xl items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                      <View
+                        className="absolute inset-0 rounded-xl items-center justify-center"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+                      >
                         <ActivityIndicator color={PARCHMENT} />
                       </View>
                     )}
@@ -858,9 +931,9 @@ export default function EditProfileScreen() {
                   >
                     <Text
                       className="text-center"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                      style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
                     >
-                      {coverPhotoURL ? "Change Cover Photo" : "Upload Cover Photo"}
+                      {coverPhotoURL ? 'Change Cover Photo' : 'Upload Cover Photo'}
                     </Text>
                   </Pressable>
                 </View>
@@ -870,7 +943,7 @@ export default function EditProfileScreen() {
             {/* About Section */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               About
             </Text>
@@ -891,7 +964,7 @@ export default function EditProfileScreen() {
                 style={{
                   backgroundColor: PARCHMENT,
                   borderColor: BORDER_SOFT,
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   color: TEXT_PRIMARY_STRONG,
                   minHeight: 100,
                 }}
@@ -901,7 +974,7 @@ export default function EditProfileScreen() {
             {/* Favorite Camping Style */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               Favorite Camping Style
             </Text>
@@ -918,13 +991,15 @@ export default function EditProfileScreen() {
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       setFavoriteCampingStyle(
-                        favoriteCampingStyle === style.value ? undefined : style.value
+                        favoriteCampingStyle === style.value ? undefined : style.value,
                       );
                     }}
                     className="px-4 py-3 rounded-xl border"
                     style={{
                       backgroundColor:
-                        favoriteCampingStyle === style.value ? DEEP_FOREST : CARD_BACKGROUND_LIGHT,
+                        favoriteCampingStyle === style.value
+                          ? DEEP_FOREST
+                          : CARD_BACKGROUND_LIGHT,
                       borderColor:
                         favoriteCampingStyle === style.value ? DEEP_FOREST : BORDER_SOFT,
                     }}
@@ -933,14 +1008,20 @@ export default function EditProfileScreen() {
                       <Ionicons
                         name={style.icon}
                         size={20}
-                        color={favoriteCampingStyle === style.value ? PARCHMENT : TEXT_PRIMARY_STRONG}
+                        color={
+                          favoriteCampingStyle === style.value
+                            ? PARCHMENT
+                            : TEXT_PRIMARY_STRONG
+                        }
                       />
                       <Text
                         className="mt-1 text-xs"
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           color:
-                            favoriteCampingStyle === style.value ? PARCHMENT : TEXT_PRIMARY_STRONG,
+                            favoriteCampingStyle === style.value
+                              ? PARCHMENT
+                              : TEXT_PRIMARY_STRONG,
                         }}
                       >
                         {style.label}
@@ -954,13 +1035,13 @@ export default function EditProfileScreen() {
             {/* Favorite Gear */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               Favorite Gear
             </Text>
             <Text
               className="mb-3 text-sm"
-              style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
             >
               Tell us about your favorite gear for each category
             </Text>
@@ -976,29 +1057,40 @@ export default function EditProfileScreen() {
                     />
                     <Text
                       className="ml-2"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       {category.label}
                     </Text>
                   </View>
                   <TextInput
-                    value={favoriteGear[category.value] || ""}
-                    onChangeText={(text) => setFavoriteGear({ ...favoriteGear, [category.value]: text })}
+                    value={favoriteGear[category.value] || ''}
+                    onChangeText={(text) =>
+                      setFavoriteGear({ ...favoriteGear, [category.value]: text })
+                    }
                     placeholder={`e.g., ${
-                      category.value === "shelter" ? "REI Co-op Half Dome SL 2+" :
-                      category.value === "sleep" ? "Therm-a-Rest NeoAir XLite" :
-                      category.value === "kitchen" ? "Tent and Lantern BaseCamp Box" :
-                      category.value === "clothing" ? "Patagonia Down Sweater" :
-                      (category.value as string) === "bags" ? "Osprey Atmos AG 65" :
-                      category.value === "lighting" ? "Black Diamond Spot 400" :
-                      "Nalgene 32oz Bottle"
+                      category.value === 'shelter'
+                        ? 'REI Co-op Half Dome SL 2+'
+                        : category.value === 'sleep'
+                          ? 'Therm-a-Rest NeoAir XLite'
+                          : category.value === 'kitchen'
+                            ? 'Tent and Lantern BaseCamp Box'
+                            : category.value === 'clothing'
+                              ? 'Patagonia Down Sweater'
+                              : (category.value as string) === 'bags'
+                                ? 'Osprey Atmos AG 65'
+                                : category.value === 'lighting'
+                                  ? 'Black Diamond Spot 400'
+                                  : 'Nalgene 32oz Bottle'
                     }`}
                     placeholderTextColor={TEXT_MUTED}
                     className="px-4 py-3 rounded-xl border"
                     style={{
                       backgroundColor: PARCHMENT,
                       borderColor: BORDER_SOFT,
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       color: TEXT_PRIMARY_STRONG,
                     }}
                   />
@@ -1010,26 +1102,35 @@ export default function EditProfileScreen() {
             <View className="mt-8 mb-2">
               <Text
                 className="text-lg mb-3"
-                style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+                style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
               >
                 Privacy Settings
               </Text>
 
               <View
                 className="p-4 rounded-xl border"
-                style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
+                style={{
+                  backgroundColor: CARD_BACKGROUND_LIGHT,
+                  borderColor: BORDER_SOFT,
+                }}
               >
                 {/* Profile Content Visibility */}
                 <View className="flex-row items-center justify-between mb-4">
                   <View className="flex-1 mr-3">
                     <Text
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Public profile content
                     </Text>
                     <Text
                       className="text-sm"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Show your activity, favorites, and saved places to others
                     </Text>
@@ -1052,7 +1153,10 @@ export default function EditProfileScreen() {
                     <Ionicons name="eye-outline" size={20} color={EARTH_GREEN} />
                     <Text
                       className="ml-3"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       View my public profile
                     </Text>
@@ -1066,27 +1170,33 @@ export default function EditProfileScreen() {
             <View className="mt-8 mb-2">
               <Text
                 className="text-lg mb-3"
-                style={{ fontFamily: "Raleway_700Bold", color: "#dc2626" }}
+                style={{ fontFamily: 'Raleway_700Bold', color: '#dc2626' }}
               >
                 Danger Zone
               </Text>
 
               <View
                 className="p-4 rounded-xl border"
-                style={{ backgroundColor: "#fef2f2", borderColor: "#fecaca" }}
+                style={{ backgroundColor: '#fef2f2', borderColor: '#fecaca' }}
               >
                 {/* Opt-out Toggles */}
                 <View className="mb-4">
                   <View className="flex-row items-center justify-between mb-3">
                     <View className="flex-1 mr-3">
                       <Text
-                        style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                        style={{
+                          fontFamily: 'SourceSans3_600SemiBold',
+                          color: TEXT_PRIMARY_STRONG,
+                        }}
                       >
                         Opt out of newsletters
                       </Text>
                       <Text
                         className="text-sm"
-                        style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                        style={{
+                          fontFamily: 'SourceSans3_400Regular',
+                          color: TEXT_SECONDARY,
+                        }}
                       >
                         Stop receiving email updates
                       </Text>
@@ -1094,7 +1204,7 @@ export default function EditProfileScreen() {
                     <Switch
                       value={optOutNewsletter}
                       onValueChange={handleToggleNewsletter}
-                      trackColor={{ false: BORDER_SOFT, true: "#dc2626" }}
+                      trackColor={{ false: BORDER_SOFT, true: '#dc2626' }}
                       thumbColor={PARCHMENT}
                     />
                   </View>
@@ -1102,13 +1212,19 @@ export default function EditProfileScreen() {
                   <View className="flex-row items-center justify-between mb-4">
                     <View className="flex-1 mr-3">
                       <Text
-                        style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                        style={{
+                          fontFamily: 'SourceSans3_600SemiBold',
+                          color: TEXT_PRIMARY_STRONG,
+                        }}
                       >
                         Opt out of notifications
                       </Text>
                       <Text
                         className="text-sm"
-                        style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                        style={{
+                          fontFamily: 'SourceSans3_400Regular',
+                          color: TEXT_SECONDARY,
+                        }}
                       >
                         Disable all push notifications
                       </Text>
@@ -1116,7 +1232,7 @@ export default function EditProfileScreen() {
                     <Switch
                       value={optOutNotifications}
                       onValueChange={handleToggleNotifications}
-                      trackColor={{ false: BORDER_SOFT, true: "#dc2626" }}
+                      trackColor={{ false: BORDER_SOFT, true: '#dc2626' }}
                       thumbColor={PARCHMENT}
                     />
                   </View>
@@ -1135,7 +1251,10 @@ export default function EditProfileScreen() {
                     <Ionicons name="card-outline" size={20} color={TEXT_PRIMARY_STRONG} />
                     <Text
                       className="ml-3"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Manage Subscription
                     </Text>
@@ -1150,12 +1269,12 @@ export default function EditProfileScreen() {
                     setShowDeleteConfirm(true);
                   }}
                   className="py-3 px-4 rounded-xl flex-row items-center justify-center active:opacity-70"
-                  style={{ backgroundColor: "#dc2626" }}
+                  style={{ backgroundColor: '#dc2626' }}
                 >
                   <Ionicons name="trash-outline" size={20} color={PARCHMENT} />
                   <Text
                     className="ml-2"
-                    style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                    style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
                   >
                     Delete My Account
                   </Text>
@@ -1170,7 +1289,7 @@ export default function EditProfileScreen() {
       {saving && (
         <View
           className="absolute inset-0 items-center justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
         >
           <ActivityIndicator size="large" color={PARCHMENT} />
         </View>
@@ -1206,13 +1325,13 @@ export default function EditProfileScreen() {
               </View>
               <Text
                 className="text-xl mb-2"
-                style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+                style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
               >
                 Profile Updated
               </Text>
               <Text
                 className="text-center"
-                style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
               >
                 Your profile has been updated successfully.
               </Text>
@@ -1229,7 +1348,7 @@ export default function EditProfileScreen() {
             >
               <Text
                 className="text-center text-parchment"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
               >
                 Done
               </Text>
@@ -1246,7 +1365,7 @@ export default function EditProfileScreen() {
         onRequestClose={() => setShowDeleteConfirm(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1"
         >
           <Pressable
@@ -1255,10 +1374,10 @@ export default function EditProfileScreen() {
           >
             <Pressable
               className="rounded-2xl p-6 w-full max-w-sm"
-              style={{ backgroundColor: PARCHMENT, maxHeight: "85%" }}
+              style={{ backgroundColor: PARCHMENT, maxHeight: '85%' }}
               onPress={(e) => e.stopPropagation()}
             >
-              <ScrollView 
+              <ScrollView
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 bounces={false}
@@ -1266,35 +1385,44 @@ export default function EditProfileScreen() {
                 <View className="items-center mb-4">
                   <View
                     className="w-16 h-16 rounded-full items-center justify-center mb-3"
-                    style={{ backgroundColor: "#dc2626" }}
+                    style={{ backgroundColor: '#dc2626' }}
                   >
                     <Ionicons name="warning" size={32} color={PARCHMENT} />
                   </View>
                   <Text
                     className="text-xl mb-2"
-                    style={{ fontFamily: "Raleway_700Bold", color: "#dc2626" }}
+                    style={{ fontFamily: 'Raleway_700Bold', color: '#dc2626' }}
                   >
                     Delete Account
                   </Text>
                   <Text
                     className="text-center mb-3"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, lineHeight: 20 }}
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: TEXT_SECONDARY,
+                      lineHeight: 20,
+                    }}
                   >
-                    This action cannot be undone. All your data, trips, and preferences will be permanently deleted. For that reason, we require 2 factor authentication.
+                    This action cannot be undone. All your data, trips, and preferences
+                    will be permanently deleted. For that reason, we require 2 factor
+                    authentication.
                   </Text>
                 </View>
 
                 <View className="mb-4">
                   <Text
                     className="mb-2"
-                    style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                    style={{
+                      fontFamily: 'SourceSans3_600SemiBold',
+                      color: TEXT_PRIMARY_STRONG,
+                    }}
                   >
                     Enter your email to confirm:
                   </Text>
                   <TextInput
                     value={deleteConfirmEmail}
                     onChangeText={setDeleteConfirmEmail}
-                    placeholder={auth.currentUser?.email || "your@email.com"}
+                    placeholder={auth.currentUser?.email || 'your@email.com'}
                     placeholderTextColor={TEXT_MUTED}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -1302,28 +1430,40 @@ export default function EditProfileScreen() {
                     className="px-4 py-3 rounded-xl border"
                     style={{
                       backgroundColor: PARCHMENT,
-                      borderColor: "#dc2626",
-                      fontFamily: "SourceSans3_400Regular",
+                      borderColor: '#dc2626',
+                      fontFamily: 'SourceSans3_400Regular',
                       color: TEXT_PRIMARY_STRONG,
                     }}
                   />
                   <Text
                     className="mt-3"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 13, lineHeight: 18 }}
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: TEXT_SECONDARY,
+                      fontSize: 13,
+                      lineHeight: 18,
+                    }}
                   >
-                    Look for a confirmation email at this address and follow instructions from there.
+                    Look for a confirmation email at this address and follow instructions
+                    from there.
                   </Text>
                 </View>
 
-                <View 
-                  className="mb-4 p-3 rounded-xl" 
+                <View
+                  className="mb-4 p-3 rounded-xl"
                   style={{ backgroundColor: CARD_BACKGROUND_LIGHT }}
                 >
                   <Text
                     className="text-center"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 13, lineHeight: 18 }}
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: TEXT_SECONDARY,
+                      fontSize: 13,
+                      lineHeight: 18,
+                    }}
                   >
-                    Happy trails! We&apos;ll miss you and hope to see you at the campground in the future. Come back anytime.
+                    Happy trails! We&apos;ll miss you and hope to see you at the
+                    campground in the future. Come back anytime.
                   </Text>
                 </View>
 
@@ -1331,14 +1471,17 @@ export default function EditProfileScreen() {
                   <Pressable
                     onPress={() => {
                       setShowDeleteConfirm(false);
-                      setDeleteConfirmEmail("");
+                      setDeleteConfirmEmail('');
                     }}
                     className="flex-1 rounded-xl py-3 border active:opacity-70"
                     style={{ borderColor: BORDER_SOFT }}
                   >
                     <Text
                       className="text-center"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Cancel
                     </Text>
@@ -1348,8 +1491,8 @@ export default function EditProfileScreen() {
                     onPress={handleDeleteAccount}
                     disabled={deleting || !deleteConfirmEmail}
                     className="flex-1 rounded-xl py-3 active:opacity-70"
-                    style={{ 
-                      backgroundColor: deleteConfirmEmail ? "#dc2626" : "#f87171",
+                    style={{
+                      backgroundColor: deleteConfirmEmail ? '#dc2626' : '#f87171',
                       opacity: deleting ? 0.5 : 1,
                     }}
                   >
@@ -1358,7 +1501,10 @@ export default function EditProfileScreen() {
                     ) : (
                       <Text
                         className="text-center"
-                        style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                        style={{
+                          fontFamily: 'SourceSans3_600SemiBold',
+                          color: PARCHMENT,
+                        }}
                       >
                         Delete
                       </Text>
@@ -1379,12 +1525,12 @@ export default function EditProfileScreen() {
         onRequestClose={() => setShowPasswordModal(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1"
         >
           <Pressable
             className="flex-1 justify-end"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onPress={() => !updatingPassword && setShowPasswordModal(false)}
           >
             <Pressable
@@ -1396,7 +1542,7 @@ export default function EditProfileScreen() {
               <View className="flex-row items-center justify-between mb-6">
                 <Text
                   className="text-2xl"
-                  style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                  style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                 >
                   Change Password
                 </Text>
@@ -1413,7 +1559,10 @@ export default function EditProfileScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Current Password
                 </Text>
@@ -1430,7 +1579,7 @@ export default function EditProfileScreen() {
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
@@ -1440,7 +1589,10 @@ export default function EditProfileScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   New Password
                 </Text>
@@ -1457,13 +1609,13 @@ export default function EditProfileScreen() {
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
                 <Text
                   className="mt-2 text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
                 >
                   Must be at least 8 characters long
                 </Text>
@@ -1473,7 +1625,10 @@ export default function EditProfileScreen() {
               <View className="mb-6">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Confirm New Password
                 </Text>
@@ -1490,7 +1645,7 @@ export default function EditProfileScreen() {
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
@@ -1511,7 +1666,11 @@ export default function EditProfileScreen() {
                 ) : (
                   <Text
                     className="text-center"
-                    style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT, fontSize: 16 }}
+                    style={{
+                      fontFamily: 'SourceSans3_600SemiBold',
+                      color: PARCHMENT,
+                      fontSize: 16,
+                    }}
                   >
                     Update Password
                   </Text>

@@ -30,7 +30,10 @@ export interface WeatherData {
 /**
  * Fetch current weather and 5-day forecast for a location using Open-Meteo (free, no API key needed)
  */
-export async function fetchWeather(latitude: number, longitude: number): Promise<WeatherData> {
+export async function fetchWeather(
+  latitude: number,
+  longitude: number,
+): Promise<WeatherData> {
   try {
     // Use Open-Meteo API - free, no API key required, accurate data
     // Documentation: https://open-meteo.com/en/docs
@@ -57,11 +60,20 @@ export async function fetchWeather(latitude: number, longitude: number): Promise
     // Process 5-day forecast
     const forecast = data.daily.time.map((date: string, index: number) => {
       const dateObj = new Date(date);
-      const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      const dayNames = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ];
 
       return {
         date: date,
-        day: index === 0 ? "Today" : index === 1 ? "Tomorrow" : dayNames[dateObj.getDay()],
+        day:
+          index === 0 ? 'Today' : index === 1 ? 'Tomorrow' : dayNames[dateObj.getDay()],
         high: Math.round(data.daily.temperature_2m_max[index]),
         low: Math.round(data.daily.temperature_2m_min[index]),
         condition: getWeatherCondition(data.daily.weather_code[index]),
@@ -75,7 +87,7 @@ export async function fetchWeather(latitude: number, longitude: number): Promise
       forecast,
     };
   } catch (error) {
-    console.error("Error fetching weather data:", error);
+    console.error('Error fetching weather data:', error);
     throw error;
   }
 }
@@ -85,16 +97,15 @@ export async function fetchWeather(latitude: number, longitude: number): Promise
  * Source: https://open-meteo.com/en/docs
  */
 function getWeatherCondition(code: number): string {
-  if (code === 0) return "Clear";
-  if (code === 1 || code === 2) return "Partly Cloudy";
-  if (code === 3) return "Cloudy";
-  if (code === 45 || code === 48) return "Foggy";
-  if (code >= 51 && code <= 57) return "Drizzle";
-  if (code >= 61 && code <= 67) return "Rain";
-  if (code >= 71 && code <= 77) return "Snow";
-  if (code >= 80 && code <= 82) return "Rain Showers";
-  if (code >= 85 && code <= 86) return "Snow Showers";
-  if (code >= 95 && code <= 99) return "Thunderstorm";
-  return "Clear";
+  if (code === 0) return 'Clear';
+  if (code === 1 || code === 2) return 'Partly Cloudy';
+  if (code === 3) return 'Cloudy';
+  if (code === 45 || code === 48) return 'Foggy';
+  if (code >= 51 && code <= 57) return 'Drizzle';
+  if (code >= 61 && code <= 67) return 'Rain';
+  if (code >= 71 && code <= 77) return 'Snow';
+  if (code >= 80 && code <= 82) return 'Rain Showers';
+  if (code >= 85 && code <= 86) return 'Snow Showers';
+  if (code >= 95 && code <= 99) return 'Thunderstorm';
+  return 'Clear';
 }
-

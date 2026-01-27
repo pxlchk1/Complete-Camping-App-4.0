@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { OnboardingState } from '../types/onboarding';
-import { getOnboardingState, markScreenAsSeen, resetOnboardingState } from '../services/onboardingStorage';
+import {
+  getOnboardingState,
+  markScreenAsSeen,
+  resetOnboardingState,
+} from '../services/onboardingStorage';
 
 interface OnboardingContextType {
   seenScreens: OnboardingState;

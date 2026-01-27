@@ -3,8 +3,8 @@
  * Centralized logic for checking user authentication and Pro status
  */
 
-import { useState } from "react";
-import { useCurrentUser } from "../state/userStore";
+import { useState } from 'react';
+import { useCurrentUser } from '../state/userStore';
 
 interface AccessControl {
   isLoggedIn: boolean;
@@ -23,7 +23,7 @@ export function useAccessControl(): AccessControl {
   const [showPaywallModal, setShowPaywallModal] = useState(false);
 
   const isLoggedIn = !!currentUser;
-  
+
   // TODO: Check actual Pro entitlement from RevenueCat
   // For now, assume all logged-in users are free
   const isPro = false;

@@ -3,9 +3,9 @@
  * Adds user's gear items to the appropriate packing sections without duplicates
  */
 
-import { GearItem } from "../types/gear";
-import { PackingSection, PackingItem } from "../state/packingStore";
-import { getPackingSectionForGear } from "./gearToPackingCategory";
+import { GearItem } from '../types/gear';
+import { PackingSection, PackingItem } from '../state/packingStore';
+import { getPackingSectionForGear } from './gearToPackingCategory';
 
 /**
  * Generate a unique ID for packing items
@@ -18,19 +18,19 @@ function generateId(): string {
  * Normalize a name for comparison (lowercase, trim, collapse whitespace)
  */
 function normalizeName(name: string): string {
-  return name.toLowerCase().trim().replace(/\s+/g, " ");
+  return name.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
 /**
  * Merge gear closet items into packing list sections
- * 
+ *
  * @param sections - Existing packing sections (from templates or empty)
  * @param gearItems - User's gear closet items to merge in
  * @returns Updated sections with gear items added to appropriate sections
  */
 export function mergeGearIntoPacking(
   sections: PackingSection[],
-  gearItems: GearItem[]
+  gearItems: GearItem[],
 ): PackingSection[] {
   // Clone sections to avoid mutation
   const updatedSections = sections.map((section) => ({
@@ -64,7 +64,7 @@ export function mergeGearIntoPacking(
       name: gear.name,
       checked: false,
       essential: false,
-      source: "gearCloset",
+      source: 'gearCloset',
       gearItemId: gear.id,
     };
 
@@ -81,7 +81,7 @@ export function mergeGearIntoPacking(
   Object.entries(gearBySection).forEach(([sectionTitle, items]) => {
     // Find existing section
     let targetSection = updatedSections.find(
-      (s) => s.title.toLowerCase() === sectionTitle.toLowerCase()
+      (s) => s.title.toLowerCase() === sectionTitle.toLowerCase(),
     );
 
     // If section doesn't exist, create it
@@ -106,5 +106,5 @@ export function mergeGearIntoPacking(
  * Check if an item is from the Gear Closet
  */
 export function isGearClosetItem(item: PackingItem): boolean {
-  return item.source === "gearCloset" || !!item.gearItemId;
+  return item.source === 'gearCloset' || !!item.gearItemId;
 }

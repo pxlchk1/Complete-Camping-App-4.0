@@ -1,6 +1,6 @@
-import React from "react";
-import { Text, TextProps } from "react-native";
-import { textStyles } from "../theme/theme";
+import React from 'react';
+import { Text, TextProps } from 'react-native';
+import { textStyles } from '../theme/theme';
 
 interface TypographyProps extends TextProps {
   children: React.ReactNode;
@@ -38,7 +38,10 @@ export function Heading3({ children, style, ...props }: TypographyProps) {
 // Section titles (same as Heading2)
 export function SectionTitle({ children, style, color, ...props }: TypographyProps) {
   return (
-    <Text style={[textStyles.headingSection, color ? { color } : undefined, style]} {...props}>
+    <Text
+      style={[textStyles.headingSection, color ? { color } : undefined, style]}
+      {...props}
+    >
       {children}
     </Text>
   );
@@ -56,7 +59,10 @@ export function BodyText({ children, style, color, ...props }: TypographyProps) 
 // Secondary body (subtle text, helper copy)
 export function BodyTextMedium({ children, style, color, ...props }: TypographyProps) {
   return (
-    <Text style={[textStyles.bodySecondary, color ? { color } : undefined, style]} {...props}>
+    <Text
+      style={[textStyles.bodySecondary, color ? { color } : undefined, style]}
+      {...props}
+    >
       {children}
     </Text>
   );

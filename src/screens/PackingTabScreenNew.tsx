@@ -4,7 +4,7 @@
  * Follows the UX pattern from the reference app
  */
 
-import React, { useMemo, useCallback, useState } from "react";
+import React, { useMemo, useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -13,21 +13,31 @@ import {
   Alert,
   ActionSheetIOS,
   Platform,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 
-import EmptyState from "../components/EmptyState";
-import { DEEP_FOREST, EARTH_GREEN, PARCHMENT, GRANITE_GOLD, BORDER_SOFT } from "../constants/colors";
-import { usePackingStore, usePackingTemplates, usePackingActiveLists } from "../state/packingStore";
-import { RootStackParamList } from "../navigation/types";
-import { requirePro } from "../utils/gating";
-import AccountRequiredModal from "../components/AccountRequiredModal";
+import EmptyState from '../components/EmptyState';
+import {
+  DEEP_FOREST,
+  EARTH_GREEN,
+  PARCHMENT,
+  GRANITE_GOLD,
+  BORDER_SOFT,
+} from '../constants/colors';
+import {
+  usePackingStore,
+  usePackingTemplates,
+  usePackingActiveLists,
+} from '../state/packingStore';
+import { RootStackParamList } from '../navigation/types';
+import { requirePro } from '../utils/gating';
+import AccountRequiredModal from '../components/AccountRequiredModal';
 
-type PlanTab = "trips" | "parks" | "weather" | "packing" | "meals";
+type PlanTab = 'trips' | 'parks' | 'weather' | 'packing' | 'meals';
 type PackingTabNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface PackingTabScreenProps {
@@ -74,92 +84,97 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
   const handleCreateList = useCallback(() => {
     const canProceed = requirePro({
       openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "packing_create_list", variant }),
+      openPaywallModal: (variant) =>
+        navigation.navigate('Paywall', { triggerKey: 'packing_create_list', variant }),
     });
     if (!canProceed) return;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("PackingListCreate" as any);
+    navigation.navigate('PackingListCreate' as any);
   }, [navigation]);
 
-  const handleOpenList = useCallback((listId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("PackingListEditor" as any, { listId });
-  }, [navigation]);
+  const handleOpenList = useCallback(
+    (listId: string) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      navigation.navigate('PackingListEditor' as any, { listId });
+    },
+    [navigation],
+  );
 
-  const handleDeleteList = useCallback((listId: string, listName: string, isTemplate: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      isTemplate ? "Delete Template" : "Delete List",
-      `Are you sure you want to delete "${listName}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deletePackingList(listId);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          },
-        },
-      ]
-    );
-  }, [deletePackingList]);
-
-  const handleShowListMenu = useCallback((listId: string, listName: string, isTemplate: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ["Cancel", "Delete"],
-          destructiveButtonIndex: 1,
-          cancelButtonIndex: 0,
-          title: listName,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 1) {
-            handleDeleteList(listId, listName, isTemplate);
-          }
-        }
-      );
-    } else {
-      // Android fallback - use Alert
+  const handleDeleteList = useCallback(
+    (listId: string, listName: string, isTemplate: boolean) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Alert.alert(
-        listName,
-        "What would you like to do?",
+        isTemplate ? 'Delete Template' : 'Delete List',
+        `Are you sure you want to delete "${listName}"?`,
         [
-          { text: "Cancel", style: "cancel" },
+          { text: 'Cancel', style: 'cancel' },
           {
-            text: "Delete",
-            style: "destructive",
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              deletePackingList(listId);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            },
+          },
+        ],
+      );
+    },
+    [deletePackingList],
+  );
+
+  const handleShowListMenu = useCallback(
+    (listId: string, listName: string, isTemplate: boolean) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: ['Cancel', 'Delete'],
+            destructiveButtonIndex: 1,
+            cancelButtonIndex: 0,
+            title: listName,
+          },
+          (buttonIndex) => {
+            if (buttonIndex === 1) {
+              handleDeleteList(listId, listName, isTemplate);
+            }
+          },
+        );
+      } else {
+        // Android fallback - use Alert
+        Alert.alert(listName, 'What would you like to do?', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
             onPress: () => handleDeleteList(listId, listName, isTemplate),
           },
-        ]
-      );
-    }
-  }, [handleDeleteList]);
+        ]);
+      }
+    },
+    [handleDeleteList],
+  );
 
-  const handleUseTemplate = useCallback((templateId: string, templateName: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      "Use Template",
-      `Create a new packing list from "${templateName}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
+  const handleUseTemplate = useCallback(
+    (templateId: string, templateName: string) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Alert.alert('Use Template', `Create a new packing list from "${templateName}"?`, [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Create List",
+          text: 'Create List',
           onPress: () => {
             const newListId = copyTemplateToTrip(templateId);
             if (newListId) {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              navigation.navigate("PackingListEditor" as any, { listId: newListId });
+              navigation.navigate('PackingListEditor' as any, { listId: newListId });
             }
           },
         },
-      ]
-    );
-  }, [copyTemplateToTrip, navigation]);
+      ]);
+    },
+    [copyTemplateToTrip, navigation],
+  );
 
   const bottomSpacer = 50 + Math.max(insets.bottom, 18) + 12;
   const hasAnyLists = templates.length > 0 || activeLists.length > 0;
@@ -167,7 +182,7 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
   // Format date for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -190,58 +205,67 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
         >
           {/* Stats Dashboard */}
           <View className="px-4 pt-4 pb-2">
-            <View
-              className="rounded-2xl p-4"
-              style={{ backgroundColor: DEEP_FOREST }}
-            >
+            <View className="rounded-2xl p-4" style={{ backgroundColor: DEEP_FOREST }}>
               <Text
                 className="text-sm mb-3"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: "rgba(255,255,255,0.7)" }}
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: 'rgba(255,255,255,0.7)',
+                }}
               >
                 YOUR PACKING STATS
               </Text>
-              
+
               <View className="flex-row justify-between">
                 <View className="items-center flex-1">
                   <Text
                     className="text-3xl"
-                    style={{ fontFamily: "Raleway_700Bold", color: PARCHMENT }}
+                    style={{ fontFamily: 'Raleway_700Bold', color: PARCHMENT }}
                   >
                     {stats.totalLists}
                   </Text>
                   <Text
                     className="text-xs"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: "rgba(255,255,255,0.7)" }}
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: 'rgba(255,255,255,0.7)',
+                    }}
                   >
                     Lists
                   </Text>
                 </View>
-                
+
                 <View className="items-center flex-1">
                   <Text
                     className="text-3xl"
-                    style={{ fontFamily: "Raleway_700Bold", color: PARCHMENT }}
+                    style={{ fontFamily: 'Raleway_700Bold', color: PARCHMENT }}
                   >
                     {stats.totalPacked}
                   </Text>
                   <Text
                     className="text-xs"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: "rgba(255,255,255,0.7)" }}
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: 'rgba(255,255,255,0.7)',
+                    }}
                   >
                     Packed
                   </Text>
                 </View>
-                
+
                 <View className="items-center flex-1">
                   <Text
                     className="text-3xl"
-                    style={{ fontFamily: "Raleway_700Bold", color: GRANITE_GOLD }}
+                    style={{ fontFamily: 'Raleway_700Bold', color: GRANITE_GOLD }}
                   >
                     {stats.avgCompletion}%
                   </Text>
                   <Text
                     className="text-xs"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: "rgba(255,255,255,0.7)" }}
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: 'rgba(255,255,255,0.7)',
+                    }}
                   >
                     Avg Complete
                   </Text>
@@ -260,7 +284,11 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
               <Ionicons name="add-circle" size={20} color={PARCHMENT} />
               <Text
                 className="ml-2"
-                style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 15, color: PARCHMENT }}
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  fontSize: 15,
+                  color: PARCHMENT,
+                }}
               >
                 Create New Packing List
               </Text>
@@ -272,7 +300,7 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
             <View className="px-4">
               <Text
                 className="text-xs mb-2"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: EARTH_GREEN }}
               >
                 ACTIVE LISTS
               </Text>
@@ -294,7 +322,7 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                       <View className="flex-1 mr-3">
                         <Text
                           className="text-base mb-1"
-                          style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                          style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                           numberOfLines={1}
                         >
                           {list.name}
@@ -302,13 +330,19 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                         <View className="flex-row items-center">
                           <Text
                             className="text-xs mr-2"
-                            style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                            style={{
+                              fontFamily: 'SourceSans3_400Regular',
+                              color: EARTH_GREEN,
+                            }}
                           >
                             {list.tripType} • {list.season}
                           </Text>
                           <Text
                             className="text-xs"
-                            style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                            style={{
+                              fontFamily: 'SourceSans3_400Regular',
+                              color: EARTH_GREEN,
+                            }}
                           >
                             {formatDate(list.createdAt)}
                           </Text>
@@ -320,14 +354,19 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                           <Text
                             className="text-lg"
                             style={{
-                              fontFamily: "Raleway_700Bold",
-                              color: progress.percentage === 100 ? DEEP_FOREST : GRANITE_GOLD,
+                              fontFamily: 'Raleway_700Bold',
+                              color:
+                                progress.percentage === 100 ? DEEP_FOREST : GRANITE_GOLD,
                             }}
                           >
                             {progress.percentage}%
                           </Text>
                           {progress.percentage === 100 && (
-                            <Ionicons name="checkmark-circle" size={16} color={DEEP_FOREST} />
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={16}
+                              color={DEEP_FOREST}
+                            />
                           )}
                         </View>
                         <Pressable
@@ -335,7 +374,11 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                           className="p-1"
                         >
-                          <Ionicons name="ellipsis-vertical" size={18} color={EARTH_GREEN} />
+                          <Ionicons
+                            name="ellipsis-vertical"
+                            size={18}
+                            color={EARTH_GREEN}
+                          />
                         </Pressable>
                       </View>
                     </View>
@@ -343,13 +386,14 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                     {/* Progress bar */}
                     <View
                       className="h-2 rounded-full overflow-hidden"
-                      style={{ backgroundColor: "#E6E1D6" }}
+                      style={{ backgroundColor: '#E6E1D6' }}
                     >
                       <View
                         className="h-full rounded-full"
                         style={{
                           width: `${progress.percentage}%` as any,
-                          backgroundColor: progress.percentage === 100 ? DEEP_FOREST : GRANITE_GOLD,
+                          backgroundColor:
+                            progress.percentage === 100 ? DEEP_FOREST : GRANITE_GOLD,
                         }}
                       />
                     </View>
@@ -357,7 +401,10 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                     <View className="flex-row items-center justify-between mt-2">
                       <Text
                         className="text-xs"
-                        style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                        style={{
+                          fontFamily: 'SourceSans3_400Regular',
+                          color: EARTH_GREEN,
+                        }}
                       >
                         {progress.packed} of {progress.total} items packed
                       </Text>
@@ -374,13 +421,16 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
             <View className="px-4 mt-2">
               <Text
                 className="text-xs mb-2"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: EARTH_GREEN }}
               >
                 MY TEMPLATES
               </Text>
 
               {templates.map((template) => {
-                const itemCount = template.sections.reduce((acc, s) => acc + s.items.length, 0);
+                const itemCount = template.sections.reduce(
+                  (acc, s) => acc + s.items.length,
+                  0,
+                );
 
                 return (
                   <Pressable
@@ -390,7 +440,7 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                     style={{
                       borderWidth: 1,
                       borderColor: BORDER_SOFT,
-                      borderStyle: "dashed",
+                      borderStyle: 'dashed',
                     }}
                   >
                     <View className="flex-row items-start justify-between">
@@ -399,7 +449,7 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                           <Ionicons name="copy-outline" size={16} color={EARTH_GREEN} />
                           <Text
                             className="text-base ml-2"
-                            style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                            style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                             numberOfLines={1}
                           >
                             {template.name}
@@ -407,7 +457,10 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                         </View>
                         <Text
                           className="text-xs"
-                          style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                          style={{
+                            fontFamily: 'SourceSans3_400Regular',
+                            color: EARTH_GREEN,
+                          }}
                         >
                           {template.tripType} • {template.season} • {itemCount} items
                         </Text>
@@ -421,17 +474,26 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
                         >
                           <Text
                             className="text-xs"
-                            style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                            style={{
+                              fontFamily: 'SourceSans3_600SemiBold',
+                              color: PARCHMENT,
+                            }}
                           >
                             Use
                           </Text>
                         </Pressable>
                         <Pressable
-                          onPress={() => handleShowListMenu(template.id, template.name, true)}
+                          onPress={() =>
+                            handleShowListMenu(template.id, template.name, true)
+                          }
                           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                           className="p-1"
                         >
-                          <Ionicons name="ellipsis-vertical" size={18} color={EARTH_GREEN} />
+                          <Ionicons
+                            name="ellipsis-vertical"
+                            size={18}
+                            color={EARTH_GREEN}
+                          />
                         </Pressable>
                       </View>
                     </View>
@@ -440,7 +502,6 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
               })}
             </View>
           )}
-
         </ScrollView>
       )}
 
@@ -450,7 +511,7 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
         onClose={() => setShowAccountModal(false)}
         onCreateAccount={() => {
           setShowAccountModal(false);
-          navigation.navigate("Auth" as never);
+          navigation.navigate('Auth' as never);
         }}
         onMaybeLater={() => setShowAccountModal(false)}
       />

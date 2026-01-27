@@ -1,17 +1,22 @@
-import React, { useRef, useEffect } from "react";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
-import { Park } from "../types/camping";
-import { DEEP_FOREST, PARCHMENT, BORDER_SOFT, EARTH_GREEN } from "../constants/colors";
+import React, { useRef, useEffect } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { Park } from '../types/camping';
+import { DEEP_FOREST, PARCHMENT, BORDER_SOFT, EARTH_GREEN } from '../constants/colors';
 
 interface ParksMapProps {
   parks: Park[];
   userLocation: { latitude: number; longitude: number } | null;
-  mode: "near" | "search" | "state" | "distance";
+  mode: 'near' | 'search' | 'state' | 'distance';
   onParkPress?: (park: Park) => void;
 }
 
-export default function ParksMap({ parks, userLocation, mode, onParkPress }: ParksMapProps) {
+export default function ParksMap({
+  parks,
+  userLocation,
+  mode,
+  onParkPress,
+}: ParksMapProps) {
   const mapRef = useRef<MapView>(null);
 
   // Update map region when parks or mode changes
@@ -26,7 +31,7 @@ export default function ParksMap({ parks, userLocation, mode, onParkPress }: Par
       }));
 
       // Add user location if in "near me" mode
-      if (mode === "near" && userLocation) {
+      if (mode === 'near' && userLocation) {
         coordinates.push(userLocation);
       }
 
@@ -34,7 +39,7 @@ export default function ParksMap({ parks, userLocation, mode, onParkPress }: Par
         edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
         animated: true,
       });
-    } else if (mode === "near" && userLocation) {
+    } else if (mode === 'near' && userLocation) {
       // If no parks but we have user location, center on user
       mapRef.current.animateToRegion({
         latitude: userLocation.latitude,
@@ -55,7 +60,7 @@ export default function ParksMap({ parks, userLocation, mode, onParkPress }: Par
 
   // Get initial region based on mode
   const getInitialRegion = () => {
-    if (mode === "near" && userLocation) {
+    if (mode === 'near' && userLocation) {
       return {
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
@@ -73,7 +78,7 @@ export default function ParksMap({ parks, userLocation, mode, onParkPress }: Par
         provider={PROVIDER_DEFAULT}
         style={styles.map}
         initialRegion={getInitialRegion()}
-        showsUserLocation={mode === "near"}
+        showsUserLocation={mode === 'near'}
         showsMyLocationButton={false}
       >
         {/* Render park markers */}
@@ -103,7 +108,7 @@ const styles = StyleSheet.create({
   container: {
     height: 280,
     borderRadius: 12,
-    overflow: "hidden",
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: BORDER_SOFT,
     marginBottom: 16,
@@ -112,8 +117,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   markerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   marker: {
     width: 16,

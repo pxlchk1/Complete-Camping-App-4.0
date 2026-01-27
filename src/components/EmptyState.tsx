@@ -24,11 +24,7 @@ export default function EmptyState({
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.message}>{message}</Text>
       {ctaLabel && onPress && (
-        <Pressable
-          onPress={onPress}
-          style={styles.button}
-          className="active:opacity-90"
-        >
+        <Pressable onPress={onPress} style={styles.button} className="active:opacity-90">
           <Text style={styles.buttonText}>{ctaLabel}</Text>
         </Pressable>
       )}

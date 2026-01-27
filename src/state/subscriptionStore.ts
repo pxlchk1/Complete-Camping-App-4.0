@@ -3,10 +3,10 @@
  * Global state for managing subscription status and entitlements
  */
 
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CustomerInfo } from "react-native-purchases";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CustomerInfo } from 'react-native-purchases';
 
 export interface SubscriptionState {
   // State
@@ -51,9 +51,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
         const entitlements = Object.keys(customerInfo.entitlements.active);
         // Check for exact entitlement "Pro" (case-sensitive)
-        const hasPro = Boolean(customerInfo.entitlements.active["Pro"]);
+        const hasPro = Boolean(customerInfo.entitlements.active['Pro']);
 
-        console.log("[SubscriptionStore] Updated subscription info:", {
+        console.log('[SubscriptionStore] Updated subscription info:', {
           isPro: hasPro,
           activeEntitlements: entitlements,
           originalAppUserId: customerInfo.originalAppUserId,
@@ -98,20 +98,20 @@ export const useSubscriptionStore = create<SubscriptionState>()(
           setLoading(true);
 
           // Import dynamically to avoid circular dependencies
-          const { getCustomerInfo } = await import("../lib/revenuecatClient");
+          const { getCustomerInfo } = await import('../lib/revenuecatClient');
           const customerInfo = await getCustomerInfo();
 
           setSubscriptionInfo(customerInfo);
         } catch (error: any) {
-          console.error("[SubscriptionStore] Failed to refresh entitlements:", error);
-          setError(error.message || "Failed to refresh subscription status");
+          console.error('[SubscriptionStore] Failed to refresh entitlements:', error);
+          setError(error.message || 'Failed to refresh subscription status');
         } finally {
           setLoading(false);
         }
       },
     }),
     {
-      name: "subscription-storage",
+      name: 'subscription-storage',
       storage: createJSONStorage(() => AsyncStorage),
       // Only persist the essential data, not loading states
       partialize: (state) => ({
@@ -119,12 +119,15 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         activeEntitlements: state.activeEntitlements,
         lastChecked: state.lastChecked,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // Selector hooks for optimized re-renders
 export const useIsPro = () => useSubscriptionStore((s) => s.isPro);
-export const useActiveEntitlements = () => useSubscriptionStore((s) => s.activeEntitlements);
-export const useSubscriptionLoading = () => useSubscriptionStore((s) => s.subscriptionLoading);
-export const useSubscriptionError = () => useSubscriptionStore((s) => s.subscriptionError);
+export const useActiveEntitlements = () =>
+  useSubscriptionStore((s) => s.activeEntitlements);
+export const useSubscriptionLoading = () =>
+  useSubscriptionStore((s) => s.subscriptionLoading);
+export const useSubscriptionError = () =>
+  useSubscriptionStore((s) => s.subscriptionError);

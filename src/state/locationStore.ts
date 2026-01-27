@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 interface LocationState {
   // Selected location from Parks finder or user input
@@ -15,8 +15,8 @@ interface LocationState {
     longitude: number;
   } | null;
 
-  setSelectedLocation: (location: LocationState["selectedLocation"]) => void;
-  setUserLocation: (location: LocationState["userLocation"]) => void;
+  setSelectedLocation: (location: LocationState['selectedLocation']) => void;
+  setUserLocation: (location: LocationState['userLocation']) => void;
   clearSelectedLocation: () => void;
 }
 

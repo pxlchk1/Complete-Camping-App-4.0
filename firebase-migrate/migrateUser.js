@@ -4,7 +4,7 @@
  * Then updates known references in other collections.
  */
 
-const admin = require("firebase-admin");
+const admin = require('firebase-admin');
 
 admin.initializeApp({
   credential: admin.credential.applicationDefault(),
@@ -12,16 +12,16 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-const fromUid = "XzyyhBRVFIMK1JZdyRUPHM71F083";
-const toUid = "CumHF5enTFQJgroqRIf72uLI9N52";
+const fromUid = 'XzyyhBRVFIMK1JZdyRUPHM71F083';
+const toUid = 'CumHF5enTFQJgroqRIf72uLI9N52';
 
 // Add your actual subcollections here
 const USER_SUBCOLLECTIONS = [
-  "trips",
-  "packingList",
-  "gearCloset",
-  "campgroundContacts",
-  "checklists",
+  'trips',
+  'packingList',
+  'gearCloset',
+  'campgroundContacts',
+  'checklists',
 ];
 
 async function copyCollection(fromRef, toRef) {
@@ -32,8 +32,8 @@ async function copyCollection(fromRef, toRef) {
 }
 
 async function migrateUserDocAndSubs() {
-  const fromUserRef = db.collection("users").doc(fromUid);
-  const toUserRef = db.collection("users").doc(toUid);
+  const fromUserRef = db.collection('users').doc(fromUid);
+  const toUserRef = db.collection('users').doc(toUid);
 
   const fromUserSnap = await fromUserRef.get();
   if (fromUserSnap.exists) {
@@ -49,13 +49,13 @@ async function updateReferences() {
   // Example: update documents in "questions" where userId == fromUid
   // Repeat for any global collections you have.
   const collectionsToFix = [
-    { name: "questions", field: "userId" },
-    { name: "tips", field: "userId" },
-    { name: "feedback", field: "userId" },
+    { name: 'questions', field: 'userId' },
+    { name: 'tips', field: 'userId' },
+    { name: 'feedback', field: 'userId' },
   ];
 
   for (const c of collectionsToFix) {
-    const q = await db.collection(c.name).where(c.field, "==", fromUid).get();
+    const q = await db.collection(c.name).where(c.field, '==', fromUid).get();
     if (q.empty) continue;
 
     const batch = db.batch();
@@ -68,8 +68,10 @@ async function main() {
   await migrateUserDocAndSubs();
   await updateReferences();
 
-  console.log("Migration complete.");
-  console.log("Next: verify data, then delete old Auth user, then link Apple to admin UID.");
+  console.log('Migration complete.');
+  console.log(
+    'Next: verify data, then delete old Auth user, then link Apple to admin UID.',
+  );
 }
 
 main().catch((e) => {

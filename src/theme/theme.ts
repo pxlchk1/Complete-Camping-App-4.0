@@ -1,5 +1,5 @@
 // src/theme/theme.ts
-import { Platform, StyleSheet } from "react-native";
+import { Platform, StyleSheet } from 'react-native';
 import {
   INK,
   PARCHMENT,
@@ -18,45 +18,45 @@ import {
   CARD_BACKGROUND_LIGHT,
   DISABLED_BG,
   DISABLED_TEXT,
-} from "../constants/colors";
+} from '../constants/colors';
 
 // Font family strings must match what we load in the app.
 // If they differ, adjust only these strings (do not change usage across screens).
 export const fonts = {
   display: Platform.select({
-    ios: "Satisfy_400Regular",
-    android: "Satisfy_400Regular",
-    default: "Satisfy_400Regular",
+    ios: 'Satisfy_400Regular',
+    android: 'Satisfy_400Regular',
+    default: 'Satisfy_400Regular',
   }),
   // Heading fonts: Raleway
   heading: Platform.select({
-    ios: "Raleway_600SemiBold",
-    android: "Raleway_600SemiBold",
-    default: "Raleway_600SemiBold",
+    ios: 'Raleway_600SemiBold',
+    android: 'Raleway_600SemiBold',
+    default: 'Raleway_600SemiBold',
   }),
   headingSemi: Platform.select({
-    ios: "Raleway_600SemiBold",
-    android: "Raleway_600SemiBold",
-    default: "Raleway_600SemiBold",
+    ios: 'Raleway_600SemiBold',
+    android: 'Raleway_600SemiBold',
+    default: 'Raleway_600SemiBold',
   }),
   body: Platform.select({
-    ios: "SourceSans3_400Regular",
-    android: "SourceSans3_400Regular",
-    default: "SourceSans3_400Regular",
+    ios: 'SourceSans3_400Regular',
+    android: 'SourceSans3_400Regular',
+    default: 'SourceSans3_400Regular',
   }),
   bodySemi: Platform.select({
-    ios: "SourceSans3_600SemiBold",
-    android: "SourceSans3_600SemiBold",
-    default: "SourceSans3_600SemiBold",
+    ios: 'SourceSans3_600SemiBold',
+    android: 'SourceSans3_600SemiBold',
+    default: 'SourceSans3_600SemiBold',
   }),
   // Legacy aliases for backward compatibility - now using Raleway
-  displayRegular: "Raleway_600SemiBold",
-  displaySemibold: "Raleway_600SemiBold",
-  displayBold: "Raleway_700Bold",
-  bodyRegular: "SourceSans3_400Regular",
-  bodySemibold: "SourceSans3_600SemiBold",
-  bodyBold: "SourceSans3_700Bold",
-  accent: "Satisfy_400Regular",
+  displayRegular: 'Raleway_600SemiBold',
+  displaySemibold: 'Raleway_600SemiBold',
+  displayBold: 'Raleway_700Bold',
+  bodyRegular: 'SourceSans3_400Regular',
+  bodySemibold: 'SourceSans3_600SemiBold',
+  bodyBold: 'SourceSans3_700Bold',
+  accent: 'Satisfy_400Regular',
 };
 
 export const fontSizes = {
@@ -129,14 +129,14 @@ export const colors = {
 // Shadows (soft, print-inspired)
 export const shadows = {
   card: {
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
   },
   modal: {
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -146,19 +146,54 @@ export const shadows = {
 
 // Optional text presets if our Typography components support them.
 export const textStyles = StyleSheet.create({
-  h1: { fontFamily: fonts.heading, fontSize: fontSizes.xxl, lineHeight: 34, color: colors.text },
-  h2: { fontFamily: fonts.heading, fontSize: fontSizes.xl, lineHeight: 28, color: colors.text },
-  h3: { fontFamily: fonts.headingSemi, fontSize: fontSizes.lg, lineHeight: 24, color: colors.text },
-  body: { fontFamily: fonts.body, fontSize: fontSizes.md, lineHeight: 22, color: colors.text },
-  bodySecondary: { fontFamily: fonts.body, fontSize: fontSizes.md, lineHeight: 22, color: colors.textSecondary },
-  label: { fontFamily: fonts.bodySemi, fontSize: fontSizes.sm, lineHeight: 18, color: colors.text },
-  caption: { fontFamily: fonts.body, fontSize: fontSizes.xs, lineHeight: 16, color: colors.textSecondary },
+  h1: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xxl,
+    lineHeight: 34,
+    color: colors.text,
+  },
+  h2: {
+    fontFamily: fonts.heading,
+    fontSize: fontSizes.xl,
+    lineHeight: 28,
+    color: colors.text,
+  },
+  h3: {
+    fontFamily: fonts.headingSemi,
+    fontSize: fontSizes.lg,
+    lineHeight: 24,
+    color: colors.text,
+  },
+  body: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
+    lineHeight: 22,
+    color: colors.text,
+  },
+  bodySecondary: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.md,
+    lineHeight: 22,
+    color: colors.textSecondary,
+  },
+  label: {
+    fontFamily: fonts.bodySemi,
+    fontSize: fontSizes.sm,
+    lineHeight: 18,
+    color: colors.text,
+  },
+  caption: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.xs,
+    lineHeight: 16,
+    color: colors.textSecondary,
+  },
   // Legacy text style aliases for backward compatibility
   headingHero: {
     fontFamily: fonts.displayBold,
     fontSize: fontSizes.xxl,
     lineHeight: 34,
-    textAlign: "center" as const,
+    textAlign: 'center' as const,
     color: colors.deepForest,
   },
   headingSection: {
@@ -221,8 +256,8 @@ export const componentStyles = StyleSheet.create({
     ...shadows.card,
   },
   cardHeader: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     marginBottom: spacing.sm,
   },
   cardDivider: {
@@ -235,8 +270,8 @@ export const componentStyles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   buttonSecondary: {
     borderRadius: radius.pill,
@@ -244,8 +279,8 @@ export const componentStyles = StyleSheet.create({
     borderColor: colors.deepForest,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   buttonText: {
     paddingVertical: spacing.xs,
@@ -267,17 +302,17 @@ export const componentStyles = StyleSheet.create({
     borderTopColor: colors.borderSoft,
     height: 70,
     paddingHorizontal: spacing.md,
-    flexDirection: "row" as const,
-    justifyContent: "space-between" as const,
-    alignItems: "center" as const,
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
   },
   tabItem: {
     flex: 1,
-    alignItems: "center" as const,
-    justifyContent: "center" as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   heroImage: {
-    width: "100%" as const,
+    width: '100%' as const,
     height: undefined,
     aspectRatio: 16 / 9,
   },

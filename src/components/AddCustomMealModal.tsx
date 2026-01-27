@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,18 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { MealCategory, PrepType, Difficulty } from "../types/meal";
-import { DEEP_FOREST, EARTH_GREEN, PARCHMENT, TEXT_SECONDARY, TEXT_MUTED } from "../constants/colors";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { MealCategory, PrepType, Difficulty } from '../types/meal';
+import {
+  DEEP_FOREST,
+  EARTH_GREEN,
+  PARCHMENT,
+  TEXT_SECONDARY,
+  TEXT_MUTED,
+} from '../constants/colors';
+import * as Haptics from 'expo-haptics';
 
 interface AddCustomMealModalProps {
   visible: boolean;
@@ -29,14 +35,18 @@ interface AddCustomMealModalProps {
   }) => void;
 }
 
-export default function AddCustomMealModal({ visible, onClose, onSave }: AddCustomMealModalProps) {
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState<MealCategory>("breakfast");
-  const [prepType, setPrepType] = useState<PrepType>("noCook");
-  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
-  const [ingredientsText, setIngredientsText] = useState("");
-  const [instructions, setInstructions] = useState("");
-  const [tagsText, setTagsText] = useState("");
+export default function AddCustomMealModal({
+  visible,
+  onClose,
+  onSave,
+}: AddCustomMealModalProps) {
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState<MealCategory>('breakfast');
+  const [prepType, setPrepType] = useState<PrepType>('noCook');
+  const [difficulty, setDifficulty] = useState<Difficulty>('easy');
+  const [ingredientsText, setIngredientsText] = useState('');
+  const [instructions, setInstructions] = useState('');
+  const [tagsText, setTagsText] = useState('');
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -44,12 +54,12 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
     }
 
     const ingredients = ingredientsText
-      .split("\n")
+      .split('\n')
       .map((i) => i.trim())
       .filter((i) => i.length > 0);
 
     const tags = tagsText
-      .split(",")
+      .split(',')
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
@@ -66,13 +76,13 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
     });
 
     // Reset form
-    setName("");
-    setCategory("breakfast");
-    setPrepType("noCook");
-    setDifficulty("easy");
-    setIngredientsText("");
-    setInstructions("");
-    setTagsText("");
+    setName('');
+    setCategory('breakfast');
+    setPrepType('noCook');
+    setDifficulty('easy');
+    setIngredientsText('');
+    setInstructions('');
+    setTagsText('');
 
     onClose();
   };
@@ -83,13 +93,18 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
   };
 
   return (
-    <Modal visible={visible} animationType="fade" transparent onRequestClose={handleClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}>
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent
+      onRequestClose={handleClose}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}>
         <KeyboardAvoidingView
-          style={{ flex: 1, justifyContent: "flex-end" }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1, justifyContent: 'flex-end' }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View className="bg-parchment rounded-t-3xl" style={{ height: "85%" }}>
+          <View className="bg-parchment rounded-t-3xl" style={{ height: '85%' }}>
             {/* Header - Deep Forest Green background */}
             <View
               style={{
@@ -101,8 +116,22 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
                 borderTopRightRadius: 24,
               }}
             >
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Text style={{ fontFamily: "Raleway_700Bold", fontSize: 24, color: PARCHMENT, flex: 1, marginRight: 12 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: 'Raleway_700Bold',
+                    fontSize: 24,
+                    color: PARCHMENT,
+                    flex: 1,
+                    marginRight: 12,
+                  }}
+                >
                   Add Custom Meal
                 </Text>
                 <Pressable
@@ -111,9 +140,9 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
                     width: 36,
                     height: 36,
                     borderRadius: 18,
-                    backgroundColor: "rgba(255, 255, 255, 0.15)",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   <Ionicons name="close" size={20} color={PARCHMENT} />
@@ -124,7 +153,10 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
             <ScrollView className="flex-1 px-6 py-4" showsVerticalScrollIndicator={false}>
               {/* Meal Name */}
               <View className="mb-4">
-                <Text className="text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                <Text
+                  className="text-sm font-semibold mb-2"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
+                >
                   Meal Name *
                 </Text>
                 <TextInput
@@ -132,80 +164,103 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
                   onChangeText={setName}
                   placeholder="e.g., My Special Pancakes"
                   className="bg-white border border-parchmentDark rounded-xl px-4 py-3 text-base"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: DEEP_FOREST }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: DEEP_FOREST }}
                   placeholderTextColor={TEXT_MUTED}
                 />
               </View>
 
               {/* Category */}
               <View className="mb-4">
-                <Text className="text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                <Text
+                  className="text-sm font-semibold mb-2"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
+                >
                   Category *
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
-                  {(["breakfast", "lunch", "dinner", "snack"] as MealCategory[]).map((cat) => (
-                    <Pressable
-                      key={cat}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setCategory(cat);
-                      }}
-                      className={`px-4 py-2 rounded-full ${
-                        category === cat ? "bg-forest" : "bg-white border border-parchmentDark"
-                      } active:opacity-70`}
-                    >
-                      <Text
-                        className="text-sm capitalize"
-                        style={{
-                          fontFamily: "SourceSans3_600SemiBold",
-                          color: category === cat ? PARCHMENT : DEEP_FOREST,
+                  {(['breakfast', 'lunch', 'dinner', 'snack'] as MealCategory[]).map(
+                    (cat) => (
+                      <Pressable
+                        key={cat}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setCategory(cat);
                         }}
+                        className={`px-4 py-2 rounded-full ${
+                          category === cat
+                            ? 'bg-forest'
+                            : 'bg-white border border-parchmentDark'
+                        } active:opacity-70`}
                       >
-                        {cat}
-                      </Text>
-                    </Pressable>
-                  ))}
+                        <Text
+                          className="text-sm capitalize"
+                          style={{
+                            fontFamily: 'SourceSans3_600SemiBold',
+                            color: category === cat ? PARCHMENT : DEEP_FOREST,
+                          }}
+                        >
+                          {cat}
+                        </Text>
+                      </Pressable>
+                    ),
+                  )}
                 </View>
               </View>
 
               {/* Prep Type */}
               <View className="mb-4">
-                <Text className="text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                <Text
+                  className="text-sm font-semibold mb-2"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
+                >
                   Preparation Type *
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
-                  {(["noCook", "cold", "campStove", "campfire"] as PrepType[]).map((prep) => (
-                    <Pressable
-                      key={prep}
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        setPrepType(prep);
-                      }}
-                      className={`px-4 py-2 rounded-full ${
-                        prepType === prep ? "bg-forest" : "bg-white border border-parchmentDark"
-                      } active:opacity-70`}
-                    >
-                      <Text
-                        className="text-sm"
-                        style={{
-                          fontFamily: "SourceSans3_600SemiBold",
-                          color: prepType === prep ? PARCHMENT : DEEP_FOREST,
+                  {(['noCook', 'cold', 'campStove', 'campfire'] as PrepType[]).map(
+                    (prep) => (
+                      <Pressable
+                        key={prep}
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setPrepType(prep);
                         }}
+                        className={`px-4 py-2 rounded-full ${
+                          prepType === prep
+                            ? 'bg-forest'
+                            : 'bg-white border border-parchmentDark'
+                        } active:opacity-70`}
                       >
-                        {prep === "noCook" ? "No Cook" : prep === "campStove" ? "Camp Stove" : prep === "campfire" ? "Campfire" : "Cold"}
-                      </Text>
-                    </Pressable>
-                  ))}
+                        <Text
+                          className="text-sm"
+                          style={{
+                            fontFamily: 'SourceSans3_600SemiBold',
+                            color: prepType === prep ? PARCHMENT : DEEP_FOREST,
+                          }}
+                        >
+                          {prep === 'noCook'
+                            ? 'No Cook'
+                            : prep === 'campStove'
+                              ? 'Camp Stove'
+                              : prep === 'campfire'
+                                ? 'Campfire'
+                                : 'Cold'}
+                        </Text>
+                      </Pressable>
+                    ),
+                  )}
                 </View>
               </View>
 
               {/* Difficulty */}
               <View className="mb-4">
-                <Text className="text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                <Text
+                  className="text-sm font-semibold mb-2"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
+                >
                   Difficulty *
                 </Text>
                 <View className="flex-row gap-2">
-                  {(["easy", "moderate"] as Difficulty[]).map((diff) => (
+                  {(['easy', 'moderate'] as Difficulty[]).map((diff) => (
                     <Pressable
                       key={diff}
                       onPress={() => {
@@ -213,13 +268,15 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
                         setDifficulty(diff);
                       }}
                       className={`px-4 py-2 rounded-full ${
-                        difficulty === diff ? "bg-forest" : "bg-white border border-parchmentDark"
+                        difficulty === diff
+                          ? 'bg-forest'
+                          : 'bg-white border border-parchmentDark'
                       } active:opacity-70`}
                     >
                       <Text
                         className="text-sm capitalize"
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           color: difficulty === diff ? PARCHMENT : DEEP_FOREST,
                         }}
                       >
@@ -232,24 +289,35 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
 
               {/* Ingredients */}
               <View className="mb-4">
-                <Text className="text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                <Text
+                  className="text-sm font-semibold mb-2"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
+                >
                   Ingredients (one per line)
                 </Text>
                 <TextInput
                   value={ingredientsText}
                   onChangeText={setIngredientsText}
-                  placeholder={"eggs\nmilk\nflour\nsalt"}
+                  placeholder={'eggs\nmilk\nflour\nsalt'}
                   multiline
                   numberOfLines={4}
                   className="bg-white border border-parchmentDark rounded-xl px-4 py-3 text-base"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: DEEP_FOREST, minHeight: 100, textAlignVertical: "top" }}
+                  style={{
+                    fontFamily: 'SourceSans3_400Regular',
+                    color: DEEP_FOREST,
+                    minHeight: 100,
+                    textAlignVertical: 'top',
+                  }}
                   placeholderTextColor={TEXT_MUTED}
                 />
               </View>
 
               {/* Instructions */}
               <View className="mb-4">
-                <Text className="text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                <Text
+                  className="text-sm font-semibold mb-2"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
+                >
                   Instructions (optional)
                 </Text>
                 <TextInput
@@ -259,14 +327,22 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
                   multiline
                   numberOfLines={4}
                   className="bg-white border border-parchmentDark rounded-xl px-4 py-3 text-base"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: DEEP_FOREST, minHeight: 100, textAlignVertical: "top" }}
+                  style={{
+                    fontFamily: 'SourceSans3_400Regular',
+                    color: DEEP_FOREST,
+                    minHeight: 100,
+                    textAlignVertical: 'top',
+                  }}
                   placeholderTextColor={TEXT_MUTED}
                 />
               </View>
 
               {/* Tags */}
               <View className="mb-4">
-                <Text className="text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                <Text
+                  className="text-sm font-semibold mb-2"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
+                >
                   Tags (comma separated, optional)
                 </Text>
                 <TextInput
@@ -274,10 +350,13 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
                   onChangeText={setTagsText}
                   placeholder="quick, healthy, kid-friendly"
                   className="bg-white border border-parchmentDark rounded-xl px-4 py-3 text-base"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: DEEP_FOREST }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: DEEP_FOREST }}
                   placeholderTextColor={TEXT_SECONDARY}
                 />
-                <Text className="text-xs mt-1" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+                <Text
+                  className="text-xs mt-1"
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
+                >
                   Tags help you find and filter your meals
                 </Text>
               </View>
@@ -289,11 +368,14 @@ export default function AddCustomMealModal({ visible, onClose, onSave }: AddCust
                 onPress={handleSave}
                 disabled={!name.trim()}
                 className={`py-3 rounded-lg flex-row items-center justify-center ${
-                  name.trim() ? "bg-forest active:opacity-90" : "bg-stone-300"
+                  name.trim() ? 'bg-forest active:opacity-90' : 'bg-stone-300'
                 }`}
               >
                 <Ionicons name="checkmark-circle" size={18} color={PARCHMENT} />
-                <Text className="text-sm font-semibold ml-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+                <Text
+                  className="text-sm font-semibold ml-2"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
+                >
                   Save Custom Meal
                 </Text>
               </Pressable>

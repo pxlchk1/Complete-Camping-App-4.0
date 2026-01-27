@@ -2,73 +2,89 @@
  * Gear Reviews List Screen
  * Shows list of gear reviews with category filtering
  */
-
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
+  ActivityIndicator,
   FlatList,
   Pressable,
-  TextInput,
-  ActivityIndicator,
   RefreshControl,
-} from "react-native";
-import { useNavigation, useFocusEffect, useRoute, RouteProp } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import { DocumentSnapshot } from "firebase/firestore";
-import * as Haptics from "expo-haptics";
-import { getGearReviews } from "../../services/gearReviewsService";
-import { gearReviewVotesService } from "../../services/firestore/gearReviewVotesService";
-import { GearReview, GearCategory } from "../../types/community";
-import { RootStackNavigationProp, RootStackParamList } from "../../navigation/types";
-import { useCurrentUser } from "../../state/userStore";
-import AccountRequiredModal from "../../components/AccountRequiredModal";
-import OnboardingModal from "../../components/OnboardingModal";
-import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
-import { requirePro } from "../../utils/gating";
-import { shouldShowInFeed } from "../../services/moderationService";
-import CommunitySectionHeader from "../../components/CommunitySectionHeader";
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+
+import * as Haptics from 'expo-haptics';
+
 import {
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import { DocumentSnapshot } from 'firebase/firestore';
+
+import AccountRequiredModal from '../../components/AccountRequiredModal';
+import CommunitySectionHeader from '../../components/CommunitySectionHeader';
+import OnboardingModal from '../../components/OnboardingModal';
+import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  TEXT_MUTED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_MUTED,
-} from "../../constants/colors";
+} from '../../constants/colors';
+import { useScreenOnboarding } from '../../hooks/useScreenOnboarding';
+import { RootStackNavigationProp, RootStackParamList } from '../../navigation/types';
+import { gearReviewVotesService } from '../../services/firestore/gearReviewVotesService';
+import { getGearReviews } from '../../services/gearReviewsService';
+import { shouldShowInFeed } from '../../services/moderationService';
+import { useCurrentUser } from '../../state/userStore';
+import { GearCategory, GearReview } from '../../types/community';
+import { requirePro } from '../../utils/gating';
 
-type CategoryFilter = "all" | GearCategory;
+type CategoryFilter = 'all' | GearCategory;
 
 const CATEGORIES: { value: CategoryFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "shelter", label: "Shelter" },
-  { value: "sleep", label: "Sleep" },
-  { value: "kitchen", label: "Kitchen" },
-  { value: "clothing", label: "Clothing" },
-  { value: "lighting", label: "Lighting" },
-  { value: "pack", label: "Packs" },
-  { value: "water", label: "Water" },
-  { value: "safety", label: "Safety" },
-  { value: "misc", label: "Other" },
+  { value: 'all', label: 'All' },
+  { value: 'shelter', label: 'Shelter' },
+  { value: 'sleep', label: 'Sleep' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'clothing', label: 'Clothing' },
+  { value: 'lighting', label: 'Lighting' },
+  { value: 'pack', label: 'Packs' },
+  { value: 'water', label: 'Water' },
+  { value: 'safety', label: 'Safety' },
+  { value: 'misc', label: 'Other' },
 ];
 
 export default function GearReviewsListScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
-  const route = useRoute<RouteProp<RootStackParamList, "GearReviewsListScreen">>();
+  const route = useRoute<RouteProp<RootStackParamList, 'GearReviewsListScreen'>>();
   const currentUser = useCurrentUser();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Onboarding modal
-  const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("Gear");
+  const { showModal, currentTooltip, dismissModal, openModal } =
+    useScreenOnboarding('Gear');
 
   // Tag filter from navigation params
-  const [tagFilter, setTagFilter] = useState<string | null>(route.params?.filterByTag || null);
+  const [tagFilter, setTagFilter] = useState<string | null>(
+    route.params?.filterByTag || null,
+  );
 
-  const [reviews, setReviews] = useState<(GearReview & { voteScore: number; userVote: "up" | "down" | null })[]>([]);
-  const [filteredReviews, setFilteredReviews] = useState<(GearReview & { voteScore: number; userVote: "up" | "down" | null })[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [category, setCategory] = useState<CategoryFilter>("all");
+  const [reviews, setReviews] = useState<
+    (GearReview & { voteScore: number; userVote: 'up' | 'down' | null })[]
+  >([]);
+  const [filteredReviews, setFilteredReviews] = useState<
+    (GearReview & { voteScore: number; userVote: 'up' | 'down' | null })[]
+  >([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [category, setCategory] = useState<CategoryFilter>('all');
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,17 +93,20 @@ export default function GearReviewsListScreen() {
   const [hasMore, setHasMore] = useState(true);
 
   const toDateString = (date: any): string => {
-    if (typeof date === "string") return date;
+    if (typeof date === 'string') return date;
     if (date?.toDate) return date.toDate().toISOString();
     return new Date().toISOString();
   };
 
   const formatTimeAgo = (dateString: string | any) => {
     const now = new Date();
-    const date = typeof dateString === "string" ? new Date(dateString) : dateString.toDate?.() || new Date();
+    const date =
+      typeof dateString === 'string'
+        ? new Date(dateString)
+        : dateString.toDate?.() || new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
-    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
@@ -107,21 +126,21 @@ export default function GearReviewsListScreen() {
       }
 
       const result = await getGearReviews(
-        category === "all" ? "all" : category,
+        category === 'all' ? 'all' : category,
         20,
-        refresh ? undefined : lastDoc || undefined
+        refresh ? undefined : lastDoc || undefined,
       );
 
       // Filter out hidden content (unless user is author)
-      const visibleReviews = result.reviews.filter(review => 
-        shouldShowInFeed(review, currentUser?.id)
+      const visibleReviews = result.reviews.filter((review) =>
+        shouldShowInFeed(review, currentUser?.id),
       );
 
       // Fetch votes for each review
       const reviewsWithVotes = await Promise.all(
         visibleReviews.map(async (review) => {
           let voteScore = 0;
-          let userVote: "up" | "down" | null = null;
+          let userVote: 'up' | 'down' | null = null;
           try {
             const summary = await gearReviewVotesService.getVoteSummary(review.id);
             voteScore = summary.score;
@@ -133,7 +152,7 @@ export default function GearReviewsListScreen() {
             voteScore = review.upvoteCount || 0;
           }
           return { ...review, voteScore, userVote };
-        })
+        }),
       );
 
       if (refresh) {
@@ -145,7 +164,7 @@ export default function GearReviewsListScreen() {
       setLastDoc(result.lastDoc);
       setHasMore(result.reviews.length === 20);
     } catch (err: any) {
-      setError(err.message || "Failed to load gear reviews");
+      setError(err.message || 'Failed to load gear reviews');
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -190,7 +209,7 @@ export default function GearReviewsListScreen() {
       if (reviews.length > 0) {
         loadReviews(true);
       }
-    }, [category, route.params?.filterByTag])
+    }, [category, route.params?.filterByTag]),
   );
 
   useEffect(() => {
@@ -199,7 +218,7 @@ export default function GearReviewsListScreen() {
     // Apply tag filter if active
     if (tagFilter) {
       filtered = filtered.filter((r) =>
-        r.tags?.some((t) => t.toLowerCase() === tagFilter.toLowerCase())
+        r.tags?.some((t) => t.toLowerCase() === tagFilter.toLowerCase()),
       );
     }
 
@@ -210,18 +229,22 @@ export default function GearReviewsListScreen() {
         (r) =>
           r.gearName.toLowerCase().includes(query) ||
           r.brand?.toLowerCase().includes(query) ||
-          r.summary.toLowerCase().includes(query)
+          r.summary.toLowerCase().includes(query),
       );
     }
 
     setFilteredReviews(filtered);
   }, [searchQuery, reviews, tagFilter]);
 
-  const renderReviewItem = ({ item }: { item: GearReview & { voteScore: number; userVote: "up" | "down" | null } }) => (
+  const renderReviewItem = ({
+    item,
+  }: {
+    item: GearReview & { voteScore: number; userVote: 'up' | 'down' | null };
+  }) => (
     <Pressable
       onPress={() => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        navigation.navigate("GearReviewDetail", { reviewId: item.id });
+        navigation.navigate('GearReviewDetail', { reviewId: item.id });
       }}
       className="mb-3 p-4 rounded-xl border active:opacity-90"
       style={{
@@ -234,7 +257,7 @@ export default function GearReviewsListScreen() {
           <Text
             className="text-lg mb-1"
             style={{
-              fontFamily: "Raleway_700Bold",
+              fontFamily: 'Raleway_700Bold',
               color: TEXT_PRIMARY_STRONG,
             }}
             numberOfLines={1}
@@ -244,7 +267,7 @@ export default function GearReviewsListScreen() {
           {item.brand && (
             <Text
               className="text-sm mb-1"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}
+              style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_SECONDARY }}
             >
               {item.brand}
             </Text>
@@ -255,7 +278,7 @@ export default function GearReviewsListScreen() {
           <Text
             className="ml-1"
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               color: TEXT_PRIMARY_STRONG,
             }}
           >
@@ -267,7 +290,7 @@ export default function GearReviewsListScreen() {
       <Text
         className="mb-2"
         style={{
-          fontFamily: "SourceSans3_400Regular",
+          fontFamily: 'SourceSans3_400Regular',
           color: TEXT_SECONDARY,
           lineHeight: 20,
         }}
@@ -287,11 +310,14 @@ export default function GearReviewsListScreen() {
                 setTagFilter(tag);
               }}
               className="px-2 py-1 rounded-full active:opacity-70"
-              style={{ backgroundColor: tagFilter === tag ? DEEP_FOREST : "#F3F4F6" }}
+              style={{ backgroundColor: tagFilter === tag ? DEEP_FOREST : '#F3F4F6' }}
             >
               <Text
                 className="text-xs"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: tagFilter === tag ? PARCHMENT : "#6B7280" }}
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: tagFilter === tag ? PARCHMENT : '#6B7280',
+                }}
               >
                 {tag}
               </Text>
@@ -300,12 +326,24 @@ export default function GearReviewsListScreen() {
         </View>
       )}
 
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-          {item.authorName || "Anonymous"}
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <Text
+          style={{
+            fontFamily: 'SourceSans3_600SemiBold',
+            fontSize: 12,
+            color: TEXT_MUTED,
+          }}
+        >
+          @{item.authorHandle || 'Anonymous'}
         </Text>
         <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>
-        <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: TEXT_MUTED }}>
+        <Text
+          style={{
+            fontFamily: 'SourceSans3_400Regular',
+            fontSize: 12,
+            color: TEXT_MUTED,
+          }}
+        >
           {formatTimeAgo(toDateString(item.createdAt))}
         </Text>
       </View>
@@ -321,7 +359,7 @@ export default function GearReviewsListScreen() {
         <Text
           className="text-lg mt-4 mb-2 text-center"
           style={{
-            fontFamily: "Raleway_700Bold",
+            fontFamily: 'Raleway_700Bold',
             color: TEXT_PRIMARY_STRONG,
           }}
         >
@@ -329,11 +367,11 @@ export default function GearReviewsListScreen() {
         </Text>
         <Text
           className="text-center mb-6"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+          style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
         >
           {searchQuery
-            ? "No reviews match your search"
-            : "Be the first to review camping gear"}
+            ? 'No reviews match your search'
+            : 'Be the first to review camping gear'}
         </Text>
         {!searchQuery && (
           <Pressable
@@ -341,19 +379,21 @@ export default function GearReviewsListScreen() {
               // Gear Reviews require PRO subscription
               const canProceed = requirePro({
                 openAccountModal: () => setShowLoginModal(true),
-                openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "gear_review_create", variant }),
+                openPaywallModal: (variant) =>
+                  navigation.navigate('Paywall', {
+                    triggerKey: 'gear_review_create',
+                    variant,
+                  }),
               });
               if (!canProceed) return;
-              
+
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              navigation.navigate("CreateGearReview");
+              navigation.navigate('CreateGearReview');
             }}
             className="px-6 py-3 rounded-xl active:opacity-90"
             style={{ backgroundColor: DEEP_FOREST }}
           >
-            <Text
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
-            >
+            <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
               Write First Review
             </Text>
           </Pressable>
@@ -368,7 +408,7 @@ export default function GearReviewsListScreen() {
       <Text
         className="text-lg mt-4 mb-2 text-center"
         style={{
-          fontFamily: "Raleway_700Bold",
+          fontFamily: 'Raleway_700Bold',
           color: TEXT_PRIMARY_STRONG,
         }}
       >
@@ -376,7 +416,7 @@ export default function GearReviewsListScreen() {
       </Text>
       <Text
         className="text-center mb-6"
-        style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+        style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
       >
         {error}
       </Text>
@@ -390,7 +430,7 @@ export default function GearReviewsListScreen() {
         className="px-6 py-3 rounded-xl active:opacity-90"
         style={{ backgroundColor: DEEP_FOREST }}
       >
-        <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+        <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
           Retry
         </Text>
       </Pressable>
@@ -407,18 +447,25 @@ export default function GearReviewsListScreen() {
           // Gear Reviews require PRO subscription
           const canProceed = requirePro({
             openAccountModal: () => setShowLoginModal(true),
-            openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "gear_review_create", variant }),
+            openPaywallModal: (variant) =>
+              navigation.navigate('Paywall', {
+                triggerKey: 'gear_review_create',
+                variant,
+              }),
           });
           if (!canProceed) return;
-          
+
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          navigation.navigate("CreateGearReview");
+          navigation.navigate('CreateGearReview');
         }}
       />
 
       {/* Search Bar */}
       <View className="px-5 py-3">
-        <View className="flex-row items-center px-4 py-3 rounded-xl border" style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}>
+        <View
+          className="flex-row items-center px-4 py-3 rounded-xl border"
+          style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
+        >
           <Ionicons name="search" size={20} color={TEXT_MUTED} />
           <TextInput
             value={searchQuery}
@@ -427,7 +474,7 @@ export default function GearReviewsListScreen() {
             placeholderTextColor={TEXT_MUTED}
             className="flex-1 ml-2"
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               color: TEXT_PRIMARY_STRONG,
               fontSize: 16,
             }}
@@ -440,7 +487,13 @@ export default function GearReviewsListScreen() {
         {/* Active Tag Filter Indicator */}
         {tagFilter && (
           <View className="flex-row items-center mb-3">
-            <Text style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, marginRight: 8 }}>
+            <Text
+              style={{
+                fontFamily: 'SourceSans3_400Regular',
+                color: TEXT_SECONDARY,
+                marginRight: 8,
+              }}
+            >
               Filtered by tag:
             </Text>
             <Pressable
@@ -453,7 +506,13 @@ export default function GearReviewsListScreen() {
               className="flex-row items-center px-3 py-1.5 rounded-full"
               style={{ backgroundColor: DEEP_FOREST }}
             >
-              <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT, marginRight: 6 }}>
+              <Text
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: PARCHMENT,
+                  marginRight: 6,
+                }}
+              >
                 {tagFilter}
               </Text>
               <Ionicons name="close-circle" size={16} color={PARCHMENT} />
@@ -478,7 +537,7 @@ export default function GearReviewsListScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   color: category === item.value ? PARCHMENT : TEXT_PRIMARY_STRONG,
                 }}
               >
@@ -516,12 +575,18 @@ export default function GearReviewsListScreen() {
                 onPress={handleLoadMore}
                 disabled={loadingMore}
                 className="py-3 px-6 rounded-xl items-center mt-2 active:opacity-90"
-                style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderWidth: 1, borderColor: BORDER_SOFT }}
+                style={{
+                  backgroundColor: CARD_BACKGROUND_LIGHT,
+                  borderWidth: 1,
+                  borderColor: BORDER_SOFT,
+                }}
               >
                 {loadingMore ? (
                   <ActivityIndicator size="small" color={DEEP_FOREST} />
                 ) : (
-                  <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                  <Text
+                    style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
+                  >
                     Load More
                   </Text>
                 )}
@@ -534,7 +599,7 @@ export default function GearReviewsListScreen() {
         visible={showLoginModal}
         onCreateAccount={() => {
           setShowLoginModal(false);
-          navigation.navigate("Auth");
+          navigation.navigate('Auth');
         }}
         onMaybeLater={() => setShowLoginModal(false)}
       />

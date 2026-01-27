@@ -28,7 +28,7 @@ export const feedbackCommentsService = {
     const q = query(
       collection(db, 'feedbackComments'),
       where('feedbackID', '==', feedbackID),
-      orderBy('createdAt', 'asc')
+      orderBy('createdAt', 'asc'),
     );
 
     const snapshot = await getDocs(q);
@@ -40,10 +40,7 @@ export const feedbackCommentsService = {
   },
 
   // Create a new comment
-  async createComment(data: {
-    feedbackID: string;
-    text: string;
-  }): Promise<string> {
+  async createComment(data: { feedbackID: string; text: string }): Promise<string> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to comment');
 

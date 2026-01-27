@@ -1,23 +1,23 @@
 /**
  * ContentActionsAffordance Component
- * 
+ *
  * Connect-only actions: This component handles Edit/Delete for owners and Remove for admins/mods.
  * ONLY use this component for Connect section content (Questions, Tips, Comments, Answers).
  * Do NOT reuse for Trips, Parks, Reviews, or other non-Connect content.
- * 
+ *
  * Drop-in wrapper that positions both ContentActionsMenu (kebab) and ModerationChip
  * correctly in any card/row header. Single component to use everywhere for UGC actions.
  */
 
-import React, { useCallback, useState } from "react";
-import { View, StyleSheet, ActionSheetIOS, Platform, Alert } from "react-native";
-import * as Haptics from "expo-haptics";
-import { ContentActionsMenu, ContentItemType, ConfirmCopy } from "./ContentActionsMenu";
-import { ModerationChip, ModerationRoleLabel } from "./ModerationChip";
-import { useToast } from "../ToastManager";
+import React, { useCallback, useState } from 'react';
+import { View, StyleSheet, ActionSheetIOS, Platform, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { ContentActionsMenu, ContentItemType, ConfirmCopy } from './ContentActionsMenu';
+import { ModerationChip, ModerationRoleLabel } from './ModerationChip';
+import { useToast } from '../ToastManager';
 
-export type LayoutVariant = "cardHeader" | "commentRow" | "compact";
-export type AlignmentVariant = "topRight" | "inlineRight";
+export type LayoutVariant = 'cardHeader' | 'commentRow' | 'compact';
+export type AlignmentVariant = 'topRight' | 'inlineRight';
 
 export interface ContentActionsAffordanceProps {
   /** Unique ID of the content item */
@@ -65,8 +65,8 @@ export function ContentActionsAffordance({
   onRequestDelete,
   onRequestRemove,
   isDeleted = false,
-  layout = "cardHeader",
-  alignment = "topRight",
+  layout = 'cardHeader',
+  alignment = 'topRight',
   confirmCopy,
   analyticsTag,
   iconSize = 20,
@@ -92,12 +92,12 @@ export function ContentActionsAffordance({
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const removeLabel = roleLabel === "ADMIN" ? "Remove (Admin)" : "Remove (Moderator)";
+    const removeLabel = roleLabel === 'ADMIN' ? 'Remove (Admin)' : 'Remove (Moderator)';
 
-    if (Platform.OS === "ios") {
+    if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: [removeLabel, "Cancel"],
+          options: [removeLabel, 'Cancel'],
           cancelButtonIndex: 1,
           destructiveButtonIndex: 0,
         },
@@ -105,7 +105,7 @@ export function ContentActionsAffordance({
           if (buttonIndex === 0) {
             confirmRemove();
           }
-        }
+        },
       );
     } else {
       confirmRemove();
@@ -114,43 +114,43 @@ export function ContentActionsAffordance({
 
   const confirmRemove = useCallback(() => {
     const copy = {
-      title: confirmCopy?.removeTitle || "Remove This?",
-      body: confirmCopy?.removeBody || "This removes it for everyone. This can't be undone.",
-      confirm: confirmCopy?.removeConfirm || "Remove",
+      title: confirmCopy?.removeTitle || 'Remove This?',
+      body:
+        confirmCopy?.removeBody || "This removes it for everyone. This can't be undone.",
+      confirm: confirmCopy?.removeConfirm || 'Remove',
     };
 
-    Alert.alert(
-      copy.title,
-      copy.body,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: copy.confirm,
-          style: "destructive",
-          onPress: async () => {
-            if (!onRequestRemove) return;
-            setLoading(true);
-            try {
-              await onRequestRemove();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              showSuccess("Removed");
-            } catch (error) {
-              console.error(`[ContentActionsAffordance] Remove failed for ${itemType}:${itemId}`, error);
-              showError("Failed to remove");
-            } finally {
-              setLoading(false);
-            }
-          },
+    Alert.alert(copy.title, copy.body, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: copy.confirm,
+        style: 'destructive',
+        onPress: async () => {
+          if (!onRequestRemove) return;
+          setLoading(true);
+          try {
+            await onRequestRemove();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            showSuccess('Removed');
+          } catch (error) {
+            console.error(
+              `[ContentActionsAffordance] Remove failed for ${itemType}:${itemId}`,
+              error,
+            );
+            showError('Failed to remove');
+          } finally {
+            setLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, [onRequestRemove, confirmCopy, itemType, itemId, showSuccess, showError]);
 
   // Determine layout styles
   const containerStyle = [
     styles.container,
-    layout === "commentRow" && styles.commentRow,
-    layout === "compact" && styles.compact,
+    layout === 'commentRow' && styles.commentRow,
+    layout === 'compact' && styles.compact,
   ];
 
   return (
@@ -162,7 +162,7 @@ export function ContentActionsAffordance({
           label={roleLabel}
           onPress={handleModChipPress}
           disabled={loading}
-          size={layout === "compact" ? "small" : "small"}
+          size={layout === 'compact' ? 'small' : 'small'}
         />
       )}
 
@@ -191,8 +191,8 @@ export function ContentActionsAffordance({
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   commentRow: {

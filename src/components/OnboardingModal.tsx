@@ -10,8 +10,8 @@ import {
 import { OnboardingTooltip } from '../types/onboarding';
 
 // Theme colors from the app
-const DEEP_FOREST = "#485952";
-const PARCHMENT = "#F4EBD0";
+const DEEP_FOREST = '#485952';
+const PARCHMENT = '#F4EBD0';
 
 interface OnboardingModalProps {
   visible: boolean;
@@ -29,25 +29,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   if (!tooltip) return null;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onDismiss}
-    >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <View style={styles.overlay}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>
-            {tooltip.title}
-          </Text>
-          <Text style={styles.message}>
-            {tooltip.message}
-          </Text>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={onDismiss}
-            activeOpacity={0.8}
-          >
+          <Text style={styles.title}>{tooltip.title}</Text>
+          <Text style={styles.message}>{tooltip.message}</Text>
+          <TouchableOpacity style={styles.button} onPress={onDismiss} activeOpacity={0.8}>
             <Text style={styles.buttonText}>Got it!</Text>
           </TouchableOpacity>
         </View>

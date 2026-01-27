@@ -3,13 +3,29 @@
  * Search users, ban/unban, view user details
  */
 
-import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Alert, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { db } from "../config/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import ModalHeader from "../components/ModalHeader";
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { db } from '../config/firebase';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import ModalHeader from '../components/ModalHeader';
 import {
   PARCHMENT,
   CARD_BACKGROUND_LIGHT,
@@ -19,7 +35,7 @@ import {
   TEXT_MUTED,
   EARTH_GREEN,
   DEEP_FOREST,
-} from "../constants/colors";
+} from '../constants/colors';
 
 interface User {
   id: string;
@@ -31,24 +47,24 @@ interface User {
 }
 
 export default function AdminUsersScreen() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
-      Alert.alert("Enter Search", "Please enter an email or handle to search");
+      Alert.alert('Enter Search', 'Please enter an email or handle to search');
       return;
     }
 
     try {
       setLoading(true);
-      const usersRef = collection(db, "users");
+      const usersRef = collection(db, 'users');
       const lowerQuery = searchQuery.trim().toLowerCase();
 
       // Search by email or handle
-      const emailQuery = query(usersRef, where("email", "==", lowerQuery));
-      const handleQuery = query(usersRef, where("handle", "==", lowerQuery));
+      const emailQuery = query(usersRef, where('email', '==', lowerQuery));
+      const handleQuery = query(usersRef, where('handle', '==', lowerQuery));
 
       const [emailSnapshot, handleSnapshot] = await Promise.all([
         getDocs(emailQuery),
@@ -58,12 +74,12 @@ export default function AdminUsersScreen() {
       const results: User[] = [];
       const seenIds = new Set<string>();
 
-      [...emailSnapshot.docs, ...handleSnapshot.docs].forEach(doc => {
+      [...emailSnapshot.docs, ...handleSnapshot.docs].forEach((doc) => {
         if (!seenIds.has(doc.id)) {
           seenIds.add(doc.id);
           results.push({
             id: doc.id,
-            ...doc.data()
+            ...doc.data(),
           } as User);
         }
       });
@@ -71,45 +87,45 @@ export default function AdminUsersScreen() {
       setSearchResults(results);
 
       if (results.length === 0) {
-        Alert.alert("No results", "No users found matching your search");
+        Alert.alert('No results', 'No users found matching your search');
       }
     } catch (error) {
-      console.error("Error searching users:", error);
-      Alert.alert("Error", "Failed to search users");
+      console.error('Error searching users:', error);
+      Alert.alert('Error', 'Failed to search users');
     } finally {
       setLoading(false);
     }
   };
 
   const handleToggleBan = async (user: User) => {
-    const action = user.banned ? "Unban" : "Ban";
+    const action = user.banned ? 'Unban' : 'Ban';
     Alert.alert(
       `${action} User`,
       `Are you sure you want to ${action.toLowerCase()} ${user.displayName}?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: action,
-          style: user.banned ? "default" : "destructive",
+          style: user.banned ? 'default' : 'destructive',
           onPress: async () => {
             try {
-              await updateDoc(doc(db, "users", user.id), {
+              await updateDoc(doc(db, 'users', user.id), {
                 banned: !user.banned,
                 bannedAt: user.banned ? null : serverTimestamp(),
               });
 
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert("Success", `User ${action.toLowerCase()}ned successfully`);
+              Alert.alert('Success', `User ${action.toLowerCase()}ned successfully`);
 
               // Refresh search results
               handleSearch();
             } catch (error) {
               console.error(`Error ${action.toLowerCase()}ning user:`, error);
-              Alert.alert("Error", `Failed to ${action.toLowerCase()} user`);
+              Alert.alert('Error', `Failed to ${action.toLowerCase()} user`);
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -123,7 +139,10 @@ export default function AdminUsersScreen() {
           <View className="mb-6">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Search Users
             </Text>
@@ -139,7 +158,7 @@ export default function AdminUsersScreen() {
                 style={{
                   backgroundColor: CARD_BACKGROUND_LIGHT,
                   borderColor: BORDER_SOFT,
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   color: TEXT_PRIMARY_STRONG,
                 }}
                 onSubmitEditing={handleSearch}
@@ -164,7 +183,10 @@ export default function AdminUsersScreen() {
             <View>
               <Text
                 className="mb-3"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: TEXT_PRIMARY_STRONG,
+                }}
               >
                 Search Results ({searchResults.length})
               </Text>
@@ -175,7 +197,7 @@ export default function AdminUsersScreen() {
                   className="mb-4 p-4 rounded-xl border"
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
-                    borderColor: user.banned ? "#D32F2F" : BORDER_SOFT,
+                    borderColor: user.banned ? '#D32F2F' : BORDER_SOFT,
                     borderWidth: user.banned ? 2 : 1,
                   }}
                 >
@@ -184,18 +206,24 @@ export default function AdminUsersScreen() {
                     <View className="flex-row items-center justify-between mb-2">
                       <Text
                         className="text-lg"
-                        style={{ fontFamily: "SourceSans3_700Bold", color: TEXT_PRIMARY_STRONG }}
+                        style={{
+                          fontFamily: 'SourceSans3_700Bold',
+                          color: TEXT_PRIMARY_STRONG,
+                        }}
                       >
                         {user.displayName}
                       </Text>
                       {user.banned && (
                         <View
                           className="px-2 py-1 rounded"
-                          style={{ backgroundColor: "#D32F2F" }}
+                          style={{ backgroundColor: '#D32F2F' }}
                         >
                           <Text
                             className="text-xs"
-                            style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                            style={{
+                              fontFamily: 'SourceSans3_600SemiBold',
+                              color: PARCHMENT,
+                            }}
                           >
                             BANNED
                           </Text>
@@ -206,7 +234,10 @@ export default function AdminUsersScreen() {
                     {user.handle && (
                       <Text
                         className="text-sm mb-1"
-                        style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                        style={{
+                          fontFamily: 'SourceSans3_400Regular',
+                          color: TEXT_SECONDARY,
+                        }}
                       >
                         @{user.handle}
                       </Text>
@@ -214,39 +245,49 @@ export default function AdminUsersScreen() {
 
                     <Text
                       className="text-sm mb-1"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       {user.email}
                     </Text>
 
                     <Text
                       className="text-xs"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                      style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
                     >
                       Joined: {new Date(user.createdAt).toLocaleDateString()}
                     </Text>
                   </View>
 
                   {/* Action Buttons */}
-                  <View className="flex-row mt-3 pt-3 border-t" style={{ borderColor: BORDER_SOFT }}>
+                  <View
+                    className="flex-row mt-3 pt-3 border-t"
+                    style={{ borderColor: BORDER_SOFT }}
+                  >
                     <Pressable
                       onPress={() => handleToggleBan(user)}
                       className="flex-1 p-3 rounded-xl items-center active:opacity-70"
                       style={{
-                        backgroundColor: user.banned ? EARTH_GREEN : "#D32F2F",
+                        backgroundColor: user.banned ? EARTH_GREEN : '#D32F2F',
                       }}
                     >
                       <View className="flex-row items-center">
                         <Ionicons
-                          name={user.banned ? "checkmark-circle" : "ban"}
+                          name={user.banned ? 'checkmark-circle' : 'ban'}
                           size={18}
                           color={PARCHMENT}
                           style={{ marginRight: 6 }}
                         />
                         <Text
-                          style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: PARCHMENT }}
+                          style={{
+                            fontFamily: 'SourceSans3_600SemiBold',
+                            fontSize: 14,
+                            color: PARCHMENT,
+                          }}
                         >
-                          {user.banned ? "Unban User" : "Ban User"}
+                          {user.banned ? 'Unban User' : 'Ban User'}
                         </Text>
                       </View>
                     </Pressable>

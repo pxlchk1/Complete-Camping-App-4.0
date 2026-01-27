@@ -3,9 +3,9 @@
  * Easy integration for onboarding tracking throughout the app
  */
 
-import { useEffect, useCallback, useRef } from "react";
-import { AppState, AppStateStatus } from "react-native";
-import { auth } from "../config/firebase";
+import { useEffect, useCallback, useRef } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
+import { auth } from '../config/firebase';
 import {
   initializeUserOnboarding,
   trackUserActivity,
@@ -22,8 +22,8 @@ import {
   getOnboardingStatus,
   getOnboardingDay,
   isCampaignActive,
-} from "../services/onboardingTrackingService";
-import { UserOnboarding } from "../types/notifications";
+} from '../services/onboardingTrackingService';
+import { UserOnboarding } from '../types/notifications';
 
 export interface UseOnboardingResult {
   // Track specific actions
@@ -58,13 +58,13 @@ export function useOnboarding(): UseOnboardingResult {
           await initializeUserOnboarding(user.uid);
           await trackUserActivity();
         } catch (error) {
-          console.error("[useOnboarding] Init error:", error);
+          console.error('[useOnboarding] Init error:', error);
         }
       }
     });
 
     // Track activity when app comes to foreground
-    const subscription = AppState.addEventListener("change", handleAppStateChange);
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
 
     return () => {
       unsubscribe();
@@ -74,13 +74,13 @@ export function useOnboarding(): UseOnboardingResult {
   }, []);
 
   const handleAppStateChange = useCallback(async (nextAppState: AppStateStatus) => {
-    if (appState.current.match(/inactive|background/) && nextAppState === "active") {
+    if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
       // App came to foreground
       if (auth.currentUser) {
         try {
           await trackUserActivity();
         } catch (error) {
-          console.error("[useOnboarding] Activity tracking error:", error);
+          console.error('[useOnboarding] Activity tracking error:', error);
         }
       }
     }
@@ -114,14 +114,14 @@ export function useOnboarding(): UseOnboardingResult {
  */
 export function withTracking<T extends (...args: any[]) => Promise<any>>(
   trackFn: () => Promise<void>,
-  callback: T
+  callback: T,
 ): T {
   return (async (...args: Parameters<T>) => {
     const result = await callback(...args);
     try {
       await trackFn();
     } catch (error) {
-      console.error("[withTracking] Error:", error);
+      console.error('[withTracking] Error:', error);
     }
     return result;
   }) as T;

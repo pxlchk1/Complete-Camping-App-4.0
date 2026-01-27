@@ -3,10 +3,10 @@
  * Provides offline meal planning when Firebase is unavailable
  */
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Meal, MealCategory } from "../types/meal";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Meal, MealCategory } from '../types/meal';
 
-const MEALS_STORAGE_KEY = "@meals_";
+const MEALS_STORAGE_KEY = '@meals_';
 
 /**
  * Get storage key for trip meals
@@ -25,7 +25,7 @@ export async function getTripMeals(tripId: string): Promise<Meal[]> {
     if (!data) return [];
     return JSON.parse(data) as Meal[];
   } catch (error) {
-    console.error("Error loading meals from local storage:", error);
+    console.error('Error loading meals from local storage:', error);
     return [];
   }
 }
@@ -35,7 +35,7 @@ export async function getTripMeals(tripId: string): Promise<Meal[]> {
  */
 export async function addMeal(
   tripId: string,
-  mealData: Omit<Meal, "id" | "tripId" | "createdAt" | "updatedAt">
+  mealData: Omit<Meal, 'id' | 'tripId' | 'createdAt' | 'updatedAt'>,
 ): Promise<string> {
   try {
     const meals = await getTripMeals(tripId);
@@ -52,7 +52,7 @@ export async function addMeal(
     await AsyncStorage.setItem(getMealsKey(tripId), JSON.stringify(meals));
     return newMeal.id;
   } catch (error) {
-    console.error("Error adding meal to local storage:", error);
+    console.error('Error adding meal to local storage:', error);
     throw error;
   }
 }
@@ -63,14 +63,14 @@ export async function addMeal(
 export async function updateMeal(
   tripId: string,
   mealId: string,
-  updates: Partial<Meal>
+  updates: Partial<Meal>,
 ): Promise<void> {
   try {
     const meals = await getTripMeals(tripId);
     const index = meals.findIndex((m) => m.id === mealId);
 
     if (index === -1) {
-      throw new Error("Meal not found");
+      throw new Error('Meal not found');
     }
 
     meals[index] = {
@@ -81,7 +81,7 @@ export async function updateMeal(
 
     await AsyncStorage.setItem(getMealsKey(tripId), JSON.stringify(meals));
   } catch (error) {
-    console.error("Error updating meal in local storage:", error);
+    console.error('Error updating meal in local storage:', error);
     throw error;
   }
 }
@@ -95,7 +95,7 @@ export async function deleteMeal(tripId: string, mealId: string): Promise<void> 
     const filtered = meals.filter((m) => m.id !== mealId);
     await AsyncStorage.setItem(getMealsKey(tripId), JSON.stringify(filtered));
   } catch (error) {
-    console.error("Error deleting meal from local storage:", error);
+    console.error('Error deleting meal from local storage:', error);
     throw error;
   }
 }
@@ -106,7 +106,7 @@ export async function deleteMeal(tripId: string, mealId: string): Promise<void> 
 export async function getMealsByDayAndCategory(
   tripId: string,
   dayIndex: number,
-  category?: MealCategory
+  category?: MealCategory,
 ): Promise<Meal[]> {
   try {
     const meals = await getTripMeals(tripId);
@@ -116,7 +116,7 @@ export async function getMealsByDayAndCategory(
       return true;
     });
   } catch (error) {
-    console.error("Error getting meals by day/category:", error);
+    console.error('Error getting meals by day/category:', error);
     return [];
   }
 }
@@ -126,7 +126,7 @@ export async function getMealsByDayAndCategory(
  */
 export async function getMealStats(
   tripId: string,
-  totalDays: number
+  totalDays: number,
 ): Promise<{
   breakfast: number;
   lunch: number;
@@ -139,15 +139,15 @@ export async function getMealStats(
     const meals = await getTripMeals(tripId);
 
     return {
-      breakfast: meals.filter((m) => m.category === "breakfast").length,
-      lunch: meals.filter((m) => m.category === "lunch").length,
-      dinner: meals.filter((m) => m.category === "dinner").length,
-      snack: meals.filter((m) => m.category === "snack").length,
+      breakfast: meals.filter((m) => m.category === 'breakfast').length,
+      lunch: meals.filter((m) => m.category === 'lunch').length,
+      dinner: meals.filter((m) => m.category === 'dinner').length,
+      snack: meals.filter((m) => m.category === 'snack').length,
       total: meals.length,
       possibleMeals: totalDays * 3, // 3 main meals per day
     };
   } catch (error) {
-    console.error("Error calculating meal stats:", error);
+    console.error('Error calculating meal stats:', error);
     return {
       breakfast: 0,
       lunch: 0,
@@ -166,7 +166,7 @@ export async function clearTripMeals(tripId: string): Promise<void> {
   try {
     await AsyncStorage.removeItem(getMealsKey(tripId));
   } catch (error) {
-    console.error("Error clearing trip meals:", error);
+    console.error('Error clearing trip meals:', error);
     throw error;
   }
 }

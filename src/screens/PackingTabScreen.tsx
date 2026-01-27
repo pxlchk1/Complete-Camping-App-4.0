@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,52 +7,55 @@ import {
   ImageBackground,
   ActivityIndicator,
   ScrollView,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import PlanTopNav from "../components/PlanTopNav";
-import AccountButtonHeader from "../components/AccountButtonHeader";
-import FireflyLoader from "../components/common/FireflyLoader";
-import EmptyState from "../components/EmptyState";
-import { HERO_IMAGES } from "../constants/images";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import PlanTopNav from '../components/PlanTopNav';
+import AccountButtonHeader from '../components/AccountButtonHeader';
+import FireflyLoader from '../components/common/FireflyLoader';
+import EmptyState from '../components/EmptyState';
+import { HERO_IMAGES } from '../constants/images';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
   PARCHMENT,
   PARCHMENT_BORDER,
   TEXT_ON_DARK,
-} from "../constants/colors";
-import { useTrips, Trip } from "../state/tripsStore";
-import { RootStackParamList } from "../navigation/types";
-import { PackingItem } from "../types/camping";
-import { getPackingList, togglePackingItem } from "../api/packing-service";
-import * as LocalPackingService from "../services/localPackingService";
-import * as Haptics from "expo-haptics";
+} from '../constants/colors';
+import { useTrips, Trip } from '../state/tripsStore';
+import { RootStackParamList } from '../navigation/types';
+import { PackingItem } from '../types/camping';
+import { getPackingList, togglePackingItem } from '../api/packing-service';
+import * as LocalPackingService from '../services/localPackingService';
+import * as Haptics from 'expo-haptics';
 
-type PlanTab = "trips" | "parks" | "weather" | "packing" | "meals";
+type PlanTab = 'trips' | 'parks' | 'weather' | 'packing' | 'meals';
 type PackingTabNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface PackingTabScreenProps {
   onTabChange: (tab: PlanTab) => void;
 }
 
-function getStatus(startISO: string, endISO: string): "In Progress" | "Upcoming" | "Completed" {
+function getStatus(
+  startISO: string,
+  endISO: string,
+): 'In Progress' | 'Upcoming' | 'Completed' {
   const today = new Date();
   const start = new Date(startISO);
   const end = new Date(endISO);
-  if (today > end) return "Completed";
-  if (today < start) return "Upcoming";
-  return "In Progress";
+  if (today > end) return 'Completed';
+  if (today < start) return 'Upcoming';
+  return 'In Progress';
 }
 
 export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps) {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<PackingTabNavigationProp>();
   const trips = useTrips();
-  const userId = "demo_user_1"; // TODO: Get from auth
+  const userId = 'demo_user_1'; // TODO: Get from auth
 
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [packingItems, setPackingItems] = useState<PackingItem[]>([]);
@@ -63,7 +66,7 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
   // Filter to active trips only (upcoming or in progress)
   const activeTrips = trips.filter((trip) => {
     const status = getStatus(trip.startDate, trip.endDate);
-    return status === "In Progress" || status === "Upcoming";
+    return status === 'In Progress' || status === 'Upcoming';
   });
 
   // Auto-select first active trip if none selected
@@ -91,8 +94,11 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
         } catch (fbError: any) {
           // Silently fall back to local storage
           // Check if it's a Firebase permissions error
-          if (fbError?.code === 'permission-denied' || fbError?.message?.includes('permission')) {
-            console.log("Using local storage for packing lists");
+          if (
+            fbError?.code === 'permission-denied' ||
+            fbError?.message?.includes('permission')
+          ) {
+            console.log('Using local storage for packing lists');
           }
           setUseLocalStorage(true);
         }
@@ -106,7 +112,7 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
       const categories = new Set(items.map((i) => i.category));
       setExpandedCategories(categories);
     } catch (error: any) {
-      console.error("Failed to load packing list:", error);
+      console.error('Failed to load packing list:', error);
       setPackingItems([]);
     } finally {
       setLoading(false);
@@ -126,31 +132,42 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
 
     // Optimistic update
     setPackingItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, isPacked: !i.isPacked } : i))
+      prev.map((i) => (i.id === item.id ? { ...i, isPacked: !i.isPacked } : i)),
     );
 
     try {
       if (useLocalStorage) {
-        await LocalPackingService.togglePackingItem(selectedTripId, item.id, !item.isPacked);
+        await LocalPackingService.togglePackingItem(
+          selectedTripId,
+          item.id,
+          !item.isPacked,
+        );
       } else {
         try {
           await togglePackingItem(userId, selectedTripId, item.id, !item.isPacked);
         } catch (fbError: any) {
           // If Firebase fails, switch to local storage and retry
-          if (fbError?.code === 'permission-denied' || fbError?.message?.includes('permission')) {
-            console.log("Switching to local storage for packing operations");
+          if (
+            fbError?.code === 'permission-denied' ||
+            fbError?.message?.includes('permission')
+          ) {
+            console.log('Switching to local storage for packing operations');
             setUseLocalStorage(true);
-            await LocalPackingService.togglePackingItem(selectedTripId, item.id, !item.isPacked);
+            await LocalPackingService.togglePackingItem(
+              selectedTripId,
+              item.id,
+              !item.isPacked,
+            );
           } else {
             throw fbError;
           }
         }
       }
     } catch (error: any) {
-      console.error("Failed to toggle item:", error);
+      console.error('Failed to toggle item:', error);
       // Revert on error
       setPackingItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, isPacked: item.isPacked } : i))
+        prev.map((i) => (i.id === item.id ? { ...i, isPacked: item.isPacked } : i)),
       );
     }
   };
@@ -169,16 +186,19 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
 
   const handleManagePacking = () => {
     if (selectedTripId) {
-      navigation.navigate("PackingList", { tripId: selectedTripId });
+      navigation.navigate('PackingList', { tripId: selectedTripId });
     }
   };
 
   // Group items by category
   const categories = Array.from(new Set(packingItems.map((i) => i.category)));
-  const itemsByCategory = categories.reduce((acc, cat) => {
-    acc[cat] = packingItems.filter((i) => i.category === cat);
-    return acc;
-  }, {} as Record<string, PackingItem[]>);
+  const itemsByCategory = categories.reduce(
+    (acc, cat) => {
+      acc[cat] = packingItems.filter((i) => i.category === cat);
+      return acc;
+    },
+    {} as Record<string, PackingItem[]>,
+  );
 
   // Calculate stats
   const totalItems = packingItems.length;
@@ -191,7 +211,6 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
 
   return (
     <View className="flex-1 bg-parchment">
-
       {activeTrips.length === 0 ? (
         /* No Active Trips */
         <View style={{ flex: 1, backgroundColor: '#F4EBD0' }}>
@@ -200,7 +219,7 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
             title="No active trips"
             message="Create a trip to build a packing list."
             ctaLabel="View Trips"
-            onPress={() => onTabChange("trips")}
+            onPress={() => onTabChange('trips')}
           />
         </View>
       ) : (
@@ -210,7 +229,7 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
             <View className="px-4 pt-3 pb-2">
               <Text
                 className="text-xs mb-2"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: EARTH_GREEN }}
               >
                 SELECT TRIP
               </Text>
@@ -227,13 +246,13 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                       onPress={() => setSelectedTripId(trip.id)}
                       className={`px-4 py-2 rounded-xl border ${
                         isSelected
-                          ? "bg-forest border-forest"
-                          : "bg-white border-stone-300"
+                          ? 'bg-forest border-forest'
+                          : 'bg-white border-stone-300'
                       }`}
                     >
                       <Text
-                        className={isSelected ? "text-white" : "text-forest"}
-                        style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14 }}
+                        className={isSelected ? 'text-white' : 'text-forest'}
+                        style={{ fontFamily: 'SourceSans3_600SemiBold', fontSize: 14 }}
                       >
                         {trip.name}
                       </Text>
@@ -251,15 +270,15 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                 <View className="flex-1">
                   <Text
                     className="text-lg mb-1"
-                    style={{ fontFamily: "JosefinSlab_700Bold", color: DEEP_FOREST }}
+                    style={{ fontFamily: 'JosefinSlab_700Bold', color: DEEP_FOREST }}
                   >
                     {selectedTrip.name}
                   </Text>
                   <Text
                     className="text-sm"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                    style={{ fontFamily: 'SourceSans3_400Regular', color: EARTH_GREEN }}
                   >
-                    {new Date(selectedTrip.startDate).toLocaleDateString()} -{" "}
+                    {new Date(selectedTrip.startDate).toLocaleDateString()} -{' '}
                     {new Date(selectedTrip.endDate).toLocaleDateString()}
                   </Text>
                 </View>
@@ -269,7 +288,7 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                 >
                   <Text
                     className="text-sm"
-                    style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                    style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
                   >
                     Manage
                   </Text>
@@ -282,13 +301,16 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                   <View className="flex-row justify-between mb-1">
                     <Text
                       className="text-xs"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: DEEP_FOREST,
+                      }}
                     >
                       {packedItems} of {totalItems} packed
                     </Text>
                     <Text
                       className="text-xs"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                      style={{ fontFamily: 'SourceSans3_400Regular', color: EARTH_GREEN }}
                     >
                       {Math.round(progress)}%
                     </Text>
@@ -314,13 +336,13 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
               <Ionicons name="add-circle-outline" size={48} color={EARTH_GREEN} />
               <Text
                 className="text-forest font-semibold mt-3 mb-1 text-center"
-                style={{ fontFamily: "SourceSans3_600SemiBold" }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold' }}
               >
                 No items yet
               </Text>
               <Text
                 className="text-earthGreen text-center mb-4"
-                style={{ fontFamily: "SourceSans3_400Regular" }}
+                style={{ fontFamily: 'SourceSans3_400Regular' }}
               >
                 Tap Manage to add items to your packing list
               </Text>
@@ -344,14 +366,14 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                     >
                       <View className="flex-row items-center flex-1">
                         <Ionicons
-                          name={isExpanded ? "chevron-down" : "chevron-forward"}
+                          name={isExpanded ? 'chevron-down' : 'chevron-forward'}
                           size={20}
                           color={DEEP_FOREST}
                         />
                         <Text
                           className="ml-2 text-base font-bold"
                           style={{
-                            fontFamily: "JosefinSlab_700Bold",
+                            fontFamily: 'JosefinSlab_700Bold',
                             color: DEEP_FOREST,
                           }}
                         >
@@ -360,7 +382,7 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                         <Text
                           className="ml-2 text-sm"
                           style={{
-                            fontFamily: "SourceSans3_400Regular",
+                            fontFamily: 'SourceSans3_400Regular',
                             color: EARTH_GREEN,
                           }}
                         >
@@ -384,8 +406,8 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                             <View
                               className={`w-6 h-6 rounded border-2 ${
                                 item.isPacked
-                                  ? "bg-forest border-forest"
-                                  : "bg-transparent border-stone-300"
+                                  ? 'bg-forest border-forest'
+                                  : 'bg-transparent border-stone-300'
                               } items-center justify-center`}
                             >
                               {item.isPacked && (
@@ -397,9 +419,9 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                           {/* Item Info */}
                           <View className="flex-1">
                             <Text
-                              className={item.isPacked ? "line-through" : ""}
+                              className={item.isPacked ? 'line-through' : ''}
                               style={{
-                                fontFamily: "SourceSans3_400Regular",
+                                fontFamily: 'SourceSans3_400Regular',
                                 color: item.isPacked ? EARTH_GREEN : DEEP_FOREST,
                               }}
                             >
@@ -410,7 +432,7 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
                               <Text
                                 className="text-xs mt-1"
                                 style={{
-                                  fontFamily: "SourceSans3_400Regular",
+                                  fontFamily: 'SourceSans3_400Regular',
                                   color: EARTH_GREEN,
                                 }}
                               >

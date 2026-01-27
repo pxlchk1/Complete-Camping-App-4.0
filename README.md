@@ -5,6 +5,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 ## 🎯 Recent Updates
 
 ### Security & Account Management (Latest)
+
 - **Email & Password Updates** in Settings screen:
   - **Change Email** - Update your account email with password confirmation
     - Modal-based interface with password re-authentication
@@ -25,6 +26,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
     - Can dismiss by tapping outside modal or close button
 
 ### Profile Photo Updates
+
 - **Direct photo updates on Account screen**:
   - **Profile Photo** - Tap profile picture to upload new photo from library
     - Camera icon overlay (green circle) on bottom-right of profile picture
@@ -40,6 +42,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Haptic feedback on successful upload
 
 ### Profile Enhancement & UI Polish
+
 - **Removed duplicate titles** from My Campground and My Gear Closet screens
   - These screens already have titles in the green ModalHeader
   - Cleaned up visual hierarchy for better mobile UX
@@ -76,6 +79,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Firebase rules updated to allow users to keep existing handles when updating
 
 ### UI Polish & Welcome Screen Updates
+
 - **Fixed lightning bug animation** on Meals tab
   - Animation now only shows in Camp Recipes view, not in empty Meal Planner view
 - **Welcome screen user state improvements**:
@@ -100,6 +104,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Opens About modal with slide-up animation
 
 ### Community Collection Names - Standardized
+
 - **All Community/Connect features now use correct Firestore collection names**:
   - ✅ `tips` with `tipComments` subcollection
   - ✅ `questions` with `answers` subcollection
@@ -120,6 +125,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - **No new collections created** - all queries use specified collection names
 
 ### Push Notifications & Email Settings - Default ON
+
 - **Preselected notifications and email updates** for all new users:
   - `notificationsEnabled: true` by default in `users/{uid}`
   - `emailSubscribed: true` by default in `users/{uid}`
@@ -144,6 +150,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - All new users start with notifications and email enabled
 
 ### My Gear Closet Feature
+
 - **Complete gear management system** for tracking personal camping equipment:
   - Private gear collection stored in `userGear` Firestore collection
   - Category-based organization: Shelter, Sleep, Kitchen, Clothing, Bags, Lighting, Misc
@@ -163,6 +170,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - See below for exact rules to add
 
 ### My Campsite Profile System - Handle Bug Fixes & Navigation Cleanup
+
 - **Fixed double @ bug in handles**:
   - Handles are now stored WITHOUT the "@" prefix in both `users` and `profiles` collections
   - Display logic always strips any existing "@" and adds it for display (@username)
@@ -185,6 +193,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Edit/create flows: strip any "@" prefix before saving to database
 
 ### My Campsite Profile Page Redesign
+
 - **Facebook-style profile layout** with hero header image and overlapping avatar
 - **Consistent with footer navigation pages** - follows same pattern as Home, Learn, Plan, Connect, First Aid
 - **Hero header area** with beautiful background image and gradient overlay
@@ -198,6 +207,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - **Back button** in top-left corner for easy navigation
 
 ### Campground Contacts Firestore Rules
+
 - **Fixed permission error** for My Campground contacts loading
 - **Added Firestore rules** for `campgroundContacts` collection:
   - Read: Only the owner (matching `ownerId` field) can read their contacts
@@ -207,6 +217,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - **Manual deployment required**: Run `firebase deploy --only firestore:rules` to deploy the updated rules
 
 ### Firebase Auth Protection for Community Content
+
 - **Authentication-gated access** - All Connect/Community tabs now require sign-in to view content
 - **Sign-in CTAs** - Non-authenticated users see friendly prompts to sign in instead of permission errors
 - **Updated Firestore rules** - Any signed-in user can:
@@ -225,6 +236,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - **Schema preserved** - All existing field names and collection structures remain unchanged
 
 ### Community Data Seeding
+
 - **Complete seed data script** for populating Firebase with sample community content
 - **SeedData screen** - Easy-to-use UI for running the seed script
 - **20 sample items** across all community sections:
@@ -237,6 +249,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Run once to instantly populate your community tabs with realistic content
 
 ### Complete Learning Module Library (Latest)
+
 - **All three skill tiers now fully populated with comprehensive content**:
   - **Weekend Camper (Beginner)** - 13 complete modules with 70+ pages total
     - Leave No Trace, First Trip Planning, Tent Selection & Setup, Sleep Systems
@@ -286,6 +299,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Persisted to AsyncStorage with user progress
 
 ### Unified EmptyState Component
+
 - **Created icon-based EmptyState component** at `src/components/EmptyState.tsx`
 - Replaced all empty states across Plan section screens with unified component
 - **Consistent design across all screens**:
@@ -302,6 +316,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Replaces old card-based EmptyState component
 
 ### RevenueCat Configuration - Package Type Selection & Clean Wiring
+
 - **PaywallScreen now uses `PACKAGE_TYPE.ANNUAL`** instead of string matching
   - Changed from `p.identifier.includes("annual")` to `p.packageType === PACKAGE_TYPE.ANNUAL`
   - Product IDs may change, but packageType remains stable
@@ -317,6 +332,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - App fully compatible with your existing Complete Camping App project
 
 ### RevenueCat Configuration - Complete Camping App Project
+
 - **Connected to existing RevenueCat project**: Complete Camping App (App Store)
 - **Correct iOS API key configured**: `appl_CXLKpXutDryiSmKJsclChUqLmie`
 - API key updated in both `src/lib/revenuecatClient.ts` and `.env` file
@@ -326,6 +342,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - App works with your existing offerings, packages, and entitlements
 
 ### Community Section Shared Header Component
+
 - **Created `CommunitySectionHeader` component** - Single source of truth for all Community tab headers
 - **Pixel-perfect consistency** across all 5 tabs (Tips, Gear Reviews, Ask, Photos, Feedback)
 - Deep forest green background with white text and icons
@@ -334,6 +351,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Simplified maintenance - header changes propagate automatically to all Community tabs
 
 ### Community Section Green Header Stripe
+
 - **Deep forest green stripe** added behind all Community section headers
 - White text and icons (`TEXT_ON_DARK`) on the green stripe for strong contrast
 - Flat color design with no gradients, shadows, or borders
@@ -342,6 +360,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Clean, professional header treatment that unifies the Community experience
 
 ### Community Section Header Standardization
+
 - **Unified header layout** across all Community tabs (Tips, Gear Reviews, Questions, Photos, Feedback)
 - All page titles now use consistent placement: `px-5 py-3` with `mb-3` on title row
 - Title size standardized to `text-xl` with `Raleway_700Bold`
@@ -349,6 +368,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Clean, professional look with matching spacing and alignment throughout Connect section
 
 ### RevenueCat Error Handling - Graceful Configuration
+
 - **Improved error handling** for incomplete RevenueCat setup
 - Changed log level from DEBUG to WARN to suppress configuration error messages
 - Gracefully handles "offerings empty" errors until App Store Connect API is configured
@@ -360,6 +380,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 ## 🎯 Recent Updates
 
 ### My Campground - Enhanced with Roles & Last Trip Tracking (Latest)
+
 - **Participant Roles System**:
   - 6 role types: Host, Co-host, Guest, Kid, Pet, Other
   - Two-step flow when adding people: select contacts → assign roles
@@ -384,6 +405,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - `updateContactLastTripDate()` - Track most recent trip date per contact
 
 ### My Campground - Camping Contacts & Trip People
+
 - **My Campground**: Manage your camping contacts (the people you camp with)
   - View all contacts with name, email, phone, and notes
   - Add new contacts with simple form (no user search in v1)
@@ -407,6 +429,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Client-side filtering for missing Firestore indexes
 
 ### UI Enhancement: Learn Screen Background
+
 - Removed dark overlay from Learn screen hero image
 - Removed outer dark `bg-forest` container
 - Removed LinearGradient overlay that was darkening the background
@@ -414,6 +437,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Text shadows retained for readability
 
 ### UI Enhancement: Dark Forest Green Modal Headers
+
 - Created reusable `ModalHeader` component for all modal/detail screens
 - All modal screens now have consistent dark forest green header extending beyond safe zone
 - White back arrow and title text for better contrast
@@ -424,6 +448,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Better touch targets with proper spacing
 
 ### Firestore Query Optimization - Feedback Tab
+
 - Fixed "missing permissions" error in Feedback List screen
 - Root cause: Firestore composite queries (category + orderBy) require indexes
 - Solution: Implemented client-side filtering to avoid index requirements
@@ -433,11 +458,13 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - TypeScript type safety improved for Timestamp | string handling
 
 ### Bug Fix: Navigation During Render
+
 - Fixed React error: "Cannot update a component while rendering a different component"
 - Moved authentication navigation logic from render to `useEffect` in MyCampsiteScreen
 - Auth check now properly handles redirects without causing React state update errors
 
 ### Community/Connect - Full Stack Navigation Implementation (Latest)
+
 - **Complete CONNECT section with Material Top Tabs navigation**
   - **Ask Tab** (Questions & Answers):
     - QuestionsListScreen.tsx - Browse all questions with filters (All, Unanswered, Answered, Popular)
@@ -468,6 +495,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Type-safe navigation with proper TypeScript types
 
 ### Community/Connect Firestore Refactor
+
 - **Complete Firestore service layer for all CONNECT features**
   - **Tips Service** (`tipsService.ts`):
     - Get tips with pagination (newest, most helpful, my tips)
@@ -504,6 +532,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Proper increment() for counts
 
 ### Account System with Role-Based Access
+
 - **Complete Firebase-backed account management system**
   - **All Users Get:**
     - My Campsite tab - Personal profile and stats (coming soon)
@@ -528,6 +557,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Firebase service layer with full permission checks
 
 ### Packing List Edit Mode
+
 - **Streamlined editing interface with dedicated Edit button**
   - "Edit" button in header (right-aligned) toggles to "Done" when active
   - Edit button changes to gold color when active for clear visual feedback
@@ -543,6 +573,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Modal pre-selects the category when adding from category + button
 
 ### Custom Meals in Trip Planning
+
 - **Users can now create personalized meals directly when planning trips**
   - "Create Custom Meal" button in the Add Meal modal
   - Simple form with meal name, ingredients, and instructions
@@ -555,6 +586,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Automatically added to the selected day and meal category
 
 ### Packing List Editing
+
 - **Full packing list customization with add and remove capabilities**
   - Add custom items to any packing list with "Add Item" button
   - Remove unwanted items with trash icon (auto-generated items protected)
@@ -570,6 +602,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Real-time progress tracking updates
 
 ### Add Custom Meals Feature
+
 - **Users can now create and save their own custom meals**
   - New "Add Custom Meal" button (+ icon) in Camp Recipes view
   - Beautiful modal form with all meal details:
@@ -586,6 +619,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Haptic feedback for better UX
 
 ### Navigation Without Slide-In Animations
+
 - **Restored full navigation functionality with page-replacement behavior**
   - Set `animation: 'none'` on RootNavigator to disable iOS slide-in animations
   - Navigation now works like page replacement/full page loads instead of overlays
@@ -596,6 +630,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Complies with VIBECODE directive: no slide-in overlays
 
 ### Account Page Removal
+
 - **Completely removed all Account page navigation throughout the app**
   - Removed Account icon (person-circle) from all hero sections (5 screens)
   - Removed all navigation.navigate("Account") calls (12 instances)
@@ -606,6 +641,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Complies with VIBECODE directive against slide-in overlay screens
 
 ### Meals Screen with Toggle View
+
 - **Toggle between two full-screen views:**
   - **Meal Planner View** - Plan meals for active trips with quick access cards
   - **Camp Recipes View** - Browse 100+ recipes from Firebase/local library
@@ -648,6 +684,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Complete "Add to trip" workflow with haptic feedback
 
 ### Trip-Specific Meal Planning
+
 - **Complete meal planning system for trips**
   - Plan meals day-by-day for each trip (breakfast, lunch, dinner, snacks)
   - Quick access from Meals tab with trip selector cards
@@ -670,6 +707,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Integrated meal planning navigation
 
 ### Meal Planning Library
+
 - **Complete meal inspiration library with 100+ camping meal ideas**
   - Organized by meal type: Breakfast, Lunch, Dinner, and Snacks
   - Filter by preparation type: No Cook, Cold, Camp Stove, or Campfire
@@ -701,6 +739,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Integrated into Plan section's Meals tab with hero image
 
 ### Packing Checklist Integration
+
 - **Interactive packing lists accessible from the Packing tab**
   - View all active trips with packing lists in one place
   - Quick trip selector for switching between multiple active trips
@@ -723,6 +762,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Links to existing `PackingListScreen.tsx` for full management
 
 ### Packing List Local Storage Fallback
+
 - **Fixed Firebase permissions error with automatic fallback**
   - Automatically detects Firebase configuration issues
   - Falls back to AsyncStorage for local data persistence
@@ -742,6 +782,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Retry button for failed operations
 
 ### Weather Tab Integration
+
 - **CRITICAL: Real weather data integration for user safety**
   - ⚠️ **IMPORTANT**: Weather data is now fetched from Open-Meteo API for accurate, real-time conditions
   - Inaccurate weather information can cause serious harm to campers - this is not mock data
@@ -773,6 +814,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - `MyTripsScreen.tsx` - Added Weather tab routing
 
 ### Camping Type Categories Expanded
+
 - **NEW: 10 camping types available in trip creation:**
   - Car camping
   - Backpacking
@@ -788,6 +830,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Updated in both CreateTripScreen and CreateTripModal with appropriate emojis
 
 ### Visual Improvements
+
 - **NEW: Hairline separators with warm rust color**
   - Added `HAIRLINE_RUST (#B26A4A)` to color palette
   - Available as `colors.hairline` in theme
@@ -795,6 +838,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Perfect for decorative accents that need warmth without weight
 
 ### Parks Browse Screen
+
 - **Enhanced Parks & Campgrounds browsing with smart filtering**
   - **Two search modes:**
     - **Near Me** - Location-based search with drive-time filtering
@@ -840,6 +884,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
   - Collection structure: `parks` with fields for name, stateCode, type, coordinates, amenities
 
 ### Modal Improvements
+
 - Removed all slide-in modal animations throughout the app
 - Replaced with fade animations for smoother, less jarring transitions
 - Affected components:
@@ -850,6 +895,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Improved user experience with gentler, more modern modal presentations
 
 ### Contrast Improvements
+
 - Enhanced legibility across the entire app with improved contrast tokens
 - New color constants added for better text readability:
   - `TEXT_PRIMARY_STRONG (#35413B)` - Darker primary text for body content
@@ -867,6 +913,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Secondary text updated to TEXT_SECONDARY for consistent hierarchy
 
 ### Community Tab Standardization
+
 - All Community tabs now have consistent green bar headers with LEFT-ALIGNED layout
 - Layout pattern: Title (left) + Icon + Search (right) - all on ONE line
 - Action buttons are + circle icons (28px) for cleaner look
@@ -880,6 +927,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 - Optimized vertical space with single-line header layout
 
 ### Hero Images & Navigation
+
 - Full-bleed hero images on all main screens (Home, Learn, Plan, Community, First Aid)
 - Universal Account icon in top-right of all hero sections
 - Consistent typography: Raleway_700Bold for titles, SourceSans3_400Regular for subtitles
@@ -889,6 +937,7 @@ A clean, optimized rebuild of your camping app with better architecture, perform
 ## 🏗️ Architecture
 
 This is a complete rebuild from the ground up with:
+
 - **Clean architecture** - Proper separation of concerns
 - **Optimized state management** - Individual Zustand stores with selective subscriptions
 - **Type safety** - Full TypeScript implementation
@@ -986,6 +1035,7 @@ src/
 ## 🚀 Core Features
 
 ### 1. Trip Management (Plan Tab)
+
 - **Create trips** with full-featured modal: name, dates, destination, party size, camping style, description
 - **Trip segments**: Active (upcoming + in progress), Completed, All
 - **Sorting options**: Start date (soonest), Recently updated, A-Z
@@ -1007,12 +1057,14 @@ src/
 - Status tracking computed from dates (Upcoming, In Progress, Completed)
 
 ### 2. Parks Discovery
+
 - Browse camping parks and locations
 - Filter by type (National Park, State Park, etc.)
 - View park details, amenities, and ratings
 - Mock data included (ready for API integration)
 
 ### 3. Packing Lists
+
 - **Interactive checklist accessible from Packing tab**
   - View and manage packing lists for all active trips
   - Quick trip selector for switching between trips
@@ -1031,6 +1083,7 @@ src/
 - Firebase integration with local storage fallback
 
 ### 4. Meal Planning
+
 - **Trip-specific meal planning**
   - Plan meals day-by-day for each trip
   - Select from 100+ camping meal ideas
@@ -1047,6 +1100,7 @@ src/
   - Suitable camping styles for each meal
 
 ### 5. Learning & Community
+
 - **Learn** - XP-based progression system with 3 learning tracks:
   - Weekend Camper (novice)
   - Trail Leader (intermediate)
@@ -1070,6 +1124,7 @@ src/
 The Connect section is a full-featured community platform with Firebase integration:
 
 ### Tips Tab
+
 - Submit and browse camping tips organized by category
 - 10 categories: Setup, Cooking, Safety, Gear, Weather, Wildlife, Navigation, Water, Family, Other
 - Like/helpful marking synced with Firebase
@@ -1077,6 +1132,7 @@ The Connect section is a full-featured community platform with Firebase integrat
 - Real-time sync with Firestore
 
 ### Gear Reviews Tab
+
 - Comprehensive gear reviews with multiple ratings (overall, durability, value, performance)
 - Filter by category, search by keyword
 - Sort by newest, highest-rated, most helpful, or price
@@ -1085,6 +1141,7 @@ The Connect section is a full-featured community platform with Firebase integrat
 - Activity tags and audience levels
 
 ### Ask a Camper Tab (Q&A)
+
 - Post questions with tags for better discoverability
 - Provide answers to community questions
 - Upvote questions for visibility
@@ -1093,6 +1150,7 @@ The Connect section is a full-featured community platform with Firebase integrat
 - Real-time Firebase sync
 
 ### Photos Tab
+
 - Upload photos with titles, descriptions, and categories
 - Vote on photos (upvote/downvote)
 - Filter by category: Camping, Nature, Gear, Food, Wildlife, Trails, etc.
@@ -1101,6 +1159,7 @@ The Connect section is a full-featured community platform with Firebase integrat
 - Grid view with voting controls
 
 ### Feedback Tab
+
 - Reddit-style voting system for app feedback
 - Categories: Feature Requests, Bug Reports, Improvements, Questions, Other
 - Status tracking: Open, Under Review, Planned, In Progress, Completed, Closed
@@ -1109,6 +1168,7 @@ The Connect section is a full-featured community platform with Firebase integrat
 - Sort by hot, top, or newest
 
 ### Technical Implementation
+
 - **Firebase Firestore** for all community data
 - **Firebase Storage** for photo uploads
 - **Zustand** for local state management with AsyncStorage persistence
@@ -1116,7 +1176,7 @@ The Connect section is a full-featured community platform with Firebase integrat
 - **Authentication gating** for content submission and voting
 - **Premium feature gating** via PaywallStore
 - **Toast notifications** for user feedback
-Custom-designed bottom navigation matching your original design:
+  Custom-designed bottom navigation matching your original design:
 - **Home** - Dashboard with quick actions and tips
 - **Learn** - Camping education and skill building
 - **Plan** - Trip management and planning
@@ -1133,14 +1193,16 @@ Custom-designed bottom navigation matching your original design:
 📖 **See [THEME_GUIDE.md](./THEME_GUIDE.md) for comprehensive theme usage guide**
 
 The app uses a complete design system with:
+
 - **Centralized color palette** (no ad-hoc colors allowed)
 - **Standardized typography** (pre-defined text styles)
 - **Consistent spacing scale** (4/8/12/16/24/32px)
 - **Shared component styles** (cards, buttons, screens)
 
 **Quick Import:**
+
 ```typescript
-import { colors, textStyles, componentStyles, spacing, layout } from "../theme/theme";
+import { colors, textStyles, componentStyles, spacing, layout } from '../theme/theme';
 ```
 
 ### Official Color Palette (Complete Camping App)
@@ -1148,18 +1210,22 @@ import { colors, textStyles, componentStyles, spacing, layout } from "../theme/t
 The app now uses an official, carefully curated color palette that creates a warm, natural camping aesthetic:
 
 **Primary Colors:**
+
 - **Deep Forest (#485952)** - Primary text, headings, icons, buttons, navigation active states
 - **Earth Green (#828872)** - Secondary text, muted labels, subtle borders, inactive icon states
 - **Warm Granite Gold (#AC9A6D)** - Accents, highlight text, decorative moments (use sparingly)
 
 **Secondary Colors:**
+
 - **River Rock Blue Green (#607A77)** - Status badges, card accents, secondary emphasis icons
 - **Soft Sierra Sky (#92AFB1)** - Soft backgrounds, light accent moments, dividers, weather elements
 
 **Background:**
+
 - **Parchment Cream (#F4EBD0)** - Universal background for screens, cards, ScrollViews, footer navigation
 
 **Borders:**
+
 - **Parchment Border (#D5C8A2)** - Thin, soft borders (never harsh black or gray)
 
 ### Color Usage Rules
@@ -1169,6 +1235,7 @@ The app now uses an official, carefully curated color palette that creates a war
 The app features beautiful hero images and empty state illustrations:
 
 **Hero Images** (`HERO_IMAGES` in `src/constants/images.ts`):
+
 - `welcome.png` - HomeScreen hero with forest scene
 - `community.png` - CommunityScreen hero with camping community
 - `learning.png` - LearnScreen hero with education theme
@@ -1176,11 +1243,13 @@ The app features beautiful hero images and empty state illustrations:
 - `weather.png` - Available for weather-related screens
 
 **Empty State Illustrations** (`EMPTY_STATE_IMAGES`):
+
 - `plan_trip.png` - Used in MyTripsScreen when no trips exist
 - `packing.png` - Used in GearListsScreen when no packing lists exist
 - `meals.png` - Ready for meal planning feature implementation
 
 All hero images are displayed with:
+
 - Height: 180-200px with safe area insets
 - Dark gradient overlay (rgba(0,0,0,0.3) to rgba(0,0,0,0.4))
 - White parchment text with title and subtitle
@@ -1212,33 +1281,35 @@ All hero images are displayed with:
    - Never use color gradients on icons
 
 6. **Tailwind Classes:**
+
 ```typescript
 // Text
-text-forest          // Primary text (#485952)
-text-earthGreen      // Secondary text (#828872)
-text-granite         // Accent text (#AC9A6D)
+text - forest; // Primary text (#485952)
+text - earthGreen; // Secondary text (#828872)
+text - granite; // Accent text (#AC9A6D)
 
 // Backgrounds
-bg-parchment         // Universal background (#F4EBD0)
-bg-forest            // Primary buttons (#485952)
-bg-riverRock         // Status badges (#607A77)
-bg-sierraSky         // Soft backgrounds (#92AFB1)
+bg - parchment; // Universal background (#F4EBD0)
+bg - forest; // Primary buttons (#485952)
+bg - riverRock; // Status badges (#607A77)
+bg - sierraSky; // Soft backgrounds (#92AFB1)
 
 // Borders
-border-parchmentDark // Soft borders (#D5C8A2)
+border - parchmentDark; // Soft borders (#D5C8A2)
 ```
 
 7. **Constants (for inline styles):**
+
 ```typescript
 import {
-  DEEP_FOREST,      // #485952
-  EARTH_GREEN,      // #828872
-  GRANITE_GOLD,     // #AC9A6D
-  RIVER_ROCK,       // #607A77
-  SIERRA_SKY,       // #92AFB1
-  PARCHMENT,        // #F4EBD0
-  PARCHMENT_BORDER  // #D5C8A2
-} from "../constants/colors";
+  DEEP_FOREST, // #485952
+  EARTH_GREEN, // #828872
+  GRANITE_GOLD, // #AC9A6D
+  RIVER_ROCK, // #607A77
+  SIERRA_SKY, // #92AFB1
+  PARCHMENT, // #F4EBD0
+  PARCHMENT_BORDER, // #D5C8A2
+} from '../constants/colors';
 ```
 
 ### Typography
@@ -1246,13 +1317,16 @@ import {
 The app uses the official CCC Font Stack with carefully selected typefaces:
 
 #### Display Font: Raleway
+
 **Weights Available:**
+
 - `Raleway_600SemiBold` - Secondary headers, section titles
 - `Raleway_700Bold` - Hero titles, main headings
 
 **IMPORTANT:** Never use `Raleway_400Regular`. It has been fully replaced with the SemiBold weight.
 
 **Use For:**
+
 - Hero titles (Bold)
 - Section headers (SemiBold)
 - Big titles (Bold)
@@ -1262,12 +1336,15 @@ The app uses the official CCC Font Stack with carefully selected typefaces:
 - Anything that carries the "WPA field guide" aesthetic
 
 #### Body Font: Source Sans 3
+
 **Weights Available:**
+
 - `SourceSans3_400Regular`
 - `SourceSans3_600SemiBold`
 - `SourceSans3_700Bold`
 
 **Use For:**
+
 - Body text
 - Labels
 - Checklists
@@ -1277,18 +1354,23 @@ The app uses the official CCC Font Stack with carefully selected typefaces:
 - Paragraphs under section headings
 
 #### Accent Font: Satisfy
+
 **Weights Available:**
+
 - `Satisfy_400Regular`
 
 **Use For:**
+
 - Very sparingly
 - Never for functional UI
 - Think tiny, decorative text when needed
 
 #### Implementation Rules
+
 **IMPORTANT:** Every `<Text>` element must specify one of these exact font families. No system font fallback is allowed.
 
 **Typography Components** (recommended approach):
+
 ```typescript
 import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../components/Typography";
 
@@ -1302,6 +1384,7 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ```
 
 **Direct Text Usage** (when typography components can't be used):
+
 ```typescript
 <Text style={{ fontFamily: "SourceSans3_400Regular" }}>Regular text</Text>
 <Text style={{ fontFamily: "SourceSans3_600SemiBold" }}>Semibold text</Text>
@@ -1321,6 +1404,7 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ### Zustand Stores with Persistence
 
 **tripsStore.ts** - Comprehensive trip management
+
 ```typescript
 - trips: Trip[]
 - addTrip() - Returns trip ID
@@ -1335,6 +1419,7 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ```
 
 **tripsListStore.ts** - Trip list UI state (persisted)
+
 ```typescript
 - segment: "active" | "completed" | "all"
 - sortBy: "startSoonest" | "updatedRecent" | "az"
@@ -1345,6 +1430,7 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ```
 
 **learningStore.ts** - Learning progression
+
 ```typescript
 - modules: LearningModule[]
 - tracks: LearningTrack[]
@@ -1355,6 +1441,7 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ```
 
 **gearStore.ts** - Packing lists
+
 ```typescript
 - packingLists: PackingList[]
 - addPackingList()
@@ -1365,6 +1452,7 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ```
 
 **parksStore.ts** - Parks discovery
+
 ```typescript
 - parks: Park[]
 - filteredParks: Park[]
@@ -1375,6 +1463,7 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ```
 
 **mealStore.ts** - Meal library and filtering
+
 ```typescript
 - mealLibrary: MealLibraryItem[] (100+ pre-populated meals)
 - selectedCategory: "all" | "breakfast" | "lunch" | "dinner" | "snack"
@@ -1389,6 +1478,7 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ```
 
 ### Best Practices Used
+
 ✅ Individual selectors to prevent unnecessary re-renders
 ✅ AsyncStorage persistence for trips and gear
 ✅ Immutable state updates
@@ -1418,28 +1508,34 @@ Detail Screens
 ## 🔧 Key Improvements Over Original
 
 ### 1. State Management
+
 **Before**: 21 different stores, potential for over-subscription
 **After**: 3 optimized stores with selective subscriptions
 
 ### 2. Code Organization
+
 **Before**: Mixed concerns, unclear structure
 **After**: Clear separation - components, screens, state, navigation
 
 ### 3. Type Safety
+
 **Before**: Inconsistent typing
 **After**: Full TypeScript with strict types
 
 ### 4. Performance
+
 **Before**: Unnecessary re-renders, bloated code
 **After**: Optimized selectors, clean code, efficient updates
 
 ### 5. UI Consistency
+
 **Before**: Inconsistent styling and patterns
 **After**: Design system with reusable components
 
 ## 🎯 Usage Examples
 
 ### Using Stores
+
 ```typescript
 // ✅ Good - Selective subscription
 const trips = useTripsStore((s) => s.trips);
@@ -1450,21 +1546,23 @@ const store = useTripsStore();
 ```
 
 ### Creating a Trip
+
 ```typescript
 addTrip({
-  name: "Yosemite Weekend",
+  name: 'Yosemite Weekend',
   startDate: new Date().toISOString(),
   endDate: new Date(Date.now() + 86400000 * 2).toISOString(),
-  campingStyle: "backpacking",
+  campingStyle: 'backpacking',
   partySize: 4,
 });
 ```
 
 ### Creating a Packing List
+
 ```typescript
 const listId = addPackingList({
-  name: "Weekend Camping",
-  tripId: "trip_123",
+  name: 'Weekend Camping',
+  tripId: 'trip_123',
   categories: GEAR_TEMPLATES,
 });
 ```
@@ -1472,6 +1570,7 @@ const listId = addPackingList({
 ## 🚀 Next Steps
 
 ### Ready to Implement
+
 - Weather API integration (forecast display on trips)
 - Map view for parks (react-native-maps is installed)
 - Photo uploads for trip memories
@@ -1480,6 +1579,7 @@ const listId = addPackingList({
 - Offline mode with better caching
 
 ### Easy Extensions
+
 - More park filters (amenities, activities)
 - Custom gear item creation
 - Trip invitations and sharing
@@ -1489,6 +1589,7 @@ const listId = addPackingList({
 ## 📦 Dependencies
 
 All required packages are already installed:
+
 - **React Navigation** - Native stack, bottom tabs
 - **Zustand** - State management with persistence
 - **date-fns** - Date formatting
@@ -1499,6 +1600,7 @@ All required packages are already installed:
 ## 🧪 Testing
 
 The app structure makes testing easy:
+
 - Pure functions in stores (easy to unit test)
 - Component props are well-defined
 - Navigation types prevent routing errors
@@ -1507,11 +1609,13 @@ The app structure makes testing easy:
 ## 📝 Notes
 
 ### What Was Kept
+
 - Your original feature set and vision
 - The lodge/camping aesthetic
 - Core functionality (trips, parks, gear)
 
 ### What Was Improved
+
 - Architecture and organization
 - State management efficiency
 - Code cleanliness and maintainability
@@ -1520,6 +1624,7 @@ The app structure makes testing easy:
 - Performance
 
 ### What's Ready to Add
+
 - Backend integration (Firebase, Supabase, etc.)
 - Authentication
 - Real park data (NPS API)
@@ -1585,6 +1690,5 @@ match /gearCloset/{userId}/{gearId}/{fileName} {
 6. Click **Publish** to deploy the changes
 
 ---
-
 
 **Built with** ❤️ **using Expo SDK 53 + React Native 0.76.7**

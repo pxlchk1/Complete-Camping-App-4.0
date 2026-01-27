@@ -11,11 +11,7 @@ export function FireflyTimeProvider({ children }: { children: React.ReactNode })
     t.value = t.value + 0.015; // Slowed down from 0.025 to 0.015
   });
 
-  return (
-    <FireflyTimeContext.Provider value={t}>
-      {children}
-    </FireflyTimeContext.Provider>
-  );
+  return <FireflyTimeContext.Provider value={t}>{children}</FireflyTimeContext.Provider>;
 }
 
 export function useFireflyTime() {

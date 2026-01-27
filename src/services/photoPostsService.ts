@@ -22,18 +22,18 @@ import {
   serverTimestamp,
   increment,
   DocumentSnapshot,
-} from "firebase/firestore";
-import firebaseApp from "../config/firebase";
+} from 'firebase/firestore';
+import firebaseApp from '../config/firebase';
 import {
   PhotoPost,
   PhotoPostType,
   TripStyle,
   DetailTag,
   PhotoFeedFilters,
-} from "../types/photoPost";
+} from '../types/photoPost';
 
 const db = getFirestore(firebaseApp);
-const COLLECTION = "photoPosts";
+const COLLECTION = 'photoPosts';
 
 // ==================== Create Photo Post ====================
 
@@ -61,7 +61,7 @@ export async function createPhotoPost(data: CreatePhotoPostData): Promise<string
 
   const docData: Partial<PhotoPost> = {
     userId: data.userId,
-    displayName: data.displayName || "Anonymous",
+    displayName: data.displayName || 'Anonymous',
     userHandle: data.userHandle,
     photoUrls: data.photoUrls,
     storagePaths: data.storagePaths || [],
@@ -106,7 +106,7 @@ export interface GetPhotoPostsResult {
 export async function getPhotoPosts(
   filters?: Partial<PhotoFeedFilters>,
   limitCount: number = 30,
-  lastDoc?: DocumentSnapshot
+  lastDoc?: DocumentSnapshot,
 ): Promise<GetPhotoPostsResult> {
   const postsRef = collection(db, COLLECTION);
 
@@ -116,39 +116,39 @@ export async function getPhotoPosts(
   // Filter by post type
   // Include legacy "tip-or-fix" posts when filtering for "setup-ideas"
   if (filters?.postType) {
-    if (filters.postType === "setup-ideas") {
+    if (filters.postType === 'setup-ideas') {
       // Include both setup-ideas and legacy tip-or-fix
-      constraints.push(where("postType", "in", ["setup-ideas", "tip-or-fix"]));
+      constraints.push(where('postType', 'in', ['setup-ideas', 'tip-or-fix']));
     } else {
-      constraints.push(where("postType", "==", filters.postType));
+      constraints.push(where('postType', '==', filters.postType));
     }
   }
 
   // Filter by trip style
   if (filters?.tripStyle) {
-    constraints.push(where("tripStyle", "==", filters.tripStyle));
+    constraints.push(where('tripStyle', '==', filters.tripStyle));
   }
 
   // Filter by campground
   if (filters?.campgroundId) {
-    constraints.push(where("campgroundId", "==", filters.campgroundId));
+    constraints.push(where('campgroundId', '==', filters.campgroundId));
   }
 
   // Filter by detail tags (can only do array-contains for one tag)
   if (filters?.detailTags && filters.detailTags.length > 0) {
-    constraints.push(where("detailTags", "array-contains", filters.detailTags[0]));
+    constraints.push(where('detailTags', 'array-contains', filters.detailTags[0]));
   }
 
   // Only show visible posts
-  constraints.push(where("isHidden", "==", false));
+  constraints.push(where('isHidden', '==', false));
 
   // Sort by
-  if (filters?.sortBy === "most-helpful") {
-    constraints.push(orderBy("helpfulCount", "desc"));
-    constraints.push(orderBy("createdAt", "desc"));
+  if (filters?.sortBy === 'most-helpful') {
+    constraints.push(orderBy('helpfulCount', 'desc'));
+    constraints.push(orderBy('createdAt', 'desc'));
   } else {
     // Default: newest
-    constraints.push(orderBy("createdAt", "desc"));
+    constraints.push(orderBy('createdAt', 'desc'));
   }
 
   constraints.push(limit(limitCount));
@@ -190,14 +190,14 @@ export async function getPhotoPostById(postId: string): Promise<PhotoPost | null
 
 export async function getUserPhotoPosts(
   userId: string,
-  limitCount: number = 30
+  limitCount: number = 30,
 ): Promise<PhotoPost[]> {
   const postsRef = collection(db, COLLECTION);
   const q = query(
     postsRef,
-    where("userId", "==", userId),
-    orderBy("createdAt", "desc"),
-    limit(limitCount)
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc'),
+    limit(limitCount),
   );
 
   const snapshot = await getDocs(q);
@@ -211,7 +211,7 @@ export async function getUserPhotoPosts(
 
 export async function updatePhotoPost(
   postId: string,
-  updates: Partial<PhotoPost>
+  updates: Partial<PhotoPost>,
 ): Promise<void> {
   const postRef = doc(db, COLLECTION, postId);
   await updateDoc(postRef, {
@@ -231,9 +231,9 @@ export async function deletePhotoPost(postId: string): Promise<void> {
 
 export async function toggleHelpful(
   postId: string,
-  userId: string
+  userId: string,
 ): Promise<{ isHelpful: boolean; newCount: number }> {
-  const helpfulRef = doc(db, COLLECTION, postId, "helpful", userId);
+  const helpfulRef = doc(db, COLLECTION, postId, 'helpful', userId);
   const postRef = doc(db, COLLECTION, postId);
 
   const helpfulSnap = await getDoc(helpfulRef);
@@ -265,11 +265,8 @@ export async function toggleHelpful(
   }
 }
 
-export async function checkIfHelpful(
-  postId: string,
-  userId: string
-): Promise<boolean> {
-  const helpfulRef = doc(db, COLLECTION, postId, "helpful", userId);
+export async function checkIfHelpful(postId: string, userId: string): Promise<boolean> {
+  const helpfulRef = doc(db, COLLECTION, postId, 'helpful', userId);
   const helpfulSnap = await getDoc(helpfulRef);
   return helpfulSnap.exists();
 }
@@ -278,7 +275,7 @@ export async function checkIfHelpful(
 
 export async function getHelpfulStatuses(
   postIds: string[],
-  userId: string
+  userId: string,
 ): Promise<Record<string, boolean>> {
   const statuses: Record<string, boolean> = {};
 
@@ -286,7 +283,7 @@ export async function getHelpfulStatuses(
   await Promise.all(
     postIds.map(async (postId) => {
       statuses[postId] = await checkIfHelpful(postId, userId);
-    })
+    }),
   );
 
   return statuses;
@@ -294,14 +291,14 @@ export async function getHelpfulStatuses(
 
 // ==================== Reddit-Style Voting ====================
 
-export type VoteDirection = "up" | "down" | null;
+export type VoteDirection = 'up' | 'down' | null;
 
 export async function vote(
   postId: string,
   userId: string,
-  direction: "up" | "down"
+  direction: 'up' | 'down',
 ): Promise<{ userVote: VoteDirection; newCount: number }> {
-  const voteRef = doc(db, COLLECTION, postId, "votes", userId);
+  const voteRef = doc(db, COLLECTION, postId, 'votes', userId);
   const postRef = doc(db, COLLECTION, postId);
 
   const voteSnap = await getDoc(voteRef);
@@ -313,14 +310,14 @@ export async function vote(
 
   if (currentVote === null) {
     // No previous vote
-    delta = direction === "up" ? 1 : -1;
+    delta = direction === 'up' ? 1 : -1;
   } else if (currentVote === direction) {
     // Same direction - remove vote
-    delta = direction === "up" ? -1 : 1;
+    delta = direction === 'up' ? -1 : 1;
     newVoteDirection = null;
   } else {
     // Opposite direction - swing vote (2 point swing)
-    delta = direction === "up" ? 2 : -2;
+    delta = direction === 'up' ? 2 : -2;
   }
 
   // Update or remove the vote record
@@ -346,9 +343,9 @@ export async function vote(
 
 export async function getUserVote(
   postId: string,
-  userId: string
+  userId: string,
 ): Promise<VoteDirection> {
-  const voteRef = doc(db, COLLECTION, postId, "votes", userId);
+  const voteRef = doc(db, COLLECTION, postId, 'votes', userId);
   const voteSnap = await getDoc(voteRef);
   if (!voteSnap.exists()) return null;
   return voteSnap.data()?.direction || null;
@@ -356,14 +353,14 @@ export async function getUserVote(
 
 export async function getUserVotes(
   postIds: string[],
-  userId: string
+  userId: string,
 ): Promise<Record<string, VoteDirection>> {
   const votes: Record<string, VoteDirection> = {};
 
   await Promise.all(
     postIds.map(async (postId) => {
       votes[postId] = await getUserVote(postId, userId);
-    })
+    }),
   );
 
   return votes;
@@ -385,24 +382,24 @@ export function isLegacyPost(post: PhotoPost): boolean {
  */
 export function getPostTypeLabel(post: PhotoPost): string {
   if (!post.postType) {
-    return "Photo";
+    return 'Photo';
   }
 
   // Map legacy tip-or-fix to setup-ideas (cast to string for legacy data comparison)
   const rawType = post.postType as string;
-  const postType = rawType === "tip-or-fix" ? "setup-ideas" : rawType;
+  const postType = rawType === 'tip-or-fix' ? 'setup-ideas' : rawType;
 
   const labels: Record<string, string> = {
-    "campsite-spotlight": "Campsite Spotlight",
-    "conditions-report": "Conditions Report",
-    "setup-ideas": "Setup Ideas",
-    "gear-in-real-life": "Gear in Real Life",
-    "camp-cooking": "Camp Cooking",
-    "wildlife-nature": "Wildlife & Nature",
-    "accessibility": "Accessibility",
+    'campsite-spotlight': 'Campsite Spotlight',
+    'conditions-report': 'Conditions Report',
+    'setup-ideas': 'Setup Ideas',
+    'gear-in-real-life': 'Gear in Real Life',
+    'camp-cooking': 'Camp Cooking',
+    'wildlife-nature': 'Wildlife & Nature',
+    accessibility: 'Accessibility',
   };
 
-  return labels[postType] || "Photo";
+  return labels[postType] || 'Photo';
 }
 
 // ==================== Photo Comments ====================
@@ -421,7 +418,7 @@ export interface PhotoComment {
   upvotes: number;
   downvotes: number;
   score: number;
-  userVote?: "up" | "down" | null;
+  userVote?: 'up' | 'down' | null;
   isHidden?: boolean;
   needsReview?: boolean;
   hiddenReason?: string;
@@ -434,7 +431,7 @@ export async function addPhotoComment(data: {
   username: string;
   userHandle?: string;
 }): Promise<string> {
-  const commentsRef = collection(db, COLLECTION, data.postId, "comments");
+  const commentsRef = collection(db, COLLECTION, data.postId, 'comments');
 
   const docRef = await addDoc(commentsRef, {
     postId: data.postId,
@@ -459,19 +456,30 @@ export async function addPhotoComment(data: {
   return docRef.id;
 }
 
-export async function getPhotoComments(postId: string, currentUserId?: string): Promise<PhotoComment[]> {
-  const commentsRef = collection(db, COLLECTION, postId, "comments");
-  const q = query(commentsRef, orderBy("createdAt", "asc"));
+export async function getPhotoComments(
+  postId: string,
+  currentUserId?: string,
+): Promise<PhotoComment[]> {
+  const commentsRef = collection(db, COLLECTION, postId, 'comments');
+  const q = query(commentsRef, orderBy('createdAt', 'asc'));
   const snapshot = await getDocs(q);
 
   const comments = await Promise.all(
     snapshot.docs.map(async (docSnap) => {
       const data = docSnap.data();
-      let userVote: "up" | "down" | null = null;
+      let userVote: 'up' | 'down' | null = null;
 
       // Get user's vote if logged in
       if (currentUserId) {
-        const voteRef = doc(db, COLLECTION, postId, "comments", docSnap.id, "votes", currentUserId);
+        const voteRef = doc(
+          db,
+          COLLECTION,
+          postId,
+          'comments',
+          docSnap.id,
+          'votes',
+          currentUserId,
+        );
         const voteSnap = await getDoc(voteRef);
         if (voteSnap.exists()) {
           userVote = voteSnap.data()?.direction || null;
@@ -494,7 +502,7 @@ export async function getPhotoComments(postId: string, currentUserId?: string): 
         needsReview: data.needsReview || false,
         hiddenReason: data.hiddenReason,
       } as PhotoComment;
-    })
+    }),
   );
 
   return comments;
@@ -505,10 +513,14 @@ export async function voteOnPhotoComment(
   postId: string,
   commentId: string,
   userId: string,
-  direction: "up" | "down"
-): Promise<{ userVote: "up" | "down" | null; newScore: number; flaggedForReview: boolean }> {
-  const commentRef = doc(db, COLLECTION, postId, "comments", commentId);
-  const voteRef = doc(db, COLLECTION, postId, "comments", commentId, "votes", userId);
+  direction: 'up' | 'down',
+): Promise<{
+  userVote: 'up' | 'down' | null;
+  newScore: number;
+  flaggedForReview: boolean;
+}> {
+  const commentRef = doc(db, COLLECTION, postId, 'comments', commentId);
+  const voteRef = doc(db, COLLECTION, postId, 'comments', commentId, 'votes', userId);
 
   const voteSnap = await getDoc(voteRef);
   const currentVote = voteSnap.exists() ? voteSnap.data()?.direction : null;
@@ -516,20 +528,20 @@ export async function voteOnPhotoComment(
   // Calculate deltas
   let upvoteDelta = 0;
   let downvoteDelta = 0;
-  let newVoteDirection: "up" | "down" | null = direction;
+  let newVoteDirection: 'up' | 'down' | null = direction;
 
   if (currentVote === null) {
     // No previous vote
-    if (direction === "up") upvoteDelta = 1;
+    if (direction === 'up') upvoteDelta = 1;
     else downvoteDelta = 1;
   } else if (currentVote === direction) {
     // Same direction - remove vote
-    if (direction === "up") upvoteDelta = -1;
+    if (direction === 'up') upvoteDelta = -1;
     else downvoteDelta = -1;
     newVoteDirection = null;
   } else {
     // Opposite direction - swing vote
-    if (direction === "up") {
+    if (direction === 'up') {
       upvoteDelta = 1;
       downvoteDelta = -1;
     } else {
@@ -558,8 +570,8 @@ export async function voteOnPhotoComment(
   // Check if comment should be flagged for review
   const commentSnap = await getDoc(commentRef);
   const commentData = commentSnap.data();
-  const newDownvotes = (commentData?.downvotes || 0);
-  const newScore = (commentData?.score || 0);
+  const newDownvotes = commentData?.downvotes || 0;
+  const newScore = commentData?.score || 0;
   let flaggedForReview = false;
 
   // Flag for review if downvotes reach threshold and not already flagged
@@ -567,11 +579,13 @@ export async function voteOnPhotoComment(
     await updateDoc(commentRef, {
       needsReview: true,
       isHidden: true,
-      hiddenReason: "AUTO_DOWNVOTE_THRESHOLD",
+      hiddenReason: 'AUTO_DOWNVOTE_THRESHOLD',
       hiddenAt: serverTimestamp(),
     });
     flaggedForReview = true;
-    console.log(`[CommentModeration] Flagged comment ${commentId} for review - ${newDownvotes} downvotes`);
+    console.log(
+      `[CommentModeration] Flagged comment ${commentId} for review - ${newDownvotes} downvotes`,
+    );
   }
 
   return { userVote: newVoteDirection, newScore, flaggedForReview };
@@ -581,9 +595,9 @@ export async function voteOnPhotoComment(
 export async function getCommentUserVote(
   postId: string,
   commentId: string,
-  userId: string
-): Promise<"up" | "down" | null> {
-  const voteRef = doc(db, COLLECTION, postId, "comments", commentId, "votes", userId);
+  userId: string,
+): Promise<'up' | 'down' | null> {
+  const voteRef = doc(db, COLLECTION, postId, 'comments', commentId, 'votes', userId);
   const voteSnap = await getDoc(voteRef);
   if (!voteSnap.exists()) return null;
   return voteSnap.data()?.direction || null;

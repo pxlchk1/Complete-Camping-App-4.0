@@ -1,22 +1,22 @@
 /**
  * useContentActions Hook
- * 
+ *
  * Provides all necessary data and callbacks for ContentActionsAffordance.
  * Handles user permissions, role detection, and action routing.
  */
 
-import { useCallback, useMemo } from "react";
-import { useCurrentUser } from "../state/userStore";
-import { isAdmin, isModerator, canModerateContent } from "../services/userService";
-import { 
-  ownerDeleteContent, 
-  adminRemoveContent, 
+import { useCallback, useMemo } from 'react';
+import { useCurrentUser } from '../state/userStore';
+import { isAdmin, isModerator, canModerateContent } from '../services/userService';
+import {
+  ownerDeleteContent,
+  adminRemoveContent,
   moderatorRemoveContent,
   deleteComment,
   ContentActionResult,
-} from "../services/contentActionsService";
-import { ContentItemType, RoleLabel } from "../components/contentActions";
-import { User } from "../types/user";
+} from '../services/contentActionsService';
+import { ContentItemType, RoleLabel } from '../components/contentActions';
+import { User } from '../types/user';
 
 export interface UseContentActionsOptions {
   itemId: string;
@@ -27,7 +27,7 @@ export interface UseContentActionsOptions {
   /** Called after successful moderation remove */
   onRemoveSuccess?: () => void;
   /** For comments: parent content type */
-  parentType?: "tip" | "feedback" | "question" | "photo";
+  parentType?: 'tip' | 'feedback' | 'question' | 'photo';
   /** For comments: parent content ID */
   parentId?: string;
 }
@@ -73,8 +73,8 @@ export function useContentActions({
 
   const roleLabel = useMemo((): RoleLabel => {
     if (!currentUser) return null;
-    if (isAdmin(currentUser as User)) return "ADMIN";
-    if (isModerator(currentUser as User)) return "MOD";
+    if (isAdmin(currentUser as User)) return 'ADMIN';
+    if (isModerator(currentUser as User)) return 'MOD';
     return null;
   }, [currentUser]);
 
@@ -85,23 +85,23 @@ export function useContentActions({
   // Delete handler (for owner)
   const handleDelete = useCallback(async () => {
     if (!currentUserId || !isOwner) {
-      throw new Error("Not authorized to delete");
+      throw new Error('Not authorized to delete');
     }
 
     let result: ContentActionResult;
 
     // Handle comments specially (they're in subcollections)
-    if (itemType === "comment" || itemType === "answer") {
+    if (itemType === 'comment' || itemType === 'answer') {
       if (!parentType || !parentId) {
-        throw new Error("Parent info required for comment deletion");
+        throw new Error('Parent info required for comment deletion');
       }
-      result = await deleteComment(parentType, parentId, itemId, "owner");
+      result = await deleteComment(parentType, parentId, itemId, 'owner');
     } else {
       result = await ownerDeleteContent(itemType, itemId);
     }
 
     if (!result.success) {
-      throw new Error(result.error || "Delete failed");
+      throw new Error(result.error || 'Delete failed');
     }
 
     onDeleteSuccess?.();
@@ -110,7 +110,7 @@ export function useContentActions({
   // Remove handler (for moderators)
   const handleRemove = useCallback(async () => {
     if (!currentUserId || !canModerate) {
-      throw new Error("Not authorized to remove");
+      throw new Error('Not authorized to remove');
     }
 
     let result: ContentActionResult;
@@ -119,15 +119,15 @@ export function useContentActions({
     const isAdminUser = currentUser && isAdmin(currentUser as User);
 
     // Handle comments specially
-    if (itemType === "comment" || itemType === "answer") {
+    if (itemType === 'comment' || itemType === 'answer') {
       if (!parentType || !parentId) {
-        throw new Error("Parent info required for comment removal");
+        throw new Error('Parent info required for comment removal');
       }
       result = await deleteComment(
-        parentType, 
-        parentId, 
-        itemId, 
-        isAdminUser ? "admin" : "moderator"
+        parentType,
+        parentId,
+        itemId,
+        isAdminUser ? 'admin' : 'moderator',
       );
     } else {
       result = isAdminUser
@@ -136,11 +136,20 @@ export function useContentActions({
     }
 
     if (!result.success) {
-      throw new Error(result.error || "Remove failed");
+      throw new Error(result.error || 'Remove failed');
     }
 
     onRemoveSuccess?.();
-  }, [currentUserId, canModerate, currentUser, itemType, itemId, parentType, parentId, onRemoveSuccess]);
+  }, [
+    currentUserId,
+    canModerate,
+    currentUser,
+    itemType,
+    itemId,
+    parentType,
+    parentId,
+    onRemoveSuccess,
+  ]);
 
   return {
     currentUserId,

@@ -1,8 +1,16 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { seedCommunityData } from "../scripts/seedCommunityData";
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+  ScrollView,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { seedCommunityData } from '../scripts/seedCommunityData';
 
 export default function SeedDataScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
@@ -19,14 +27,14 @@ export default function SeedDataScreen({ navigation }: any) {
       setResult(seedResult);
 
       Alert.alert(
-        "Success!",
+        'Success!',
         `Seeded community data:\n• ${seedResult.counts.tips} tips\n• ${seedResult.counts.gearReviews} gear reviews\n• ${seedResult.counts.questions} questions\n• ${seedResult.counts.feedback} feedback posts`,
-        [{ text: "OK" }]
+        [{ text: 'OK' }],
       );
     } catch (err: any) {
-      console.error("Seed error:", err);
-      setError(err.message || "Failed to seed data");
-      Alert.alert("Error", err.message || "Failed to seed data");
+      console.error('Seed error:', err);
+      setError(err.message || 'Failed to seed data');
+      Alert.alert('Error', err.message || 'Failed to seed data');
     } finally {
       setLoading(false);
     }
@@ -76,7 +84,8 @@ export default function SeedDataScreen({ navigation }: any) {
               <Ionicons name="checkmark-circle" size={24} color="#16a34a" />
               <Text style={styles.successText}>Data seeded successfully!</Text>
               <Text style={styles.successDetail}>
-                {result.counts.tips} tips, {result.counts.gearReviews} reviews, {result.counts.questions} questions, {result.counts.feedback} feedback
+                {result.counts.tips} tips, {result.counts.gearReviews} reviews,{' '}
+                {result.counts.questions} questions, {result.counts.feedback} feedback
               </Text>
             </View>
           )}
@@ -96,23 +105,23 @@ export default function SeedDataScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4EBD0",
+    backgroundColor: '#F4EBD0',
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#D5C8A2",
+    borderBottomColor: '#D5C8A2',
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: 'Raleway_700Bold',
     fontSize: 20,
-    color: "#485952",
+    color: '#485952',
     marginLeft: 8,
   },
   content: {
@@ -121,21 +130,21 @@ const styles = StyleSheet.create({
   card: {
     margin: 16,
     padding: 20,
-    backgroundColor: "#FFF9EB",
+    backgroundColor: '#FFF9EB',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#D5C8A2",
+    borderColor: '#D5C8A2',
   },
   cardTitle: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: 'Raleway_700Bold',
     fontSize: 24,
-    color: "#485952",
+    color: '#485952',
     marginBottom: 12,
   },
   cardDescription: {
-    fontFamily: "SourceSans3_400Regular",
+    fontFamily: 'SourceSans3_400Regular',
     fontSize: 16,
-    color: "#4F655F",
+    color: '#4F655F',
     marginBottom: 16,
     lineHeight: 24,
   },
@@ -143,70 +152,70 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   listItem: {
-    fontFamily: "SourceSans3_600SemiBold",
+    fontFamily: 'SourceSans3_600SemiBold',
     fontSize: 16,
-    color: "#485952",
+    color: '#485952',
     marginBottom: 8,
   },
   warning: {
-    fontFamily: "SourceSans3_600SemiBold",
+    fontFamily: 'SourceSans3_600SemiBold',
     fontSize: 14,
-    color: "#d97706",
-    backgroundColor: "#fef3c7",
+    color: '#d97706',
+    backgroundColor: '#fef3c7',
     padding: 12,
     borderRadius: 8,
     marginBottom: 20,
   },
   button: {
-    backgroundColor: "#485952",
+    backgroundColor: '#485952',
     paddingVertical: 14,
     borderRadius: 10,
-    alignItems: "center",
+    alignItems: 'center',
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    fontFamily: "SourceSans3_600SemiBold",
+    fontFamily: 'SourceSans3_600SemiBold',
     fontSize: 15,
-    color: "#F4EBD0",
+    color: '#F4EBD0',
   },
   successBox: {
     marginTop: 20,
     padding: 16,
-    backgroundColor: "#dcfce7",
+    backgroundColor: '#dcfce7',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#16a34a",
-    alignItems: "center",
+    borderColor: '#16a34a',
+    alignItems: 'center',
   },
   successText: {
-    fontFamily: "SourceSans3_600SemiBold",
+    fontFamily: 'SourceSans3_600SemiBold',
     fontSize: 16,
-    color: "#16a34a",
+    color: '#16a34a',
     marginTop: 8,
   },
   successDetail: {
-    fontFamily: "SourceSans3_400Regular",
+    fontFamily: 'SourceSans3_400Regular',
     fontSize: 14,
-    color: "#15803d",
+    color: '#15803d',
     marginTop: 4,
-    textAlign: "center",
+    textAlign: 'center',
   },
   errorBox: {
     marginTop: 20,
     padding: 16,
-    backgroundColor: "#fee2e2",
+    backgroundColor: '#fee2e2',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#dc2626",
-    alignItems: "center",
+    borderColor: '#dc2626',
+    alignItems: 'center',
   },
   errorText: {
-    fontFamily: "SourceSans3_600SemiBold",
+    fontFamily: 'SourceSans3_600SemiBold',
     fontSize: 14,
-    color: "#dc2626",
+    color: '#dc2626',
     marginTop: 8,
-    textAlign: "center",
+    textAlign: 'center',
   },
 });

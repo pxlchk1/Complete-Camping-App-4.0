@@ -16,8 +16,8 @@ import {
   addDoc,
   serverTimestamp,
   Timestamp,
-} from "firebase/firestore";
-import firebaseApp from "../config/firebase";
+} from 'firebase/firestore';
+import firebaseApp from '../config/firebase';
 import {
   User,
   UserRole,
@@ -25,14 +25,14 @@ import {
   MembershipGrant,
   ContentModeration,
   AuditLog,
-} from "../types/user";
+} from '../types/user';
 
 const db = getFirestore(firebaseApp);
 
 // ==================== User Profile ====================
 
 export async function getUser(userId: string): Promise<User | null> {
-  const userRef = doc(db, "profiles", userId);
+  const userRef = doc(db, 'profiles', userId);
   const userSnap = await getDoc(userRef);
 
   if (!userSnap.exists()) {
@@ -43,8 +43,8 @@ export async function getUser(userId: string): Promise<User | null> {
 }
 
 export async function getUserByHandle(handle: string): Promise<User | null> {
-  const usersRef = collection(db, "profiles");
-  const q = query(usersRef, where("handle", "==", handle));
+  const usersRef = collection(db, 'profiles');
+  const q = query(usersRef, where('handle', '==', handle));
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) {
@@ -56,8 +56,8 @@ export async function getUserByHandle(handle: string): Promise<User | null> {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const usersRef = collection(db, "profiles");
-  const q = query(usersRef, where("email", "==", email));
+  const usersRef = collection(db, 'profiles');
+  const q = query(usersRef, where('email', '==', email));
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) {
@@ -70,9 +70,9 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function updateUserProfile(
   userId: string,
-  updates: Partial<Pick<User, "displayName" | "photoURL" | "handle">>
+  updates: Partial<Pick<User, 'displayName' | 'photoURL' | 'handle'>>,
 ): Promise<void> {
-  const userRef = doc(db, "profiles", userId);
+  const userRef = doc(db, 'profiles', userId);
   await updateDoc(userRef, {
     ...updates,
     updatedAt: new Date().toISOString(),
@@ -84,19 +84,19 @@ export async function updateUserProfile(
 export async function grantMembership(
   adminId: string,
   targetUserId: string,
-  duration: MembershipDuration
+  duration: MembershipDuration,
 ): Promise<void> {
-  const userRef = doc(db, "profiles", targetUserId);
+  const userRef = doc(db, 'profiles', targetUserId);
 
   let expiresAt: string | undefined;
-  if (duration !== "lifetime") {
+  if (duration !== 'lifetime') {
     const now = new Date();
     const months = {
-      "1_month": 1,
-      "3_months": 3,
-      "6_months": 6,
-      "1_year": 12,
-      "lifetime": 0,
+      '1_month': 1,
+      '3_months': 3,
+      '6_months': 6,
+      '1_year': 12,
+      lifetime: 0,
     }[duration];
 
     now.setMonth(now.getMonth() + months);
@@ -105,13 +105,13 @@ export async function grantMembership(
 
   // Update user membership
   await updateDoc(userRef, {
-    membershipTier: "subscribed",
+    membershipTier: 'subscribed',
     membershipExpiresAt: expiresAt || null,
     updatedAt: new Date().toISOString(),
   });
 
   // Create membership grant record
-  const grantsRef = collection(db, "membershipGrants");
+  const grantsRef = collection(db, 'membershipGrants');
   await addDoc(grantsRef, {
     userId: targetUserId,
     grantedBy: adminId,
@@ -123,10 +123,10 @@ export async function grantMembership(
   // Log the action
   await logAuditAction(
     adminId,
-    "grant_membership",
+    'grant_membership',
     targetUserId,
     undefined,
-    `Granted ${duration} membership`
+    `Granted ${duration} membership`,
   );
 }
 
@@ -135,9 +135,9 @@ export async function grantMembership(
 export async function banUser(
   adminId: string,
   targetUserId: string,
-  reason: string
+  reason: string,
 ): Promise<void> {
-  const userRef = doc(db, "profiles", targetUserId);
+  const userRef = doc(db, 'profiles', targetUserId);
 
   await updateDoc(userRef, {
     isBanned: true,
@@ -149,18 +149,15 @@ export async function banUser(
 
   await logAuditAction(
     adminId,
-    "ban_user",
+    'ban_user',
     targetUserId,
     undefined,
-    `Banned user: ${reason}`
+    `Banned user: ${reason}`,
   );
 }
 
-export async function unbanUser(
-  adminId: string,
-  targetUserId: string
-): Promise<void> {
-  const userRef = doc(db, "profiles", targetUserId);
+export async function unbanUser(adminId: string, targetUserId: string): Promise<void> {
+  const userRef = doc(db, 'profiles', targetUserId);
 
   await updateDoc(userRef, {
     isBanned: false,
@@ -170,25 +167,19 @@ export async function unbanUser(
     updatedAt: new Date().toISOString(),
   });
 
-  await logAuditAction(
-    adminId,
-    "unban_user",
-    targetUserId,
-    undefined,
-    "Unbanned user"
-  );
+  await logAuditAction(adminId, 'unban_user', targetUserId, undefined, 'Unbanned user');
 }
 
 // ==================== Content Moderation ====================
 
 export async function hideContent(
   moderatorId: string,
-  contentType: ContentModeration["contentType"],
+  contentType: ContentModeration['contentType'],
   contentId: string,
   contentOwnerId: string,
-  reason: string
+  reason: string,
 ): Promise<void> {
-  const moderationRef = collection(db, "contentModeration");
+  const moderationRef = collection(db, 'contentModeration');
 
   await addDoc(moderationRef, {
     contentType,
@@ -203,18 +194,18 @@ export async function hideContent(
 
   await logAuditAction(
     moderatorId,
-    "hide_content",
+    'hide_content',
     contentOwnerId,
     contentId,
-    `Hidden ${contentType}: ${reason}`
+    `Hidden ${contentType}: ${reason}`,
   );
 }
 
 export async function unhideContent(
   moderatorId: string,
-  moderationId: string
+  moderationId: string,
 ): Promise<void> {
-  const moderationRef = doc(db, "contentModeration", moderationId);
+  const moderationRef = doc(db, 'contentModeration', moderationId);
 
   await updateDoc(moderationRef, {
     isHidden: false,
@@ -224,19 +215,21 @@ export async function unhideContent(
 
   await logAuditAction(
     moderatorId,
-    "unhide_content",
+    'unhide_content',
     undefined,
     moderationId,
-    "Unhidden content"
+    'Unhidden content',
   );
 }
 
-export async function getHiddenContentByUser(userId: string): Promise<ContentModeration[]> {
-  const moderationRef = collection(db, "contentModeration");
+export async function getHiddenContentByUser(
+  userId: string,
+): Promise<ContentModeration[]> {
+  const moderationRef = collection(db, 'contentModeration');
   const q = query(
     moderationRef,
-    where("userId", "==", userId),
-    where("isHidden", "==", true)
+    where('userId', '==', userId),
+    where('isHidden', '==', true),
   );
 
   const snapshot = await getDocs(q);
@@ -251,22 +244,22 @@ export async function getHiddenContentByUser(userId: string): Promise<ContentMod
 export async function updateUserRole(
   adminId: string,
   targetUserId: string,
-  newRole: UserRole
+  newRole: UserRole,
 ): Promise<void> {
-  const userRef = doc(db, "profiles", targetUserId);
+  const userRef = doc(db, 'profiles', targetUserId);
 
   await updateDoc(userRef, {
     role: newRole,
     updatedAt: new Date().toISOString(),
   });
 
-  const action = newRole === "moderator" ? "promote_moderator" : "demote_moderator";
+  const action = newRole === 'moderator' ? 'promote_moderator' : 'demote_moderator';
   await logAuditAction(
     adminId,
     action,
     targetUserId,
     undefined,
-    `Changed role to ${newRole}`
+    `Changed role to ${newRole}`,
   );
 }
 
@@ -274,25 +267,25 @@ export async function updateUserRole(
 
 export async function logAuditAction(
   performedBy: string,
-  action: AuditLog["action"],
+  action: AuditLog['action'],
   targetUserId?: string,
   targetContentId?: string,
-  details?: string
+  details?: string,
 ): Promise<void> {
-  const auditRef = collection(db, "auditLogs");
+  const auditRef = collection(db, 'auditLogs');
 
   await addDoc(auditRef, {
     action,
     performedBy,
     targetUserId: targetUserId || null,
     targetContentId: targetContentId || null,
-    details: details || "",
+    details: details || '',
     timestamp: new Date().toISOString(),
   });
 }
 
 export async function getAuditLogs(limit: number = 50): Promise<AuditLog[]> {
-  const auditRef = collection(db, "auditLogs");
+  const auditRef = collection(db, 'auditLogs');
   const snapshot = await getDocs(auditRef);
 
   const logs = snapshot.docs.map((doc) => ({
@@ -301,9 +294,9 @@ export async function getAuditLogs(limit: number = 50): Promise<AuditLog[]> {
   })) as AuditLog[];
 
   // Sort by timestamp descending and limit
-  return logs.sort((a, b) =>
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  ).slice(0, limit);
+  return logs
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    .slice(0, limit);
 }
 
 // ==================== Email Subscribers ====================
@@ -314,21 +307,21 @@ export async function createEmailSubscriber(data: {
   firstname: string;
   subscriptionStatus?: string;
 }): Promise<void> {
-  const subscriberRef = doc(db, "emailSubscribers", data.userId);
-  
+  const subscriberRef = doc(db, 'emailSubscribers', data.userId);
+
   await setDoc(subscriberRef, {
     emailAddress: data.emailAddress,
     firstname: data.firstname,
     subscribedAt: new Date().toISOString(),
-    subscriptionStatus: data.subscriptionStatus || "subscribed",
+    subscriptionStatus: data.subscriptionStatus || 'subscribed',
   });
 }
 
 export async function updateEmailSubscriberStatus(
   userId: string,
-  status: string
+  status: string,
 ): Promise<void> {
-  const subscriberRef = doc(db, "emailSubscribers", userId);
+  const subscriberRef = doc(db, 'emailSubscribers', userId);
   await updateDoc(subscriberRef, {
     subscriptionStatus: status,
   });
@@ -340,20 +333,21 @@ export async function createUserProfile(data: {
   displayName: string;
   handle: string;
 }): Promise<void> {
-  const userRef = doc(db, "profiles", data.userId);
-  
+  const userRef = doc(db, 'profiles', data.userId);
+
   // Check if this is the admin account
-  const isAdmin = data.email.toLowerCase() === "alana@tentandlantern.com" || 
-                  data.handle.toLowerCase() === "tentandlantern";
-  
+  const isAdmin =
+    data.email.toLowerCase() === 'alana@tentandlantern.com' ||
+    data.handle.toLowerCase() === 'tentandlantern';
+
   // Create profile
   await setDoc(userRef, {
     email: data.email,
     displayName: data.displayName,
     handle: data.handle,
     joinedAt: serverTimestamp(),
-    membershipTier: isAdmin ? "isAdmin" : "freeMember",
-    role: isAdmin ? "administrator" : "user",
+    membershipTier: isAdmin ? 'isAdmin' : 'freeMember',
+    role: isAdmin ? 'administrator' : 'user',
     stats: {
       gearReviewsCount: 0,
       photosCount: 0,
@@ -376,44 +370,51 @@ export async function createUserProfile(data: {
     userId: data.userId,
     emailAddress: data.email,
     firstname,
-    subscriptionStatus: "subscribed",
+    subscriptionStatus: 'subscribed',
   });
 }
 
 // ==================== Permission Checks ====================
 
 export function isAdmin(user: User): boolean {
-  return user.membershipTier === "isAdmin" || 
-         user.role === "administrator" ||
-         (user.role as string) === "admin" ||
-         user.email?.toLowerCase() === "alana@tentandlantern.com" ||
-         user.handle?.toLowerCase() === "tentandlantern";
+  return (
+    user.membershipTier === 'isAdmin' ||
+    user.role === 'administrator' ||
+    (user.role as string) === 'admin' ||
+    user.email?.toLowerCase() === 'alana@tentandlantern.com' ||
+    user.handle?.toLowerCase() === 'tentandlantern'
+  );
 }
 
 export function isModerator(user: User): boolean {
-  return user.membershipTier === "isModerator";
+  return user.membershipTier === 'isModerator';
 }
 
 export function hasProAccess(user: User): boolean {
   // Admin has full access
   if (isAdmin(user)) return true;
-  
+
   // Check for paid membership tiers
-  return user.membershipTier === "subscribed";
+  return user.membershipTier === 'subscribed';
 }
 
 export function canModerateContent(user: User): boolean {
-  return isAdmin(user) || isModerator(user) || user.role === "moderator" || user.role === "administrator";
+  return (
+    isAdmin(user) ||
+    isModerator(user) ||
+    user.role === 'moderator' ||
+    user.role === 'administrator'
+  );
 }
 
 export function canBanUsers(user: User): boolean {
-  return isAdmin(user) || user.role === "administrator";
+  return isAdmin(user) || user.role === 'administrator';
 }
 
 export function canGrantMemberships(user: User): boolean {
-  return isAdmin(user) || user.role === "administrator";
+  return isAdmin(user) || user.role === 'administrator';
 }
 
 export function canManageRoles(user: User): boolean {
-  return isAdmin(user) || user.role === "administrator";
+  return isAdmin(user) || user.role === 'administrator';
 }

@@ -3,7 +3,7 @@
  * Edit existing contact in My Campground
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,17 +14,17 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import {
   getCampgroundContactById,
   updateCampgroundContact,
   deleteCampgroundContact,
-} from "../services/campgroundContactsService";
-import { CampgroundContact } from "../types/campground";
-import { RootStackParamList, RootStackNavigationProp } from "../navigation/types";
-import ModalHeader from "../components/ModalHeader";
+} from '../services/campgroundContactsService';
+import { CampgroundContact } from '../types/campground';
+import { RootStackParamList, RootStackNavigationProp } from '../navigation/types';
+import ModalHeader from '../components/ModalHeader';
 import {
   DEEP_FOREST,
   PARCHMENT,
@@ -33,18 +33,18 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
-} from "../constants/colors";
+} from '../constants/colors';
 
 export default function EditCamperScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
-  const route = useRoute<RouteProp<RootStackParamList, "EditCamper">>();
+  const route = useRoute<RouteProp<RootStackParamList, 'EditCamper'>>();
   const { contactId } = route.params;
 
   const [contact, setContact] = useState<CampgroundContact | null>(null);
-  const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [notes, setNotes] = useState("");
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,19 +56,19 @@ export default function EditCamperScreen() {
     try {
       const contactData = await getCampgroundContactById(contactId);
       if (!contactData) {
-        Alert.alert("Error", "Contact not found");
+        Alert.alert('Error', 'Contact not found');
         navigation.goBack();
         return;
       }
 
       setContact(contactData);
       setDisplayName(contactData.contactName);
-      setEmail(contactData.contactEmail || "");
-      setPhone(contactData.contactPhone || "");
-      setNotes(contactData.contactNote || "");
+      setEmail(contactData.contactEmail || '');
+      setPhone(contactData.contactPhone || '');
+      setNotes(contactData.contactNote || '');
     } catch (error: any) {
-      console.error("Error loading contact:", error);
-      Alert.alert("Error", "Failed to load contact");
+      console.error('Error loading contact:', error);
+      Alert.alert('Error', 'Failed to load contact');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -77,7 +77,7 @@ export default function EditCamperScreen() {
 
   const handleSubmit = async () => {
     if (!displayName.trim()) {
-      Alert.alert("Name Required", "Please enter a name for this contact");
+      Alert.alert('Name Required', 'Please enter a name for this contact');
       return;
     }
 
@@ -93,8 +93,8 @@ export default function EditCamperScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error: any) {
-      console.error("Error updating contact:", error);
-      Alert.alert("Error", error.message || "Failed to update contact");
+      console.error('Error updating contact:', error);
+      Alert.alert('Error', error.message || 'Failed to update contact');
     } finally {
       setSubmitting(false);
     }
@@ -102,24 +102,24 @@ export default function EditCamperScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      "Delete Contact",
+      'Delete Contact',
       `Are you sure you want to remove ${displayName} from your campground?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Delete",
-          style: "destructive",
+          text: 'Delete',
+          style: 'destructive',
           onPress: async () => {
             try {
               await deleteCampgroundContact(contactId);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               navigation.goBack();
             } catch (error) {
-              Alert.alert("Error", "Failed to delete contact");
+              Alert.alert('Error', 'Failed to delete contact');
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -129,7 +129,10 @@ export default function EditCamperScreen() {
         <ModalHeader title="Edit Camper" showTitle />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={DEEP_FOREST} />
-          <Text className="mt-4" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+          <Text
+            className="mt-4"
+            style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
+          >
             Loading contact...
           </Text>
         </View>
@@ -143,13 +146,13 @@ export default function EditCamperScreen() {
         title="Edit Camper"
         showTitle
         rightAction={{
-          icon: "checkmark",
+          icon: 'checkmark',
           onPress: handleSubmit,
         }}
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         <ScrollView className="flex-1 px-5 pt-5">
@@ -157,7 +160,10 @@ export default function EditCamperScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Name *
             </Text>
@@ -170,7 +176,7 @@ export default function EditCamperScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -180,7 +186,10 @@ export default function EditCamperScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Email
             </Text>
@@ -195,7 +204,7 @@ export default function EditCamperScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -205,7 +214,10 @@ export default function EditCamperScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Phone
             </Text>
@@ -219,7 +231,7 @@ export default function EditCamperScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -229,7 +241,10 @@ export default function EditCamperScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Notes
             </Text>
@@ -245,7 +260,7 @@ export default function EditCamperScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
                 minHeight: 100,
               }}
@@ -266,7 +281,7 @@ export default function EditCamperScreen() {
             ) : (
               <Text
                 className="text-center"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
               >
                 Update Camper
               </Text>
@@ -277,11 +292,11 @@ export default function EditCamperScreen() {
           <Pressable
             onPress={handleDelete}
             className="mb-8 py-3 rounded-lg border active:opacity-70"
-            style={{ borderColor: "#dc2626" }}
+            style={{ borderColor: '#dc2626' }}
           >
             <Text
               className="text-center"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: "#dc2626" }}
+              style={{ fontFamily: 'SourceSans3_600SemiBold', color: '#dc2626' }}
             >
               Delete Contact
             </Text>

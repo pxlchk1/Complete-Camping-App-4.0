@@ -1,20 +1,20 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { CommunityTip, TipCategory } from "../types/community";
-import { getTips, createTip, deleteTip, type Tip } from "../api/tips-service";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { CommunityTip, TipCategory } from '../types/community';
+import { getTips, createTip, deleteTip, type Tip } from '../api/tips-service';
 
 export const TIP_CATEGORIES: TipCategory[] = [
-  { id: "setup", name: "Setup & Campsite", icon: "home" },
-  { id: "cooking", name: "Cooking", icon: "restaurant" },
-  { id: "safety", name: "Safety", icon: "shield-checkmark" },
-  { id: "gear", name: "Gear", icon: "backpack" },
-  { id: "weather", name: "Weather", icon: "cloud" },
-  { id: "wildlife", name: "Wildlife", icon: "paw" },
-  { id: "navigation", name: "Navigation", icon: "compass" },
-  { id: "water", name: "Water", icon: "water" },
-  { id: "family", name: "Family Camping", icon: "people" },
-  { id: "other", name: "Other", icon: "ellipsis-horizontal" },
+  { id: 'setup', name: 'Setup & Campsite', icon: 'home' },
+  { id: 'cooking', name: 'Cooking', icon: 'restaurant' },
+  { id: 'safety', name: 'Safety', icon: 'shield-checkmark' },
+  { id: 'gear', name: 'Gear', icon: 'backpack' },
+  { id: 'weather', name: 'Weather', icon: 'cloud' },
+  { id: 'wildlife', name: 'Wildlife', icon: 'paw' },
+  { id: 'navigation', name: 'Navigation', icon: 'compass' },
+  { id: 'water', name: 'Water', icon: 'water' },
+  { id: 'family', name: 'Family Camping', icon: 'people' },
+  { id: 'other', name: 'Other', icon: 'ellipsis-horizontal' },
 ];
 
 interface TipState {
@@ -46,7 +46,7 @@ export const useTipStore = create<TipState>()(
           const tips = await getTips();
           set({ tips, isLoading: false });
         } catch (error) {
-          console.error("Error syncing tips:", error);
+          console.error('Error syncing tips:', error);
           set({ isLoading: false });
         }
       },
@@ -59,7 +59,7 @@ export const useTipStore = create<TipState>()(
           await get().syncFromFirebase();
           return tipId;
         } catch (error) {
-          console.error("Error adding tip:", error);
+          console.error('Error adding tip:', error);
           throw error;
         }
       },
@@ -71,7 +71,7 @@ export const useTipStore = create<TipState>()(
             tips: state.tips.filter((tip) => tip.id !== tipId),
           }));
         } catch (error) {
-          console.error("Error deleting tip:", error);
+          console.error('Error deleting tip:', error);
           throw error;
         }
       },
@@ -95,15 +95,15 @@ export const useTipStore = create<TipState>()(
       },
     }),
     {
-      name: "tip-storage",
+      name: 'tip-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         tips: state.tips,
         favorites: state.favorites,
         bookmarks: state.bookmarks,
       }),
-    }
-  )
+    },
+  ),
 );
 
 // Selector hooks for optimized subscriptions

@@ -1,12 +1,16 @@
 # Deploy Firestore Rules
 
 ## The Problem
+
 The Connect tabs (Tips, Gear, Ask, Feedback) were showing "Failed to load - Missing or insufficient permissions" because:
+
 1. The `communityTips` collection rules were missing
 2. All community collections required authentication to READ (they should allow public read)
 
 ## The Fix
+
 Updated `firestore.rules` to:
+
 1. Add rules for `communityTips` collection
 2. Allow public read access (`allow read: if true`) for all community content
 3. Still require authentication for creating/updating/deleting
@@ -14,6 +18,7 @@ Updated `firestore.rules` to:
 ## Deploy Options
 
 ### Option 1: Firebase CLI (Recommended)
+
 ```bash
 # First, re-authenticate
 firebase login --reauth
@@ -23,6 +28,7 @@ firebase deploy --only firestore:rules
 ```
 
 ### Option 2: Firebase Console (Manual)
+
 1. Go to https://console.firebase.google.com/
 2. Select "tentandlanternapp" project
 3. Click "Firestore Database" → "Rules" tab
@@ -30,7 +36,9 @@ firebase deploy --only firestore:rules
 5. Click "Publish"
 
 ## Verify It Works
+
 After deploying:
+
 1. Open the app
 2. Navigate to Connect tab
 3. Tap Tips, Gear, Ask, or Feedback tabs
@@ -39,10 +47,11 @@ After deploying:
 6. Creating/editing still requires authentication
 
 ## What Changed
+
 - ✅ Added `communityTips` collection rules
 - ✅ Changed all community read permissions from `isSignedIn()` to `true` (public)
 - ✅ Updated all 4 services to not require auth for reading:
-  - `tipsService.ts` 
+  - `tipsService.ts`
   - `askService.ts`
   - `gearReviewsService.ts`
   - `feedbackService.ts`

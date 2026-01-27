@@ -4,7 +4,7 @@
  * Wired to users/{uid}, profiles/{uid}, and emailSubscribers collections
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,20 +17,35 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
-import * as Notifications from "expo-notifications";
-import { auth, db, storage } from "../config/firebase";
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
-import { useSubscriptionStore } from "../state/subscriptionStore";
-import { restorePurchases } from "../services/subscriptionService";
-import ModalHeader from "../components/ModalHeader";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
+import { auth, db, storage } from '../config/firebase';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import {
+  updateEmail,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+} from 'firebase/auth';
+import { useSubscriptionStore } from '../state/subscriptionStore';
+import { restorePurchases } from '../services/subscriptionService';
+import ModalHeader from '../components/ModalHeader';
 import {
   PARCHMENT,
   CARD_BACKGROUND_LIGHT,
@@ -41,135 +56,135 @@ import {
   EARTH_GREEN,
   DEEP_FOREST,
   GRANITE_GOLD,
-} from "../constants/colors";
+} from '../constants/colors';
 
 // Reserved handles that cannot be used by regular users
 const RESERVED_HANDLES = [
   // Brand and product
-  "tentandlantern",
-  "tentlantern",
-  "tentandlanternapp",
-  "completecampingapp",
-  "completecamping",
-  "thecompletecampingapp",
-  "tentandlanternofficial",
-  "tentandlanternhq",
-  "tentandlanternteam",
-  "tentandlanternsupport",
+  'tentandlantern',
+  'tentlantern',
+  'tentandlanternapp',
+  'completecampingapp',
+  'completecamping',
+  'thecompletecampingapp',
+  'tentandlanternofficial',
+  'tentandlanternhq',
+  'tentandlanternteam',
+  'tentandlanternsupport',
 
   // Variants people will try
-  "tent_and_lantern",
-  "tent_lantern",
-  "complete_camping_app",
-  "complete_camping",
-  "camping_app",
-  "campingapp",
+  'tent_and_lantern',
+  'tent_lantern',
+  'complete_camping_app',
+  'complete_camping',
+  'camping_app',
+  'campingapp',
 
   // Staff and authority impersonation
-  "admin",
-  "administrator",
-  "root",
-  "owner",
-  "moderator",
-  "mod",
-  "staff",
-  "team",
-  "official",
-  "support",
-  "help",
-  "security",
-  "trust",
-  "trustandsafety",
-  "safety",
-  "billing",
-  "payments",
-  "payment",
-  "refund",
-  "refunds",
-  "subscriptions",
-  "subscription",
-  "premium",
-  "pro",
-  "plus",
-  "developer",
-  "dev",
+  'admin',
+  'administrator',
+  'root',
+  'owner',
+  'moderator',
+  'mod',
+  'staff',
+  'team',
+  'official',
+  'support',
+  'help',
+  'security',
+  'trust',
+  'trustandsafety',
+  'safety',
+  'billing',
+  'payments',
+  'payment',
+  'refund',
+  'refunds',
+  'subscriptions',
+  'subscription',
+  'premium',
+  'pro',
+  'plus',
+  'developer',
+  'dev',
 
   // App navigation and core features
-  "plan",
-  "trips",
-  "trip",
-  "newtrip",
-  "packing",
-  "packinglist",
-  "packinglists",
-  "gear",
-  "gearcloset",
-  "mygear",
-  "meal",
-  "meals",
-  "mealplan",
-  "mealplans",
-  "shopping",
-  "shoppinglist",
-  "parks",
-  "park",
-  "campground",
-  "campgrounds",
-  "itinerary",
-  "itinerarylinks",
-  "links",
-  "weather",
-  "learn",
-  "skills",
-  "leavenotrace",
-  "lnt",
-  "connect",
-  "community",
-  "askacamper",
-  "campfire",
-  "mycampsite",
-  "campsite",
-  "profile",
-  "account",
-  "settings",
-  "notifications",
-  "favorites",
-  "favorite",
+  'plan',
+  'trips',
+  'trip',
+  'newtrip',
+  'packing',
+  'packinglist',
+  'packinglists',
+  'gear',
+  'gearcloset',
+  'mygear',
+  'meal',
+  'meals',
+  'mealplan',
+  'mealplans',
+  'shopping',
+  'shoppinglist',
+  'parks',
+  'park',
+  'campground',
+  'campgrounds',
+  'itinerary',
+  'itinerarylinks',
+  'links',
+  'weather',
+  'learn',
+  'skills',
+  'leavenotrace',
+  'lnt',
+  'connect',
+  'community',
+  'askacamper',
+  'campfire',
+  'mycampsite',
+  'campsite',
+  'profile',
+  'account',
+  'settings',
+  'notifications',
+  'favorites',
+  'favorite',
 
   // System and technical words that cause confusion
-  "api",
-  "app",
-  "system",
-  "null",
-  "undefined",
-  "test",
-  "tester",
-  "demo",
-  "staging",
-  "production",
-  "prod",
-  "beta",
-  "qa",
+  'api',
+  'app',
+  'system',
+  'null',
+  'undefined',
+  'test',
+  'tester',
+  'demo',
+  'staging',
+  'production',
+  'prod',
+  'beta',
+  'qa',
 
   // Messaging and contact
-  "email",
-  "mail",
-  "sms",
-  "text",
-  "contact",
-  "press",
-  "media",
-  "partnerships",
-  "partners",
+  'email',
+  'mail',
+  'sms',
+  'text',
+  'contact',
+  'press',
+  'media',
+  'partnerships',
+  'partners',
 
   // Avoid platform brand impersonation
-  "apple",
-  "appstore",
-  "google",
-  "android",
-  "ios",
-  "firebase",
-  "revenuecat",
+  'apple',
+  'appstore',
+  'google',
+  'android',
+  'ios',
+  'firebase',
+  'revenuecat',
 ];
 
 export default function SettingsScreen() {
@@ -182,10 +197,12 @@ export default function SettingsScreen() {
   const [restoringPurchases, setRestoringPurchases] = useState(false);
 
   // User data
-  const [displayName, setDisplayName] = useState("");
-  const [handle, setHandle] = useState("");
+  const [displayName, setDisplayName] = useState('');
+  const [handle, setHandle] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [notificationPermissionStatus, setNotificationPermissionStatus] = useState<"unknown" | "granted" | "denied">("unknown");
+  const [notificationPermissionStatus, setNotificationPermissionStatus] = useState<
+    'unknown' | 'granted' | 'denied'
+  >('unknown');
   const [emailTransactionalEnabled, setEmailTransactionalEnabled] = useState(true);
   const [emailMarketingEnabled, setEmailMarketingEnabled] = useState(true);
   // Legacy - keep for backward compatibility
@@ -196,15 +213,15 @@ export default function SettingsScreen() {
 
   // Email change modal
   const [showEmailModal, setShowEmailModal] = useState(false);
-  const [newEmail, setNewEmail] = useState("");
-  const [emailPassword, setEmailPassword] = useState("");
+  const [newEmail, setNewEmail] = useState('');
+  const [emailPassword, setEmailPassword] = useState('');
   const [updatingEmail, setUpdatingEmail] = useState(false);
 
   // Password change modal
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [updatingPassword, setUpdatingPassword] = useState(false);
 
   useEffect(() => {
@@ -219,27 +236,32 @@ export default function SettingsScreen() {
     }
 
     try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
       if (userDoc.exists()) {
         const data = userDoc.data();
-        setDisplayName(data.displayName || "");
-        setHandle(data.handle || "");
+        setDisplayName(data.displayName || '');
+        setHandle(data.handle || '');
         // Default to true if missing (null/undefined) - preselected ON
         setNotificationsEnabled(data.notificationsEnabled !== false);
-        setNotificationPermissionStatus(data.notificationPermissionStatus || "unknown");
+        setNotificationPermissionStatus(data.notificationPermissionStatus || 'unknown');
         // New split email preferences (with fallback to legacy emailSubscribed)
         setEmailTransactionalEnabled(data.emailTransactionalEnabled !== false);
-        setEmailMarketingEnabled(data.emailMarketingEnabled !== false && data.emailSubscribed !== false);
+        setEmailMarketingEnabled(
+          data.emailMarketingEnabled !== false && data.emailSubscribed !== false,
+        );
         // Legacy field for backward compatibility
         setEmailSubscribed(data.emailSubscribed !== false);
         setProfilePublic(data.profilePublic !== false); // default true
         setShowUsernamePublicly(data.showUsernamePublicly !== false); // default true
         // Check if user is admin
-        setIsAdmin(data.role === "admin" || user.email?.toLowerCase() === "alana@tentandlantern.com");
+        setIsAdmin(
+          data.role === 'admin' ||
+            user.email?.toLowerCase() === 'alana@tentandlantern.com',
+        );
       }
     } catch (error) {
-      console.error("[Settings] Error loading:", error);
-      Alert.alert("Error", "Failed to load settings");
+      console.error('[Settings] Error loading:', error);
+      Alert.alert('Error', 'Failed to load settings');
     } finally {
       setLoading(false);
     }
@@ -248,50 +270,56 @@ export default function SettingsScreen() {
   const handleSave = async () => {
     const user = auth.currentUser;
     if (!user) {
-      Alert.alert("Error", "You must be signed in");
+      Alert.alert('Error', 'You must be signed in');
       return;
     }
 
     // Validate display name
     if (!displayName.trim()) {
-      Alert.alert("Required Field", "Please enter a display name");
+      Alert.alert('Required Field', 'Please enter a display name');
       return;
     }
 
     if (displayName.length < 1 || displayName.length > 50) {
-      Alert.alert("Invalid Name", "Display name must be between 1 and 50 characters");
+      Alert.alert('Invalid Name', 'Display name must be between 1 and 50 characters');
       return;
     }
 
     // Validate handle (now required)
     if (!handle.trim()) {
-      Alert.alert("Required Field", "Please enter a handle");
+      Alert.alert('Required Field', 'Please enter a handle');
       return;
     }
 
     const cleanHandle = handle.trim().toLowerCase();
 
     if (cleanHandle.length < 3 || cleanHandle.length > 30) {
-      Alert.alert("Invalid Handle", "Handle must be between 3 and 30 characters");
+      Alert.alert('Invalid Handle', 'Handle must be between 3 and 30 characters');
       return;
     }
 
     if (!/^[a-z0-9_-]+$/.test(cleanHandle)) {
-      Alert.alert("Invalid Handle", "Handle can only contain lowercase letters, numbers, hyphens, and underscores");
+      Alert.alert(
+        'Invalid Handle',
+        'Handle can only contain lowercase letters, numbers, hyphens, and underscores',
+      );
       return;
     }
 
     // Allow admin email to use reserved handles
-    const isAdminEmail = user.email?.toLowerCase() === "alana@tentandlantern.com";
+    const isAdminEmail = user.email?.toLowerCase() === 'alana@tentandlantern.com';
     if (RESERVED_HANDLES.includes(cleanHandle) && !isAdminEmail) {
-      Alert.alert("Reserved Handle", "This handle is reserved. Please choose a different one.");
+      Alert.alert(
+        'Reserved Handle',
+        'This handle is reserved. Please choose a different one.',
+      );
       return;
     }
 
     try {
       setSaving(true);
 
-      const userRef = doc(db, "users", user.uid);
+      const userRef = doc(db, 'users', user.uid);
 
       // Check if document exists
       const userDoc = await getDoc(userRef);
@@ -319,48 +347,59 @@ export default function SettingsScreen() {
         // The app treats missing membershipTier as "free" tier
         await setDoc(userRef, {
           ...userData,
-          email: user.email || "",
+          email: user.email || '',
           createdAt: serverTimestamp(),
-          role: "user",
+          role: 'user',
           // membershipTier omitted - blocked by Firestore rules on create
         });
       }
 
       // Update email subscriber document (using marketing preference)
-      await updateEmailSubscription(user.uid, user.email || "", emailMarketingEnabled);
+      await updateEmailSubscription(user.uid, user.email || '', emailMarketingEnabled);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Success", "Settings saved successfully");
+      Alert.alert('Success', 'Settings saved successfully');
     } catch (error: any) {
-      console.error("[Settings] Error saving:", error);
+      console.error('[Settings] Error saving:', error);
 
-      if (error.code === "permission-denied") {
-        Alert.alert("Error", "You do not have permission to update these settings. Please try signing out and back in.");
+      if (error.code === 'permission-denied') {
+        Alert.alert(
+          'Error',
+          'You do not have permission to update these settings. Please try signing out and back in.',
+        );
       } else {
-        Alert.alert("Error", error.message || "Failed to save settings");
+        Alert.alert('Error', error.message || 'Failed to save settings');
       }
     } finally {
       setSaving(false);
     }
   };
 
-  const updateEmailSubscription = async (userId: string, email: string, marketingEnabled: boolean) => {
+  const updateEmailSubscription = async (
+    userId: string,
+    email: string,
+    marketingEnabled: boolean,
+  ) => {
     if (!email) return;
 
     try {
       // Use userId as document ID for easier lookups
-      const emailSubRef = doc(db, "emailSubscribers", userId);
-      await setDoc(emailSubRef, {
-        email,
-        userId,
-        unsubscribed: !marketingEnabled,
-        marketingUnsubscribed: !marketingEnabled,
-        source: "app-settings",
-        updatedAt: serverTimestamp(),
-        ...(marketingEnabled ? {} : { unsubscribedAt: serverTimestamp() }),
-      }, { merge: true });
+      const emailSubRef = doc(db, 'emailSubscribers', userId);
+      await setDoc(
+        emailSubRef,
+        {
+          email,
+          userId,
+          unsubscribed: !marketingEnabled,
+          marketingUnsubscribed: !marketingEnabled,
+          source: 'app-settings',
+          updatedAt: serverTimestamp(),
+          ...(marketingEnabled ? {} : { unsubscribedAt: serverTimestamp() }),
+        },
+        { merge: true },
+      );
     } catch (error) {
-      console.error("[Settings] Error updating email subscription:", error);
+      console.error('[Settings] Error updating email subscription:', error);
       // Don't throw - this is a secondary operation
     }
   };
@@ -372,9 +411,9 @@ export default function SettingsScreen() {
 
     try {
       setEmailMarketingEnabled(value);
-      
+
       // Update users document
-      await updateDoc(doc(db, "users", user.uid), {
+      await updateDoc(doc(db, 'users', user.uid), {
         emailMarketingEnabled: value,
         emailSubscribed: value, // Keep legacy field in sync
         updatedAt: serverTimestamp(),
@@ -389,10 +428,10 @@ export default function SettingsScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error: any) {
-      console.error("[Settings] Error toggling email marketing:", error);
+      console.error('[Settings] Error toggling email marketing:', error);
       // Revert state on error
       setEmailMarketingEnabled(!value);
-      Alert.alert("Error", "Failed to update email preferences");
+      Alert.alert('Error', 'Failed to update email preferences');
     }
   };
 
@@ -403,8 +442,8 @@ export default function SettingsScreen() {
 
     try {
       setEmailTransactionalEnabled(value);
-      
-      await updateDoc(doc(db, "users", user.uid), {
+
+      await updateDoc(doc(db, 'users', user.uid), {
         emailTransactionalEnabled: value,
         updatedAt: serverTimestamp(),
       });
@@ -415,19 +454,23 @@ export default function SettingsScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error: any) {
-      console.error("[Settings] Error toggling transactional email:", error);
+      console.error('[Settings] Error toggling transactional email:', error);
       setEmailTransactionalEnabled(!value);
-      Alert.alert("Error", "Failed to update email preferences");
+      Alert.alert('Error', 'Failed to update email preferences');
     }
   };
 
   // Legacy update function - keep for backward compatibility with handleEmailToggle
-  const updateEmailSubscriptionLegacy = async (userId: string, email: string, subscribed: boolean) => {
+  const updateEmailSubscriptionLegacy = async (
+    userId: string,
+    email: string,
+    subscribed: boolean,
+  ) => {
     if (!email) return;
 
     try {
-      const emailSubsRef = collection(db, "emailSubscribers");
-      const q = query(emailSubsRef, where("userId", "==", userId));
+      const emailSubsRef = collection(db, 'emailSubscribers');
+      const q = query(emailSubsRef, where('userId', '==', userId));
       const existing = await getDocs(q);
 
       if (existing.empty) {
@@ -436,7 +479,7 @@ export default function SettingsScreen() {
           email,
           userId,
           unsubscribed: !subscribed,
-          source: "app-settings",
+          source: 'app-settings',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -449,7 +492,7 @@ export default function SettingsScreen() {
         });
       }
     } catch (error) {
-      console.error("[Settings] Error updating email subscription:", error);
+      console.error('[Settings] Error updating email subscription:', error);
       // Don't throw - this is a secondary operation
     }
   };
@@ -465,20 +508,23 @@ export default function SettingsScreen() {
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
 
-        if (existingStatus !== "granted") {
+        if (existingStatus !== 'granted') {
           // Request permission from OS
           const { status } = await Notifications.requestPermissionsAsync();
           finalStatus = status;
         }
 
-        if (finalStatus === "granted") {
+        if (finalStatus === 'granted') {
           // Permission granted - get push token and save
           const tokenData = await Notifications.getExpoPushTokenAsync({
-            projectId: "your-expo-project-id", // This will be replaced by EAS config
+            projectId: 'your-expo-project-id', // This will be replaced by EAS config
           });
 
           // Save token to pushTokens collection
-          const pushTokenRef = doc(collection(db, "pushTokens"), `${user.uid}_${Platform.OS}`);
+          const pushTokenRef = doc(
+            collection(db, 'pushTokens'),
+            `${user.uid}_${Platform.OS}`,
+          );
           await setDoc(pushTokenRef, {
             userId: user.uid,
             token: tokenData.data,
@@ -488,7 +534,7 @@ export default function SettingsScreen() {
           });
 
           // Update users document
-          await updateDoc(doc(db, "users", user.uid), {
+          await updateDoc(doc(db, 'users', user.uid), {
             notificationsEnabled: true,
             updatedAt: serverTimestamp(),
           });
@@ -497,7 +543,7 @@ export default function SettingsScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } else {
           // Permission denied
-          await updateDoc(doc(db, "users", user.uid), {
+          await updateDoc(doc(db, 'users', user.uid), {
             notificationsEnabled: false,
             updatedAt: serverTimestamp(),
           });
@@ -505,35 +551,38 @@ export default function SettingsScreen() {
           setNotificationsEnabled(false);
 
           Alert.alert(
-            "Notifications Disabled",
-            "To enable notifications, please go to your device Settings and allow notifications for this app.",
-            [{ text: "OK" }]
+            'Notifications Disabled',
+            'To enable notifications, please go to your device Settings and allow notifications for this app.',
+            [{ text: 'OK' }],
           );
         }
       } else {
         // User wants to disable notifications
-        await updateDoc(doc(db, "users", user.uid), {
+        await updateDoc(doc(db, 'users', user.uid), {
           notificationsEnabled: false,
           updatedAt: serverTimestamp(),
         });
 
         // Optionally delete push tokens
         try {
-          const pushTokenRef = doc(collection(db, "pushTokens"), `${user.uid}_${Platform.OS}`);
+          const pushTokenRef = doc(
+            collection(db, 'pushTokens'),
+            `${user.uid}_${Platform.OS}`,
+          );
           await updateDoc(pushTokenRef, {
             updatedAt: serverTimestamp(),
             disabled: true,
           });
         } catch (error) {
-          console.log("[Settings] No push token to disable");
+          console.log('[Settings] No push token to disable');
         }
 
         setNotificationsEnabled(false);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error: any) {
-      console.error("[Settings] Error toggling notifications:", error);
-      Alert.alert("Error", "Failed to update notification settings");
+      console.error('[Settings] Error toggling notifications:', error);
+      Alert.alert('Error', 'Failed to update notification settings');
     }
   };
 
@@ -545,22 +594,22 @@ export default function SettingsScreen() {
       if (value) {
         // User wants to enable email updates
         // Upsert emailSubscribers document
-        const emailSubRef = doc(db, "emailSubscribers", user.uid);
+        const emailSubRef = doc(db, 'emailSubscribers', user.uid);
         await setDoc(
           emailSubRef,
           {
             email: user.email,
             userId: user.uid,
             unsubscribed: false,
-            source: "app-settings",
+            source: 'app-settings',
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           },
-          { merge: true }
+          { merge: true },
         );
 
         // Update users document
-        await updateDoc(doc(db, "users", user.uid), {
+        await updateDoc(doc(db, 'users', user.uid), {
           emailSubscribed: true,
           updatedAt: serverTimestamp(),
         });
@@ -570,18 +619,18 @@ export default function SettingsScreen() {
       } else {
         // User wants to disable email updates
         // Update emailSubscribers document
-        const emailSubRef = doc(db, "emailSubscribers", user.uid);
+        const emailSubRef = doc(db, 'emailSubscribers', user.uid);
         await setDoc(
           emailSubRef,
           {
             unsubscribed: true,
             updatedAt: serverTimestamp(),
           },
-          { merge: true }
+          { merge: true },
         );
 
         // Update users document
-        await updateDoc(doc(db, "users", user.uid), {
+        await updateDoc(doc(db, 'users', user.uid), {
           emailSubscribed: false,
           updatedAt: serverTimestamp(),
         });
@@ -590,8 +639,8 @@ export default function SettingsScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error: any) {
-      console.error("[Settings] Error toggling email:", error);
-      Alert.alert("Error", "Failed to update email preferences");
+      console.error('[Settings] Error toggling email:', error);
+      Alert.alert('Error', 'Failed to update email preferences');
     }
   };
 
@@ -601,18 +650,18 @@ export default function SettingsScreen() {
 
     // Validate new email
     if (!newEmail.trim()) {
-      Alert.alert("Required Field", "Please enter your new email address");
+      Alert.alert('Required Field', 'Please enter your new email address');
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(newEmail.trim())) {
-      Alert.alert("Invalid Email", "Please enter a valid email address");
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
       return;
     }
 
     if (!emailPassword.trim()) {
-      Alert.alert("Required Field", "Please enter your current password to confirm");
+      Alert.alert('Required Field', 'Please enter your current password to confirm');
       return;
     }
 
@@ -627,44 +676,53 @@ export default function SettingsScreen() {
       await updateEmail(user, newEmail.trim());
 
       // Update email in Firestore
-      await updateDoc(doc(db, "users", user.uid), {
+      await updateDoc(doc(db, 'users', user.uid), {
         email: newEmail.trim(),
         updatedAt: serverTimestamp(),
       });
 
       // Update email subscribers if they're subscribed
       if (emailSubscribed) {
-        const emailSubRef = doc(db, "emailSubscribers", user.uid);
+        const emailSubRef = doc(db, 'emailSubscribers', user.uid);
         await setDoc(
           emailSubRef,
           {
             email: newEmail.trim(),
             updatedAt: serverTimestamp(),
           },
-          { merge: true }
+          { merge: true },
         );
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Success", "Your email has been updated successfully");
+      Alert.alert('Success', 'Your email has been updated successfully');
 
       // Close modal and reset fields
       setShowEmailModal(false);
-      setNewEmail("");
-      setEmailPassword("");
+      setNewEmail('');
+      setEmailPassword('');
     } catch (error: any) {
-      console.error("[Settings] Error updating email:", error);
+      console.error('[Settings] Error updating email:', error);
 
-      if (error.code === "auth/wrong-password") {
-        Alert.alert("Incorrect Password", "The password you entered is incorrect");
-      } else if (error.code === "auth/email-already-in-use") {
-        Alert.alert("Email In Use", "This email is already being used by another account");
-      } else if (error.code === "auth/invalid-email") {
-        Alert.alert("Invalid Email", "Please enter a valid email address");
-      } else if (error.code === "auth/requires-recent-login") {
-        Alert.alert("Session Expired", "Please sign out and sign back in before changing your email");
+      if (error.code === 'auth/wrong-password') {
+        Alert.alert('Incorrect Password', 'The password you entered is incorrect');
+      } else if (error.code === 'auth/email-already-in-use') {
+        Alert.alert(
+          'Email In Use',
+          'This email is already being used by another account',
+        );
+      } else if (error.code === 'auth/invalid-email') {
+        Alert.alert('Invalid Email', 'Please enter a valid email address');
+      } else if (error.code === 'auth/requires-recent-login') {
+        Alert.alert(
+          'Session Expired',
+          'Please sign out and sign back in before changing your email',
+        );
       } else {
-        Alert.alert("Error", error.message || "Failed to update email. Please try again.");
+        Alert.alert(
+          'Error',
+          error.message || 'Failed to update email. Please try again.',
+        );
       }
     } finally {
       setUpdatingEmail(false);
@@ -677,27 +735,30 @@ export default function SettingsScreen() {
 
     // Validate passwords
     if (!currentPassword.trim()) {
-      Alert.alert("Required Field", "Please enter your current password");
+      Alert.alert('Required Field', 'Please enter your current password');
       return;
     }
 
     if (!newPassword.trim()) {
-      Alert.alert("Required Field", "Please enter your new password");
+      Alert.alert('Required Field', 'Please enter your new password');
       return;
     }
 
     if (newPassword.length < 8) {
-      Alert.alert("Weak Password", "Password must be at least 8 characters long");
+      Alert.alert('Weak Password', 'Password must be at least 8 characters long');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      Alert.alert("Passwords Don't Match", "New password and confirmation do not match");
+      Alert.alert("Passwords Don't Match", 'New password and confirmation do not match');
       return;
     }
 
     if (currentPassword === newPassword) {
-      Alert.alert("Same Password", "New password must be different from current password");
+      Alert.alert(
+        'Same Password',
+        'New password must be different from current password',
+      );
       return;
     }
 
@@ -712,24 +773,33 @@ export default function SettingsScreen() {
       await updatePassword(user, newPassword);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Success", "Your password has been updated successfully");
+      Alert.alert('Success', 'Your password has been updated successfully');
 
       // Close modal and reset fields
       setShowPasswordModal(false);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (error: any) {
-      console.error("[Settings] Error updating password:", error);
+      console.error('[Settings] Error updating password:', error);
 
-      if (error.code === "auth/wrong-password") {
-        Alert.alert("Incorrect Password", "The current password you entered is incorrect");
-      } else if (error.code === "auth/weak-password") {
-        Alert.alert("Weak Password", "Please choose a stronger password");
-      } else if (error.code === "auth/requires-recent-login") {
-        Alert.alert("Session Expired", "Please sign out and sign back in before changing your password");
+      if (error.code === 'auth/wrong-password') {
+        Alert.alert(
+          'Incorrect Password',
+          'The current password you entered is incorrect',
+        );
+      } else if (error.code === 'auth/weak-password') {
+        Alert.alert('Weak Password', 'Please choose a stronger password');
+      } else if (error.code === 'auth/requires-recent-login') {
+        Alert.alert(
+          'Session Expired',
+          'Please sign out and sign back in before changing your password',
+        );
       } else {
-        Alert.alert("Error", error.message || "Failed to update password. Please try again.");
+        Alert.alert(
+          'Error',
+          error.message || 'Failed to update password. Please try again.',
+        );
       }
     } finally {
       setUpdatingPassword(false);
@@ -742,7 +812,10 @@ export default function SettingsScreen() {
         <ModalHeader title="Settings" showTitle />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={DEEP_FOREST} />
-          <Text className="mt-4" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+          <Text
+            className="mt-4"
+            style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
+          >
             Loading settings...
           </Text>
         </View>
@@ -756,13 +829,13 @@ export default function SettingsScreen() {
         title="Settings"
         showTitle
         rightAction={{
-          icon: "checkmark",
+          icon: 'checkmark',
           onPress: handleSave,
         }}
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         <ScrollView className="flex-1">
@@ -770,7 +843,7 @@ export default function SettingsScreen() {
             {/* Profile Section */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               Profile
             </Text>
@@ -783,7 +856,10 @@ export default function SettingsScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Display Name *
                 </Text>
@@ -796,7 +872,7 @@ export default function SettingsScreen() {
                   style={{
                     backgroundColor: PARCHMENT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
@@ -806,7 +882,10 @@ export default function SettingsScreen() {
               <View>
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Handle *
                 </Text>
@@ -821,13 +900,13 @@ export default function SettingsScreen() {
                   style={{
                     backgroundColor: PARCHMENT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
                 <Text
                   className="mt-1 text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
                 >
                   Lowercase letters, numbers, hyphens, and underscores only
                 </Text>
@@ -837,7 +916,7 @@ export default function SettingsScreen() {
             {/* Notifications Section */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               App Settings
             </Text>
@@ -852,24 +931,35 @@ export default function SettingsScreen() {
                   <View className="flex-1 mr-4">
                     <Text
                       className="mb-1"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Push Notifications
                     </Text>
                     <Text
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Trip reminders and tips
                     </Text>
                     {/* Show OS permission status message */}
-                    {notificationsEnabled && notificationPermissionStatus === "denied" && (
-                      <Text
-                        className="mt-1"
-                        style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: "#dc2626" }}
-                      >
-                        ⚠️ Notifications blocked in device settings. Tap to enable.
-                      </Text>
-                    )}
+                    {notificationsEnabled &&
+                      notificationPermissionStatus === 'denied' && (
+                        <Text
+                          className="mt-1"
+                          style={{
+                            fontFamily: 'SourceSans3_400Regular',
+                            fontSize: 12,
+                            color: '#dc2626',
+                          }}
+                        >
+                          ⚠️ Notifications blocked in device settings. Tap to enable.
+                        </Text>
+                      )}
                   </View>
                   <Switch
                     value={notificationsEnabled}
@@ -884,29 +974,35 @@ export default function SettingsScreen() {
               <Pressable
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate("Paywall");
+                  navigation.navigate('Paywall');
                 }}
                 className="flex-row items-center justify-between p-4 active:opacity-70"
               >
                 <View className="flex-1 mr-4">
                   <View className="flex-row items-center">
-                    <Ionicons 
-                      name={isPro ? "star" : "star-outline"} 
-                      size={20} 
-                      color={isPro ? GRANITE_GOLD : EARTH_GREEN} 
+                    <Ionicons
+                      name={isPro ? 'star' : 'star-outline'}
+                      size={20}
+                      color={isPro ? GRANITE_GOLD : EARTH_GREEN}
                     />
                     <Text
                       className="ml-3"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
-                      {isPro ? "Pro Member" : "Upgrade to Pro"}
+                      {isPro ? 'Pro Member' : 'Upgrade to Pro'}
                     </Text>
                   </View>
                   <Text
                     className="ml-8 mt-1"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: TEXT_SECONDARY,
+                    }}
                   >
-                    {isPro ? "Manage your subscription" : "Unlock all premium features"}
+                    {isPro ? 'Manage your subscription' : 'Unlock all premium features'}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={TEXT_SECONDARY} />
@@ -922,19 +1018,22 @@ export default function SettingsScreen() {
                       const restored = await restorePurchases();
                       if (restored) {
                         Alert.alert(
-                          "Purchases Restored",
-                          "Your subscription has been restored.",
-                          [{ text: "OK" }]
+                          'Purchases Restored',
+                          'Your subscription has been restored.',
+                          [{ text: 'OK' }],
                         );
                       } else {
                         Alert.alert(
-                          "No Purchases Found",
-                          "No active subscriptions were found for your account.",
-                          [{ text: "OK" }]
+                          'No Purchases Found',
+                          'No active subscriptions were found for your account.',
+                          [{ text: 'OK' }],
                         );
                       }
                     } catch (error) {
-                      Alert.alert("Restore Failed", "Please try again or contact support.");
+                      Alert.alert(
+                        'Restore Failed',
+                        'Please try again or contact support.',
+                      );
                     } finally {
                       setRestoringPurchases(false);
                     }
@@ -948,14 +1047,20 @@ export default function SettingsScreen() {
                       <Ionicons name="refresh-outline" size={20} color={EARTH_GREEN} />
                       <Text
                         className="ml-3"
-                        style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                        style={{
+                          fontFamily: 'SourceSans3_600SemiBold',
+                          color: TEXT_PRIMARY_STRONG,
+                        }}
                       >
-                        {restoringPurchases ? "Restoring..." : "Restore purchases"}
+                        {restoringPurchases ? 'Restoring...' : 'Restore purchases'}
                       </Text>
                     </View>
                     <Text
                       className="ml-8 mt-1"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Already subscribed? Restore your access
                     </Text>
@@ -967,7 +1072,7 @@ export default function SettingsScreen() {
             {/* Email Section */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               Email Preferences
             </Text>
@@ -982,12 +1087,18 @@ export default function SettingsScreen() {
                   <View className="flex-1 mr-4">
                     <Text
                       className="mb-1"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Trip Planning Emails
                     </Text>
                     <Text
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Invites, trip reminders, and account notices
                     </Text>
@@ -1007,12 +1118,18 @@ export default function SettingsScreen() {
                   <View className="flex-1 mr-4">
                     <Text
                       className="mb-1"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Tips & Updates
                     </Text>
                     <Text
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Product updates and gentle first-month onboarding tips
                     </Text>
@@ -1030,7 +1147,7 @@ export default function SettingsScreen() {
             {/* Security Section */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               Security
             </Text>
@@ -1052,14 +1169,20 @@ export default function SettingsScreen() {
                   <View className="flex-1 mr-4">
                     <Text
                       className="mb-1"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Change Email
                     </Text>
                     <Text
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
-                      {auth.currentUser?.email || "Update your email address"}
+                      {auth.currentUser?.email || 'Update your email address'}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={TEXT_SECONDARY} />
@@ -1078,12 +1201,18 @@ export default function SettingsScreen() {
                   <View className="flex-1 mr-4">
                     <Text
                       className="mb-1"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Change Password
                     </Text>
                     <Text
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Update your account password
                     </Text>
@@ -1098,7 +1227,7 @@ export default function SettingsScreen() {
               <>
                 <Text
                   className="text-lg mb-3"
-                  style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+                  style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
                 >
                   Admin
                 </Text>
@@ -1106,28 +1235,37 @@ export default function SettingsScreen() {
                 <Pressable
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    navigation.navigate("AdminDashboard" as any);
+                    navigation.navigate('AdminDashboard' as any);
                   }}
                   className="mb-6 p-4 rounded-xl border active:opacity-70"
-                  style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
+                  style={{
+                    backgroundColor: CARD_BACKGROUND_LIGHT,
+                    borderColor: BORDER_SOFT,
+                  }}
                 >
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center flex-1">
                       <View
                         className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                        style={{ backgroundColor: "#D32F2F" + "20" }}
+                        style={{ backgroundColor: '#D32F2F' + '20' }}
                       >
                         <Ionicons name="shield-checkmark" size={24} color="#D32F2F" />
                       </View>
                       <View className="flex-1">
                         <Text
                           className="mb-1"
-                          style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                          style={{
+                            fontFamily: 'SourceSans3_600SemiBold',
+                            color: TEXT_PRIMARY_STRONG,
+                          }}
                         >
                           Admin Dashboard
                         </Text>
                         <Text
-                          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                          style={{
+                            fontFamily: 'SourceSans3_400Regular',
+                            color: TEXT_SECONDARY,
+                          }}
                         >
                           Manage users, content, and reports
                         </Text>
@@ -1142,7 +1280,7 @@ export default function SettingsScreen() {
             {/* Privacy Section */}
             <Text
               className="text-lg mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               Privacy
             </Text>
@@ -1157,12 +1295,18 @@ export default function SettingsScreen() {
                   <View className="flex-1 mr-4">
                     <Text
                       className="mb-1"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Public Profile
                     </Text>
                     <Text
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Allow others to view your profile
                     </Text>
@@ -1182,12 +1326,18 @@ export default function SettingsScreen() {
                   <View className="flex-1 mr-4">
                     <Text
                       className="mb-1"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: TEXT_PRIMARY_STRONG,
+                      }}
                     >
                       Show Username Publicly
                     </Text>
                     <Text
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        color: TEXT_SECONDARY,
+                      }}
                     >
                       Display your username on public posts
                     </Text>
@@ -1207,7 +1357,10 @@ export default function SettingsScreen() {
 
       {/* Save Button */}
       {saving && (
-        <View className="absolute inset-0 items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.3)" }}>
+        <View
+          className="absolute inset-0 items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+        >
           <ActivityIndicator size="large" color={PARCHMENT} />
         </View>
       )}
@@ -1220,12 +1373,12 @@ export default function SettingsScreen() {
         onRequestClose={() => setShowEmailModal(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1"
         >
           <Pressable
             className="flex-1 justify-end"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onPress={() => !updatingEmail && setShowEmailModal(false)}
           >
             <Pressable
@@ -1237,7 +1390,7 @@ export default function SettingsScreen() {
               <View className="flex-row items-center justify-between mb-6">
                 <Text
                   className="text-2xl"
-                  style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                  style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                 >
                   Change Email
                 </Text>
@@ -1254,7 +1407,10 @@ export default function SettingsScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   New Email Address
                 </Text>
@@ -1271,7 +1427,7 @@ export default function SettingsScreen() {
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
@@ -1281,7 +1437,10 @@ export default function SettingsScreen() {
               <View className="mb-6">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Current Password
                 </Text>
@@ -1298,13 +1457,13 @@ export default function SettingsScreen() {
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
                 <Text
                   className="mt-2 text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
                 >
                   For security, please enter your current password
                 </Text>
@@ -1322,7 +1481,7 @@ export default function SettingsScreen() {
                 ) : (
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 15,
                       color: PARCHMENT,
                     }}
@@ -1344,12 +1503,12 @@ export default function SettingsScreen() {
         onRequestClose={() => setShowPasswordModal(false)}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1"
         >
           <Pressable
             className="flex-1 justify-end"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onPress={() => !updatingPassword && setShowPasswordModal(false)}
           >
             <Pressable
@@ -1361,7 +1520,7 @@ export default function SettingsScreen() {
               <View className="flex-row items-center justify-between mb-6">
                 <Text
                   className="text-2xl"
-                  style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                  style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                 >
                   Change Password
                 </Text>
@@ -1378,7 +1537,10 @@ export default function SettingsScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Current Password
                 </Text>
@@ -1395,7 +1557,7 @@ export default function SettingsScreen() {
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
@@ -1405,7 +1567,10 @@ export default function SettingsScreen() {
               <View className="mb-4">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   New Password
                 </Text>
@@ -1422,13 +1587,13 @@ export default function SettingsScreen() {
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
                 <Text
                   className="mt-2 text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
                 >
                   Must be at least 8 characters long
                 </Text>
@@ -1438,7 +1603,10 @@ export default function SettingsScreen() {
               <View className="mb-6">
                 <Text
                   className="mb-2"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Confirm New Password
                 </Text>
@@ -1455,7 +1623,7 @@ export default function SettingsScreen() {
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderColor: BORDER_SOFT,
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
@@ -1473,7 +1641,7 @@ export default function SettingsScreen() {
                 ) : (
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 15,
                       color: PARCHMENT,
                     }}

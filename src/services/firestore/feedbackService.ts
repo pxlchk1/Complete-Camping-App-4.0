@@ -58,10 +58,7 @@ export const feedbackService = {
 
   // Get all feedback ordered by createdAt desc
   async getFeedback(): Promise<FeedbackPost[]> {
-    const q = query(
-      collection(db, 'feedbackPosts'),
-      orderBy('createdAt', 'desc')
-    );
+    const q = query(collection(db, 'feedbackPosts'), orderBy('createdAt', 'desc'));
 
     const snapshot = await getDocs(q);
 
@@ -91,7 +88,7 @@ export const feedbackService = {
       title?: string;
       description?: string;
       category?: 'Feature Request' | 'Bug Report' | 'Improvement' | 'Question' | 'Other';
-    }
+    },
   ): Promise<void> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to update feedback');
@@ -100,7 +97,7 @@ export const feedbackService = {
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) throw new Error('Feedback not found');
-    
+
     // Check if the current user created this feedback
     if (docSnap.data().createdByUserId !== user.uid) {
       throw new Error('You can only edit your own feedback');
@@ -143,4 +140,3 @@ export const feedbackService = {
     return this.adjustKarma(feedbackId, 1);
   },
 };
-

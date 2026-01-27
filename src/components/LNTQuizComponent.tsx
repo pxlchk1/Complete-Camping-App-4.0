@@ -10,11 +10,11 @@
  * - Completion badge reward
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { View, Text, ScrollView, Pressable, Alert, Modal } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, ScrollView, Pressable, Alert, Modal } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 import {
   LNTQuestion,
@@ -23,7 +23,7 @@ import {
   generateLNTQuiz,
   calculateQuizResult,
   QuizResult,
-} from "../data/lntQuestionBank";
+} from '../data/lntQuestionBank';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -34,7 +34,7 @@ import {
   BORDER_SOFT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-} from "../constants/colors";
+} from '../constants/colors';
 
 interface LNTQuizProps {
   onComplete: (passed: boolean, result: QuizResult) => void;
@@ -89,7 +89,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
       const questionId = currentQuestion.id;
       const currentSelections = answers[questionId] || [];
 
-      if (currentQuestion.type === "multi") {
+      if (currentQuestion.type === 'multi') {
         // Multi-select: toggle selection
         if (currentSelections.includes(choiceId)) {
           setAnswers({
@@ -110,20 +110,20 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
         });
       }
     },
-    [currentQuestion, answers, showExplanation]
+    [currentQuestion, answers, showExplanation],
   );
 
   // Handle submit answer (show explanation)
   const handleSubmitAnswer = useCallback(() => {
     if (!isAnswered) {
-      Alert.alert("Select an Answer", "Please select an answer before continuing.");
+      Alert.alert('Select an Answer', 'Please select an answer before continuing.');
       return;
     }
 
     Haptics.notificationAsync(
       isCorrect
         ? Haptics.NotificationFeedbackType.Success
-        : Haptics.NotificationFeedbackType.Warning
+        : Haptics.NotificationFeedbackType.Warning,
     );
     setShowExplanation(true);
   }, [isAnswered, isCorrect]);
@@ -139,7 +139,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
       Haptics.notificationAsync(
         result.passed
           ? Haptics.NotificationFeedbackType.Success
-          : Haptics.NotificationFeedbackType.Error
+          : Haptics.NotificationFeedbackType.Error,
       );
     } else {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -173,21 +173,21 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
   // Get question type label
   const getQuestionTypeLabel = (type: string): string => {
     switch (type) {
-      case "multi":
-        return "Select all that apply";
-      case "tf":
-        return "True or False";
-      case "scenario":
-        return "Scenario";
+      case 'multi':
+        return 'Select all that apply';
+      case 'tf':
+        return 'True or False';
+      case 'scenario':
+        return 'Scenario';
       default:
-        return "Choose one";
+        return 'Choose one';
     }
   };
 
   // Get principle title
   const getPrincipleTitle = (principleId: string): string => {
     const principle = LNT_PRINCIPLES[principleId as keyof typeof LNT_PRINCIPLES];
-    return principle ? `Principle ${principle.number}: ${principle.title}` : "";
+    return principle ? `Principle ${principle.number}: ${principle.title}` : '';
   };
 
   // Render choice button
@@ -196,34 +196,34 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
     choice: { id: string; text: string },
     selectedIds: string[],
     showResult: boolean,
-    disabled: boolean
+    disabled: boolean,
   ) => {
     const isSelected = selectedIds.includes(choice.id);
     const isCorrectChoice = question.correctChoiceIds.includes(choice.id);
-    const isMulti = question.type === "multi";
+    const isMulti = question.type === 'multi';
 
-    let backgroundColor = "rgba(255, 255, 255, 0.5)";
+    let backgroundColor = 'rgba(255, 255, 255, 0.5)';
     let borderColor = BORDER_SOFT;
     let iconName: keyof typeof Ionicons.glyphMap | null = null;
     let iconColor = EARTH_GREEN;
 
     if (showResult) {
       if (isCorrectChoice) {
-        backgroundColor = "#f0fdf4";
-        borderColor = "#86efac";
+        backgroundColor = '#f0fdf4';
+        borderColor = '#86efac';
         if (isSelected) {
-          iconName = "checkmark-circle";
-          iconColor = "#16a34a";
+          iconName = 'checkmark-circle';
+          iconColor = '#16a34a';
         }
       } else if (isSelected && !isCorrectChoice) {
-        backgroundColor = "#fef2f2";
-        borderColor = "#fca5a5";
-        iconName = "close-circle";
-        iconColor = "#dc2626";
+        backgroundColor = '#fef2f2';
+        borderColor = '#fca5a5';
+        iconName = 'close-circle';
+        iconColor = '#dc2626';
       }
     } else if (isSelected) {
-      backgroundColor = "#eff6ff";
-      borderColor = "#93c5fd";
+      backgroundColor = '#eff6ff';
+      borderColor = '#93c5fd';
     }
 
     return (
@@ -232,8 +232,8 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
         onPress={() => !disabled && handleSelectAnswer(choice.id)}
         disabled={disabled}
         style={{
-          flexDirection: "row",
-          alignItems: "center",
+          flexDirection: 'row',
+          alignItems: 'center',
           padding: 14,
           marginBottom: 10,
           backgroundColor,
@@ -250,15 +250,15 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
             borderRadius: isMulti ? 4 : 12,
             borderWidth: 2,
             borderColor: isSelected ? GRANITE_GOLD : BORDER_SOFT,
-            backgroundColor: isSelected ? GRANITE_GOLD : "transparent",
+            backgroundColor: isSelected ? GRANITE_GOLD : 'transparent',
             marginRight: 12,
-            alignItems: "center",
-            justifyContent: "center",
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           {isSelected && (
             <Ionicons
-              name={isMulti ? "checkmark" : "radio-button-on"}
+              name={isMulti ? 'checkmark' : 'radio-button-on'}
               size={isMulti ? 16 : 12}
               color={PARCHMENT}
             />
@@ -269,7 +269,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
         <Text
           style={{
             flex: 1,
-            fontFamily: "SourceSans3_400Regular",
+            fontFamily: 'SourceSans3_400Regular',
             fontSize: 16,
             color: TEXT_PRIMARY_STRONG,
             lineHeight: 22,
@@ -280,7 +280,12 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
 
         {/* Result icon */}
         {showResult && iconName && (
-          <Ionicons name={iconName} size={24} color={iconColor} style={{ marginLeft: 8 }} />
+          <Ionicons
+            name={iconName}
+            size={24}
+            color={iconColor}
+            style={{ marginLeft: 8 }}
+          />
         )}
       </Pressable>
     );
@@ -293,13 +298,13 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
         style={{
           flex: 1,
           backgroundColor: PARCHMENT_BACKGROUND,
-          justifyContent: "center",
-          alignItems: "center",
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         <Text
           style={{
-            fontFamily: "SourceSans3_400Regular",
+            fontFamily: 'SourceSans3_400Regular',
             fontSize: 16,
             color: TEXT_SECONDARY,
           }}
@@ -317,40 +322,40 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
         {/* Header */}
         <View
           style={{
-            backgroundColor: quizResult.passed ? DEEP_FOREST : "#991B1B",
+            backgroundColor: quizResult.passed ? DEEP_FOREST : '#991B1B',
             paddingTop: insets.top + 12,
             paddingBottom: 20,
             paddingHorizontal: 20,
-            alignItems: "center",
+            alignItems: 'center',
           }}
         >
           <Ionicons
-            name={quizResult.passed ? "checkmark-circle" : "close-circle"}
+            name={quizResult.passed ? 'checkmark-circle' : 'close-circle'}
             size={64}
             color={PARCHMENT}
           />
           <Text
             style={{
-              fontFamily: "Raleway_700Bold",
+              fontFamily: 'Raleway_700Bold',
               fontSize: 28,
               color: PARCHMENT,
               marginTop: 12,
             }}
           >
-            {quizResult.passed ? "Congratulations!" : "Not Quite"}
+            {quizResult.passed ? 'Congratulations!' : 'Not Quite'}
           </Text>
           <Text
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               fontSize: 16,
               color: PARCHMENT,
               opacity: 0.9,
               marginTop: 8,
-              textAlign: "center",
+              textAlign: 'center',
             }}
           >
             {quizResult.passed
-              ? "You passed the Leave No Trace assessment!"
+              ? 'You passed the Leave No Trace assessment!'
               : `You scored ${quizResult.percentCorrect}%. You need ${LNT_QUIZ_CONFIG.passPercent}% to pass.`}
           </Text>
         </View>
@@ -368,21 +373,21 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
               marginBottom: 20,
               borderWidth: 1,
               borderColor: BORDER_SOFT,
-              alignItems: "center",
+              alignItems: 'center',
             }}
           >
             <Text
               style={{
-                fontFamily: "Raleway_700Bold",
+                fontFamily: 'Raleway_700Bold',
                 fontSize: 48,
-                color: quizResult.passed ? DEEP_FOREST : "#991B1B",
+                color: quizResult.passed ? DEEP_FOREST : '#991B1B',
               }}
             >
               {quizResult.percentCorrect}%
             </Text>
             <Text
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 fontSize: 16,
                 color: TEXT_SECONDARY,
                 marginTop: 8,
@@ -396,12 +401,12 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
           {quizResult.passed && (
             <View
               style={{
-                backgroundColor: "#fef3c7",
+                backgroundColor: '#fef3c7',
                 borderRadius: 12,
                 padding: 20,
                 marginBottom: 20,
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
               }}
             >
               <View
@@ -410,8 +415,8 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                   height: 56,
                   borderRadius: 28,
                   backgroundColor: GRANITE_GOLD,
-                  alignItems: "center",
-                  justifyContent: "center",
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   marginRight: 16,
                 }}
               >
@@ -420,7 +425,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     fontSize: 18,
                     color: TEXT_PRIMARY_STRONG,
                   }}
@@ -429,7 +434,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                 </Text>
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     fontSize: 14,
                     color: TEXT_SECONDARY,
                     marginTop: 4,
@@ -446,7 +451,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
             <View style={{ marginBottom: 20 }}>
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 18,
                   color: TEXT_PRIMARY_STRONG,
                   marginBottom: 12,
@@ -464,12 +469,12 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                   <View
                     key={principleId}
                     style={{
-                      backgroundColor: "#fef2f2",
+                      backgroundColor: '#fef2f2',
                       borderRadius: 8,
                       padding: 12,
                       marginBottom: 8,
-                      flexDirection: "row",
-                      alignItems: "center",
+                      flexDirection: 'row',
+                      alignItems: 'center',
                     }}
                   >
                     <Ionicons
@@ -480,9 +485,9 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                     />
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
+                        fontFamily: 'SourceSans3_400Regular',
                         fontSize: 14,
-                        color: "#991B1B",
+                        color: '#991B1B',
                         flex: 1,
                       }}
                     >
@@ -502,12 +507,12 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                   marginTop: 12,
                   borderWidth: 1,
                   borderColor: BORDER_SOFT,
-                  alignItems: "center",
+                  alignItems: 'center',
                 }}
               >
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     fontSize: 15,
                     color: DEEP_FOREST,
                   }}
@@ -531,7 +536,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 18,
                   color: TEXT_PRIMARY_STRONG,
                   marginBottom: 16,
@@ -544,9 +549,9 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                 <View
                   key={principle.id}
                   style={{
-                    flexDirection: "row",
+                    flexDirection: 'row',
                     marginBottom: 12,
-                    alignItems: "flex-start",
+                    alignItems: 'flex-start',
                   }}
                 >
                   <View
@@ -555,14 +560,14 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                       height: 24,
                       borderRadius: 12,
                       backgroundColor: DEEP_FOREST,
-                      alignItems: "center",
-                      justifyContent: "center",
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       marginRight: 12,
                     }}
                   >
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 12,
                         color: PARCHMENT,
                       }}
@@ -573,7 +578,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 14,
                         color: TEXT_PRIMARY_STRONG,
                       }}
@@ -582,7 +587,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                     </Text>
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
+                        fontFamily: 'SourceSans3_400Regular',
                         fontSize: 13,
                         color: TEXT_SECONDARY,
                         marginTop: 2,
@@ -600,7 +605,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
         {/* Bottom buttons */}
         <View
           style={{
-            position: "absolute",
+            position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
@@ -610,7 +615,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
             paddingBottom: insets.bottom + 16,
             borderTopWidth: 1,
             borderTopColor: BORDER_SOFT,
-            flexDirection: "row",
+            flexDirection: 'row',
             gap: 12,
           }}
         >
@@ -623,12 +628,12 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                 borderRadius: 10,
                 borderWidth: 2,
                 borderColor: DEEP_FOREST,
-                alignItems: "center",
+                alignItems: 'center',
               }}
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 15,
                   color: DEEP_FOREST,
                 }}
@@ -645,17 +650,17 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
               paddingVertical: 14,
               borderRadius: 10,
               backgroundColor: DEEP_FOREST,
-              alignItems: "center",
+              alignItems: 'center',
             }}
           >
             <Text
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 fontSize: 15,
                 color: PARCHMENT,
               }}
             >
-              {quizResult.passed ? "Complete Module" : "Try Again Later"}
+              {quizResult.passed ? 'Complete Module' : 'Try Again Later'}
             </Text>
           </Pressable>
         </View>
@@ -675,17 +680,20 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                 paddingTop: insets.top + 12,
                 paddingBottom: 12,
                 paddingHorizontal: 16,
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
               }}
             >
-              <Pressable onPress={() => setShowReviewModal(false)} style={{ marginRight: 12 }}>
+              <Pressable
+                onPress={() => setShowReviewModal(false)}
+                style={{ marginRight: 12 }}
+              >
                 <Ionicons name="close" size={24} color={PARCHMENT} />
               </Pressable>
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontFamily: "Raleway_700Bold",
+                    fontFamily: 'Raleway_700Bold',
                     fontSize: 16,
                     color: PARCHMENT,
                   }}
@@ -694,7 +702,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                 </Text>
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     fontSize: 13,
                     color: PARCHMENT,
                     opacity: 0.8,
@@ -720,19 +728,19 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                       {/* Principle tag */}
                       <View
                         style={{
-                          backgroundColor: "#fef3c7",
+                          backgroundColor: '#fef3c7',
                           paddingHorizontal: 12,
                           paddingVertical: 6,
                           borderRadius: 6,
-                          alignSelf: "flex-start",
+                          alignSelf: 'flex-start',
                           marginBottom: 16,
                         }}
                       >
                         <Text
                           style={{
-                            fontFamily: "SourceSans3_600SemiBold",
+                            fontFamily: 'SourceSans3_600SemiBold',
                             fontSize: 12,
-                            color: "#92400e",
+                            color: '#92400e',
                           }}
                         >
                           {getPrincipleTitle(reviewQuestion.principleId)}
@@ -742,7 +750,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                       {/* Question */}
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           fontSize: 18,
                           color: TEXT_PRIMARY_STRONG,
                           marginBottom: 20,
@@ -754,25 +762,31 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
 
                       {/* Choices */}
                       {reviewQuestion.choices.map((choice) =>
-                        renderChoiceButton(reviewQuestion, choice, userAnswers, true, true)
+                        renderChoiceButton(
+                          reviewQuestion,
+                          choice,
+                          userAnswers,
+                          true,
+                          true,
+                        ),
                       )}
 
                       {/* Explanation */}
                       <View
                         style={{
-                          backgroundColor: "#f0fdf4",
+                          backgroundColor: '#f0fdf4',
                           borderRadius: 10,
                           padding: 16,
                           marginTop: 16,
                           borderLeftWidth: 4,
-                          borderLeftColor: "#16a34a",
+                          borderLeftColor: '#16a34a',
                         }}
                       >
                         <Text
                           style={{
-                            fontFamily: "SourceSans3_600SemiBold",
+                            fontFamily: 'SourceSans3_600SemiBold',
                             fontSize: 14,
-                            color: "#16a34a",
+                            color: '#16a34a',
                             marginBottom: 8,
                           }}
                         >
@@ -780,7 +794,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                         </Text>
                         <Text
                           style={{
-                            fontFamily: "SourceSans3_400Regular",
+                            fontFamily: 'SourceSans3_400Regular',
                             fontSize: 15,
                             color: TEXT_PRIMARY_STRONG,
                             lineHeight: 22,
@@ -798,7 +812,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
             {/* Review Navigation */}
             <View
               style={{
-                position: "absolute",
+                position: 'absolute',
                 bottom: 0,
                 left: 0,
                 right: 0,
@@ -816,19 +830,19 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                   paddingVertical: 14,
                   borderRadius: 10,
                   backgroundColor: DEEP_FOREST,
-                  alignItems: "center",
+                  alignItems: 'center',
                 }}
               >
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     fontSize: 15,
                     color: PARCHMENT,
                   }}
                 >
                   {reviewQuestionIndex < (quizResult?.missedQuestions.length || 0) - 1
-                    ? "Next Question"
-                    : "Done Reviewing"}
+                    ? 'Next Question'
+                    : 'Done Reviewing'}
                 </Text>
               </Pressable>
             </View>
@@ -848,8 +862,8 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
           paddingTop: insets.top + 12,
           paddingBottom: 12,
           paddingHorizontal: 16,
-          flexDirection: "row",
-          alignItems: "center",
+          flexDirection: 'row',
+          alignItems: 'center',
         }}
       >
         <Pressable onPress={onBack} style={{ marginRight: 12 }}>
@@ -858,7 +872,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontFamily: "Raleway_700Bold",
+              fontFamily: 'Raleway_700Bold',
               fontSize: 16,
               color: PARCHMENT,
             }}
@@ -868,7 +882,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
           </Text>
           <Text
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               fontSize: 13,
               color: PARCHMENT,
               opacity: 0.8,
@@ -881,7 +895,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
       </View>
 
       {/* Progress Bar */}
-      <View style={{ height: 4, backgroundColor: "#d1d5db" }}>
+      <View style={{ height: 4, backgroundColor: '#d1d5db' }}>
         <View
           style={{
             height: 4,
@@ -901,15 +915,15 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
             {/* Question type badge */}
             <View
               style={{
-                flexDirection: "row",
+                flexDirection: 'row',
                 marginBottom: 16,
-                flexWrap: "wrap",
+                flexWrap: 'wrap',
                 gap: 8,
               }}
             >
               <View
                 style={{
-                  backgroundColor: "#fef3c7",
+                  backgroundColor: '#fef3c7',
                   paddingHorizontal: 12,
                   paddingVertical: 6,
                   borderRadius: 6,
@@ -917,18 +931,18 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
               >
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     fontSize: 12,
-                    color: "#92400e",
+                    color: '#92400e',
                   }}
                 >
                   {getQuestionTypeLabel(currentQuestion.type)}
                 </Text>
               </View>
-              {currentQuestion.type === "scenario" && (
+              {currentQuestion.type === 'scenario' && (
                 <View
                   style={{
-                    backgroundColor: "#f0f9ff",
+                    backgroundColor: '#f0f9ff',
                     paddingHorizontal: 12,
                     paddingVertical: 6,
                     borderRadius: 6,
@@ -936,9 +950,9 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                 >
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 12,
-                      color: "#0369a1",
+                      color: '#0369a1',
                     }}
                   >
                     Real-world Decision
@@ -950,7 +964,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
             {/* Question prompt */}
             <Text
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 fontSize: 20,
                 color: TEXT_PRIMARY_STRONG,
                 marginBottom: 24,
@@ -967,44 +981,44 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
                 choice,
                 currentAnswers,
                 showExplanation,
-                showExplanation
-              )
+                showExplanation,
+              ),
             )}
 
             {/* Explanation (after submit) */}
             {showExplanation && (
               <View
                 style={{
-                  backgroundColor: isCorrect ? "#f0fdf4" : "#fef2f2",
+                  backgroundColor: isCorrect ? '#f0fdf4' : '#fef2f2',
                   borderRadius: 10,
                   padding: 16,
                   marginTop: 16,
                   borderLeftWidth: 4,
-                  borderLeftColor: isCorrect ? "#16a34a" : "#dc2626",
+                  borderLeftColor: isCorrect ? '#16a34a' : '#dc2626',
                 }}
               >
                 <View
-                  style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
+                  style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
                 >
                   <Ionicons
-                    name={isCorrect ? "checkmark-circle" : "information-circle"}
+                    name={isCorrect ? 'checkmark-circle' : 'information-circle'}
                     size={20}
-                    color={isCorrect ? "#16a34a" : "#dc2626"}
+                    color={isCorrect ? '#16a34a' : '#dc2626'}
                     style={{ marginRight: 8 }}
                   />
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 15,
-                      color: isCorrect ? "#16a34a" : "#dc2626",
+                      color: isCorrect ? '#16a34a' : '#dc2626',
                     }}
                   >
-                    {isCorrect ? "Correct!" : "Not quite right"}
+                    {isCorrect ? 'Correct!' : 'Not quite right'}
                   </Text>
                 </View>
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     fontSize: 15,
                     color: TEXT_PRIMARY_STRONG,
                     lineHeight: 22,
@@ -1021,7 +1035,7 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
       {/* Bottom Button */}
       <View
         style={{
-          position: "absolute",
+          position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
@@ -1040,21 +1054,21 @@ export default function LNTQuizComponent({ onComplete, onBack }: LNTQuizProps) {
             paddingVertical: 14,
             borderRadius: 10,
             backgroundColor: isAnswered || showExplanation ? DEEP_FOREST : BORDER_SOFT,
-            alignItems: "center",
+            alignItems: 'center',
           }}
         >
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 15,
               color: isAnswered || showExplanation ? PARCHMENT : TEXT_SECONDARY,
             }}
           >
             {showExplanation
               ? isLastQuestion
-                ? "See Results"
-                : "Next Question"
-              : "Check Answer"}
+                ? 'See Results'
+                : 'Next Question'
+              : 'Check Answer'}
           </Text>
         </Pressable>
       </View>

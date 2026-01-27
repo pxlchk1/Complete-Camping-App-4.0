@@ -3,7 +3,7 @@
  * Modal for creating or editing packing list items
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,10 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
 import {
   PackingItemV2,
@@ -24,9 +24,9 @@ import {
   PACKING_CATEGORIES,
   CATEGORY_LABELS,
   CATEGORY_ICONS,
-} from "../types/packingV2";
-import { savePackingItem } from "../services/packingServiceV2";
-import { useAuth } from "../context/AuthContext";
+} from '../types/packingV2';
+import { savePackingItem } from '../services/packingServiceV2';
+import { useAuth } from '../context/AuthContext';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -35,7 +35,7 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   CARD_BACKGROUND_LIGHT,
-} from "../constants/colors";
+} from '../constants/colors';
 
 interface AddEditPackingItemModalProps {
   visible: boolean;
@@ -57,12 +57,12 @@ export default function AddEditPackingItemModal({
   const { user } = useAuth();
 
   // Form state
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [category, setCategory] = useState<PackingCategory>(
-    defaultCategory || "camp_comfort"
+    defaultCategory || 'camp_comfort',
   );
   const [quantity, setQuantity] = useState(1);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState('');
   const [isEssential, setIsEssential] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -74,13 +74,13 @@ export default function AddEditPackingItemModal({
         setName(editingItem.name);
         setCategory(editingItem.category);
         setQuantity(editingItem.quantity);
-        setNotes(editingItem.notes || "");
+        setNotes(editingItem.notes || '');
         setIsEssential(editingItem.isEssential);
       } else {
-        setName("");
-        setCategory(defaultCategory || "camp_comfort");
+        setName('');
+        setCategory(defaultCategory || 'camp_comfort');
         setQuantity(1);
-        setNotes("");
+        setNotes('');
         setIsEssential(false);
       }
       setShowCategoryPicker(false);
@@ -117,7 +117,7 @@ export default function AddEditPackingItemModal({
       onSaved();
       onClose();
     } catch (error) {
-      console.error("[AddEditPackingItemModal] Error saving item:", error);
+      console.error('[AddEditPackingItemModal] Error saving item:', error);
     } finally {
       setSaving(false);
     }
@@ -141,23 +141,23 @@ export default function AddEditPackingItemModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
         <View className="flex-1 justify-end">
           {/* Backdrop */}
           <Pressable
             className="absolute inset-0"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onPress={onClose}
           />
 
           {/* Content */}
           <View
             className="rounded-t-3xl overflow-hidden"
-            style={{ backgroundColor: PARCHMENT, maxHeight: "90%" }}
+            style={{ backgroundColor: PARCHMENT, maxHeight: '90%' }}
           >
-            <SafeAreaView edges={["bottom"]}>
+            <SafeAreaView edges={['bottom']}>
               {/* Header */}
               <View
                 className="flex-row items-center justify-between px-5 py-4 border-b"
@@ -166,7 +166,7 @@ export default function AddEditPackingItemModal({
                 <Pressable onPress={onClose} hitSlop={10}>
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 16,
                       color: EARTH_GREEN,
                     }}
@@ -177,12 +177,12 @@ export default function AddEditPackingItemModal({
 
                 <Text
                   style={{
-                    fontFamily: "Raleway_700Bold",
+                    fontFamily: 'Raleway_700Bold',
                     fontSize: 17,
                     color: DEEP_FOREST,
                   }}
                 >
-                  {isEditing ? "Edit Item" : "Add Item"}
+                  {isEditing ? 'Edit Item' : 'Add Item'}
                 </Text>
 
                 <Pressable
@@ -192,29 +192,26 @@ export default function AddEditPackingItemModal({
                 >
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 16,
                       color: canSave ? DEEP_FOREST : TEXT_SECONDARY,
                     }}
                   >
-                    {saving ? "Saving..." : "Save"}
+                    {saving ? 'Saving...' : 'Save'}
                   </Text>
                 </Pressable>
               </View>
 
-              <ScrollView
-                className="px-5 py-4"
-                keyboardShouldPersistTaps="handled"
-              >
+              <ScrollView className="px-5 py-4" keyboardShouldPersistTaps="handled">
                 {/* Name Input */}
                 <View className="mb-5">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginBottom: 6,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       letterSpacing: 0.5,
                     }}
                   >
@@ -229,7 +226,7 @@ export default function AddEditPackingItemModal({
                     style={{
                       borderColor: BORDER_SOFT,
                       backgroundColor: CARD_BACKGROUND_LIGHT,
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 16,
                       color: TEXT_PRIMARY_STRONG,
                     }}
@@ -241,11 +238,11 @@ export default function AddEditPackingItemModal({
                 <View className="mb-5">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginBottom: 6,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       letterSpacing: 0.5,
                     }}
                   >
@@ -267,7 +264,7 @@ export default function AddEditPackingItemModal({
                       />
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_400Regular",
+                          fontFamily: 'SourceSans3_400Regular',
                           fontSize: 16,
                           color: TEXT_PRIMARY_STRONG,
                           marginLeft: 10,
@@ -277,7 +274,7 @@ export default function AddEditPackingItemModal({
                       </Text>
                     </View>
                     <Ionicons
-                      name={showCategoryPicker ? "chevron-up" : "chevron-down"}
+                      name={showCategoryPicker ? 'chevron-up' : 'chevron-down'}
                       size={20}
                       color={EARTH_GREEN}
                     />
@@ -306,8 +303,8 @@ export default function AddEditPackingItemModal({
                               borderColor: BORDER_SOFT,
                               backgroundColor:
                                 cat === category
-                                  ? "rgba(26, 76, 57, 0.1)"
-                                  : "transparent",
+                                  ? 'rgba(26, 76, 57, 0.1)'
+                                  : 'transparent',
                             }}
                           >
                             <Ionicons
@@ -319,8 +316,8 @@ export default function AddEditPackingItemModal({
                               style={{
                                 fontFamily:
                                   cat === category
-                                    ? "SourceSans3_600SemiBold"
-                                    : "SourceSans3_400Regular",
+                                    ? 'SourceSans3_600SemiBold'
+                                    : 'SourceSans3_400Regular',
                                 fontSize: 14,
                                 color:
                                   cat === category ? DEEP_FOREST : TEXT_PRIMARY_STRONG,
@@ -340,11 +337,11 @@ export default function AddEditPackingItemModal({
                 <View className="mb-5">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginBottom: 6,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       letterSpacing: 0.5,
                     }}
                   >
@@ -361,7 +358,7 @@ export default function AddEditPackingItemModal({
                     <View className="px-6">
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           fontSize: 18,
                           color: TEXT_PRIMARY_STRONG,
                         }}
@@ -395,7 +392,7 @@ export default function AddEditPackingItemModal({
                     <Ionicons name="star" size={18} color={EARTH_GREEN} />
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
+                        fontFamily: 'SourceSans3_400Regular',
                         fontSize: 16,
                         color: TEXT_PRIMARY_STRONG,
                         marginLeft: 10,
@@ -408,7 +405,7 @@ export default function AddEditPackingItemModal({
                     className="w-6 h-6 rounded-md border-2 items-center justify-center"
                     style={{
                       borderColor: isEssential ? DEEP_FOREST : BORDER_SOFT,
-                      backgroundColor: isEssential ? DEEP_FOREST : "transparent",
+                      backgroundColor: isEssential ? DEEP_FOREST : 'transparent',
                     }}
                   >
                     {isEssential && (
@@ -421,11 +418,11 @@ export default function AddEditPackingItemModal({
                 <View className="mb-5">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginBottom: 6,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       letterSpacing: 0.5,
                     }}
                   >
@@ -442,11 +439,11 @@ export default function AddEditPackingItemModal({
                     style={{
                       borderColor: BORDER_SOFT,
                       backgroundColor: CARD_BACKGROUND_LIGHT,
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 16,
                       color: TEXT_PRIMARY_STRONG,
                       minHeight: 80,
-                      textAlignVertical: "top",
+                      textAlignVertical: 'top',
                     }}
                   />
                 </View>

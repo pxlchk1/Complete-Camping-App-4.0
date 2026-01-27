@@ -1,8 +1,24 @@
-import React, { useState } from "react";
-import { View, Text, Pressable, Modal } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { colors, textStyles, spacing, radius, fonts, fontSizes, shadows } from "../theme/theme";
-import { DEEP_FOREST, EARTH_GREEN, CARD_BACKGROUND_LIGHT, BORDER_SOFT, PARCHMENT, TEXT_PRIMARY_STRONG, TEXT_SECONDARY } from "../constants/colors";
+import React, { useState } from 'react';
+import { View, Text, Pressable, Modal } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  colors,
+  textStyles,
+  spacing,
+  radius,
+  fonts,
+  fontSizes,
+  shadows,
+} from '../theme/theme';
+import {
+  DEEP_FOREST,
+  EARTH_GREEN,
+  CARD_BACKGROUND_LIGHT,
+  BORDER_SOFT,
+  PARCHMENT,
+  TEXT_PRIMARY_STRONG,
+  TEXT_SECONDARY,
+} from '../constants/colors';
 
 interface AddCampgroundButtonProps {
   onPress: () => void;
@@ -26,15 +42,17 @@ export default function AddCampgroundButton({ onPress }: AddCampgroundButtonProp
           ...shadows.card,
         })}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.xs }}>
+        <View
+          style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}
+        >
           <View
             style={{
               width: 40,
               height: 40,
               borderRadius: 20,
               backgroundColor: DEEP_FOREST,
-              alignItems: "center",
-              justifyContent: "center",
+              alignItems: 'center',
+              justifyContent: 'center',
               marginRight: spacing.sm,
             }}
           >
@@ -60,8 +78,8 @@ export default function AddCampgroundButton({ onPress }: AddCampgroundButtonProp
             style={({ pressed }) => ({
               width: 44,
               height: 44,
-              alignItems: "center",
-              justifyContent: "center",
+              alignItems: 'center',
+              justifyContent: 'center',
               opacity: pressed ? 0.6 : 1,
             })}
           >
@@ -77,7 +95,8 @@ export default function AddCampgroundButton({ onPress }: AddCampgroundButtonProp
             lineHeight: 22,
           }}
         >
-          Want to include a private or lesser known campground in your trip? Add it here so you can plan with it.
+          Want to include a private or lesser known campground in your trip? Add it here
+          so you can plan with it.
         </Text>
       </Pressable>
 
@@ -91,9 +110,9 @@ export default function AddCampgroundButton({ onPress }: AddCampgroundButtonProp
         <Pressable
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
             padding: spacing.xl,
           }}
           onPress={() => setShowInfoModal(false)}
@@ -104,12 +123,18 @@ export default function AddCampgroundButton({ onPress }: AddCampgroundButtonProp
               borderRadius: radius.lg,
               padding: spacing.xl,
               maxWidth: 340,
-              width: "100%",
+              width: '100%',
               ...shadows.modal,
             }}
             onPress={(e) => e.stopPropagation?.()}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.md }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginBottom: spacing.md,
+              }}
+            >
               <Ionicons name="information-circle" size={28} color={DEEP_FOREST} />
               <Text
                 style={{
@@ -132,7 +157,9 @@ export default function AddCampgroundButton({ onPress }: AddCampgroundButtonProp
                 marginBottom: spacing.md,
               }}
             >
-              Use this to add private campgrounds that aren't in the national or state park system. Think campgrounds on private land, family property, farms, club campgrounds, or a friend's place.
+              Use this to add private campgrounds that aren't in the national or state
+              park system. Think campgrounds on private land, family property, farms, club
+              campgrounds, or a friend's place.
             </Text>
 
             <Text
@@ -140,7 +167,7 @@ export default function AddCampgroundButton({ onPress }: AddCampgroundButtonProp
                 fontFamily: fonts.bodyRegular,
                 fontSize: fontSizes.sm,
                 color: EARTH_GREEN,
-                fontStyle: "italic",
+                fontStyle: 'italic',
                 marginBottom: spacing.lg,
               }}
             >
@@ -153,7 +180,7 @@ export default function AddCampgroundButton({ onPress }: AddCampgroundButtonProp
                 backgroundColor: DEEP_FOREST,
                 borderRadius: radius.md,
                 paddingVertical: spacing.md,
-                alignItems: "center",
+                alignItems: 'center',
                 opacity: pressed ? 0.8 : 1,
               })}
             >

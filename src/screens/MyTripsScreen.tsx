@@ -1,43 +1,58 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { View, Text, Pressable, Modal, ScrollView } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
-import { useTrips, Trip, useDeleteTrip, useTripsStore } from "../state/tripsStore";
-import { useUserStore } from "../state/userStore";
-import { usePlanTabStore, PlanTab } from "../state/planTabStore";
-import { usePackingStore } from "../state/packingStore";
-import { useUserStatus } from "../utils/authHelper";
-import { requirePro, requireAccount } from "../utils/gating";
-import { useAuthStore } from "../state/authStore";
-import { getTripsCreatedCount } from "../services/userActionTrackerService";
-import TripCard from "../components/TripCard";
-import CreateTripModal from "../components/CreateTripModal";
-import ConfirmationModal from "../components/ConfirmationModal";
-import AccountRequiredModal from "../components/AccountRequiredModal";
-import { RootStackParamList } from "../navigation/types";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { DEEP_FOREST, EARTH_GREEN, GRANITE_GOLD, PARCHMENT, BORDER_SOFT, CARD_BACKGROUND_LIGHT } from "../constants/colors";
-import * as Haptics from "expo-haptics";
-import { format } from "date-fns";
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { View, Text, Pressable, Modal, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from '@react-navigation/native';
+import { useTrips, Trip, useDeleteTrip, useTripsStore } from '../state/tripsStore';
+import { useUserStore } from '../state/userStore';
+import { usePlanTabStore, PlanTab } from '../state/planTabStore';
+import { usePackingStore } from '../state/packingStore';
+import { useUserStatus } from '../utils/authHelper';
+import { requirePro, requireAccount } from '../utils/gating';
+import { useAuthStore } from '../state/authStore';
+import { getTripsCreatedCount } from '../services/userActionTrackerService';
+import TripCard from '../components/TripCard';
+import CreateTripModal from '../components/CreateTripModal';
+import ConfirmationModal from '../components/ConfirmationModal';
+import AccountRequiredModal from '../components/AccountRequiredModal';
+import { RootStackParamList } from '../navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  DEEP_FOREST,
+  EARTH_GREEN,
+  GRANITE_GOLD,
+  PARCHMENT,
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
+} from '../constants/colors';
+import * as Haptics from 'expo-haptics';
+import { format } from 'date-fns';
 
 type MyTripsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type MyTripsScreenRouteProp = RouteProp<{ MyTrips: { initialTab?: PlanTab } }, "MyTrips">;
+type MyTripsScreenRouteProp = RouteProp<{ MyTrips: { initialTab?: PlanTab } }, 'MyTrips'>;
 
-function getStatus(startISO: string, endISO: string): "In Progress" | "Upcoming" | "Completed" {
+function getStatus(
+  startISO: string,
+  endISO: string,
+): 'In Progress' | 'Upcoming' | 'Completed' {
   const today = new Date();
   const start = new Date(startISO);
   const end = new Date(endISO);
-  if (today > end) return "Completed";
-  if (today < start) return "Upcoming";
-  return "In Progress";
+  if (today > end) return 'Completed';
+  if (today < start) return 'Upcoming';
+  return 'In Progress';
 }
 
 function formatDateRange(startISO: string, endISO: string): string {
   const start = new Date(startISO);
   const end = new Date(endISO);
-  const startStr = format(start, "MMM d");
-  const endStr = format(end, "MMM d, yyyy");
+  const startStr = format(start, 'MMM d');
+  const endStr = format(end, 'MMM d, yyyy');
   return `${startStr} – ${endStr}`;
 }
 
@@ -58,7 +73,7 @@ export default function MyTripsScreen() {
       if (currentUser && !isGuest) {
         loadTrips();
       }
-    }, [currentUser, isGuest, loadTrips])
+    }, [currentUser, isGuest, loadTrips]),
   );
 
   // Handle route params for initialTab
@@ -89,37 +104,39 @@ export default function MyTripsScreen() {
   const { allUpcomingTrips, pastTrips } = useMemo(() => {
     const upcoming: Trip[] = [];
     const past: Trip[] = [];
-    
+
     trips.forEach((t) => {
       const status = getStatus(t.startDate, t.endDate);
-      if (status === "Completed") {
+      if (status === 'Completed') {
         past.push(t);
       } else {
         // Include planning, in progress, and upcoming
         upcoming.push(t);
       }
     });
-    
+
     // Sort upcoming by start date (soonest first)
-    upcoming.sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    upcoming.sort(
+      (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+    );
     // Sort past by end date (most recent first)
     past.sort((a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime());
-    
+
     return { allUpcomingTrips: upcoming, pastTrips: past };
   }, [trips]);
 
-  const onResume = (trip: Trip) => nav.navigate("TripDetail", { tripId: trip.id });
+  const onResume = (trip: Trip) => nav.navigate('TripDetail', { tripId: trip.id });
   const onMenu = (trip: Trip) => setMenuTrip(trip);
 
   /**
    * Handle create trip with proper gating (2026-01-24 fix)
-   * 
+   *
    * Rules:
    * - First trip EVER (tripsCreatedCount === 0): requiresAccount=true, requiresPro=false
    *   → GUEST sees AccountRequiredModal, FREE/PRO can create
    * - Second+ trip EVER (tripsCreatedCount >= 1): requiresPro=true
    *   → GUEST or FREE sees PaywallModal, PRO can create
-   * 
+   *
    * NOTE: Uses tripsCreatedCount from Firestore, NOT trips.length
    * This prevents users from deleting trips to bypass the paywall
    */
@@ -131,22 +148,25 @@ export default function MyTripsScreen() {
     if (!hasAccount) return;
 
     // Get total trips ever created from Firestore
-    const tripsCreatedCount = currentUser ? await getTripsCreatedCount(currentUser.id) : 0;
-    
+    const tripsCreatedCount = currentUser
+      ? await getTripsCreatedCount(currentUser.id)
+      : 0;
+
     if (tripsCreatedCount >= 1) {
       // User has already used their free trip - requires Pro
       const canProceed = requirePro({
         openAccountModal: () => setShowAccountModal(true),
-        openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "second_trip", variant }),
+        openPaywallModal: (variant) =>
+          nav.navigate('Paywall', { triggerKey: 'second_trip', variant }),
       });
       if (!canProceed) return;
     }
-    
+
     setShowCreate(true);
   };
 
   const handleGuestLogin = () => {
-    nav.navigate("Auth");
+    nav.navigate('Auth');
   };
 
   // Show empty state if there are no trips at all
@@ -166,25 +186,30 @@ export default function MyTripsScreen() {
     // Gate: Pro-only feature
     const canProceed = requirePro({
       openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "packing_list", variant }),
+      openPaywallModal: (variant) =>
+        nav.navigate('Paywall', { triggerKey: 'packing_list', variant }),
     });
     if (!canProceed) return;
 
     safeHaptic();
-    
+
     // Check if there's a local packing list for this trip
-    const localLists = usePackingStore.getState().packingLists.filter(list => list.tripId === tripId);
+    const localLists = usePackingStore
+      .getState()
+      .packingLists.filter((list) => list.tripId === tripId);
     if (localLists.length > 0) {
       // Navigate to local packing list editor
-      nav.navigate("PackingListEditor", { listId: localLists[0].id });
+      nav.navigate('PackingListEditor', { listId: localLists[0].id });
       return;
     }
-    
+
     // Find the trip to get its data for season detection
-    const trip = allUpcomingTrips.find(t => t.id === tripId) || pastTrips.find(t => t.id === tripId);
-    
+    const trip =
+      allUpcomingTrips.find((t) => t.id === tripId) ||
+      pastTrips.find((t) => t.id === tripId);
+
     // No local list yet - navigate to create one with trip context
-    nav.navigate("PackingListCreate", { 
+    nav.navigate('PackingListCreate', {
       tripId,
       tripName: trip?.name,
       tripStartDate: trip?.startDate,
@@ -200,12 +225,13 @@ export default function MyTripsScreen() {
     // Gate: Pro-only feature
     const canProceed = requirePro({
       openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "meal_planner", variant }),
+      openPaywallModal: (variant) =>
+        nav.navigate('Paywall', { triggerKey: 'meal_planner', variant }),
     });
     if (!canProceed) return;
 
     safeHaptic();
-    nav.navigate("MealPlanning", { tripId });
+    nav.navigate('MealPlanning', { tripId });
   };
 
   // Navigate to standalone packing (drafts mode)
@@ -213,12 +239,13 @@ export default function MyTripsScreen() {
     // Gate: Pro-only feature
     const canProceed = requirePro({
       openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "packing_list", variant }),
+      openPaywallModal: (variant) =>
+        nav.navigate('Paywall', { triggerKey: 'packing_list', variant }),
     });
     if (!canProceed) return;
 
     safeHaptic();
-    nav.navigate("PackingListCreate");
+    nav.navigate('PackingListCreate');
   };
 
   // Navigate to standalone meals (meal planner without trip context)
@@ -226,7 +253,8 @@ export default function MyTripsScreen() {
     // Gate: Pro-only feature
     const canProceed = requirePro({
       openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "meal_planner", variant }),
+      openPaywallModal: (variant) =>
+        nav.navigate('Paywall', { triggerKey: 'meal_planner', variant }),
     });
     if (!canProceed) return;
 
@@ -234,7 +262,7 @@ export default function MyTripsScreen() {
     // Navigate to meal planning - if user has an upcoming trip, use the first one
     // Otherwise, prompt them to create a trip first
     if (allUpcomingTrips.length > 0) {
-      nav.navigate("MealPlanning", { tripId: allUpcomingTrips[0].id });
+      nav.navigate('MealPlanning', { tripId: allUpcomingTrips[0].id });
     } else {
       // No upcoming trip - prompt to create one
       handleCreateTrip();
@@ -259,9 +287,9 @@ export default function MyTripsScreen() {
             >
               <Text
                 className="text-base"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
               >
-                {isGuest ? "Log In to Start" : "+ New Trip"}
+                {isGuest ? 'Log In to Start' : '+ New Trip'}
               </Text>
             </Pressable>
           </View>
@@ -271,23 +299,25 @@ export default function MyTripsScreen() {
             className="flex-1 mx-4 rounded-xl items-center justify-center"
             style={{ backgroundColor: CARD_BACKGROUND_LIGHT, minHeight: 200 }}
           >
-            <View className="w-16 h-16 rounded-full items-center justify-center mb-4" style={{ backgroundColor: DEEP_FOREST + "15" }}>
+            <View
+              className="w-16 h-16 rounded-full items-center justify-center mb-4"
+              style={{ backgroundColor: DEEP_FOREST + '15' }}
+            >
               <Ionicons name="compass" size={32} color={DEEP_FOREST} />
             </View>
             <Text
               className="text-lg text-center mb-2 px-6"
-              style={{ fontFamily: "Raleway_600SemiBold", color: DEEP_FOREST }}
+              style={{ fontFamily: 'Raleway_600SemiBold', color: DEEP_FOREST }}
             >
-              {isGuest ? "Log in to start planning" : "No trips yet"}
+              {isGuest ? 'Log in to start planning' : 'No trips yet'}
             </Text>
             <Text
               className="text-sm text-center px-8"
-              style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: EARTH_GREEN }}
             >
-              {isGuest 
-                ? "Create an account to plan trips, save parks, and organize your camping adventures." 
-                : "Your sleeping bag is giving you side-eye."
-              }
+              {isGuest
+                ? 'Create an account to plan trips, save parks, and organize your camping adventures.'
+                : 'Your sleeping bag is giving you side-eye.'}
             </Text>
           </View>
         </ScrollView>
@@ -306,7 +336,7 @@ export default function MyTripsScreen() {
           triggerKey="create_first_trip"
           onCreateAccount={() => {
             setShowAccountModal(false);
-            nav.navigate("Auth");
+            nav.navigate('Auth');
           }}
           onMaybeLater={() => setShowAccountModal(false)}
         />
@@ -330,7 +360,7 @@ export default function MyTripsScreen() {
           >
             <Text
               className="text-base"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+              style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
             >
               + New trip
             </Text>
@@ -355,7 +385,7 @@ export default function MyTripsScreen() {
               >
                 <Text
                   style={{
-                    fontFamily: "Raleway_700Bold",
+                    fontFamily: 'Raleway_700Bold',
                     fontSize: 18,
                     color: PARCHMENT,
                   }}
@@ -366,104 +396,127 @@ export default function MyTripsScreen() {
 
               {/* Trip Cards */}
               <View className="p-4">
-            
-            {allUpcomingTrips.map((trip) => (
-              <View
-                key={trip.id}
-                className="rounded-xl p-3 mb-2"
-                style={{ backgroundColor: "#59625C" }}
-              >
-                <View className="flex-row items-start justify-between">
-                  <Pressable 
-                    onPress={() => onResume(trip)} 
-                    className="flex-1 mr-2 active:opacity-70"
+                {allUpcomingTrips.map((trip) => (
+                  <View
+                    key={trip.id}
+                    className="rounded-xl p-3 mb-2"
+                    style={{ backgroundColor: '#59625C' }}
                   >
-                    <Text
-                      className="text-base"
-                      style={{ fontFamily: "Raleway_700Bold", color: PARCHMENT }}
-                      numberOfLines={1}
-                    >
-                      {trip.name}
-                    </Text>
-                    <Text
-                      className="text-xs mt-0.5"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: "rgba(255,255,255,0.7)" }}
-                      numberOfLines={1}
-                    >
-                      {formatDateRange(trip.startDate, trip.endDate)}
-                      {trip.destination?.name ? ` • ${trip.destination.name}` : ""}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => onMenu(trip)}
-                    className="p-1.5 rounded-full active:opacity-80"
-                    style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-                  >
-                    <Ionicons name="ellipsis-horizontal" size={16} color={PARCHMENT} />
-                  </Pressable>
-                </View>
-
-                {/* View Trip Details CTA */}
-                <Pressable
-                  onPress={() => onResume(trip)}
-                  className="mt-2 py-2 active:opacity-70"
-                  accessibilityLabel="View trip details"
-                >
-                  <Text
-                    style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: PARCHMENT }}
-                  >
-                    View trip details »
-                  </Text>
-                  <Text
-                    className="mt-0.5"
-                    style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: "rgba(255,255,255,0.6)" }}
-                  >
-                    Add destinations, itinerary links, and confirmations.
-                  </Text>
-                </Pressable>
-
-                {/* Compact Packing & Meals Buttons */}
-                <View className="flex-row mt-3" style={{ gap: 8 }}>
-                  <Pressable
-                    onPress={() => handlePackingPress(trip.id)}
-                    className="flex-1 flex-row items-center justify-center py-2 rounded-lg active:opacity-90"
-                    style={{ backgroundColor: "rgba(255,255,255,0.12)" }}
-                  >
-                    <Ionicons name="bag" size={16} color={PARCHMENT} />
-                    <Text
-                      className="text-xs ml-1.5"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
-                    >
-                      Packing
-                    </Text>
-                    {trip.packing && (
-                      <Text
-                        className="text-xs ml-1"
-                        style={{ fontFamily: "SourceSans3_400Regular", color: "rgba(255,255,255,0.6)" }}
+                    <View className="flex-row items-start justify-between">
+                      <Pressable
+                        onPress={() => onResume(trip)}
+                        className="flex-1 mr-2 active:opacity-70"
                       >
-                        ({trip.packing.itemsChecked}/{trip.packing.totalItems})
-                      </Text>
-                    )}
-                  </Pressable>
+                        <Text
+                          className="text-base"
+                          style={{ fontFamily: 'Raleway_700Bold', color: PARCHMENT }}
+                          numberOfLines={1}
+                        >
+                          {trip.name}
+                        </Text>
+                        <Text
+                          className="text-xs mt-0.5"
+                          style={{
+                            fontFamily: 'SourceSans3_400Regular',
+                            color: 'rgba(255,255,255,0.7)',
+                          }}
+                          numberOfLines={1}
+                        >
+                          {formatDateRange(trip.startDate, trip.endDate)}
+                          {trip.destination?.name ? ` • ${trip.destination.name}` : ''}
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={() => onMenu(trip)}
+                        className="p-1.5 rounded-full active:opacity-80"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
+                      >
+                        <Ionicons
+                          name="ellipsis-horizontal"
+                          size={16}
+                          color={PARCHMENT}
+                        />
+                      </Pressable>
+                    </View>
 
-                  <Pressable
-                    onPress={() => handleMealsPress(trip.id)}
-                    className="flex-1 flex-row items-center justify-center py-2 rounded-lg active:opacity-90"
-                    style={{ backgroundColor: "rgba(255,255,255,0.12)" }}
-                  >
-                    <Ionicons name="restaurant" size={16} color={PARCHMENT} />
-                    <Text
-                      className="text-xs ml-1.5"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                    {/* View Trip Details CTA */}
+                    <Pressable
+                      onPress={() => onResume(trip)}
+                      className="mt-2 py-2 active:opacity-70"
+                      accessibilityLabel="View trip details"
                     >
-                      Meals
-                    </Text>
-                  </Pressable>
-                </View>
+                      <Text
+                        style={{
+                          fontFamily: 'SourceSans3_600SemiBold',
+                          fontSize: 14,
+                          color: PARCHMENT,
+                        }}
+                      >
+                        View trip details »
+                      </Text>
+                      <Text
+                        className="mt-0.5"
+                        style={{
+                          fontFamily: 'SourceSans3_400Regular',
+                          fontSize: 12,
+                          color: 'rgba(255,255,255,0.6)',
+                        }}
+                      >
+                        Add destinations, itinerary links, and confirmations.
+                      </Text>
+                    </Pressable>
+
+                    {/* Compact Packing & Meals Buttons */}
+                    <View className="flex-row mt-3" style={{ gap: 8 }}>
+                      <Pressable
+                        onPress={() => handlePackingPress(trip.id)}
+                        className="flex-1 flex-row items-center justify-center py-2 rounded-lg active:opacity-90"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+                      >
+                        <Ionicons name="bag" size={16} color={PARCHMENT} />
+                        <Text
+                          className="text-xs ml-1.5"
+                          style={{
+                            fontFamily: 'SourceSans3_600SemiBold',
+                            color: PARCHMENT,
+                          }}
+                        >
+                          Packing
+                        </Text>
+                        {trip.packing && (
+                          <Text
+                            className="text-xs ml-1"
+                            style={{
+                              fontFamily: 'SourceSans3_400Regular',
+                              color: 'rgba(255,255,255,0.6)',
+                            }}
+                          >
+                            ({trip.packing.itemsChecked}/{trip.packing.totalItems})
+                          </Text>
+                        )}
+                      </Pressable>
+
+                      <Pressable
+                        onPress={() => handleMealsPress(trip.id)}
+                        className="flex-1 flex-row items-center justify-center py-2 rounded-lg active:opacity-90"
+                        style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+                      >
+                        <Ionicons name="restaurant" size={16} color={PARCHMENT} />
+                        <Text
+                          className="text-xs ml-1.5"
+                          style={{
+                            fontFamily: 'SourceSans3_600SemiBold',
+                            color: PARCHMENT,
+                          }}
+                        >
+                          Meals
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
-              </View>
-          </View>
+            </View>
           )}
 
           {/* Empty trips message when no upcoming trips but panel is shown */}
@@ -471,7 +524,7 @@ export default function MyTripsScreen() {
             <View className="p-6 items-center">
               <Text
                 className="text-base text-center"
-                style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                style={{ fontFamily: 'SourceSans3_400Regular', color: EARTH_GREEN }}
               >
                 No trips yet. Tap the button above to start planning!
               </Text>
@@ -483,7 +536,11 @@ export default function MyTripsScreen() {
             <View className="p-4 pt-2">
               <Text
                 className="text-xs mb-3"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN, letterSpacing: 0.5 }}
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: EARTH_GREEN,
+                  letterSpacing: 0.5,
+                }}
               >
                 PAST
               </Text>
@@ -519,7 +576,7 @@ export default function MyTripsScreen() {
         triggerKey="create_first_trip"
         onCreateAccount={() => {
           setShowAccountModal(false);
-          nav.navigate("Auth");
+          nav.navigate('Auth');
         }}
         onMaybeLater={() => setShowAccountModal(false)}
       />
@@ -534,44 +591,52 @@ export default function MyTripsScreen() {
         <Pressable
           className="flex-1 bg-black/50 justify-end"
           onPress={() => setMenuTrip(null)}
+        >
+          <Pressable
+            className="bg-parchment rounded-t-2xl p-6"
+            onPress={(e) => e.stopPropagation()}
           >
-            <Pressable
-              className="bg-parchment rounded-t-2xl p-6"
-              onPress={(e) => e.stopPropagation()}
+            <Text
+              className="text-xl font-bold mb-4"
+              style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
             >
-              <Text className="text-xl font-bold mb-4" style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}>
-                {menuTrip?.name}
-              </Text>
-              <Pressable
-                onPress={() => {
-                  setPendingDelete(menuTrip);
-                  setMenuTrip(null);
-                }}
-                className="py-3 active:opacity-70"
+              {menuTrip?.name}
+            </Text>
+            <Pressable
+              onPress={() => {
+                setPendingDelete(menuTrip);
+                setMenuTrip(null);
+              }}
+              className="py-3 active:opacity-70"
+            >
+              <Text
+                className="text-base text-red-600"
+                style={{ fontFamily: 'SourceSans3_400Regular' }}
               >
-                <Text className="text-base text-red-600" style={{ fontFamily: "SourceSans3_400Regular" }}>Delete trip</Text>
-              </Pressable>
+                Delete trip
+              </Text>
             </Pressable>
           </Pressable>
-        </Modal>
+        </Pressable>
+      </Modal>
 
-        <ConfirmationModal
-          visible={!!pendingDelete}
-          title="Delete trip?"
-          message={`Are you sure you want to delete "${pendingDelete?.name}"? This cannot be undone.`}
-          primary={{
-            label: "Delete",
-            onPress: () => {
-              if (pendingDelete) deleteTrip(pendingDelete.id);
-              setPendingDelete(null);
-            },
-          }}
-          secondary={{
-            label: "Cancel",
-            onPress: () => setPendingDelete(null),
-          }}
-          onClose={() => setPendingDelete(null)}
-        />
+      <ConfirmationModal
+        visible={!!pendingDelete}
+        title="Delete trip?"
+        message={`Are you sure you want to delete "${pendingDelete?.name}"? This cannot be undone.`}
+        primary={{
+          label: 'Delete',
+          onPress: () => {
+            if (pendingDelete) deleteTrip(pendingDelete.id);
+            setPendingDelete(null);
+          },
+        }}
+        secondary={{
+          label: 'Cancel',
+          onPress: () => setPendingDelete(null),
+        }}
+        onClose={() => setPendingDelete(null)}
+      />
     </View>
   );
 }

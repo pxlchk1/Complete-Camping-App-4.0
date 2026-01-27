@@ -1,6 +1,6 @@
 /**
  * Onboarding Configuration
- * 
+ *
  * This file contains the single debug switch for onboarding logging.
  * Set ONBOARDING_DEBUG to true when debugging sign-up issues.
  * IMPORTANT: Set to false for production/release builds.

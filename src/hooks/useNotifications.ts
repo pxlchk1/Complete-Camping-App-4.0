@@ -3,16 +3,16 @@
  * Handles notification setup, listeners, and navigation
  */
 
-import { useEffect, useRef, useCallback } from "react";
-import * as Notifications from "expo-notifications";
-import { auth } from "../config/firebase";
+import { useEffect, useRef, useCallback } from 'react';
+import * as Notifications from 'expo-notifications';
+import { auth } from '../config/firebase';
 import {
   registerPushToken,
   addNotificationReceivedListener,
   addNotificationResponseListener,
   getInitialNotification,
   clearBadge,
-} from "../services/notificationService";
+} from '../services/notificationService';
 
 type NotificationData = {
   type?: string;
@@ -29,82 +29,81 @@ type NavigateFunction = (screen: string, params?: Record<string, any>) => void;
  * Hook to manage notification listeners and handle notification responses
  * Should be used in the root App component
  */
-export function useNotificationListeners(
-  navigateFn?: NavigateFunction
-) {
+export function useNotificationListeners(navigateFn?: NavigateFunction) {
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
-  const handleNotificationResponse = useCallback((
-    response: Notifications.NotificationResponse
-  ) => {
-    const data = response.notification.request.content.data as NotificationData;
+  const handleNotificationResponse = useCallback(
+    (response: Notifications.NotificationResponse) => {
+      const data = response.notification.request.content.data as NotificationData;
 
-    if (!data?.type || !navigateFn) {
-      return;
-    }
+      if (!data?.type || !navigateFn) {
+        return;
+      }
 
-    // Navigate based on notification type
-    switch (data.type) {
-      case "trip_reminder":
-      case "packing_reminder":
-      case "arrival_day":
-      case "trip_ending":
-      case "post_trip_recap":
-        if (data.tripId) {
-          navigateFn("TripDetails", { tripId: data.tripId });
-        }
-        break;
+      // Navigate based on notification type
+      switch (data.type) {
+        case 'trip_reminder':
+        case 'packing_reminder':
+        case 'arrival_day':
+        case 'trip_ending':
+        case 'post_trip_recap':
+          if (data.tripId) {
+            navigateFn('TripDetails', { tripId: data.tripId });
+          }
+          break;
 
-      case "weather_alert":
-        if (data.tripId) {
-          navigateFn("PlanTab", { 
-            screen: "Weather",
-            params: { tripId: data.tripId }
-          });
-        }
-        break;
+        case 'weather_alert':
+          if (data.tripId) {
+            navigateFn('PlanTab', {
+              screen: 'Weather',
+              params: { tripId: data.tripId },
+            });
+          }
+          break;
 
-      case "park_advisory":
-        if (data.parkId) {
-          navigateFn("ParkDetail", { parkId: data.parkId });
-        }
-        break;
+        case 'park_advisory':
+          if (data.parkId) {
+            navigateFn('ParkDetail', { parkId: data.parkId });
+          }
+          break;
 
-      case "community_answer":
-      case "community_reply":
-        if (data.contentId) {
-          navigateFn("CommunityStack", {
-            screen: "ContentDetail",
-            params: { contentId: data.contentId }
-          });
-        }
-        break;
+        case 'community_answer':
+        case 'community_reply':
+          if (data.contentId) {
+            navigateFn('CommunityStack', {
+              screen: 'ContentDetail',
+              params: { contentId: data.contentId },
+            });
+          }
+          break;
 
-      case "community_upvote":
-      case "community_featured":
-        navigateFn("CommunityTab");
-        break;
+        case 'community_upvote':
+        case 'community_featured':
+          navigateFn('CommunityTab');
+          break;
 
-      case "subscription":
-      case "payment_issue":
-        navigateFn("ManageSubscription");
-        break;
+        case 'subscription':
+        case 'payment_issue':
+          navigateFn('ManageSubscription');
+          break;
 
-      case "badge_earned":
-      case "module_progress":
-        navigateFn("LearnTab");
-        break;
+        case 'badge_earned':
+        case 'module_progress':
+          navigateFn('LearnTab');
+          break;
 
-      default:
-        console.log("[Notifications] Unhandled notification type:", data.type);
-    }
-  }, [navigateFn]);
+        default:
+          console.log('[Notifications] Unhandled notification type:', data.type);
+      }
+    },
+    [navigateFn],
+  );
 
   const checkInitialNotification = useCallback(async () => {
     const response = await getInitialNotification();
     if (response) {
-      console.log("[Notifications] App launched from notification:", response);
+      console.log('[Notifications] App launched from notification:', response);
       handleNotificationResponse(response);
     }
   }, [handleNotificationResponse]);
@@ -122,13 +121,13 @@ export function useNotificationListeners(
 
     // Listen for notifications received while app is foregrounded
     notificationListener.current = addNotificationReceivedListener((notification) => {
-      console.log("[Notifications] Received in foreground:", notification);
+      console.log('[Notifications] Received in foreground:', notification);
       // Could show an in-app notification banner here
     });
 
     // Listen for notification responses (user tapped notification)
     responseListener.current = addNotificationResponseListener((response) => {
-      console.log("[Notifications] User tapped:", response);
+      console.log('[Notifications] User tapped:', response);
       handleNotificationResponse(response);
     });
 

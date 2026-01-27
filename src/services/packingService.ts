@@ -8,7 +8,7 @@
  * 3. Weather-specific templates (based on conditions)
  */
 
-import { db } from "../config/firebase";
+import { db } from '../config/firebase';
 import {
   collection,
   doc,
@@ -18,9 +18,9 @@ import {
   query,
   where,
   serverTimestamp,
-  Timestamp
-} from "firebase/firestore";
-import { CampingStyle } from "../types/camping";
+  Timestamp,
+} from 'firebase/firestore';
+import { CampingStyle } from '../types/camping';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -32,7 +32,7 @@ import { CampingStyle } from "../types/camping";
  * - type: Specific to camping style (backpacking vs RV)
  * - weather: Specific to weather conditions (rain gear, sun protection)
  */
-export type TemplateType = "base" | "type" | "weather";
+export type TemplateType = 'base' | 'type' | 'weather';
 
 /**
  * Weather tags for conditional packing
@@ -40,28 +40,28 @@ export type TemplateType = "base" | "type" | "weather";
  * - hot: Above 80°F
  * - wet: Rain/precipitation expected
  */
-export type WeatherTag = "cold" | "hot" | "wet";
+export type WeatherTag = 'cold' | 'hot' | 'wet';
 
 /**
  * Source of packing list item (for tracking and filtering)
  */
-export type PackingItemSource = "base" | "type" | "weather" | "custom";
+export type PackingItemSource = 'base' | 'type' | 'weather' | 'custom';
 
 /**
  * Packing item categories for organization
  */
 export type PackingCategory =
-  | "sleep"
-  | "shelter"
-  | "kitchen"
-  | "clothing"
-  | "safety"
-  | "tools"
-  | "hygiene"
-  | "food"
-  | "water"
-  | "entertainment"
-  | "other";
+  | 'sleep'
+  | 'shelter'
+  | 'kitchen'
+  | 'clothing'
+  | 'safety'
+  | 'tools'
+  | 'hygiene'
+  | 'food'
+  | 'water'
+  | 'entertainment'
+  | 'other';
 
 /**
  * Individual packing item (in template)
@@ -124,13 +124,16 @@ export interface TripContext {
  * Convert CampingStyle enum to lowercase string for matching templates
  */
 function campingTypeToKey(campingType: CampingStyle): string {
-  return campingType.toLowerCase().replace(/_/g, "_");
+  return campingType.toLowerCase().replace(/_/g, '_');
 }
 
 /**
  * Check if template applies to given camping type
  */
-function templateMatchesCampingType(template: TemplateDoc, campingType: CampingStyle): boolean {
+function templateMatchesCampingType(
+  template: TemplateDoc,
+  campingType: CampingStyle,
+): boolean {
   if (template.campingTypes.length === 0) return true; // Applies to all
   const typeKey = campingTypeToKey(campingType);
   return template.campingTypes.includes(typeKey);
@@ -139,12 +142,15 @@ function templateMatchesCampingType(template: TemplateDoc, campingType: CampingS
 /**
  * Check if template applies to given weather tags
  */
-function templateMatchesWeather(template: TemplateDoc, weatherTags: WeatherTag[]): boolean {
-  if (template.templateType !== "weather") return true; // Not a weather template
+function templateMatchesWeather(
+  template: TemplateDoc,
+  weatherTags: WeatherTag[],
+): boolean {
+  if (template.templateType !== 'weather') return true; // Not a weather template
   if (template.weatherTags.length === 0) return true; // Applies to all weather
 
   // Template matches if ANY of its weather tags are in the trip's weather tags
-  return template.weatherTags.some(tag => weatherTags.includes(tag));
+  return template.weatherTags.some((tag) => weatherTags.includes(tag));
 }
 
 // ============================================================================
@@ -158,7 +164,7 @@ function templateMatchesWeather(template: TemplateDoc, weatherTags: WeatherTag[]
  */
 export async function getPackingTemplates(): Promise<TemplateDoc[]> {
   try {
-    const templatesRef = collection(db, "packingTemplates");
+    const templatesRef = collection(db, 'packingTemplates');
     const snapshot = await getDocs(templatesRef);
 
     const templates: TemplateDoc[] = [];
@@ -166,8 +172,8 @@ export async function getPackingTemplates(): Promise<TemplateDoc[]> {
       const data = doc.data();
       templates.push({
         id: doc.id,
-        label: data.label || "",
-        templateType: data.templateType || "base",
+        label: data.label || '',
+        templateType: data.templateType || 'base',
         campingTypes: data.campingTypes || [],
         weatherTags: data.weatherTags || [],
         addItems: data.addItems || [],
@@ -179,7 +185,7 @@ export async function getPackingTemplates(): Promise<TemplateDoc[]> {
 
     return templates;
   } catch (error) {
-    console.error("Error fetching packing templates:", error);
+    console.error('Error fetching packing templates:', error);
     throw error;
   }
 }
@@ -197,7 +203,9 @@ export async function getPackingTemplates(): Promise<TemplateDoc[]> {
  * @param context - Trip context (tripId, userId, campingType, weatherTags)
  * @returns Promise<PackingListItem[]> - Generated packing list
  */
-export async function generatePackingListForTrip(context: TripContext): Promise<PackingListItem[]> {
+export async function generatePackingListForTrip(
+  context: TripContext,
+): Promise<PackingListItem[]> {
   try {
     const { tripId, userId, campingType, weatherTags } = context;
 
@@ -205,26 +213,26 @@ export async function generatePackingListForTrip(context: TripContext): Promise<
     const templates = await getPackingTemplates();
 
     // 2. Filter applicable templates
-    const baseTemplates = templates.filter(t => t.templateType === "base");
-    const typeTemplates = templates.filter(t =>
-      t.templateType === "type" && templateMatchesCampingType(t, campingType)
+    const baseTemplates = templates.filter((t) => t.templateType === 'base');
+    const typeTemplates = templates.filter(
+      (t) => t.templateType === 'type' && templateMatchesCampingType(t, campingType),
     );
-    const weatherTemplates = templates.filter(t =>
-      t.templateType === "weather" && templateMatchesWeather(t, weatherTags)
+    const weatherTemplates = templates.filter(
+      (t) => t.templateType === 'weather' && templateMatchesWeather(t, weatherTags),
     );
 
     // 3. Collect all items to add
     const itemsMap = new Map<string, PackingListItem>();
 
     // Add base items
-    baseTemplates.forEach(template => {
-      template.addItems.forEach(item => {
+    baseTemplates.forEach((template) => {
+      template.addItems.forEach((item) => {
         if (!itemsMap.has(item.id)) {
           itemsMap.set(item.id, {
             id: item.id,
             label: item.label,
             category: item.category,
-            source: "base",
+            source: 'base',
             isPacked: false,
             isRemoved: false,
             quantity: 1,
@@ -235,14 +243,14 @@ export async function generatePackingListForTrip(context: TripContext): Promise<
     });
 
     // Add type-specific items
-    typeTemplates.forEach(template => {
-      template.addItems.forEach(item => {
+    typeTemplates.forEach((template) => {
+      template.addItems.forEach((item) => {
         if (!itemsMap.has(item.id)) {
           itemsMap.set(item.id, {
             id: item.id,
             label: item.label,
             category: item.category,
-            source: "type",
+            source: 'type',
             campingType: campingTypeToKey(campingType),
             isPacked: false,
             isRemoved: false,
@@ -254,14 +262,14 @@ export async function generatePackingListForTrip(context: TripContext): Promise<
     });
 
     // Add weather-specific items
-    weatherTemplates.forEach(template => {
-      template.addItems.forEach(item => {
+    weatherTemplates.forEach((template) => {
+      template.addItems.forEach((item) => {
         if (!itemsMap.has(item.id)) {
           itemsMap.set(item.id, {
             id: item.id,
             label: item.label,
             category: item.category,
-            source: "weather",
+            source: 'weather',
             weatherTags: template.weatherTags,
             isPacked: false,
             isRemoved: false,
@@ -274,14 +282,14 @@ export async function generatePackingListForTrip(context: TripContext): Promise<
 
     // 4. Apply removeItems pattern (collect all items to remove)
     const itemsToRemove = new Set<string>();
-    [...baseTemplates, ...typeTemplates, ...weatherTemplates].forEach(template => {
-      template.removeItems.forEach(itemId => {
+    [...baseTemplates, ...typeTemplates, ...weatherTemplates].forEach((template) => {
+      template.removeItems.forEach((itemId) => {
         itemsToRemove.add(itemId);
       });
     });
 
     // Filter out removed items
-    itemsToRemove.forEach(itemId => {
+    itemsToRemove.forEach((itemId) => {
       itemsMap.delete(itemId);
     });
 
@@ -289,10 +297,17 @@ export async function generatePackingListForTrip(context: TripContext): Promise<
     const packingList = Array.from(itemsMap.values());
 
     // 6. Save to Firestore
-    const packingListRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingListRef = collection(
+      db,
+      'users',
+      userId,
+      'trips',
+      tripId,
+      'packingList',
+    );
 
     // Save each item
-    const savePromises = packingList.map(item => {
+    const savePromises = packingList.map((item) => {
       const itemRef = doc(packingListRef, item.id);
       return setDoc(itemRef, {
         ...item,
@@ -305,7 +320,7 @@ export async function generatePackingListForTrip(context: TripContext): Promise<
 
     return packingList;
   } catch (error) {
-    console.error("Error generating packing list:", error);
+    console.error('Error generating packing list:', error);
     throw error;
   }
 }
@@ -317,9 +332,19 @@ export async function generatePackingListForTrip(context: TripContext): Promise<
  * @param tripId - Trip ID
  * @returns Promise<PackingListItem[]> - Existing packing list
  */
-export async function getPackingListForTrip(userId: string, tripId: string): Promise<PackingListItem[]> {
+export async function getPackingListForTrip(
+  userId: string,
+  tripId: string,
+): Promise<PackingListItem[]> {
   try {
-    const packingListRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingListRef = collection(
+      db,
+      'users',
+      userId,
+      'trips',
+      tripId,
+      'packingList',
+    );
     const snapshot = await getDocs(packingListRef);
 
     const packingList: PackingListItem[] = [];
@@ -327,9 +352,9 @@ export async function getPackingListForTrip(userId: string, tripId: string): Pro
       const data = doc.data();
       packingList.push({
         id: doc.id,
-        label: data.label || "",
-        category: data.category || "other",
-        source: data.source || "custom",
+        label: data.label || '',
+        category: data.category || 'other',
+        source: data.source || 'custom',
         campingType: data.campingType,
         weatherTags: data.weatherTags,
         isPacked: data.isPacked || false,
@@ -343,7 +368,7 @@ export async function getPackingListForTrip(userId: string, tripId: string): Pro
 
     return packingList;
   } catch (error) {
-    console.error("Error fetching packing list:", error);
+    console.error('Error fetching packing list:', error);
     throw error;
   }
 }
@@ -360,16 +385,20 @@ export async function updatePackingListItem(
   userId: string,
   tripId: string,
   itemId: string,
-  updates: Partial<PackingListItem>
+  updates: Partial<PackingListItem>,
 ): Promise<void> {
   try {
-    const itemRef = doc(db, "users", userId, "trips", tripId, "packingList", itemId);
-    await setDoc(itemRef, {
-      ...updates,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
+    const itemRef = doc(db, 'users', userId, 'trips', tripId, 'packingList', itemId);
+    await setDoc(
+      itemRef,
+      {
+        ...updates,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
   } catch (error) {
-    console.error("Error updating packing list item:", error);
+    console.error('Error updating packing list item:', error);
     throw error;
   }
 }
@@ -384,16 +413,23 @@ export async function updatePackingListItem(
 export async function addCustomPackingItem(
   userId: string,
   tripId: string,
-  item: Omit<PackingListItem, "id" | "source" | "createdAt" | "updatedAt">
+  item: Omit<PackingListItem, 'id' | 'source' | 'createdAt' | 'updatedAt'>,
 ): Promise<PackingListItem> {
   try {
-    const packingListRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingListRef = collection(
+      db,
+      'users',
+      userId,
+      'trips',
+      tripId,
+      'packingList',
+    );
     const newItemRef = doc(packingListRef);
 
     const newItem: PackingListItem = {
       ...item,
       id: newItemRef.id,
-      source: "custom",
+      source: 'custom',
     };
 
     await setDoc(newItemRef, {
@@ -404,7 +440,7 @@ export async function addCustomPackingItem(
 
     return newItem;
   } catch (error) {
-    console.error("Error adding custom packing item:", error);
+    console.error('Error adding custom packing item:', error);
     throw error;
   }
 }
@@ -415,20 +451,22 @@ export async function addCustomPackingItem(
  * @param forecast - Array of daily forecasts with high/low temps and precipitation
  * @returns WeatherTag[] - Weather tags for packing list generation
  */
-export function determineWeatherTags(forecast: Array<{ high: number; low: number; precipitation?: number }>): WeatherTag[] {
+export function determineWeatherTags(
+  forecast: Array<{ high: number; low: number; precipitation?: number }>,
+): WeatherTag[] {
   const tags: WeatherTag[] = [];
 
   // Check for cold weather (any day below 50°F)
-  const hasCold = forecast.some(day => day.low < 50);
-  if (hasCold) tags.push("cold");
+  const hasCold = forecast.some((day) => day.low < 50);
+  if (hasCold) tags.push('cold');
 
   // Check for hot weather (any day above 80°F)
-  const hasHot = forecast.some(day => day.high > 80);
-  if (hasHot) tags.push("hot");
+  const hasHot = forecast.some((day) => day.high > 80);
+  if (hasHot) tags.push('hot');
 
   // Check for wet weather (any day with >30% precipitation)
-  const hasWet = forecast.some(day => (day.precipitation || 0) > 30);
-  if (hasWet) tags.push("wet");
+  const hasWet = forecast.some((day) => (day.precipitation || 0) > 30);
+  if (hasWet) tags.push('wet');
 
   return tags;
 }

@@ -1,31 +1,38 @@
-import React from "react";
-import { Pressable, PressableProps, ActivityIndicator, View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { hapticMedium } from "../utils/haptics";
-import { colors, spacing, radius, textStyles, iconColors } from "../theme/theme";
+import React from 'react';
+import {
+  Pressable,
+  PressableProps,
+  ActivityIndicator,
+  View,
+  Text,
+  StyleSheet,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { hapticMedium } from '../utils/haptics';
+import { colors, spacing, radius, textStyles, iconColors } from '../theme/theme';
 
-export type ButtonVariant = "primary" | "secondary" | "text" | "ghost";
-export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonVariant = 'primary' | 'secondary' | 'text' | 'ghost';
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
-interface ButtonProps extends Omit<PressableProps, "style"> {
+interface ButtonProps extends Omit<PressableProps, 'style'> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   children: React.ReactNode;
   loading?: boolean;
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
-  iconPosition?: "left" | "right";
+  iconPosition?: 'left' | 'right';
   fullWidth?: boolean;
 }
 
 export default function Button({
-  variant = "primary",
-  size = "md",
+  variant = 'primary',
+  size = 'md',
   children,
   loading = false,
   disabled = false,
   icon,
-  iconPosition = "left",
+  iconPosition = 'left',
   fullWidth = false,
   onPress,
   ...pressableProps
@@ -55,33 +62,33 @@ export default function Button({
   // Variant-based styles (theme-based)
   const getVariantStyle = () => {
     switch (variant) {
-      case "primary":
+      case 'primary':
         return styles.buttonPrimary;
-      case "secondary":
+      case 'secondary':
         return styles.buttonSecondary;
-      case "text":
-      case "ghost":
+      case 'text':
+      case 'ghost':
         return styles.buttonText;
     }
   };
 
   const getTextStyle = () => {
     switch (variant) {
-      case "primary":
+      case 'primary':
         return textStyles.buttonPrimary;
-      case "secondary":
-      case "text":
-      case "ghost":
+      case 'secondary':
+      case 'text':
+      case 'ghost':
         return textStyles.buttonSecondary;
     }
   };
 
   const getIconColor = () => {
-    return variant === "primary" ? colors.parchment : colors.deepForest;
+    return variant === 'primary' ? colors.parchment : colors.deepForest;
   };
 
   const getLoadingColor = () => {
-    return variant === "primary" ? colors.parchment : colors.deepForest;
+    return variant === 'primary' ? colors.parchment : colors.deepForest;
   };
 
   return (
@@ -103,13 +110,13 @@ export default function Button({
         <ActivityIndicator size="small" color={getLoadingColor()} />
       ) : (
         <>
-          {icon && iconPosition === "left" && (
+          {icon && iconPosition === 'left' && (
             <View style={styles.iconLeft}>
               <Ionicons name={icon} size={iconSizes[size]} color={getIconColor()} />
             </View>
           )}
           <Text style={getTextStyle()}>{children}</Text>
-          {icon && iconPosition === "right" && (
+          {icon && iconPosition === 'right' && (
             <View style={styles.iconRight}>
               <Ionicons name={icon} size={iconSizes[size]} color={getIconColor()} />
             </View>
@@ -122,9 +129,9 @@ export default function Button({
 
 const styles = StyleSheet.create({
   baseButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonPrimary: {
     backgroundColor: colors.deepForest,
@@ -134,14 +141,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.deepForest,
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
   },
   buttonText: {
     paddingVertical: spacing.xs,
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
   },
   fullWidth: {
-    width: "100%",
+    width: '100%',
   },
   disabled: {
     opacity: 0.5,

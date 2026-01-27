@@ -1,21 +1,16 @@
 /**
  * Onboarding Steps Orchestrator
- * 
+ *
  * This is the ONLY place where onboarding Firestore writes should happen.
  * All writes are logged, validated, and handled with proper error management.
- * 
+ *
  * IMPORTANT: This module is designed to be IDEMPOTENT:
  * - Never overwrites existing user/profile docs
  * - Only creates missing docs
  * - Validates email index ownership before writing
  */
 
-import {
-  doc,
-  getDoc,
-  serverTimestamp,
-  DocumentData,
-} from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, DocumentData } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { onboardingSetDoc } from './onboardingWrites';
 import { getDebugErrorString, onboardingLog } from './onboardingDebug';
@@ -101,7 +96,7 @@ async function ensureUserDoc(params: BootstrapAccountParams): Promise<void> {
 /**
  * Creates the profiles/{uid} document with safe, minimal fields.
  * This is a CRITICAL step - failure will abort onboarding.
- * 
+ *
  * IMPORTANT: Do NOT include any subscription-related fields:
  * - membershipTier
  * - subscriptionProvider
@@ -154,14 +149,16 @@ async function ensureProfileDoc(params: BootstrapAccountParams): Promise<void> {
     },
   };
 
-  await onboardingSetDoc(profileRef, profileData, undefined, { step: STEPS.ENSURE_PROFILE_DOC });
+  await onboardingSetDoc(profileRef, profileData, undefined, {
+    step: STEPS.ENSURE_PROFILE_DOC,
+  });
 }
 
 /**
  * Creates the userEmailIndex/{normalizedEmail} document.
  * This is a CRITICAL step - failure will abort onboarding.
- * 
- * IMPORTANT: 
+ *
+ * IMPORTANT:
  * - Field name must be exactly "userId" (not "uid").
  * - If the email index exists and belongs to a DIFFERENT user, this throws
  *   an "email-in-use" error to abort signup.
@@ -169,7 +166,7 @@ async function ensureProfileDoc(params: BootstrapAccountParams): Promise<void> {
  */
 async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<void> {
   const { userId, email } = params;
-  
+
   if (!email) {
     onboardingLog('success', {
       step: STEPS.ENSURE_USER_EMAIL_INDEX,
@@ -190,18 +187,25 @@ async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<voi
 
     // CRITICAL: Check if this email belongs to a different user
     if (existingUserId && existingUserId !== userId) {
-      onboardingLog('error', {
-        step: STEPS.ENSURE_USER_EMAIL_INDEX,
-        op: 'getDoc',
-        path: emailIndexRef.path,
-      }, undefined, {
-        code: ONBOARDING_ERROR_CODES.EMAIL_IN_USE,
-        message: `Email index exists for different user`,
-      });
+      onboardingLog(
+        'error',
+        {
+          step: STEPS.ENSURE_USER_EMAIL_INDEX,
+          op: 'getDoc',
+          path: emailIndexRef.path,
+        },
+        undefined,
+        {
+          code: ONBOARDING_ERROR_CODES.EMAIL_IN_USE,
+          message: `Email index exists for different user`,
+        },
+      );
 
       // Throw a specific error that can be caught and mapped to user-friendly message
-      const error = new Error('That email is already in use. Try signing in instead.') as Error & { 
-        code: string; 
+      const error = new Error(
+        'That email is already in use. Try signing in instead.',
+      ) as Error & {
+        code: string;
         onboardingStep: string;
         emailInUse: boolean;
       };
@@ -226,7 +230,9 @@ async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<voi
     createdAt: serverTimestamp(),
   };
 
-  await onboardingSetDoc(emailIndexRef, emailIndexData, undefined, { step: STEPS.ENSURE_USER_EMAIL_INDEX });
+  await onboardingSetDoc(emailIndexRef, emailIndexData, undefined, {
+    step: STEPS.ENSURE_USER_EMAIL_INDEX,
+  });
 }
 
 /**
@@ -235,7 +241,7 @@ async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<voi
  */
 async function ensureEmailSubscriber(params: BootstrapAccountParams): Promise<void> {
   const { userId, email, displayName } = params;
-  
+
   if (!email) {
     return; // No email, skip
   }
@@ -263,27 +269,31 @@ async function ensureEmailSubscriber(params: BootstrapAccountParams): Promise<vo
     subscriptionStatus: 'subscribed',
   };
 
-  await onboardingSetDoc(subscriberRef, subscriberData, undefined, { step: STEPS.ENSURE_EMAIL_SUBSCRIBER });
+  await onboardingSetDoc(subscriberRef, subscriberData, undefined, {
+    step: STEPS.ENSURE_EMAIL_SUBSCRIBER,
+  });
 }
 
 /**
  * Bootstraps a new account by creating all required Firestore documents.
- * 
+ *
  * This function orchestrates the onboarding writes in a specific order:
  * 1. ensureUserDoc (critical)
  * 2. ensureProfileDoc (critical)
  * 3. ensureUserEmailIndex (critical)
  * 4. ensureEmailSubscriber (optional)
- * 
+ *
  * Critical steps will abort onboarding if they fail.
  * Optional steps will log errors and continue.
- * 
+ *
  * @param params - The user data for creating the account
  * @returns Result indicating success or failure with error details
  */
-export async function bootstrapNewAccount(params: BootstrapAccountParams): Promise<BootstrapAccountResult> {
+export async function bootstrapNewAccount(
+  params: BootstrapAccountParams,
+): Promise<BootstrapAccountResult> {
   const startTime = Date.now();
-  
+
   if (ONBOARDING_DEBUG) {
     console.log('[Onboarding] Starting bootstrapNewAccount for:', params.userId);
   }
@@ -305,7 +315,11 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
       // Log but don't fail - this is optional
       const firebaseError = error as { code?: string; message?: string };
       if (ONBOARDING_DEBUG) {
-        console.warn('[Onboarding] ensureEmailSubscriber failed (non-critical):', firebaseError.code, firebaseError.message);
+        console.warn(
+          '[Onboarding] ensureEmailSubscriber failed (non-critical):',
+          firebaseError.code,
+          firebaseError.message,
+        );
       }
     }
 
@@ -315,11 +329,10 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
     }
 
     return { success: true };
-
   } catch (error) {
-    const firebaseError = error as { 
-      code?: string; 
-      message?: string; 
+    const firebaseError = error as {
+      code?: string;
+      message?: string;
       onboardingStep?: string;
       emailInUse?: boolean;
     };
@@ -356,7 +369,7 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
 
     // Return user-friendly error with optional debug info
     const debugInfo = getDebugErrorString(step, errorCode);
-    
+
     return {
       success: false,
       error: "We couldn't finish setting up your account. Please try again.",
@@ -370,17 +383,24 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
  * Use this in the auth flow to display appropriate error messages.
  */
 export function getOnboardingErrorMessage(error: unknown): string {
-  const firebaseError = error as { code?: string; onboardingStep?: string; emailInUse?: boolean };
-  
+  const firebaseError = error as {
+    code?: string;
+    onboardingStep?: string;
+    emailInUse?: boolean;
+  };
+
   // Handle email-in-use specifically
-  if (firebaseError.emailInUse || firebaseError.code === ONBOARDING_ERROR_CODES.EMAIL_IN_USE) {
+  if (
+    firebaseError.emailInUse ||
+    firebaseError.code === ONBOARDING_ERROR_CODES.EMAIL_IN_USE
+  ) {
     return 'That email is already in use. Try signing in instead.';
   }
 
   if (firebaseError.code === 'permission-denied') {
     const debugInfo = getDebugErrorString(
       firebaseError.onboardingStep || 'unknown',
-      firebaseError.code
+      firebaseError.code,
     );
     return `We couldn't finish setting up your account. Please try again.${debugInfo}`;
   }
@@ -394,7 +414,10 @@ export function getOnboardingErrorMessage(error: unknown): string {
  */
 export function isEmailInUseError(error: unknown): boolean {
   const firebaseError = error as { code?: string; emailInUse?: boolean };
-  return firebaseError.emailInUse === true || firebaseError.code === ONBOARDING_ERROR_CODES.EMAIL_IN_USE;
+  return (
+    firebaseError.emailInUse === true ||
+    firebaseError.code === ONBOARDING_ERROR_CODES.EMAIL_IN_USE
+  );
 }
 
 export { STEPS as ONBOARDING_STEPS };

@@ -4,13 +4,7 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  Modal,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import {
@@ -45,39 +39,34 @@ export default function ItineraryPromptPanel({
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onDismiss}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
       <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onDismiss} />
-        
+
         <View style={styles.panel}>
           {/* Handle bar */}
           <View style={styles.handleBar} />
-          
+
           {/* Icon */}
           <View style={styles.iconContainer}>
             <Ionicons name="map-outline" size={28} color={EARTH_GREEN} />
           </View>
-          
+
           {/* Title */}
           <Text style={styles.title}>Want to add an itinerary?</Text>
-          
+
           {/* Body */}
           <Text style={styles.body}>
             Drop in an AllTrails or onX link and we&apos;ll organize it by day.
           </Text>
-          
+
           {/* Buttons */}
           <View style={styles.buttons}>
             <Pressable onPress={handleAddPress} style={styles.primaryButton}>
               <Ionicons name="add-circle-outline" size={18} color={PARCHMENT} />
               <Text style={styles.primaryButtonText}>Add itinerary link</Text>
             </Pressable>
-            
+
             <Pressable onPress={handleDismissPress} style={styles.secondaryButton}>
               <Text style={styles.secondaryButtonText}>Not Now</Text>
             </Pressable>

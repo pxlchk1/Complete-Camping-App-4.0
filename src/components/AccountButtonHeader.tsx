@@ -1,8 +1,8 @@
-import React from "react";
-import { View, ViewStyle } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AccountButton from "./AccountButton";
-import { spacing } from "../theme/theme";
+import React from 'react';
+import { View, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AccountButton from './AccountButton';
+import { spacing } from '../theme/theme';
 
 interface AccountButtonHeaderProps {
   color?: string;
@@ -20,7 +20,7 @@ export default function AccountButtonHeader({ color, style }: AccountButtonHeade
     <View
       style={[
         {
-          position: "absolute",
+          position: 'absolute',
           top: insets.top + 8,
           right: spacing.lg,
           zIndex: 10,

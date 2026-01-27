@@ -2,35 +2,51 @@
  * Feedback List Screen
  * Shows app feedback posts from the community
  */
-
-import React, { useState, useEffect } from "react";
-import { View, Text, Pressable, FlatList, ActivityIndicator, TextInput } from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { feedbackService, FeedbackPost } from "../../services/firestore/feedbackService";
-import { feedbackVoteService } from "../../services/firestore/feedbackVoteService";
-import { auth } from "../../config/firebase";
-import AccountRequiredModal from "../../components/AccountRequiredModal";
-import OnboardingModal from "../../components/OnboardingModal";
-import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
-import { requireProForAction } from "../../utils/gating";
-import { shouldShowInFeed } from "../../services/moderationService";
-import { RootStackNavigationProp } from "../../navigation/types";
-import CommunitySectionHeader from "../../components/CommunitySectionHeader";
-import { seedFeedbackIfEmpty } from "../../features/feedback/seedFeedback";
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+
+import * as Haptics from 'expo-haptics';
+
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import AccountRequiredModal from '../../components/AccountRequiredModal';
+import CommunitySectionHeader from '../../components/CommunitySectionHeader';
+import OnboardingModal from '../../components/OnboardingModal';
+import { auth } from '../../config/firebase';
+import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  TEXT_MUTED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_MUTED,
-} from "../../constants/colors";
+} from '../../constants/colors';
+import { seedFeedbackIfEmpty } from '../../features/feedback/seedFeedback';
+import { useScreenOnboarding } from '../../hooks/useScreenOnboarding';
+import { RootStackNavigationProp } from '../../navigation/types';
+import { FeedbackPost, feedbackService } from '../../services/firestore/feedbackService';
+import { feedbackVoteService } from '../../services/firestore/feedbackVoteService';
+import { shouldShowInFeed } from '../../services/moderationService';
+import { requireProForAction } from '../../utils/gating';
 
-type CategoryFilter = 'Feature Request' | 'Bug Report' | 'Improvement' | 'Question' | 'Other' | 'all';
+type CategoryFilter =
+  | 'Feature Request'
+  | 'Bug Report'
+  | 'Improvement'
+  | 'Question'
+  | 'Other'
+  | 'all';
 
 export default function FeedbackListScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -38,18 +54,25 @@ export default function FeedbackListScreen() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Onboarding modal
-  const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("Feedback");
+  const { showModal, currentTooltip, dismissModal, openModal } =
+    useScreenOnboarding('Feedback');
 
-  const [posts, setPosts] = useState<(FeedbackPost & { voteScore: number; userVote: "up" | "down" | null; commentCount?: number })[]>([]);
+  const [posts, setPosts] = useState<
+    (FeedbackPost & {
+      voteScore: number;
+      userVote: 'up' | 'down' | null;
+      commentCount?: number;
+    })[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("all");
+  const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>('all');
 
   // Seed on mount
   useEffect(() => {
-    console.log("[FeedbackList] Mounting feedback screen, running seed check.");
-    seedFeedbackIfEmpty().catch(err => {
-      console.error("[FeedbackList] Seed failed:", err);
+    console.log('[FeedbackList] Mounting feedback screen, running seed check.');
+    seedFeedbackIfEmpty().catch((err) => {
+      console.error('[FeedbackList] Seed failed:', err);
     });
   }, []);
 
@@ -59,28 +82,31 @@ export default function FeedbackListScreen() {
       setError(null);
       const allPosts = await feedbackService.getFeedback();
       // Filter out hidden content (unless user is author)
-      const visiblePosts = allPosts.filter(post => 
-        shouldShowInFeed(post, currentUser?.uid)
+      const visiblePosts = allPosts.filter((post) =>
+        shouldShowInFeed(post, currentUser?.uid),
       );
       // TODO: Replace with actual comment count fetch if available
       const postsWithVotes = await Promise.all(
         visiblePosts.map(async (post) => {
           let voteScore = post.karmaScore || 0;
-          let userVote: "up" | "down" | null = null;
+          let userVote: 'up' | 'down' | null = null;
           try {
             const summary = await feedbackVoteService.getUserVote(post.id);
-            if (summary) userVote = summary.value === 1 ? "up" : summary.value === -1 ? "down" : null;
+            if (summary)
+              userVote =
+                summary.value === 1 ? 'up' : summary.value === -1 ? 'down' : null;
           } catch {}
           // Placeholder: commentCount is not implemented, set to 0
           return { ...post, voteScore, userVote, commentCount: post.commentCount ?? 0 };
-        })
+        }),
       );
-      const filtered = selectedCategory === "all"
-        ? postsWithVotes
-        : postsWithVotes.filter(post => post.category === selectedCategory);
+      const filtered =
+        selectedCategory === 'all'
+          ? postsWithVotes
+          : postsWithVotes.filter((post) => post.category === selectedCategory);
       setPosts(filtered);
     } catch (err: any) {
-      setError(err.message || "Failed to load feedback");
+      setError(err.message || 'Failed to load feedback');
     } finally {
       setLoading(false);
     }
@@ -93,24 +119,25 @@ export default function FeedbackListScreen() {
   useFocusEffect(
     React.useCallback(() => {
       loadPosts();
-    }, [selectedCategory])
+    }, [selectedCategory]),
   );
 
   const handlePostPress = (postId: string) => {
-    navigation.navigate("FeedbackDetail", { postId });
+    navigation.navigate('FeedbackDetail', { postId });
   };
-  
+
   const handleCreatePost = () => {
     // Feedback submission requires Pro
     requireProForAction(
       () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        navigation.navigate("CreateFeedback");
+        navigation.navigate('CreateFeedback');
       },
       {
         openAccountModal: () => setShowLoginModal(true),
-        openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "feedback_create", variant }),
-      }
+        openPaywallModal: (variant) =>
+          navigation.navigate('Paywall', { triggerKey: 'feedback_create', variant }),
+      },
     );
   };
 
@@ -121,8 +148,10 @@ export default function FeedbackListScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         try {
           await feedbackService.upvoteFeedback(postId);
-          setPosts(prev =>
-            prev.map(p => (p.id === postId ? { ...p, karmaScore: p.karmaScore + 1 } : p))
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.id === postId ? { ...p, karmaScore: p.karmaScore + 1 } : p,
+            ),
           );
         } catch (err) {
           // Silently fail
@@ -130,8 +159,9 @@ export default function FeedbackListScreen() {
       },
       {
         openAccountModal: () => setShowLoginModal(true),
-        openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "feedback_vote", variant }),
-      }
+        openPaywallModal: (variant) =>
+          navigation.navigate('Paywall', { triggerKey: 'feedback_vote', variant }),
+      },
     );
   };
 
@@ -142,8 +172,10 @@ export default function FeedbackListScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         try {
           await feedbackService.adjustKarma(postId, -1);
-          setPosts(prev =>
-            prev.map(p => (p.id === postId ? { ...p, karmaScore: p.karmaScore - 1 } : p))
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.id === postId ? { ...p, karmaScore: p.karmaScore - 1 } : p,
+            ),
           );
         } catch (err) {
           // Silently fail
@@ -151,23 +183,24 @@ export default function FeedbackListScreen() {
       },
       {
         openAccountModal: () => setShowLoginModal(true),
-        openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "feedback_vote", variant }),
-      }
+        openPaywallModal: (variant) =>
+          navigation.navigate('Paywall', { triggerKey: 'feedback_vote', variant }),
+      },
     );
   };
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case "Feature Request":
-        return "Feature Request";
-      case "Bug Report":
-        return "Bug Report";
-      case "Improvement":
-        return "Improvement";
-      case "Question":
-        return "Question";
-      case "Other":
-        return "Other";
+      case 'Feature Request':
+        return 'Feature Request';
+      case 'Bug Report':
+        return 'Bug Report';
+      case 'Improvement':
+        return 'Improvement';
+      case 'Question':
+        return 'Question';
+      case 'Other':
+        return 'Other';
       default:
         return category;
     }
@@ -175,10 +208,13 @@ export default function FeedbackListScreen() {
 
   const formatTimeAgo = (dateString: string | any) => {
     const now = new Date();
-    const date = typeof dateString === "string" ? new Date(dateString) : dateString.toDate?.() || new Date();
+    const date =
+      typeof dateString === 'string'
+        ? new Date(dateString)
+        : dateString.toDate?.() || new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
-    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
 
     const diffInDays = Math.floor(diffInHours / 24);
@@ -190,7 +226,15 @@ export default function FeedbackListScreen() {
     return date.toLocaleDateString();
   };
 
-  const renderPost = ({ item }: { item: FeedbackPost & { voteScore: number; userVote: "up" | "down" | null; commentCount?: number } }) => {
+  const renderPost = ({
+    item,
+  }: {
+    item: FeedbackPost & {
+      voteScore: number;
+      userVote: 'up' | 'down' | null;
+      commentCount?: number;
+    };
+  }) => {
     return (
       <Pressable
         onPress={() => handlePostPress(item.id)}
@@ -200,7 +244,10 @@ export default function FeedbackListScreen() {
         <View className="flex-row items-start justify-between mb-2">
           <View className="flex-row items-center gap-2 flex-1">
             <View className="px-3 py-1 rounded-full bg-amber-100">
-              <Text className="text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: "#92400e" }}>
+              <Text
+                className="text-xs"
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: '#92400e' }}
+              >
                 {getCategoryLabel(item.category)}
               </Text>
             </View>
@@ -209,7 +256,7 @@ export default function FeedbackListScreen() {
 
         <Text
           className="text-lg mb-2"
-          style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+          style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
         >
           {item.title}
         </Text>
@@ -217,25 +264,55 @@ export default function FeedbackListScreen() {
         <Text
           className="mb-3"
           numberOfLines={2}
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+          style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
         >
           {item.description}
         </Text>
 
         {/* Footer: author, date, and comments count */}
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTopWidth: 1, borderColor: BORDER_SOFT }}>
-          <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
-            <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-              {item.authorName || "Anonymous"}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingTop: 12,
+            borderTopWidth: 1,
+            borderColor: BORDER_SOFT,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexShrink: 1 }}>
+            <Text
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                fontSize: 12,
+                color: TEXT_MUTED,
+              }}
+            >
+              @{item.authorHandle || 'Anonymous'}
             </Text>
-            <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>
-            <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: TEXT_MUTED }}>
+            <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>
+              •
+            </Text>
+            <Text
+              style={{
+                fontFamily: 'SourceSans3_400Regular',
+                fontSize: 12,
+                color: TEXT_MUTED,
+              }}
+            >
               {formatTimeAgo(item.createdAt)}
             </Text>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Ionicons name="chatbubble-outline" size={16} color={TEXT_MUTED} />
-            <Text style={{ marginLeft: 4, fontSize: 12, fontFamily: "SourceSans3_600SemiBold", color: TEXT_MUTED }}>
+            <Text
+              style={{
+                marginLeft: 4,
+                fontSize: 12,
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_MUTED,
+              }}
+            >
               {item.commentCount ?? 0}
             </Text>
           </View>
@@ -250,7 +327,7 @@ export default function FeedbackListScreen() {
         <ActivityIndicator size="large" color={DEEP_FOREST} />
         <Text
           className="mt-4"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+          style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
         >
           Loading feedback...
         </Text>
@@ -264,13 +341,13 @@ export default function FeedbackListScreen() {
         <Ionicons name="alert-circle-outline" size={64} color={EARTH_GREEN} />
         <Text
           className="mt-4 text-center text-lg"
-          style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+          style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_PRIMARY_STRONG }}
         >
           Failed to load feedback
         </Text>
         <Text
           className="mt-2 text-center"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+          style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
         >
           {error}
         </Text>
@@ -279,7 +356,7 @@ export default function FeedbackListScreen() {
           className="mt-6 px-6 py-3 rounded-xl active:opacity-90"
           style={{ backgroundColor: DEEP_FOREST }}
         >
-          <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+          <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
             Retry
           </Text>
         </Pressable>
@@ -300,13 +377,13 @@ export default function FeedbackListScreen() {
       <View className="px-5 py-3 border-b" style={{ borderColor: BORDER_SOFT }}>
         <View className="flex-row flex-wrap gap-2">
           {[
-            { id: "all" as CategoryFilter, label: "All" },
-            { id: "feature" as CategoryFilter, label: "Features" },
-            { id: "bug" as CategoryFilter, label: "Bugs" },
-            { id: "improvement" as CategoryFilter, label: "Improvements" },
-            { id: "question" as CategoryFilter, label: "Questions" },
-            { id: "other" as CategoryFilter, label: "Other" },
-          ].map(option => (
+            { id: 'all' as CategoryFilter, label: 'All' },
+            { id: 'feature' as CategoryFilter, label: 'Features' },
+            { id: 'bug' as CategoryFilter, label: 'Bugs' },
+            { id: 'improvement' as CategoryFilter, label: 'Improvements' },
+            { id: 'question' as CategoryFilter, label: 'Questions' },
+            { id: 'other' as CategoryFilter, label: 'Other' },
+          ].map((option) => (
             <Pressable
               key={option.label}
               onPress={() => {
@@ -314,15 +391,19 @@ export default function FeedbackListScreen() {
                 setSelectedCategory(option.id);
               }}
               className={`px-3 py-1 rounded-full border ${
-                selectedCategory === option.id ? "bg-amber-100 border-amber-600" : "bg-white"
+                selectedCategory === option.id
+                  ? 'bg-amber-100 border-amber-600'
+                  : 'bg-white'
               }`}
-              style={selectedCategory !== option.id ? { borderColor: BORDER_SOFT } : undefined}
+              style={
+                selectedCategory !== option.id ? { borderColor: BORDER_SOFT } : undefined
+              }
             >
               <Text
                 className="text-xs"
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
-                  color: selectedCategory === option.id ? "#92400e" : TEXT_SECONDARY
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: selectedCategory === option.id ? '#92400e' : TEXT_SECONDARY,
                 }}
               >
                 {option.label}
@@ -338,21 +419,26 @@ export default function FeedbackListScreen() {
           <View className="items-center mb-8">
             <View
               className="w-20 h-20 rounded-full items-center justify-center mb-4"
-              style={{ backgroundColor: DEEP_FOREST + "15" }}
+              style={{ backgroundColor: DEEP_FOREST + '15' }}
             >
               <Ionicons name="chatbubbles-outline" size={48} color={DEEP_FOREST} />
             </View>
             <Text
               className="text-2xl text-center mb-3"
-              style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+              style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
               Share Your Feedback
             </Text>
             <Text
               className="text-center text-base mb-6"
-              style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, lineHeight: 24 }}
+              style={{
+                fontFamily: 'SourceSans3_400Regular',
+                color: TEXT_SECONDARY,
+                lineHeight: 24,
+              }}
             >
-              Help us improve! Share feature requests, report bugs, or suggest improvements.
+              Help us improve! Share feature requests, report bugs, or suggest
+              improvements.
             </Text>
           </View>
 
@@ -362,33 +448,42 @@ export default function FeedbackListScreen() {
               <View className="items-center" style={{ width: 100 }}>
                 <View
                   className="w-14 h-14 rounded-full items-center justify-center mb-2"
-                  style={{ backgroundColor: "#f59e0b15" }}
+                  style={{ backgroundColor: '#f59e0b15' }}
                 >
                   <Ionicons name="bulb-outline" size={28} color="#f59e0b" />
                 </View>
-                <Text className="text-xs text-center" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}>
+                <Text
+                  className="text-xs text-center"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_SECONDARY }}
+                >
                   Features
                 </Text>
               </View>
               <View className="items-center" style={{ width: 100 }}>
                 <View
                   className="w-14 h-14 rounded-full items-center justify-center mb-2"
-                  style={{ backgroundColor: "#ef444415" }}
+                  style={{ backgroundColor: '#ef444415' }}
                 >
                   <Ionicons name="bug-outline" size={28} color="#ef4444" />
                 </View>
-                <Text className="text-xs text-center" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}>
+                <Text
+                  className="text-xs text-center"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_SECONDARY }}
+                >
                   Bugs
                 </Text>
               </View>
               <View className="items-center" style={{ width: 100 }}>
                 <View
                   className="w-14 h-14 rounded-full items-center justify-center mb-2"
-                  style={{ backgroundColor: "#3b82f615" }}
+                  style={{ backgroundColor: '#3b82f615' }}
                 >
                   <Ionicons name="trending-up-outline" size={28} color="#3b82f6" />
                 </View>
-                <Text className="text-xs text-center" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}>
+                <Text
+                  className="text-xs text-center"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_SECONDARY }}
+                >
                   Improvements
                 </Text>
               </View>
@@ -401,7 +496,10 @@ export default function FeedbackListScreen() {
             style={{ backgroundColor: DEEP_FOREST }}
           >
             <Ionicons name="add-circle-outline" size={20} color={PARCHMENT} />
-            <Text className="ml-2 text-sm" style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+            <Text
+              className="ml-2 text-sm"
+              style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
+            >
               Submit Feedback
             </Text>
           </Pressable>
@@ -410,7 +508,7 @@ export default function FeedbackListScreen() {
         <FlatList
           data={posts}
           renderItem={renderPost}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         />
       )}
@@ -419,7 +517,7 @@ export default function FeedbackListScreen() {
         visible={showLoginModal}
         onCreateAccount={() => {
           setShowLoginModal(false);
-          navigation.navigate("Auth");
+          navigation.navigate('Auth');
         }}
         onMaybeLater={() => setShowLoginModal(false)}
       />
@@ -433,4 +531,3 @@ export default function FeedbackListScreen() {
     </View>
   );
 }
-

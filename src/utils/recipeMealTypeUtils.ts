@@ -1,17 +1,17 @@
 /**
  * Recipe Meal Type Utils
- * 
+ *
  * Utilities for getting and normalizing mealTypes on recipes,
  * with fallback inference for legacy data.
  */
 
-import { MealType, inferMealTypes, mealCategoryToMealType } from "../constants/mealTypes";
-import { MealSuggestion } from "../types/meals";
-import { MealLibraryItem } from "../types/meal";
+import { MealType, inferMealTypes, mealCategoryToMealType } from '../constants/mealTypes';
+import { MealSuggestion } from '../types/meals';
+import { MealLibraryItem } from '../types/meal';
 
 /**
  * Get the mealTypes for a MealSuggestion, with fallback inference.
- * 
+ *
  * Priority:
  * 1. Use mealTypes if explicitly set
  * 2. Infer from mealType field (legacy singular)
@@ -34,7 +34,7 @@ export function getRecipeMealTypes(recipe: MealSuggestion): MealType[] {
 
 /**
  * Get the mealTypes for a MealLibraryItem, with fallback inference.
- * 
+ *
  * Priority:
  * 1. Use mealTypes if explicitly set
  * 2. Convert category field to mealType
@@ -57,16 +57,16 @@ export function getLibraryItemMealTypes(item: MealLibraryItem): MealType[] {
 
 /**
  * Check if a recipe matches a given meal type filter.
- * 
+ *
  * @param recipe - The recipe to check
  * @param filterType - The meal type to filter by, or "all" for no filter
  * @returns true if recipe matches the filter
  */
 export function recipeMatchesMealType(
   recipe: MealSuggestion,
-  filterType: MealType | "all"
+  filterType: MealType | 'all',
 ): boolean {
-  if (filterType === "all") return true;
+  if (filterType === 'all') return true;
 
   const mealTypes = getRecipeMealTypes(recipe);
   return mealTypes.includes(filterType);
@@ -74,16 +74,16 @@ export function recipeMatchesMealType(
 
 /**
  * Check if a library item matches a given meal type filter.
- * 
+ *
  * @param item - The library item to check
  * @param filterType - The meal type to filter by, or "all" for no filter
  * @returns true if item matches the filter
  */
 export function libraryItemMatchesMealType(
   item: MealLibraryItem,
-  filterType: MealType | "all"
+  filterType: MealType | 'all',
 ): boolean {
-  if (filterType === "all") return true;
+  if (filterType === 'all') return true;
 
   const mealTypes = getLibraryItemMealTypes(item);
   return mealTypes.includes(filterType);
@@ -92,19 +92,19 @@ export function libraryItemMatchesMealType(
 /**
  * Normalize and validate mealTypes array.
  * Ensures we have at least 1, at most 2, and all valid types.
- * 
+ *
  * @param mealTypes - Input array (may be undefined or empty)
  * @param fallbackName - Recipe name for inference fallback
  * @returns Validated mealTypes array
  */
 export function normalizeMealTypes(
   mealTypes: MealType[] | undefined,
-  fallbackName: string
+  fallbackName: string,
 ): MealType[] {
   // Validate existing types
-  const validTypes = ["breakfast", "lunch", "dinner", "snacks"] as const;
-  const validated = (mealTypes || []).filter(
-    (t): t is MealType => validTypes.includes(t as any)
+  const validTypes = ['breakfast', 'lunch', 'dinner', 'snacks'] as const;
+  const validated = (mealTypes || []).filter((t): t is MealType =>
+    validTypes.includes(t as any),
   );
 
   // If empty, infer
@@ -121,9 +121,7 @@ export function normalizeMealTypes(
  * E.g., ["breakfast", "lunch"] -> "Breakfast, Lunch"
  */
 export function formatMealTypesLabel(mealTypes: MealType[]): string {
-  if (!mealTypes || mealTypes.length === 0) return "Dinner";
+  if (!mealTypes || mealTypes.length === 0) return 'Dinner';
 
-  return mealTypes
-    .map((t) => t.charAt(0).toUpperCase() + t.slice(1))
-    .join(", ");
+  return mealTypes.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(', ');
 }

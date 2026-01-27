@@ -1,15 +1,22 @@
 /**
  * Photo Daily Limit Service
- * 
+ *
  * Manages daily photo upload limits for FREE users.
  * - FREE users: 1 photo per calendar day
  * - PRO users: Unlimited
- * 
+ *
  * Uses America/Chicago timezone for consistent day boundaries.
  * Stores limit data in Firestore: /users/{userId}/dailyUsage/{YYYY-MM-DD}
  */
 
-import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  increment,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import { useSubscriptionStore } from '../state/subscriptionStore';
 import { useUserStore } from '../state/userStore';
@@ -23,7 +30,9 @@ export const FREE_DAILY_PHOTO_LIMIT = 1;
 export function getTodayDateString(): string {
   const now = new Date();
   // Format in America/Chicago timezone
-  const chicagoDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+  const chicagoDate = new Date(
+    now.toLocaleString('en-US', { timeZone: 'America/Chicago' }),
+  );
   const year = chicagoDate.getFullYear();
   const month = String(chicagoDate.getMonth() + 1).padStart(2, '0');
   const day = String(chicagoDate.getDate()).padStart(2, '0');
@@ -47,9 +56,9 @@ interface DailyUsage {
  * Check if the current user can upload a photo today
  * @returns { canUpload: boolean, remaining: number, isPro: boolean }
  */
-export async function canUploadPhotoToday(): Promise<{ 
-  canUpload: boolean; 
-  remaining: number; 
+export async function canUploadPhotoToday(): Promise<{
+  canUpload: boolean;
+  remaining: number;
   isPro: boolean;
   message?: string;
 }> {
@@ -73,10 +82,10 @@ export async function canUploadPhotoToday(): Promise<{
   // FREE user - check daily limit
   const today = getTodayDateString();
   const usageRef = getDailyUsageRef(user.uid, today);
-  
+
   try {
     const usageSnap = await getDoc(usageRef);
-    
+
     if (!usageSnap.exists()) {
       // No usage record for today - can upload
       return { canUpload: true, remaining: FREE_DAILY_PHOTO_LIMIT, isPro: false };
@@ -87,11 +96,12 @@ export async function canUploadPhotoToday(): Promise<{
     const remaining = Math.max(0, FREE_DAILY_PHOTO_LIMIT - photoPosts);
 
     if (photoPosts >= FREE_DAILY_PHOTO_LIMIT) {
-      return { 
-        canUpload: false, 
-        remaining: 0, 
+      return {
+        canUpload: false,
+        remaining: 0,
         isPro: false,
-        message: "You've hit today's photo limit. Try again tomorrow, or upgrade for unlimited photo posts."
+        message:
+          "You've hit today's photo limit. Try again tomorrow, or upgrade for unlimited photo posts.",
       };
     }
 
@@ -115,7 +125,7 @@ export async function recordPhotoUpload(): Promise<void> {
 
   // PRO users don't need to track (but we can for analytics)
   const isPro = useSubscriptionStore.getState().isPro;
-  
+
   const today = getTodayDateString();
   const usageRef = getDailyUsageRef(user.uid, today);
 
@@ -173,12 +183,17 @@ export async function getPhotoUsageToday(): Promise<{
 
   try {
     const usageSnap = await getDoc(usageRef);
-    const used = usageSnap.exists() ? (usageSnap.data().photoPosts || 0) : 0;
+    const used = usageSnap.exists() ? usageSnap.data().photoPosts || 0 : 0;
     const remaining = Math.max(0, FREE_DAILY_PHOTO_LIMIT - used);
 
     return { used, limit: FREE_DAILY_PHOTO_LIMIT, remaining, isPro: false };
   } catch (error) {
     console.error('Error getting photo usage:', error);
-    return { used: 0, limit: FREE_DAILY_PHOTO_LIMIT, remaining: FREE_DAILY_PHOTO_LIMIT, isPro: false };
+    return {
+      used: 0,
+      limit: FREE_DAILY_PHOTO_LIMIT,
+      remaining: FREE_DAILY_PHOTO_LIMIT,
+      isPro: false,
+    };
   }
 }

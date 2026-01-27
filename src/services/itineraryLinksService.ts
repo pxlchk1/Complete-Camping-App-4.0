@@ -37,7 +37,7 @@ function getLinksCollection(tripId: string) {
  */
 export async function createItineraryLink(
   tripId: string,
-  data: CreateItineraryLinkData
+  data: CreateItineraryLinkData,
 ): Promise<ItineraryLink> {
   const user = auth.currentUser;
   if (!user) throw new Error('Must be signed in to create an itinerary link');
@@ -91,11 +91,11 @@ export async function getItineraryLinks(tripId: string): Promise<ItineraryLink[]
   // Sort by day, then by moment, then by sortOrder
   return links.sort((a, b) => {
     if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
-    
+
     const aMomentOrder = a.moment ? MOMENT_SORT_ORDER[a.moment] : 99;
     const bMomentOrder = b.moment ? MOMENT_SORT_ORDER[b.moment] : 99;
     if (aMomentOrder !== bMomentOrder) return aMomentOrder - bMomentOrder;
-    
+
     return (a.sortOrder || 0) - (b.sortOrder || 0);
   });
 }
@@ -105,7 +105,7 @@ export async function getItineraryLinks(tripId: string): Promise<ItineraryLink[]
  */
 export async function getItineraryLink(
   tripId: string,
-  linkId: string
+  linkId: string,
 ): Promise<ItineraryLink | null> {
   const user = auth.currentUser;
   if (!user) throw new Error('Must be signed in to get an itinerary link');
@@ -127,13 +127,13 @@ export async function getItineraryLink(
 export async function updateItineraryLink(
   tripId: string,
   linkId: string,
-  data: UpdateItineraryLinkData
+  data: UpdateItineraryLinkData,
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user) throw new Error('Must be signed in to update an itinerary link');
 
   const linkRef = doc(db, 'trips', tripId, 'itineraryLinks', linkId);
-  
+
   const updateData: Record<string, any> = {
     updatedAt: new Date().toISOString(),
   };
@@ -141,7 +141,7 @@ export async function updateItineraryLink(
   if (data.url !== undefined) {
     const normalizedUrl = normalizeUrl(data.url);
     if (!normalizedUrl) throw new Error('Invalid URL');
-    
+
     const providerInfo = sniffProvider(normalizedUrl);
     updateData.url = normalizedUrl;
     updateData.provider = providerInfo.provider;
@@ -173,12 +173,12 @@ export async function deleteItineraryLink(tripId: string, linkId: string): Promi
  */
 export function groupLinksByDay(links: ItineraryLink[]): Map<number, ItineraryLink[]> {
   const grouped = new Map<number, ItineraryLink[]>();
-  
+
   for (const link of links) {
     const existing = grouped.get(link.dayIndex) || [];
     existing.push(link);
     grouped.set(link.dayIndex, existing);
   }
-  
+
   return grouped;
 }

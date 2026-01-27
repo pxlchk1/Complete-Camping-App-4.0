@@ -10,11 +10,11 @@ import {
   orderBy,
   limit,
   Timestamp,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-const QUESTIONS_COLLECTION = "questions";
-const ANSWERS_COLLECTION = "answers";
+const QUESTIONS_COLLECTION = 'questions';
+const ANSWERS_COLLECTION = 'answers';
 
 // Question interface matching EXACT Firestore structure
 export interface Question {
@@ -25,7 +25,7 @@ export interface Question {
   createdAt: Timestamp | any;
   score?: number;
   upvotes?: number;
-  userVote?: "up" | "down" | null;
+  userVote?: 'up' | 'down' | null;
 }
 
 // Answer interface matching EXACT Firestore structure
@@ -41,7 +41,7 @@ export interface Answer {
 export async function createQuestion(
   question: string,
   details: string,
-  userId: string
+  userId: string,
 ): Promise<string> {
   try {
     const questionDoc = {
@@ -54,7 +54,7 @@ export async function createQuestion(
     const docRef = await addDoc(collection(db, QUESTIONS_COLLECTION), questionDoc);
     return docRef.id;
   } catch (error) {
-    console.error("Error creating question:", error);
+    console.error('Error creating question:', error);
     throw error;
   }
 }
@@ -64,8 +64,8 @@ export async function getQuestions(): Promise<Question[]> {
   try {
     const q = query(
       collection(db, QUESTIONS_COLLECTION),
-      orderBy("createdAt", "desc"),
-      limit(100)
+      orderBy('createdAt', 'desc'),
+      limit(100),
     );
 
     const snapshot = await getDocs(q);
@@ -74,11 +74,14 @@ export async function getQuestions(): Promise<Question[]> {
       ...doc.data(),
     })) as Question[];
   } catch (error: any) {
-    if (error?.code === "permission-denied" || error?.message?.includes("Missing or insufficient permissions")) {
-      console.log("Firebase unavailable for questions, returning empty array");
+    if (
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
+      console.log('Firebase unavailable for questions, returning empty array');
       return [];
     }
-    console.error("Error fetching questions:", error);
+    console.error('Error fetching questions:', error);
     return [];
   }
 }
@@ -97,11 +100,14 @@ export async function getQuestionById(questionId: string): Promise<Question | nu
     }
     return null;
   } catch (error: any) {
-    if (error?.code === "permission-denied" || error?.message?.includes("Missing or insufficient permissions")) {
-      console.log("Firebase unavailable for question detail, returning null");
+    if (
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
+      console.log('Firebase unavailable for question detail, returning null');
       return null;
     }
-    console.error("Error fetching question:", error);
+    console.error('Error fetching question:', error);
     return null;
   }
 }
@@ -113,16 +119,16 @@ export async function deleteQuestion(questionId: string, userId: string): Promis
     const questionDoc = await getDoc(questionRef);
 
     if (!questionDoc.exists()) {
-      throw new Error("Question not found");
+      throw new Error('Question not found');
     }
 
     if (questionDoc.data().userId !== userId) {
-      throw new Error("Unauthorized to delete this question");
+      throw new Error('Unauthorized to delete this question');
     }
 
     await deleteDoc(questionRef);
   } catch (error) {
-    console.error("Error deleting question:", error);
+    console.error('Error deleting question:', error);
     throw error;
   }
 }
@@ -131,7 +137,7 @@ export async function deleteQuestion(questionId: string, userId: string): Promis
 export async function addAnswer(
   text: string,
   userId: string,
-  questionId: string
+  questionId: string,
 ): Promise<string> {
   try {
     const answerDoc = {
@@ -144,7 +150,7 @@ export async function addAnswer(
     const answerRef = await addDoc(collection(db, ANSWERS_COLLECTION), answerDoc);
     return answerRef.id;
   } catch (error) {
-    console.error("Error adding answer:", error);
+    console.error('Error adding answer:', error);
     throw error;
   }
 }
@@ -154,8 +160,8 @@ export async function getAnswers(questionId: string): Promise<Answer[]> {
   try {
     const q = query(
       collection(db, ANSWERS_COLLECTION),
-      where("questionId", "==", questionId),
-      orderBy("createdAt", "asc")
+      where('questionId', '==', questionId),
+      orderBy('createdAt', 'asc'),
     );
 
     const snapshot = await getDocs(q);
@@ -164,11 +170,14 @@ export async function getAnswers(questionId: string): Promise<Answer[]> {
       ...doc.data(),
     })) as Answer[];
   } catch (error: any) {
-    if (error?.code === "permission-denied" || error?.message?.includes("Missing or insufficient permissions")) {
-      console.log("Firebase unavailable for answers, returning empty array");
+    if (
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
+      console.log('Firebase unavailable for answers, returning empty array');
       return [];
     }
-    console.error("Error fetching answers:", error);
+    console.error('Error fetching answers:', error);
     return [];
   }
 }
@@ -178,8 +187,8 @@ export async function getQuestionsByUser(userId: string): Promise<Question[]> {
   try {
     const q = query(
       collection(db, QUESTIONS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
     );
 
     const snapshot = await getDocs(q);
@@ -188,11 +197,14 @@ export async function getQuestionsByUser(userId: string): Promise<Question[]> {
       ...doc.data(),
     })) as Question[];
   } catch (error: any) {
-    if (error?.code === "permission-denied" || error?.message?.includes("Missing or insufficient permissions")) {
-      console.log("Firebase unavailable for user questions, returning empty array");
+    if (
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
+      console.log('Firebase unavailable for user questions, returning empty array');
       return [];
     }
-    console.error("Error fetching user questions:", error);
+    console.error('Error fetching user questions:', error);
     return [];
   }
 }
@@ -202,8 +214,8 @@ export async function getAnswersByUser(userId: string): Promise<Answer[]> {
   try {
     const q = query(
       collection(db, ANSWERS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
     );
 
     const snapshot = await getDocs(q);
@@ -212,11 +224,14 @@ export async function getAnswersByUser(userId: string): Promise<Answer[]> {
       ...doc.data(),
     })) as Answer[];
   } catch (error: any) {
-    if (error?.code === "permission-denied" || error?.message?.includes("Missing or insufficient permissions")) {
-      console.log("Firebase unavailable for user answers, returning empty array");
+    if (
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
+      console.log('Firebase unavailable for user answers, returning empty array');
       return [];
     }
-    console.error("Error fetching user answers:", error);
+    console.error('Error fetching user answers:', error);
     return [];
   }
 }
@@ -228,16 +243,16 @@ export async function deleteAnswer(answerId: string, userId: string): Promise<vo
     const answerDoc = await getDoc(answerRef);
 
     if (!answerDoc.exists()) {
-      throw new Error("Answer not found");
+      throw new Error('Answer not found');
     }
 
     if (answerDoc.data().userId !== userId) {
-      throw new Error("Unauthorized to delete this answer");
+      throw new Error('Unauthorized to delete this answer');
     }
 
     await deleteDoc(answerRef);
   } catch (error) {
-    console.error("Error deleting answer:", error);
+    console.error('Error deleting answer:', error);
     throw error;
   }
 }

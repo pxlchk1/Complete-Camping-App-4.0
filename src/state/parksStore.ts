@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import { Park } from "../types/camping";
+import { create } from 'zustand';
+import { Park } from '../types/camping';
 
-type ParkFilter = "national_park" | "state_park" | "national_forest" | "all";
+type ParkFilter = 'national_park' | 'state_park' | 'national_forest' | 'all';
 
 interface ParksState {
   parks: Park[];
@@ -12,7 +12,7 @@ interface ParksState {
     searchQuery?: string;
   };
   setParks: (parks: Park[]) => void;
-  setFilters: (filters: Partial<ParksState["filters"]>) => void;
+  setFilters: (filters: Partial<ParksState['filters']>) => void;
   clearFilters: () => void;
   getParkById: (id: string) => Park | undefined;
 }
@@ -37,12 +37,14 @@ export const useParksStore = create<ParksState>()((set, get) => ({
     let filtered = allParks;
 
     if (filters.types.length > 0) {
-      filtered = filtered.filter((park) => filters.types.includes(park.filter as ParkFilter));
+      filtered = filtered.filter((park) =>
+        filters.types.includes(park.filter as ParkFilter),
+      );
     }
 
     if (filters.state) {
-      filtered = filtered.filter((park) =>
-        park.state.toLowerCase() === filters.state?.toLowerCase()
+      filtered = filtered.filter(
+        (park) => park.state.toLowerCase() === filters.state?.toLowerCase(),
       );
     }
 
@@ -52,7 +54,7 @@ export const useParksStore = create<ParksState>()((set, get) => ({
         (park) =>
           park.name.toLowerCase().includes(query) ||
           park.address.toLowerCase().includes(query) ||
-          park.state.toLowerCase().includes(query)
+          park.state.toLowerCase().includes(query),
       );
     }
 

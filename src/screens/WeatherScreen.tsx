@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,23 +8,23 @@ import {
   TextInput,
   Keyboard,
   Modal,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import * as Location from "expo-location";
-import * as Haptics from "expo-haptics";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { useLocationStore } from "../state/locationStore";
-import { usePlanTabStore } from "../state/planTabStore";
-import { requirePro } from "../utils/gating";
-import AccountRequiredModal from "../components/AccountRequiredModal";
-import { RootStackParamList } from "../navigation/types";
-import { useTrips, useTripsStore } from "../state/tripsStore";
-import { fetchWeather, WeatherData } from "../api/weather-service";
-import { WeatherDestination } from "../types/camping";
-import { colors, spacing, radius, fonts, fontSizes } from "../theme/theme";
+import { useLocationStore } from '../state/locationStore';
+import { usePlanTabStore } from '../state/planTabStore';
+import { requirePro } from '../utils/gating';
+import AccountRequiredModal from '../components/AccountRequiredModal';
+import { RootStackParamList } from '../navigation/types';
+import { useTrips, useTripsStore } from '../state/tripsStore';
+import { fetchWeather, WeatherData } from '../api/weather-service';
+import { WeatherDestination } from '../types/camping';
+import { colors, spacing, radius, fonts, fontSizes } from '../theme/theme';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -32,10 +32,10 @@ import {
   BORDER_SOFT,
   TEXT_SECONDARY,
   PARCHMENT,
-} from "../constants/colors";
+} from '../constants/colors';
 
 interface WeatherScreenProps {
-  onTabChange?: (tab: "trips" | "parks" | "weather") => void;
+  onTabChange?: (tab: 'trips' | 'parks' | 'weather') => void;
 }
 
 type LocationLike = {
@@ -58,23 +58,26 @@ type TripLike = {
 };
 
 const hasState = (loc: LocationLike): loc is LocationLike & { state: string } =>
-  typeof loc.state === "string" && loc.state.trim().length > 0;
+  typeof loc.state === 'string' && loc.state.trim().length > 0;
 
 const getWeatherIcon = (condition: string): keyof typeof Ionicons.glyphMap => {
-  const lower = (condition || "").toLowerCase();
-  if (lower.includes("rain")) return "rainy";
-  if (lower.includes("cloud")) return "cloudy";
-  if (lower.includes("sun") || lower.includes("clear")) return "sunny";
-  if (lower.includes("snow")) return "snow";
-  if (lower.includes("thunder")) return "thunderstorm";
-  if (lower.includes("wind")) return "cloudy";
-  return "partly-sunny";
+  const lower = (condition || '').toLowerCase();
+  if (lower.includes('rain')) return 'rainy';
+  if (lower.includes('cloud')) return 'cloudy';
+  if (lower.includes('sun') || lower.includes('clear')) return 'sunny';
+  if (lower.includes('snow')) return 'snow';
+  if (lower.includes('thunder')) return 'thunderstorm';
+  if (lower.includes('wind')) return 'cloudy';
+  return 'partly-sunny';
 };
 
-const formatTripRange = (startDate: string | number | Date, endDate: string | number | Date) => {
-  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  const start = new Date(startDate).toLocaleDateString("en-US", opts);
-  const end = new Date(endDate).toLocaleDateString("en-US", opts);
+const formatTripRange = (
+  startDate: string | number | Date,
+  endDate: string | number | Date,
+) => {
+  const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  const start = new Date(startDate).toLocaleDateString('en-US', opts);
+  const end = new Date(endDate).toLocaleDateString('en-US', opts);
   return `${start} - ${end}`;
 };
 
@@ -84,7 +87,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<WeatherScreenNavigationProp>();
 
-  const { selectedLocation, userLocation, setUserLocation, setSelectedLocation } = useLocationStore();
+  const { selectedLocation, userLocation, setUserLocation, setSelectedLocation } =
+    useLocationStore();
   const weatherPickerTripId = usePlanTabStore((s) => s.weatherPickerTripId);
   const setWeatherPickerTripId = usePlanTabStore((s) => s.setWeatherPickerTripId);
   const setActivePlanTab = usePlanTabStore((s) => s.setActiveTab);
@@ -96,10 +100,12 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAddToTripModal, setShowAddToTripModal] = useState(false);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [locationPermission, setLocationPermission] = useState<"unknown" | "granted" | "denied">("unknown");
+  const [locationPermission, setLocationPermission] = useState<
+    'unknown' | 'granted' | 'denied'
+  >('unknown');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
@@ -118,18 +124,21 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
   useEffect(() => {
     if (__DEV__) {
       // eslint-disable-next-line no-console
-      console.log("[PLAN_TRACE] WeatherScreen mounted");
+      console.log('[PLAN_TRACE] WeatherScreen mounted');
     }
   }, []);
 
   // Helper: Get trip status (same logic as MyTripsScreen)
-  const getStatus = (startISO: string | number | Date, endISO: string | number | Date): "In Progress" | "Upcoming" | "Completed" => {
+  const getStatus = (
+    startISO: string | number | Date,
+    endISO: string | number | Date,
+  ): 'In Progress' | 'Upcoming' | 'Completed' => {
     const today = new Date();
     const start = new Date(startISO);
     const end = new Date(endISO);
-    if (today > end) return "Completed";
-    if (today < start) return "Upcoming";
-    return "In Progress";
+    if (today > end) return 'Completed';
+    if (today < start) return 'Upcoming';
+    return 'In Progress';
   };
 
   // Helper: Check if trip has valid location (new tripDestination or legacy coordinates)
@@ -143,7 +152,9 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
   };
 
   // Helper: Get location from trip (new tripDestination or legacy coordinates)
-  const getTripLocation = (trip: TripLike): { name: string; latitude: number; longitude: number } | null => {
+  const getTripLocation = (
+    trip: TripLike,
+  ): { name: string; latitude: number; longitude: number } | null => {
     // Check new tripDestination first
     const tripDest = (trip as any).tripDestination;
     if (tripDest?.lat && tripDest?.lng) {
@@ -168,19 +179,25 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
   const tripInProgress = useMemo(() => {
     return trips.find((trip) => {
       const status = getStatus(trip.startDate, trip.endDate);
-      return status === "In Progress" && tripHasLocation(trip);
+      return status === 'In Progress' && tripHasLocation(trip);
     });
   }, [trips]);
 
   // Filter upcoming trips with location (secondary priority)
   const upcomingTripsWithLocation = useMemo(() => {
     const now = new Date();
-    return trips.filter((trip) => {
-      const startDate = new Date(trip.startDate);
-      const hasLocation = tripHasLocation(trip);
-      // Upcoming: not started yet, not the in-progress trip
-      return hasLocation && startDate > now && (!tripInProgress || trip.id !== tripInProgress.id);
-    }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    return trips
+      .filter((trip) => {
+        const startDate = new Date(trip.startDate);
+        const hasLocation = tripHasLocation(trip);
+        // Upcoming: not started yet, not the in-progress trip
+        return (
+          hasLocation &&
+          startDate > now &&
+          (!tripInProgress || trip.id !== tripInProgress.id)
+        );
+      })
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
   }, [trips, tripInProgress]);
 
   const location: LocationLike | null = useMemo(() => {
@@ -203,7 +220,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
     // PRIORITY 4: User's current device location
     if (userLocation) {
       return {
-        name: "Your Location",
+        name: 'Your Location',
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
       };
@@ -229,8 +246,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
       if (currentRequestId !== requestIdRef.current) return;
 
       // eslint-disable-next-line no-console
-      console.error("Error fetching weather:", err);
-      setError("Failed to load weather data. Please try again.");
+      console.error('Error fetching weather:', err);
+      setError('Failed to load weather data. Please try again.');
       setWeatherData(null);
     } finally {
       if (currentRequestId !== requestIdRef.current) return;
@@ -250,20 +267,22 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
 
-      if (status !== "granted") {
-        setLocationPermission("denied");
-        setError("Location permission denied. Please enable location in your device settings.");
+      if (status !== 'granted') {
+        setLocationPermission('denied');
+        setError(
+          'Location permission denied. Please enable location in your device settings.',
+        );
         return;
       }
 
-      setLocationPermission("granted");
+      setLocationPermission('granted');
 
       const locationResult = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
 
       // Reverse geocode to get city/state
-      let locationName = "Your Location";
+      let locationName = 'Your Location';
       try {
         const reverseResults = await Location.reverseGeocodeAsync({
           latitude: locationResult.coords.latitude,
@@ -271,8 +290,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
         });
         if (reverseResults.length > 0) {
           const place = reverseResults[0];
-          const city = place.city || place.subregion || place.district || "";
-          const state = place.region || "";
+          const city = place.city || place.subregion || place.district || '';
+          const state = place.region || '';
           if (city && state) {
             locationName = `${city}, ${state}`;
           } else if (city) {
@@ -283,7 +302,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
         }
       } catch (geocodeErr) {
         // eslint-disable-next-line no-console
-        console.warn("Reverse geocode failed, using default name:", geocodeErr);
+        console.warn('Reverse geocode failed, using default name:', geocodeErr);
       }
 
       setSelectedLocation({
@@ -298,12 +317,17 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
 
       if (__DEV__) {
         // eslint-disable-next-line no-console
-        console.log("User location obtained:", locationResult.coords, "Name:", locationName);
+        console.log(
+          'User location obtained:',
+          locationResult.coords,
+          'Name:',
+          locationName,
+        );
       }
     } catch (err: unknown) {
       // eslint-disable-next-line no-console
-      console.error("Error getting location:", err);
-      setError("Failed to get your location. Please try again.");
+      console.error('Error getting location:', err);
+      setError('Failed to get your location. Please try again.');
     } finally {
       setIsLoadingLocation(false);
     }
@@ -313,7 +337,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
     const query = searchQuery.trim();
 
     if (!query) {
-      setError("Please enter a city and state");
+      setError('Please enter a city and state');
       return;
     }
 
@@ -325,7 +349,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
       const results = await Location.geocodeAsync(query);
 
       if (!results.length) {
-        setError("Location not found. Please try a different search.");
+        setError('Location not found. Please try a different search.');
         return;
       }
 
@@ -337,24 +361,24 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
         longitude: result.longitude,
       } as unknown as any);
 
-      setSearchQuery("");
+      setSearchQuery('');
       setShowLocationPicker(false);
 
       if (__DEV__) {
         // eslint-disable-next-line no-console
-        console.log("Location found:", result);
+        console.log('Location found:', result);
       }
     } catch (err: unknown) {
       // eslint-disable-next-line no-console
-      console.error("Error searching location:", err);
-      setError("Failed to find location. Please try again.");
+      console.error('Error searching location:', err);
+      setError('Failed to find location. Please try again.');
     } finally {
       setIsSearchingLocation(false);
     }
   }, [searchQuery, setSelectedLocation]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F4EBD0" }}>
+    <View style={{ flex: 1, backgroundColor: '#F4EBD0' }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
@@ -369,8 +393,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
         {location && !showLocationPicker && (
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: 'row',
+              alignItems: 'center',
               marginBottom: spacing.md,
             }}
           >
@@ -410,8 +434,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
         {!location && !showLocationPicker && !isLoading && (
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: 'row',
+              alignItems: 'center',
               marginBottom: spacing.md,
             }}
           >
@@ -424,7 +448,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 marginLeft: spacing.xs,
               }}
             >
-              {locationPermission === "denied" ? "Location unavailable" : "Location off"}
+              {locationPermission === 'denied' ? 'Location unavailable' : 'Location off'}
             </Text>
             <Pressable
               onPress={handleUseMyLocation}
@@ -439,7 +463,9 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 backgroundColor: CARD_BACKGROUND_LIGHT,
               }}
               accessibilityRole="button"
-              accessibilityLabel={locationPermission === "denied" ? "Try again" : "Enable location"}
+              accessibilityLabel={
+                locationPermission === 'denied' ? 'Try again' : 'Enable location'
+              }
             >
               {isLoadingLocation ? (
                 <ActivityIndicator size="small" color={DEEP_FOREST} />
@@ -451,7 +477,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     color: DEEP_FOREST,
                   }}
                 >
-                  {locationPermission === "denied" ? "Try again" : "Enable"}
+                  {locationPermission === 'denied' ? 'Try again' : 'Enable'}
                 </Text>
               )}
             </Pressable>
@@ -467,7 +493,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
               borderWidth: 1,
               borderColor: BORDER_SOFT,
               padding: spacing.xl,
-              alignItems: "center",
+              alignItems: 'center',
             }}
           >
             {/* Cancel button when changing location */}
@@ -475,10 +501,10 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
               <Pressable
                 onPress={() => {
                   setShowLocationPicker(false);
-                  setSearchQuery("");
+                  setSearchQuery('');
                 }}
                 style={{
-                  alignSelf: "flex-end",
+                  alignSelf: 'flex-end',
                   marginBottom: spacing.sm,
                 }}
                 accessibilityRole="button"
@@ -495,15 +521,15 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 </Text>
               </Pressable>
             )}
-            
+
             <View
               style={{
                 width: 60,
                 height: 60,
                 borderRadius: 30,
                 backgroundColor: `${DEEP_FOREST}15`,
-                alignItems: "center",
-                justifyContent: "center",
+                alignItems: 'center',
+                justifyContent: 'center',
                 marginBottom: spacing.sm,
               }}
             >
@@ -526,19 +552,20 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 fontFamily: fonts.bodyRegular,
                 fontSize: fontSizes.sm,
                 color: EARTH_GREEN,
-                textAlign: "center",
+                textAlign: 'center',
                 marginBottom: spacing.md,
               }}
             >
-              Select a park, search for a city, or use your location to see weather forecasts.
+              Select a park, search for a city, or use your location to see weather
+              forecasts.
             </Text>
 
             {/* City/State Search */}
-            <View style={{ width: "100%", marginBottom: spacing.md }}>
+            <View style={{ width: '100%', marginBottom: spacing.md }}>
               <View
                 style={{
-                  flexDirection: "row",
-                  alignItems: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   backgroundColor: colors.parchment,
                   borderRadius: radius.md,
                   borderWidth: 1,
@@ -565,7 +592,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 />
                 {searchQuery.length > 0 && (
                   <Pressable
-                    onPress={() => setSearchQuery("")}
+                    onPress={() => setSearchQuery('')}
                     accessibilityRole="button"
                     accessibilityLabel="Clear search"
                   >
@@ -576,7 +603,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
             </View>
 
             {/* Stacked Buttons */}
-            <View style={{ width: "100%", gap: spacing.sm }}>
+            <View style={{ width: '100%', gap: spacing.sm }}>
               <Pressable
                 onPress={handleSearchLocation}
                 disabled={isSearchingLocation || !searchQuery.trim()}
@@ -585,16 +612,21 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   borderRadius: radius.md,
                   paddingVertical: spacing.sm,
                   paddingHorizontal: spacing.lg,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   opacity: isSearchingLocation || !searchQuery.trim() ? 0.6 : 1,
                 }}
               >
                 {isSearchingLocation ? (
                   <ActivityIndicator size="small" color={colors.parchment} />
                 ) : (
-                  <Ionicons name="search" size={18} color={colors.parchment} style={{ marginRight: spacing.xs }} />
+                  <Ionicons
+                    name="search"
+                    size={18}
+                    color={colors.parchment}
+                    style={{ marginRight: spacing.xs }}
+                  />
                 )}
                 <Text
                   style={{
@@ -604,7 +636,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     marginLeft: isSearchingLocation ? spacing.xs : 0,
                   }}
                 >
-                  {isSearchingLocation ? "Searching..." : "Search location"}
+                  {isSearchingLocation ? 'Searching...' : 'Search location'}
                 </Text>
               </Pressable>
 
@@ -616,9 +648,9 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   borderRadius: radius.md,
                   paddingVertical: spacing.sm,
                   paddingHorizontal: spacing.lg,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   borderWidth: 1,
                   borderColor: BORDER_SOFT,
                   opacity: isLoadingLocation ? 0.6 : 1,
@@ -627,7 +659,12 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 {isLoadingLocation ? (
                   <ActivityIndicator size="small" color={DEEP_FOREST} />
                 ) : (
-                  <Ionicons name="navigate" size={18} color={DEEP_FOREST} style={{ marginRight: spacing.xs }} />
+                  <Ionicons
+                    name="navigate"
+                    size={18}
+                    color={DEEP_FOREST}
+                    style={{ marginRight: spacing.xs }}
+                  />
                 )}
                 <Text
                   style={{
@@ -637,12 +674,12 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     marginLeft: isLoadingLocation ? spacing.xs : 0,
                   }}
                 >
-                  {isLoadingLocation ? "Getting location..." : "Use my location"}
+                  {isLoadingLocation ? 'Getting location...' : 'Use my location'}
                 </Text>
               </Pressable>
 
               <Pressable
-                onPress={() => setActivePlanTab("parks")}
+                onPress={() => setActivePlanTab('parks')}
                 style={{
                   backgroundColor: colors.parchment,
                   borderRadius: radius.md,
@@ -650,7 +687,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   paddingHorizontal: spacing.lg,
                   borderWidth: 1,
                   borderColor: BORDER_SOFT,
-                  alignItems: "center",
+                  alignItems: 'center',
                 }}
               >
                 <Text
@@ -666,15 +703,16 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
             </View>
 
             {/* Trips with Locations */}
-            {trips.filter((t) => t.coordinates?.latitude && t.coordinates?.longitude).length > 0 && (
-              <View style={{ width: "100%", marginTop: spacing.lg }}>
+            {trips.filter((t) => t.coordinates?.latitude && t.coordinates?.longitude)
+              .length > 0 && (
+              <View style={{ width: '100%', marginTop: spacing.lg }}>
                 <Text
                   style={{
                     fontFamily: fonts.bodySemibold,
                     fontSize: fontSizes.xs,
                     color: EARTH_GREEN,
                     marginBottom: spacing.sm,
-                    textTransform: "uppercase",
+                    textTransform: 'uppercase',
                     letterSpacing: 0.5,
                   }}
                 >
@@ -697,8 +735,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                         }
                       }}
                       style={{
-                        flexDirection: "row",
-                        alignItems: "center",
+                        flexDirection: 'row',
+                        alignItems: 'center',
                         paddingVertical: spacing.sm,
                         paddingHorizontal: spacing.sm,
                         borderRadius: radius.sm,
@@ -743,7 +781,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
 
         {/* Loading State */}
         {isLoading && (
-          <View style={{ alignItems: "center", paddingVertical: spacing.xl }}>
+          <View style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
             <ActivityIndicator size="large" color={DEEP_FOREST} />
             <Text
               style={{
@@ -762,19 +800,19 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
         {error && (
           <View
             style={{
-              backgroundColor: "#FEE2E2",
+              backgroundColor: '#FEE2E2',
               borderRadius: radius.md,
               padding: spacing.md,
               marginBottom: spacing.md,
               borderWidth: 1,
-              borderColor: "#FCA5A5",
+              borderColor: '#FCA5A5',
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.bodyRegular,
                 fontSize: fontSizes.sm,
-                color: "#991B1B",
+                color: '#991B1B',
               }}
             >
               {error}
@@ -791,14 +829,20 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 borderRadius: radius.md,
                 padding: spacing.md,
                 marginBottom: spacing.md,
-                alignItems: "center",
+                alignItems: 'center',
                 borderWidth: 1,
                 borderColor: BORDER_SOFT,
               }}
             >
               {/* Icon and Temperature Row */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-                <Ionicons name={getWeatherIcon(weatherData.current.condition)} size={40} color={DEEP_FOREST} />
+              <View
+                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}
+              >
+                <Ionicons
+                  name={getWeatherIcon(weatherData.current.condition)}
+                  size={40}
+                  color={DEEP_FOREST}
+                />
                 <Text
                   style={{
                     fontFamily: fonts.displayBold,
@@ -824,12 +868,12 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
               {/* Weather Details */}
               <View
                 style={{
-                  flexDirection: "row",
+                  flexDirection: 'row',
                   marginTop: spacing.sm,
                   gap: spacing.lg,
                 }}
               >
-                <View style={{ alignItems: "center" }}>
+                <View style={{ alignItems: 'center' }}>
                   <Ionicons name="water-outline" size={18} color={TEXT_SECONDARY} />
                   <Text
                     style={{
@@ -852,7 +896,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   </Text>
                 </View>
 
-                <View style={{ alignItems: "center" }}>
+                <View style={{ alignItems: 'center' }}>
                   <Ionicons name="speedometer-outline" size={18} color={TEXT_SECONDARY} />
                   <Text
                     style={{
@@ -875,7 +919,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   </Text>
                 </View>
 
-                <View style={{ alignItems: "center" }}>
+                <View style={{ alignItems: 'center' }}>
                   <Ionicons name="thermometer-outline" size={18} color={TEXT_SECONDARY} />
                   <Text
                     style={{
@@ -909,13 +953,18 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   borderRadius: 10,
                   paddingVertical: 14,
                   paddingHorizontal: spacing.lg,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   marginBottom: spacing.md,
                 }}
               >
-                <Ionicons name="add-circle" size={20} color={colors.parchment} style={{ marginRight: spacing.xs }} />
+                <Ionicons
+                  name="add-circle"
+                  size={20}
+                  color={colors.parchment}
+                  style={{ marginRight: spacing.xs }}
+                />
                 <Text
                   style={{
                     fontFamily: fonts.bodySemibold,
@@ -932,7 +981,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
             {location && trips.length === 0 && (
               <View
                 style={{
-                  alignItems: "center",
+                  alignItems: 'center',
                   marginBottom: spacing.md,
                   paddingVertical: spacing.sm,
                 }}
@@ -961,10 +1010,14 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   onPress={() => {
                     const canProceed = requirePro({
                       openAccountModal: () => setShowAccountModal(true),
-                      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "weather_trip", variant }),
+                      openPaywallModal: (variant) =>
+                        navigation.navigate('Paywall', {
+                          triggerKey: 'weather_trip',
+                          variant,
+                        }),
                     });
                     if (canProceed) {
-                      setActivePlanTab("trips");
+                      setActivePlanTab('trips');
                     }
                   }}
                   style={{
@@ -972,12 +1025,17 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     borderRadius: 10,
                     paddingVertical: 14,
                     paddingHorizontal: spacing.lg,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  <Ionicons name="compass" size={20} color={colors.parchment} style={{ marginRight: spacing.xs }} />
+                  <Ionicons
+                    name="compass"
+                    size={20}
+                    color={colors.parchment}
+                    style={{ marginRight: spacing.xs }}
+                  />
                   <Text
                     style={{
                       fontFamily: fonts.bodySemibold,
@@ -1011,8 +1069,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   borderRadius: radius.md,
                   padding: spacing.md,
                   marginBottom: spacing.sm,
-                  flexDirection: "row",
-                  alignItems: "center",
+                  flexDirection: 'row',
+                  alignItems: 'center',
                   borderWidth: 1,
                   borderColor: BORDER_SOFT,
                 }}
@@ -1038,8 +1096,12 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   </Text>
                 </View>
 
-                <View style={{ alignItems: "center", marginRight: spacing.md }}>
-                  <Ionicons name={getWeatherIcon(day.condition)} size={32} color={DEEP_FOREST} />
+                <View style={{ alignItems: 'center', marginRight: spacing.md }}>
+                  <Ionicons
+                    name={getWeatherIcon(day.condition)}
+                    size={32}
+                    color={DEEP_FOREST}
+                  />
                   {day.precipitation > 0 && (
                     <Text
                       style={{
@@ -1054,7 +1116,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   )}
                 </View>
 
-                <View style={{ alignItems: "flex-end" }}>
+                <View style={{ alignItems: 'flex-end' }}>
                   <Text
                     style={{
                       fontFamily: fonts.bodySemibold,
@@ -1090,8 +1152,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
         <Pressable
           style={{
             flex: 1,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            justifyContent: "flex-end",
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'flex-end',
           }}
           onPress={() => setShowAddToTripModal(false)}
         >
@@ -1101,16 +1163,16 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               padding: spacing.lg,
-              maxHeight: "70%",
+              maxHeight: '70%',
             }}
             onPress={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 marginBottom: spacing.md,
               }}
             >
@@ -1131,8 +1193,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   height: 32,
                   borderRadius: 16,
                   backgroundColor: CARD_BACKGROUND_LIGHT,
-                  alignItems: "center",
-                  justifyContent: "center",
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
               >
                 <Ionicons name="close" size={18} color={DEEP_FOREST} />
@@ -1151,7 +1213,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   borderColor: BORDER_SOFT,
                 }}
               >
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="location" size={18} color={TEXT_SECONDARY} />
                   <Text
                     style={{
@@ -1168,12 +1230,15 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
             )}
 
             {/* Trips List */}
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               {trips.length === 0 ? (
                 <View
                   style={{
                     padding: spacing.xl,
-                    alignItems: "center",
+                    alignItems: 'center',
                   }}
                 >
                   <Ionicons name="calendar-outline" size={48} color={EARTH_GREEN} />
@@ -1182,7 +1247,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                       fontFamily: fonts.displayRegular,
                       fontSize: fontSizes.sm,
                       color: EARTH_GREEN,
-                      textAlign: "center",
+                      textAlign: 'center',
                       marginTop: spacing.sm,
                     }}
                   >
@@ -1198,7 +1263,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
 
                       // Build the weatherDestination object
                       const weatherDestination: WeatherDestination = {
-                        source: "manual",
+                        source: 'manual',
                         label: location.name,
                         lat: location.latitude,
                         lon: location.longitude,
@@ -1206,38 +1271,44 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                       };
 
                       // Build weather data to save (if available)
-                      const weatherToSave = weatherData ? {
-                        forecast: weatherData.forecast,
-                        lastUpdated: new Date().toISOString(),
-                      } : undefined;
+                      const weatherToSave = weatherData
+                        ? {
+                            forecast: weatherData.forecast,
+                            lastUpdated: new Date().toISOString(),
+                          }
+                        : undefined;
 
                       try {
-                        await updateTrip(trip.id, { 
+                        await updateTrip(trip.id, {
                           weatherDestination,
                           ...(weatherToSave && { weather: weatherToSave }),
                         });
-                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        Haptics.notificationAsync(
+                          Haptics.NotificationFeedbackType.Success,
+                        );
                       } catch (err) {
                         if (__DEV__) {
                           // eslint-disable-next-line no-console
-                          console.error("Failed to save weather destination:", err);
+                          console.error('Failed to save weather destination:', err);
                         }
-                        setToastMessage("Failed to add weather location. Please try again.");
+                        setToastMessage(
+                          'Failed to add weather location. Please try again.',
+                        );
                         setTimeout(() => setToastMessage(null), 3000);
                         setShowAddToTripModal(false);
                         return;
                       }
 
                       setShowAddToTripModal(false);
-                      
+
                       // If we came from TripDetail, navigate back to that trip
                       if (weatherPickerTripId && trip.id === weatherPickerTripId) {
                         setWeatherPickerTripId(null);
-                        navigation.navigate("TripDetail", { tripId: trip.id });
+                        navigation.navigate('TripDetail', { tripId: trip.id });
                       } else if (weatherPickerTripId) {
                         // User chose a different trip - still clear context and go to that trip's details
                         setWeatherPickerTripId(null);
-                        navigation.navigate("TripDetail", { tripId: trip.id });
+                        navigation.navigate('TripDetail', { tripId: trip.id });
                       } else {
                         // No trip context - just show toast
                         setToastMessage(`Weather location added to "${trip.name}"`);
@@ -1284,16 +1355,16 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
       {toastMessage && (
         <View
           style={{
-            position: "absolute",
+            position: 'absolute',
             bottom: insets.bottom + 100,
             left: spacing.lg,
             right: spacing.lg,
             backgroundColor: DEEP_FOREST,
             borderRadius: radius.md,
             padding: spacing.md,
-            flexDirection: "row",
-            alignItems: "center",
-            shadowColor: "#000",
+            flexDirection: 'row',
+            alignItems: 'center',
+            shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,
             shadowRadius: 3.84,
@@ -1301,9 +1372,9 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
           }}
         >
           <Ionicons
-            name={toastMessage.includes("Failed") ? "alert-circle" : "checkmark-circle"}
+            name={toastMessage.includes('Failed') ? 'alert-circle' : 'checkmark-circle'}
             size={20}
-            color={toastMessage.includes("Failed") ? "#EF4444" : EARTH_GREEN}
+            color={toastMessage.includes('Failed') ? '#EF4444' : EARTH_GREEN}
             style={{ marginRight: spacing.sm }}
           />
           <Text
@@ -1328,7 +1399,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
         onMaybeLater={() => setShowAccountModal(false)}
         onCreateAccount={() => {
           setShowAccountModal(false);
-          navigation.navigate("Auth" as never);
+          navigation.navigate('Auth' as never);
         }}
       />
     </View>

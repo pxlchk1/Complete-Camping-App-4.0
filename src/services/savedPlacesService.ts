@@ -16,16 +16,16 @@ import {
   onSnapshot,
   serverTimestamp,
   Timestamp,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-export type PlaceType = "campground" | "park" | "trailhead" | "other";
+export type PlaceType = 'campground' | 'park' | 'trailhead' | 'other';
 
 export interface SavedPlace {
   placeId: string;
   name: string;
   placeType: PlaceType;
-  source: "user";
+  source: 'user';
   locationText?: string;
   address?: string;
   lat?: number;
@@ -51,7 +51,7 @@ export interface SavedPlaceInput {
  * Get saved places collection reference for a user
  */
 function getSavedPlacesCollection(userId: string) {
-  return collection(db, "users", userId, "savedPlaces");
+  return collection(db, 'users', userId, 'savedPlaces');
 }
 
 /**
@@ -59,15 +59,15 @@ function getSavedPlacesCollection(userId: string) {
  */
 export async function addSavedPlace(
   userId: string,
-  placeData: SavedPlaceInput
+  placeData: SavedPlaceInput,
 ): Promise<string> {
   const placesRef = getSavedPlacesCollection(userId);
   const placeId = `${userId}_${Date.now()}`;
 
-  const newPlace: Omit<SavedPlace, "placeId"> = {
+  const newPlace: Omit<SavedPlace, 'placeId'> = {
     name: placeData.name.trim(),
-    placeType: placeData.placeType || "campground",
-    source: "user",
+    placeType: placeData.placeType || 'campground',
+    source: 'user',
     locationText: placeData.locationText?.trim() || undefined,
     address: placeData.address?.trim() || undefined,
     lat: placeData.lat,
@@ -87,9 +87,9 @@ export async function addSavedPlace(
  */
 export async function getSavedPlace(
   userId: string,
-  placeId: string
+  placeId: string,
 ): Promise<SavedPlace | null> {
-  const placeRef = doc(db, "users", userId, "savedPlaces", placeId);
+  const placeRef = doc(db, 'users', userId, 'savedPlaces', placeId);
   const placeSnap = await getDoc(placeRef);
 
   if (!placeSnap.exists()) {
@@ -107,7 +107,7 @@ export async function getSavedPlace(
  */
 export async function getSavedPlaces(userId: string): Promise<SavedPlace[]> {
   const placesRef = getSavedPlacesCollection(userId);
-  const q = query(placesRef, orderBy("createdAt", "desc"));
+  const q = query(placesRef, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
 
   return snapshot.docs.map((doc) => ({
@@ -121,10 +121,10 @@ export async function getSavedPlaces(userId: string): Promise<SavedPlace[]> {
  */
 export function listenToSavedPlaces(
   userId: string,
-  callback: (places: SavedPlace[]) => void
+  callback: (places: SavedPlace[]) => void,
 ): () => void {
   const placesRef = getSavedPlacesCollection(userId);
-  const q = query(placesRef, orderBy("createdAt", "desc"));
+  const q = query(placesRef, orderBy('createdAt', 'desc'));
 
   const unsubscribe = onSnapshot(
     q,
@@ -136,9 +136,9 @@ export function listenToSavedPlaces(
       callback(places);
     },
     (error) => {
-      console.error("[savedPlacesService] Error listening to saved places:", error);
+      console.error('[savedPlacesService] Error listening to saved places:', error);
       callback([]);
-    }
+    },
   );
 
   return unsubscribe;
@@ -150,9 +150,9 @@ export function listenToSavedPlaces(
 export async function updateSavedPlace(
   userId: string,
   placeId: string,
-  updates: Partial<SavedPlaceInput>
+  updates: Partial<SavedPlaceInput>,
 ): Promise<void> {
-  const placeRef = doc(db, "users", userId, "savedPlaces", placeId);
+  const placeRef = doc(db, 'users', userId, 'savedPlaces', placeId);
 
   const updateData: Record<string, any> = {
     ...updates,
@@ -172,10 +172,7 @@ export async function updateSavedPlace(
 /**
  * Remove a saved place
  */
-export async function removeSavedPlace(
-  userId: string,
-  placeId: string
-): Promise<void> {
-  const placeRef = doc(db, "users", userId, "savedPlaces", placeId);
+export async function removeSavedPlace(userId: string, placeId: string): Promise<void> {
+  const placeRef = doc(db, 'users', userId, 'savedPlaces', placeId);
   await deleteDoc(placeRef);
 }

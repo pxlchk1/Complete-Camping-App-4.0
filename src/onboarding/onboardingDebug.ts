@@ -1,6 +1,6 @@
 /**
  * Onboarding Debug Logger
- * 
+ *
  * A safe logger that never crashes the app.
  * All logging is controlled by the ONBOARDING_DEBUG flag.
  * Sensitive keys are automatically redacted.
@@ -31,13 +31,13 @@ function redactSensitiveData(data: Record<string, unknown>): Record<string, unkn
   }
 
   const redacted: Record<string, unknown> = {};
-  
+
   for (const key of Object.keys(data)) {
     const lowerKey = key.toLowerCase();
-    const isSensitive = SENSITIVE_KEYS.some(sensitiveKey => 
-      lowerKey.includes(sensitiveKey.toLowerCase())
+    const isSensitive = SENSITIVE_KEYS.some((sensitiveKey) =>
+      lowerKey.includes(sensitiveKey.toLowerCase()),
     );
-    
+
     if (isSensitive) {
       redacted[key] = '[REDACTED]';
     } else if (data[key] && typeof data[key] === 'object' && !Array.isArray(data[key])) {
@@ -47,7 +47,7 @@ function redactSensitiveData(data: Record<string, unknown>): Record<string, unkn
       redacted[key] = data[key];
     }
   }
-  
+
   return redacted;
 }
 
@@ -86,7 +86,7 @@ export function onboardingLog(
   phase: 'before' | 'success' | 'error',
   meta: OnboardingLogMeta,
   payload?: OnboardingLogPayload,
-  error?: OnboardingLogError
+  error?: OnboardingLogError,
 ): void {
   // Early return if debugging is disabled
   if (!ONBOARDING_DEBUG) {
@@ -96,35 +96,37 @@ export function onboardingLog(
   try {
     const prefix = `[Onboarding:${meta.step}]`;
     const timestamp = new Date().toISOString();
-    
+
     switch (phase) {
       case 'before':
         console.log(
           `${prefix} BEFORE ${meta.op}`,
           `\n  Timestamp: ${timestamp}`,
           `\n  Path: ${meta.path}`,
-          payload?.payloadKeys ? `\n  PayloadKeys: ${JSON.stringify(payload.payloadKeys)}` : '',
-          payload?.includePayload && payload?.payload 
+          payload?.payloadKeys
+            ? `\n  PayloadKeys: ${JSON.stringify(payload.payloadKeys)}`
+            : '',
+          payload?.includePayload && payload?.payload
             ? `\n  Payload: ${JSON.stringify(redactSensitiveData(payload.payload), null, 2)}`
-            : ''
+            : '',
         );
         break;
-        
+
       case 'success':
         console.log(
           `${prefix} SUCCESS ${meta.op}`,
           `\n  Timestamp: ${timestamp}`,
-          `\n  Path: ${meta.path}`
+          `\n  Path: ${meta.path}`,
         );
         break;
-        
+
       case 'error':
         console.error(
           `${prefix} ERROR ${meta.op}`,
           `\n  Timestamp: ${timestamp}`,
           `\n  Path: ${meta.path}`,
           `\n  ErrorCode: ${error?.code || 'unknown'}`,
-          `\n  ErrorMessage: ${error?.message || 'No message'}`
+          `\n  ErrorMessage: ${error?.message || 'No message'}`,
         );
         break;
     }
@@ -141,7 +143,7 @@ export function getDebugErrorString(step: string, errorCode?: string): string {
   if (!ONBOARDING_DEBUG) {
     return '';
   }
-  
+
   try {
     return ` [DEBUG: step=${step}, code=${errorCode || 'unknown'}]`;
   } catch {
@@ -155,7 +157,11 @@ export function getDebugErrorString(step: string, errorCode?: string): string {
 export function safeStringify(data: unknown): string {
   try {
     if (data && typeof data === 'object') {
-      return JSON.stringify(redactSensitiveData(data as Record<string, unknown>), null, 2);
+      return JSON.stringify(
+        redactSensitiveData(data as Record<string, unknown>),
+        null,
+        2,
+      );
     }
     return String(data);
   } catch {

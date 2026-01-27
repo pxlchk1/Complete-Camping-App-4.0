@@ -5,33 +5,33 @@
  * a practical checklist, and a final assessment quiz.
  */
 
-import { LearningStep } from "../state/learningStore";
+import { LearningStep } from '../state/learningStore';
 
 export const LNT_MODULE_METADATA = {
-  id: "leave-no-trace",
-  title: "Leave No Trace: The 7 Principles",
+  id: 'leave-no-trace',
+  title: 'Leave No Trace: The 7 Principles',
   description:
-    "Learn how to protect the places we love with these seven principles. Make better decisions in real-world camping scenarios.",
-  icon: "leaf",
-  difficulty: "Beginner" as const,
-  duration: "25 min",
-  category: "ethics",
-  trackId: "novice" as const,
+    'Learn how to protect the places we love with these seven principles. Make better decisions in real-world camping scenarios.',
+  icon: 'leaf',
+  difficulty: 'Beginner' as const,
+  duration: '25 min',
+  category: 'ethics',
+  trackId: 'novice' as const,
   xpReward: 75,
   badge: {
-    id: "lnt-badge",
-    name: "Leave No Trace Ready",
-    description: "Completed Leave No Trace training and passed the assessment",
-    icon: "medal",
+    id: 'lnt-badge',
+    name: 'Leave No Trace Ready',
+    description: 'Completed Leave No Trace training and passed the assessment',
+    icon: 'medal',
   },
 };
 
 export const LNT_EXPANDED_STEPS: LearningStep[] = [
   // ===== INTRO (1 step) =====
   {
-    id: "lnt-intro",
-    title: "Why Leave No Trace Matters",
-    type: "article",
+    id: 'lnt-intro',
+    title: 'Why Leave No Trace Matters',
+    type: 'article',
     content: `Leave No Trace is more than a set of rules. It's a way of thinking about your relationship with the outdoors.
 
 Every year, millions of people visit wild places. Without thoughtful practices, these places can be loved to death—worn trails, polluted water, displaced wildlife, and damaged ecosystems.
@@ -50,9 +50,9 @@ Let's get started.`,
 
   // ===== PRINCIPLE 1: Plan Ahead and Prepare (2 steps) =====
   {
-    id: "lnt-p1-main",
-    title: "Principle 1: Plan Ahead and Prepare",
-    type: "article",
+    id: 'lnt-p1-main',
+    title: 'Principle 1: Plan Ahead and Prepare',
+    type: 'article',
     content: `Good planning prevents most problems—and most impact.
 
 **What it means:**
@@ -73,9 +73,9 @@ Know before you go. Check weather, rules, and conditions. Bring the right gear a
     duration: 2,
   },
   {
-    id: "lnt-p1-scenario",
-    title: "Scenario: Late Arrival",
-    type: "article",
+    id: 'lnt-p1-scenario',
+    title: 'Scenario: Late Arrival',
+    type: 'article',
     content: `**Scenario:**
 You arrive at the trailhead after dark. The campsite is somewhere ahead, but you can't see the trail markers clearly.
 
@@ -92,9 +92,9 @@ Planning means arriving with enough daylight. But when plans fail, protecting th
 
   // ===== PRINCIPLE 2: Travel and Camp on Durable Surfaces (2 steps) =====
   {
-    id: "lnt-p2-main",
-    title: "Principle 2: Travel and Camp on Durable Surfaces",
-    type: "article",
+    id: 'lnt-p2-main',
+    title: 'Principle 2: Travel and Camp on Durable Surfaces',
+    type: 'article',
     content: `Where you walk and sleep matters more than you might think.
 
 **What it means:**
@@ -115,9 +115,9 @@ Stick to paths and established campsites. Choose surfaces that can handle impact
     duration: 2,
   },
   {
-    id: "lnt-p2-scenario",
-    title: "Scenario: The Muddy Trail",
-    type: "article",
+    id: 'lnt-p2-scenario',
+    title: 'Scenario: The Muddy Trail',
+    type: 'article',
     content: `**Scenario:**
 It rained last night. The trail is muddy, and you don't want to ruin your boots. There's a dry path through some plants next to the trail.
 
@@ -134,9 +134,9 @@ Trails exist to concentrate impact. When they're muddy, they're doing their job.
 
   // ===== PRINCIPLE 3: Dispose of Waste Properly (3 steps) =====
   {
-    id: "lnt-p3-main",
-    title: "Principle 3: Dispose of Waste Properly",
-    type: "article",
+    id: 'lnt-p3-main',
+    title: 'Principle 3: Dispose of Waste Properly',
+    type: 'article',
     content: `This principle causes the most confusion—and the most damage when ignored.
 
 **What it means:**
@@ -157,9 +157,9 @@ Pack it in, pack it out. This includes ALL trash, food scraps, and hygiene produ
     duration: 2,
   },
   {
-    id: "lnt-p3-bathroom",
-    title: "Human Waste: The Uncomfortable Truth",
-    type: "article",
+    id: 'lnt-p3-bathroom',
+    title: 'Human Waste: The Uncomfortable Truth',
+    type: 'article',
     content: `Nobody wants to talk about this. But improper waste disposal is one of the biggest problems in popular outdoor areas.
 
 **The basics:**
@@ -181,9 +181,9 @@ This is the principle people skip because it's awkward. But it's the one that pr
     duration: 3,
   },
   {
-    id: "lnt-p3-scenario",
-    title: "Scenario: The Apple Core Debate",
-    type: "article",
+    id: 'lnt-p3-scenario',
+    title: 'Scenario: The Apple Core Debate',
+    type: 'article',
     content: `**Scenario:**
 Your hiking partner finishes an apple and tosses the core into the bushes. "It's natural," they say. "It'll decompose."
 
@@ -207,9 +207,9 @@ Your hiking partner finishes an apple and tosses the core into the bushes. "It's
 
   // ===== PRINCIPLE 4: Leave What You Find (2 steps) =====
   {
-    id: "lnt-p4-main",
-    title: "Principle 4: Leave What You Find",
-    type: "article",
+    id: 'lnt-p4-main',
+    title: 'Principle 4: Leave What You Find',
+    type: 'article',
     content: `Everything you see is part of someone else's experience—and part of the ecosystem.
 
 **What it means:**
@@ -230,9 +230,9 @@ Don't take souvenirs. Don't move things. Don't build structures.
     duration: 2,
   },
   {
-    id: "lnt-p4-scenario",
-    title: "Scenario: The Perfect Rock",
-    type: "article",
+    id: 'lnt-p4-scenario',
+    title: 'Scenario: The Perfect Rock',
+    type: 'article',
     content: `**Scenario:**
 You find a beautiful, smooth river stone. It would look great on your desk. "It's just one rock," you think. "The river has millions."
 
@@ -254,9 +254,9 @@ Leave the landscape as you found it. Future visitors deserve the same experience
 
   // ===== PRINCIPLE 5: Minimize Campfire Impacts (3 steps) =====
   {
-    id: "lnt-p5-main",
-    title: "Principle 5: Minimize Campfire Impacts",
-    type: "article",
+    id: 'lnt-p5-main',
+    title: 'Principle 5: Minimize Campfire Impacts',
+    type: 'article',
     content: `Campfires are iconic, but they come with real risks and lasting impacts.
 
 **What it means:**
@@ -277,9 +277,9 @@ Use a stove when possible. If you have a fire, keep it small and controlled. Lea
     duration: 2,
   },
   {
-    id: "lnt-p5-safety",
-    title: "Fire Safety: From Spark to Cold",
-    type: "article",
+    id: 'lnt-p5-safety',
+    title: 'Fire Safety: From Spark to Cold',
+    type: 'article',
     content: `If you choose to have a fire, do it right from start to finish.
 
 **Starting:**
@@ -305,9 +305,9 @@ Wildfires often start from "dead" campfires. Be certain, not confident.`,
     duration: 3,
   },
   {
-    id: "lnt-p5-scenario",
-    title: "Scenario: The Windy Night",
-    type: "article",
+    id: 'lnt-p5-scenario',
+    title: 'Scenario: The Windy Night',
+    type: 'article',
     content: `**Scenario:**
 It's getting cold, and the wind has picked up. Fires are technically allowed, but sparks keep blowing sideways. Your group really wants a fire.
 
@@ -327,9 +327,9 @@ The responsible choice isn't always the fun choice. But the outdoors will still 
 
   // ===== PRINCIPLE 6: Respect Wildlife (2 steps) =====
   {
-    id: "lnt-p6-main",
-    title: "Principle 6: Respect Wildlife",
-    type: "article",
+    id: 'lnt-p6-main',
+    title: 'Principle 6: Respect Wildlife',
+    type: 'article',
     content: `Wildlife is one of the reasons we go outside. Respecting them keeps everyone safe.
 
 **What it means:**
@@ -352,9 +352,9 @@ When wildlife learns to associate humans with food, they become bold. Bold anima
     duration: 2,
   },
   {
-    id: "lnt-p6-scenario",
-    title: "Scenario: The Friendly Chipmunk",
-    type: "article",
+    id: 'lnt-p6-scenario',
+    title: 'Scenario: The Friendly Chipmunk',
+    type: 'article',
     content: `**Scenario:**
 A chipmunk keeps coming into your campsite. It's cute! Your kid wants to give it a cracker.
 
@@ -380,9 +380,9 @@ Love wildlife from a distance. The kindest thing you can do is let them stay wil
 
   // ===== PRINCIPLE 7: Be Considerate of Other Visitors (2 steps) =====
   {
-    id: "lnt-p7-main",
-    title: "Principle 7: Be Considerate of Other Visitors",
-    type: "article",
+    id: 'lnt-p7-main',
+    title: 'Principle 7: Be Considerate of Other Visitors',
+    type: 'article',
     content: `You're not the only one out there. Others came for the same reasons you did.
 
 **What it means:**
@@ -403,9 +403,9 @@ Share the space. Keep noise low. Be a good neighbor.
     duration: 2,
   },
   {
-    id: "lnt-p7-scenario",
-    title: "Scenario: The Loud Neighbors",
-    type: "article",
+    id: 'lnt-p7-scenario',
+    title: 'Scenario: The Loud Neighbors',
+    type: 'article',
     content: `**Scenario:**
 It's 11 PM. The group at the next campsite is loud—laughing, music, headlamps everywhere. You have an early start tomorrow.
 
@@ -431,9 +431,9 @@ Be the camper you'd want next to you.`,
 
   // ===== WRAP-UP: Your First Trip Checklist (1 step) =====
   {
-    id: "lnt-checklist",
-    title: "Your First Trip Checklist",
-    type: "article",
+    id: 'lnt-checklist',
+    title: 'Your First Trip Checklist',
+    type: 'article',
     content: `Here's your Leave No Trace checklist for every trip. Screenshot this or add it to your packing list.
 
 **Before You Go:**
@@ -470,10 +470,10 @@ You're ready for the final assessment.`,
 
   // ===== FINAL ASSESSMENT (1 step) =====
   {
-    id: "lnt-final-quiz",
-    title: "Final Assessment",
-    type: "quiz",
-    content: "DYNAMIC_LNT_QUIZ", // Special marker for dynamic quiz generation
+    id: 'lnt-final-quiz',
+    title: 'Final Assessment',
+    type: 'quiz',
+    content: 'DYNAMIC_LNT_QUIZ', // Special marker for dynamic quiz generation
     duration: 5,
   },
 ];

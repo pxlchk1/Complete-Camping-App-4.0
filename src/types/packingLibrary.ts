@@ -3,7 +3,7 @@
  * Type definitions for the global packing library and trip packing lists
  */
 
-import { Timestamp } from "firebase/firestore";
+import { Timestamp } from 'firebase/firestore';
 
 // ============================================================================
 // GLOBAL LIBRARY TYPES (read-only, shared across all users)
@@ -24,11 +24,11 @@ export interface PackingLibraryCategory {
  * Tags for matching items to trip context
  */
 export interface PackingItemTags {
-  seasons: ("winter" | "summer" | "shoulder" | "any")[]; // When this item is relevant
-  temps: ("below_freezing" | "cold" | "mild" | "hot" | "any")[]; // Temperature conditions
-  wind: ("windy" | "any")[]; // Wind conditions
-  precip: ("rain" | "snow" | "any")[]; // Precipitation conditions
-  styles: ("car_camping" | "backpacking" | "hammock" | "rv" | "any")[]; // Camping styles
+  seasons: ('winter' | 'summer' | 'shoulder' | 'any')[]; // When this item is relevant
+  temps: ('below_freezing' | 'cold' | 'mild' | 'hot' | 'any')[]; // Temperature conditions
+  wind: ('windy' | 'any')[]; // Wind conditions
+  precip: ('rain' | 'snow' | 'any')[]; // Precipitation conditions
+  styles: ('car_camping' | 'backpacking' | 'hammock' | 'rv' | 'any')[]; // Camping styles
   locations?: string[]; // Optional location hints ["coastal", "desert", "mountains"]
   tripTypes?: string[]; // Optional trip types ["family", "solo", "photo"]
   base?: boolean; // If true, this is a base item that should always be included
@@ -63,7 +63,7 @@ export interface PackingLibraryItem {
 /**
  * Source of how an item was added to the packing list
  */
-export type PackingItemSource = "base" | "suggested" | "user";
+export type PackingItemSource = 'base' | 'suggested' | 'user';
 
 /**
  * Trip packing list item
@@ -85,7 +85,7 @@ export interface TripPackingItem {
 /**
  * Suggestion status for tracking dismissed/added suggestions
  */
-export type SuggestionStatus = "new" | "added" | "dismissed";
+export type SuggestionStatus = 'new' | 'added' | 'dismissed';
 
 /**
  * Trip packing suggestion tracking

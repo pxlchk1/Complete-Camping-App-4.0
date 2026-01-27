@@ -3,7 +3,7 @@
  * Entry point for packing - shows trip selector, progress, and list generation options
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,23 +11,20 @@ import {
   Pressable,
   ActivityIndicator,
   RefreshControl,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 
-import { RootStackParamList } from "../navigation/types";
-import { Trip } from "../types/camping";
-import { PackingTemplate, calculateProgress } from "../types/packingV2";
-import {
-  getTripPackingList,
-  getUserTemplates,
-} from "../services/packingServiceV2";
-import { PACKING_TEMPLATES } from "../data/packingTemplates";
-import { useTrips } from "../state/tripsStore";
-import { useAuth } from "../context/AuthContext";
+import { RootStackParamList } from '../navigation/types';
+import { Trip } from '../types/camping';
+import { PackingTemplate, calculateProgress } from '../types/packingV2';
+import { getTripPackingList, getUserTemplates } from '../services/packingServiceV2';
+import { PACKING_TEMPLATES } from '../data/packingTemplates';
+import { useTrips } from '../state/tripsStore';
+import { useAuth } from '../context/AuthContext';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -38,7 +35,7 @@ import {
   GRANITE_GOLD,
   CARD_BACKGROUND_LIGHT,
   FOREST_BG,
-} from "../constants/colors";
+} from '../constants/colors';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -64,16 +61,23 @@ export default function PackingListHomeScreenV2() {
     return trips
       .filter((t) => {
         if (!t.startDate) return true;
-        const startDate = typeof t.startDate === "string" 
-          ? new Date(t.startDate) 
-          : t.startDate.toDate?.() || new Date(t.startDate);
+        const startDate =
+          typeof t.startDate === 'string'
+            ? new Date(t.startDate)
+            : t.startDate.toDate?.() || new Date(t.startDate);
         return startDate >= now || !t.endDate;
       })
       .sort((a, b) => {
         if (!a.startDate) return 1;
         if (!b.startDate) return -1;
-        const aDate = typeof a.startDate === "string" ? new Date(a.startDate) : a.startDate.toDate?.() || new Date(a.startDate);
-        const bDate = typeof b.startDate === "string" ? new Date(b.startDate) : b.startDate.toDate?.() || new Date(b.startDate);
+        const aDate =
+          typeof a.startDate === 'string'
+            ? new Date(a.startDate)
+            : a.startDate.toDate?.() || new Date(a.startDate);
+        const bDate =
+          typeof b.startDate === 'string'
+            ? new Date(b.startDate)
+            : b.startDate.toDate?.() || new Date(b.startDate);
         return aDate.getTime() - bDate.getTime();
       });
   }, [trips]);
@@ -81,7 +85,7 @@ export default function PackingListHomeScreenV2() {
   // Selected trip
   const selectedTrip = useMemo(
     () => trips.find((t) => t.id === selectedTripId),
-    [trips, selectedTripId]
+    [trips, selectedTripId],
   );
 
   // Auto-select first upcoming trip
@@ -113,7 +117,7 @@ export default function PackingListHomeScreenV2() {
         }
       }
     } catch (error) {
-      console.error("[PackingListHome] Error loading data:", error);
+      console.error('[PackingListHome] Error loading data:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -134,21 +138,22 @@ export default function PackingListHomeScreenV2() {
   const goToPackingList = () => {
     if (!selectedTripId) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("PackingList", { tripId: selectedTripId });
+    navigation.navigate('PackingList', { tripId: selectedTripId });
   };
 
   // Navigate to generate screen
   const goToGenerate = () => {
     if (!selectedTripId) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("PackingListGenerate", { tripId: selectedTripId });
+    navigation.navigate('PackingListGenerate', { tripId: selectedTripId });
   };
 
   // Format date
   const formatDate = (date: any): string => {
-    if (!date) return "";
-    const d = typeof date === "string" ? new Date(date) : date.toDate?.() || new Date(date);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    if (!date) return '';
+    const d =
+      typeof date === 'string' ? new Date(date) : date.toDate?.() || new Date(date);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   // Progress percentage
@@ -173,7 +178,7 @@ export default function PackingListHomeScreenV2() {
   return (
     <View className="flex-1 bg-parchment">
       {/* Header */}
-      <SafeAreaView edges={["top"]} style={{ backgroundColor: DEEP_FOREST }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: DEEP_FOREST }}>
         <View
           style={{
             paddingTop: 8,
@@ -184,7 +189,7 @@ export default function PackingListHomeScreenV2() {
         >
           <Text
             style={{
-              fontFamily: "Raleway_700Bold",
+              fontFamily: 'Raleway_700Bold',
               fontSize: 24,
               color: PARCHMENT,
             }}
@@ -196,20 +201,18 @@ export default function PackingListHomeScreenV2() {
 
       <ScrollView
         className="flex-1"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
       >
         {/* Trip Selector */}
         <View className="mb-6">
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 13,
               color: TEXT_SECONDARY,
               marginBottom: 8,
-              textTransform: "uppercase",
+              textTransform: 'uppercase',
               letterSpacing: 0.5,
             }}
           >
@@ -226,10 +229,10 @@ export default function PackingListHomeScreenV2() {
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   fontSize: 14,
                   color: TEXT_SECONDARY,
-                  textAlign: "center",
+                  textAlign: 'center',
                 }}
               >
                 No upcoming trips. Create a trip to start packing!
@@ -254,18 +257,18 @@ export default function PackingListHomeScreenV2() {
                 <View className="flex-1">
                   <Text
                     style={{
-                      fontFamily: "Raleway_700Bold",
+                      fontFamily: 'Raleway_700Bold',
                       fontSize: 16,
                       color: DEEP_FOREST,
                     }}
                     numberOfLines={1}
                   >
-                    {selectedTrip?.name || "Select a trip"}
+                    {selectedTrip?.name || 'Select a trip'}
                   </Text>
                   {selectedTrip?.startDate && (
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
+                        fontFamily: 'SourceSans3_400Regular',
                         fontSize: 13,
                         color: TEXT_SECONDARY,
                         marginTop: 2,
@@ -278,7 +281,7 @@ export default function PackingListHomeScreenV2() {
                 </View>
               </View>
               <Ionicons
-                name={showTripPicker ? "chevron-up" : "chevron-down"}
+                name={showTripPicker ? 'chevron-up' : 'chevron-down'}
                 size={20}
                 color={EARTH_GREEN}
               />
@@ -310,8 +313,8 @@ export default function PackingListHomeScreenV2() {
                       borderColor: BORDER_SOFT,
                       backgroundColor:
                         trip.id === selectedTripId
-                          ? "rgba(26, 76, 57, 0.1)"
-                          : "transparent",
+                          ? 'rgba(26, 76, 57, 0.1)'
+                          : 'transparent',
                     }}
                   >
                     <View className="flex-1">
@@ -319,8 +322,8 @@ export default function PackingListHomeScreenV2() {
                         style={{
                           fontFamily:
                             trip.id === selectedTripId
-                              ? "SourceSans3_600SemiBold"
-                              : "SourceSans3_400Regular",
+                              ? 'SourceSans3_600SemiBold'
+                              : 'SourceSans3_400Regular',
                           fontSize: 15,
                           color: DEEP_FOREST,
                         }}
@@ -331,7 +334,7 @@ export default function PackingListHomeScreenV2() {
                       {trip.startDate && (
                         <Text
                           style={{
-                            fontFamily: "SourceSans3_400Regular",
+                            fontFamily: 'SourceSans3_400Regular',
                             fontSize: 12,
                             color: TEXT_SECONDARY,
                           }}
@@ -365,7 +368,7 @@ export default function PackingListHomeScreenV2() {
                 <View className="flex-row items-center justify-between mb-3">
                   <Text
                     style={{
-                      fontFamily: "Raleway_700Bold",
+                      fontFamily: 'Raleway_700Bold',
                       fontSize: 16,
                       color: DEEP_FOREST,
                     }}
@@ -374,7 +377,7 @@ export default function PackingListHomeScreenV2() {
                   </Text>
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 14,
                       color: progressPercent === 100 ? EARTH_GREEN : DEEP_FOREST,
                     }}
@@ -385,7 +388,7 @@ export default function PackingListHomeScreenV2() {
 
                 <View
                   className="h-3 rounded-full overflow-hidden mb-3"
-                  style={{ backgroundColor: "#FFFFFF" }}
+                  style={{ backgroundColor: '#FFFFFF' }}
                 >
                   <View
                     className="h-full rounded-full"
@@ -400,7 +403,7 @@ export default function PackingListHomeScreenV2() {
                 <View className="flex-row items-center justify-between">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                     }}
@@ -413,7 +416,7 @@ export default function PackingListHomeScreenV2() {
                       <Ionicons name="checkmark-circle" size={16} color={EARTH_GREEN} />
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           fontSize: 12,
                           color: EARTH_GREEN,
                           marginLeft: 4,
@@ -438,7 +441,7 @@ export default function PackingListHomeScreenV2() {
                   <Ionicons name="checkbox-outline" size={22} color={PARCHMENT} />
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 16,
                       color: PARCHMENT,
                       marginLeft: 10,
@@ -456,7 +459,7 @@ export default function PackingListHomeScreenV2() {
                   <Ionicons name="sparkles" size={22} color={PARCHMENT} />
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 16,
                       color: PARCHMENT,
                       marginLeft: 10,
@@ -476,7 +479,7 @@ export default function PackingListHomeScreenV2() {
                   <Ionicons name="refresh" size={18} color={DEEP_FOREST} />
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 14,
                       color: DEEP_FOREST,
                       marginLeft: 8,
@@ -494,11 +497,11 @@ export default function PackingListHomeScreenV2() {
         <View className="mb-6">
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 13,
               color: TEXT_SECONDARY,
               marginBottom: 8,
-              textTransform: "uppercase",
+              textTransform: 'uppercase',
               letterSpacing: 0.5,
             }}
           >
@@ -515,10 +518,10 @@ export default function PackingListHomeScreenV2() {
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   fontSize: 14,
                   color: TEXT_SECONDARY,
-                  textAlign: "center",
+                  textAlign: 'center',
                 }}
               >
                 No saved templates yet. Save a packing list as a template to reuse it!
@@ -539,12 +542,16 @@ export default function PackingListHomeScreenV2() {
                     className="w-10 h-10 rounded-full items-center justify-center mr-3"
                     style={{ backgroundColor: CARD_BACKGROUND_LIGHT }}
                   >
-                    <Ionicons name="document-text-outline" size={20} color={EARTH_GREEN} />
+                    <Ionicons
+                      name="document-text-outline"
+                      size={20}
+                      color={EARTH_GREEN}
+                    />
                   </View>
                   <View className="flex-1">
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 15,
                         color: DEEP_FOREST,
                       }}
@@ -555,7 +562,7 @@ export default function PackingListHomeScreenV2() {
                     {template.description && (
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_400Regular",
+                          fontFamily: 'SourceSans3_400Regular',
                           fontSize: 12,
                           color: TEXT_SECONDARY,
                           marginTop: 2,
@@ -577,11 +584,11 @@ export default function PackingListHomeScreenV2() {
         <View>
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 13,
               color: TEXT_SECONDARY,
               marginBottom: 8,
-              textTransform: "uppercase",
+              textTransform: 'uppercase',
               letterSpacing: 0.5,
             }}
           >
@@ -607,7 +614,7 @@ export default function PackingListHomeScreenV2() {
                 <View className="flex-1">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 15,
                       color: DEEP_FOREST,
                     }}
@@ -617,7 +624,7 @@ export default function PackingListHomeScreenV2() {
                   </Text>
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 12,
                       color: TEXT_SECONDARY,
                       marginTop: 2,

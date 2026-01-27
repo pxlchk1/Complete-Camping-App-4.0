@@ -20,16 +20,16 @@ export interface PackingCategory {
 
 // Default packing categories
 export const DEFAULT_PACKING_CATEGORIES = [
-  "Shelter",
-  "Sleep system",
-  "Kitchen",
-  "Clothing",
-  "Tools",
-  "Safety and first aid",
-  "Personal items",
-  "Trip specific items",
-  "Season specific items",
-  "Food and kitchen",
+  'Shelter',
+  'Sleep system',
+  'Kitchen',
+  'Clothing',
+  'Tools',
+  'Safety and first aid',
+  'Personal items',
+  'Trip specific items',
+  'Season specific items',
+  'Food and kitchen',
 ] as const;
 
-export type DefaultPackingCategory = typeof DEFAULT_PACKING_CATEGORIES[number];
+export type DefaultPackingCategory = (typeof DEFAULT_PACKING_CATEGORIES)[number];

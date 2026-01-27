@@ -4,12 +4,7 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { format } from 'date-fns';
@@ -59,7 +54,9 @@ export default function WeatherForecastSection({
   today.setHours(0, 0, 0, 0);
   const tripStart = tripStartDate ? new Date(tripStartDate) : null;
   if (tripStart) tripStart.setHours(0, 0, 0, 0);
-  const daysUntilTrip = tripStart ? Math.ceil((tripStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+  const daysUntilTrip = tripStart
+    ? Math.ceil((tripStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
   const isTripFarAway = daysUntilTrip > 10;
 
   // Filter forecast based on trip timing
@@ -96,7 +93,9 @@ export default function WeatherForecastSection({
       {/* Location */}
       <View style={styles.locationRow}>
         <Ionicons name="location" size={14} color={EARTH_GREEN} />
-        <Text style={styles.locationText} numberOfLines={1}>{locationName}</Text>
+        <Text style={styles.locationText} numberOfLines={1}>
+          {locationName}
+        </Text>
         {onChangeLocation && (
           <Pressable
             onPress={() => {
@@ -105,7 +104,15 @@ export default function WeatherForecastSection({
             }}
             style={{ marginRight: 8 }}
           >
-            <Text style={{ fontFamily: 'SourceSans3_400Regular', fontSize: 13, color: EARTH_GREEN }}>change</Text>
+            <Text
+              style={{
+                fontFamily: 'SourceSans3_400Regular',
+                fontSize: 13,
+                color: EARTH_GREEN,
+              }}
+            >
+              change
+            </Text>
           </Pressable>
         )}
         <Text style={styles.updatedText}>
@@ -126,30 +133,45 @@ export default function WeatherForecastSection({
             <View style={styles.farAwayNote}>
               <Ionicons name="calendar-outline" size={14} color={TEXT_SECONDARY} />
               <Text style={styles.farAwayText}>
-                Your trip is {daysUntilTrip} days away. Full forecast will be available closer to your trip date.
+                Your trip is {daysUntilTrip} days away. Full forecast will be available
+                closer to your trip date.
               </Text>
             </View>
           )}
           <View style={styles.forecastList}>
             {displayForecast.map((day, index) => (
-              <View key={day.date} style={[styles.forecastRow, index === displayForecast.length - 1 && styles.lastRow]}>
+              <View
+                key={day.date}
+                style={[
+                  styles.forecastRow,
+                  index === displayForecast.length - 1 && styles.lastRow,
+                ]}
+              >
                 <View style={styles.dateColumn}>
                   <Text style={styles.dayName}>
                     {index === 0 ? 'Today' : format(new Date(day.date), 'EEE')}
                   </Text>
-                  <Text style={styles.dateText}>{format(new Date(day.date), 'MMM d')}</Text>
+                  <Text style={styles.dateText}>
+                    {format(new Date(day.date), 'MMM d')}
+                  </Text>
                 </View>
-              
+
                 <View style={styles.conditionColumn}>
-                  <Ionicons name={getWeatherIcon(day.condition)} size={24} color={DEEP_FOREST} />
-                  <Text style={styles.conditionText} numberOfLines={1}>{day.condition}</Text>
+                  <Ionicons
+                    name={getWeatherIcon(day.condition)}
+                    size={24}
+                    color={DEEP_FOREST}
+                  />
+                  <Text style={styles.conditionText} numberOfLines={1}>
+                    {day.condition}
+                  </Text>
                 </View>
-              
+
                 <View style={styles.tempColumn}>
                   <Text style={styles.highTemp}>{Math.round(day.high)}°</Text>
                   <Text style={styles.lowTemp}>{Math.round(day.low)}°</Text>
                 </View>
-              
+
                 {day.precipitation !== undefined && day.precipitation > 0 && (
                   <View style={styles.precipColumn}>
                     <Ionicons name="water" size={12} color="#5BA4E5" />

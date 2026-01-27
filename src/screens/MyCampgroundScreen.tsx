@@ -5,7 +5,7 @@
  * Includes a "What is this?" explainer modal with a Pro upgrade CTA
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,22 +15,22 @@ import {
   Alert,
   RefreshControl,
   Modal,
-} from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { auth } from "../config/firebase";
+} from 'react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { auth } from '../config/firebase';
 import {
   getCampgroundContacts,
   deleteCampgroundContact,
-} from "../services/campgroundContactsService";
-import { CampgroundContact } from "../types/campground";
-import { RootStackNavigationProp } from "../navigation/types";
-import ModalHeader from "../components/ModalHeader";
-import InviteOptionsSheet from "../components/InviteOptionsSheet";
-import OnboardingModal from "../components/OnboardingModal";
-import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
+} from '../services/campgroundContactsService';
+import { CampgroundContact } from '../types/campground';
+import { RootStackNavigationProp } from '../navigation/types';
+import ModalHeader from '../components/ModalHeader';
+import InviteOptionsSheet from '../components/InviteOptionsSheet';
+import OnboardingModal from '../components/OnboardingModal';
+import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -40,7 +40,7 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
-} from "../constants/colors";
+} from '../constants/colors';
 
 export default function MyCampgroundScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -53,19 +53,19 @@ export default function MyCampgroundScreen() {
 
   // Invite sheet state
   const [showInviteSheet, setShowInviteSheet] = useState(false);
-  const [selectedContact, setSelectedContact] =
-    useState<CampgroundContact | null>(null);
+  const [selectedContact, setSelectedContact] = useState<CampgroundContact | null>(null);
 
   // "What is this?" modal state
   const [showWhatIsThis, setShowWhatIsThis] = useState(false);
 
   // Onboarding modal
-  const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("MyCampground");
+  const { showModal, currentTooltip, dismissModal, openModal } =
+    useScreenOnboarding('MyCampground');
 
   const loadContacts = useCallback(async () => {
     const user = auth.currentUser;
     if (!user) {
-      setError("Please sign in to view your campground");
+      setError('Please sign in to view your campground');
       setLoading(false);
       setRefreshing(false);
       return;
@@ -76,8 +76,8 @@ export default function MyCampgroundScreen() {
       const contactsData = await getCampgroundContacts(user.uid);
       setContacts(contactsData);
     } catch (err: any) {
-      console.error("Error loading contacts:", err);
-      setError(err?.message || "Failed to load contacts");
+      console.error('Error loading contacts:', err);
+      setError(err?.message || 'Failed to load contacts');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -93,7 +93,7 @@ export default function MyCampgroundScreen() {
     useCallback(() => {
       loadContacts();
       return () => {};
-    }, [loadContacts])
+    }, [loadContacts]),
   );
 
   const handleRefresh = () => {
@@ -103,37 +103,35 @@ export default function MyCampgroundScreen() {
 
   const handleAddCamper = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("AddCamper");
+    navigation.navigate('AddCamper');
   };
 
   const handleContactPress = (contact: CampgroundContact) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("EditCamper", { contactId: contact.id });
+    navigation.navigate('EditCamper', { contactId: contact.id });
   };
 
   const handleDeleteContact = (contact: CampgroundContact) => {
     Alert.alert(
-      "Delete Contact",
+      'Delete Contact',
       `Are you sure you want to remove ${contact.contactName} from your campground?`,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Delete",
-          style: "destructive",
+          text: 'Delete',
+          style: 'destructive',
           onPress: async () => {
             try {
               await deleteCampgroundContact(contact.id);
-              Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               await loadContacts();
             } catch (err) {
-              console.error("Delete contact failed:", err);
-              Alert.alert("Error", "Failed to delete contact");
+              console.error('Delete contact failed:', err);
+              Alert.alert('Error', 'Failed to delete contact');
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -163,8 +161,8 @@ export default function MyCampgroundScreen() {
 
     // Wire this to your app's Paywall entry point.
     // Choose the correct route name for your project and remove the cast if your types support it.
-    navigation.navigate("Paywall" as any, {
-      triggerKey: "my_campground_info",
+    navigation.navigate('Paywall' as any, {
+      triggerKey: 'my_campground_info',
     });
   };
 
@@ -177,7 +175,7 @@ export default function MyCampgroundScreen() {
           <Text
             className="mt-4"
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               color: TEXT_SECONDARY,
             }}
           >
@@ -197,20 +195,18 @@ export default function MyCampgroundScreen() {
           <Text
             className="mt-4 text-center text-lg"
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               color: TEXT_PRIMARY_STRONG,
             }}
           >
             Sign in to view your campground
           </Text>
           <Pressable
-            onPress={() => navigation.navigate("Auth")}
+            onPress={() => navigation.navigate('Auth')}
             className="mt-6 px-6 py-3 rounded-xl active:opacity-90"
             style={{ backgroundColor: DEEP_FOREST }}
           >
-            <Text
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
-            >
+            <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
               Sign In
             </Text>
           </Pressable>
@@ -239,7 +235,7 @@ export default function MyCampgroundScreen() {
             <View className="flex-1 pr-3">
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   color: TEXT_SECONDARY,
                 }}
               >
@@ -250,9 +246,9 @@ export default function MyCampgroundScreen() {
             <Pressable onPress={handleOpenWhatIsThis} className="active:opacity-70">
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   color: EARTH_GREEN,
-                  textDecorationLine: "underline",
+                  textDecorationLine: 'underline',
                 }}
               >
                 What is this?
@@ -272,7 +268,7 @@ export default function MyCampgroundScreen() {
             <Text
               className="ml-2"
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 color: PARCHMENT,
               }}
             >
@@ -287,7 +283,7 @@ export default function MyCampgroundScreen() {
             <Ionicons name="people-outline" size={64} color={BORDER_SOFT} />
             <Text
               className="mt-4 text-center"
-              style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
             >
               No contacts yet. Add the people you camp with to organize your trips
               together.
@@ -315,7 +311,7 @@ export default function MyCampgroundScreen() {
                         <Text
                           className="text-lg"
                           style={{
-                            fontFamily: "SourceSans3_600SemiBold",
+                            fontFamily: 'SourceSans3_600SemiBold',
                             color: TEXT_PRIMARY_STRONG,
                           }}
                         >
@@ -327,7 +323,7 @@ export default function MyCampgroundScreen() {
                         <Text
                           className="mt-1"
                           style={{
-                            fontFamily: "SourceSans3_400Regular",
+                            fontFamily: 'SourceSans3_400Regular',
                             color: TEXT_SECONDARY,
                           }}
                         >
@@ -339,7 +335,7 @@ export default function MyCampgroundScreen() {
                         <Text
                           className="mt-2 text-sm"
                           style={{
-                            fontFamily: "SourceSans3_400Regular",
+                            fontFamily: 'SourceSans3_400Regular',
                             color: TEXT_MUTED,
                           }}
                         >
@@ -348,11 +344,7 @@ export default function MyCampgroundScreen() {
                       ) : null}
                     </View>
 
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={TEXT_MUTED}
-                    />
+                    <Ionicons name="chevron-forward" size={20} color={TEXT_MUTED} />
                   </View>
                 </Pressable>
 
@@ -370,7 +362,7 @@ export default function MyCampgroundScreen() {
                   <Text
                     className="ml-2"
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       color: EARTH_GREEN,
                       fontSize: 14,
                     }}
@@ -400,7 +392,7 @@ export default function MyCampgroundScreen() {
         animationType="fade"
         onRequestClose={handleCloseWhatIsThis}
       >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)" }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)' }}>
           {/* Backdrop: tap outside to close */}
           <Pressable style={{ flex: 1 }} onPress={handleCloseWhatIsThis} />
 
@@ -416,7 +408,7 @@ export default function MyCampgroundScreen() {
           >
             <Text
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 color: TEXT_PRIMARY_STRONG,
                 fontSize: 18,
               }}
@@ -427,20 +419,20 @@ export default function MyCampgroundScreen() {
             <Text
               className="mt-3"
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_SECONDARY,
                 lineHeight: 20,
               }}
             >
-              My Campground is your private list of the people you actually camp
-              with. Add friends, family, and trip buddies so you are not hunting
-              through texts later.
+              My Campground is your private list of the people you actually camp with. Add
+              friends, family, and trip buddies so you are not hunting through texts
+              later.
             </Text>
 
             <View className="mt-4">
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   color: TEXT_SECONDARY,
                   lineHeight: 20,
                 }}
@@ -449,7 +441,7 @@ export default function MyCampgroundScreen() {
               </Text>
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   color: TEXT_SECONDARY,
                   lineHeight: 20,
                   marginTop: 10,
@@ -459,7 +451,7 @@ export default function MyCampgroundScreen() {
               </Text>
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   color: TEXT_SECONDARY,
                   lineHeight: 20,
                   marginTop: 10,
@@ -479,7 +471,7 @@ export default function MyCampgroundScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   color: TEXT_PRIMARY_STRONG,
                 }}
               >
@@ -488,13 +480,13 @@ export default function MyCampgroundScreen() {
               <Text
                 className="mt-2"
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   color: TEXT_SECONDARY,
                   lineHeight: 20,
                 }}
               >
-                Pro is where this really shines, especially if you camp with the
-                same people often.
+                Pro is where this really shines, especially if you camp with the same
+                people often.
               </Text>
             </View>
 
@@ -506,7 +498,7 @@ export default function MyCampgroundScreen() {
               >
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     color: PARCHMENT,
                   }}
                 >
@@ -521,7 +513,7 @@ export default function MyCampgroundScreen() {
               >
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     color: TEXT_SECONDARY,
                   }}
                 >

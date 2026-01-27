@@ -3,7 +3,7 @@
  * Allows user to select a trip to add gear to their packing list
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,16 +12,16 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
-import { Trip, useTripsStore } from "../state/tripsStore";
-import { GearItem, GearCategory } from "../types/gear";
-import { PackingCategory, PackingItemV2 } from "../types/packingV2";
-import { savePackingItem, getTripPackingItems } from "../services/packingServiceV2";
-import { useAuthStore } from "../state/authStore";
+import { Trip, useTripsStore } from '../state/tripsStore';
+import { GearItem, GearCategory } from '../types/gear';
+import { PackingCategory, PackingItemV2 } from '../types/packingV2';
+import { savePackingItem, getTripPackingItems } from '../services/packingServiceV2';
+import { useAuthStore } from '../state/authStore';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -30,29 +30,29 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   CARD_BACKGROUND_LIGHT,
-} from "../constants/colors";
+} from '../constants/colors';
 
 // Map Gear Closet categories to Packing List categories
 const GEAR_TO_PACKING_CATEGORY: Record<GearCategory, PackingCategory> = {
-  camp_comfort: "camp_comfort",
-  campFurniture: "camp_comfort",
-  clothing: "clothing",
-  documents_essentials: "documents_essentials",
-  electronics: "electronics",
-  entertainment: "optional_extras",
-  food: "food",
-  hygiene: "hygiene",
-  kitchen: "kitchen",
-  lighting: "lighting",
-  meal_prep: "kitchen",
-  optional_extras: "optional_extras",
-  pet_supplies: "optional_extras",
-  safety: "navigation_safety",
-  seating: "camp_comfort",
-  shelter: "shelter",
-  sleep: "sleep",
-  tools: "tools_repairs",
-  water: "water",
+  camp_comfort: 'camp_comfort',
+  campFurniture: 'camp_comfort',
+  clothing: 'clothing',
+  documents_essentials: 'documents_essentials',
+  electronics: 'electronics',
+  entertainment: 'optional_extras',
+  food: 'food',
+  hygiene: 'hygiene',
+  kitchen: 'kitchen',
+  lighting: 'lighting',
+  meal_prep: 'kitchen',
+  optional_extras: 'optional_extras',
+  pet_supplies: 'optional_extras',
+  safety: 'navigation_safety',
+  seating: 'camp_comfort',
+  shelter: 'shelter',
+  sleep: 'sleep',
+  tools: 'tools_repairs',
+  water: 'water',
 };
 
 interface TripPickerModalProps {
@@ -76,10 +76,12 @@ export default function TripPickerModal({
   // Filter to active/upcoming trips only
   const activeTrips = useMemo(() => {
     const now = new Date();
-    return trips.filter((trip) => {
-      const endDate = new Date(trip.endDate);
-      return endDate >= now;
-    }).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    return trips
+      .filter((trip) => {
+        const endDate = new Date(trip.endDate);
+        return endDate >= now;
+      })
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
   }, [trips]);
 
   const handleSelectTrip = async (tripId: string) => {
@@ -92,22 +94,27 @@ export default function TripPickerModal({
     try {
       // Check if item already exists in the trip's packing list
       const existingItems = await getTripPackingItems(user.id, tripId);
-      
+
       // Check by gearClosetId
-      const existsById = existingItems.some(
-        (item) => item.gearClosetId === gearItem.id
-      );
-      
+      const existsById = existingItems.some((item) => item.gearClosetId === gearItem.id);
+
       // Check by normalized name
-      const normalizedName = gearItem.name.toLowerCase().trim().replace(/[^\w\s]/g, "");
+      const normalizedName = gearItem.name
+        .toLowerCase()
+        .trim()
+        .replace(/[^\w\s]/g, '');
       const existsByName = existingItems.some(
-        (item) => item.name.toLowerCase().trim().replace(/[^\w\s]/g, "") === normalizedName
+        (item) =>
+          item.name
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s]/g, '') === normalizedName,
       );
 
       if (existsById || existsByName) {
         Alert.alert(
-          "Already in packing list",
-          `${gearItem.name} is already on this trip's list`
+          'Already in packing list',
+          `${gearItem.name} is already on this trip's list`,
         );
         setAdding(false);
         setSelectedTripId(null);
@@ -115,13 +122,14 @@ export default function TripPickerModal({
       }
 
       // Add the gear to the trip's packing list
-      const packingCategory = GEAR_TO_PACKING_CATEGORY[gearItem.category] || "optional_extras";
+      const packingCategory =
+        GEAR_TO_PACKING_CATEGORY[gearItem.category] || 'optional_extras';
 
       const itemData: Partial<PackingItemV2> = {
         name: gearItem.name,
         category: packingCategory,
         quantity: 1,
-        notes: [gearItem.brand, gearItem.model].filter(Boolean).join(" ") || undefined,
+        notes: [gearItem.brand, gearItem.model].filter(Boolean).join(' ') || undefined,
         isEssential: false,
         isPacked: false,
         isFromGearCloset: true,
@@ -134,8 +142,8 @@ export default function TripPickerModal({
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error("[TripPickerModal] Error adding to packing list:", error);
-      Alert.alert("Error adding item", "Please try again");
+      console.error('[TripPickerModal] Error adding to packing list:', error);
+      Alert.alert('Error adding item', 'Please try again');
     } finally {
       setAdding(false);
       setSelectedTripId(null);
@@ -144,16 +152,16 @@ export default function TripPickerModal({
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
   };
 
   const renderTrip = ({ item: trip }: { item: Trip }) => {
     const isSelected = selectedTripId === trip.id;
-    const tripName = trip.name || trip.destination?.name || "Untitled Trip";
+    const tripName = trip.name || trip.destination?.name || 'Untitled Trip';
     const startDate = formatDate(trip.startDate);
     const endDate = formatDate(trip.endDate);
 
@@ -164,7 +172,7 @@ export default function TripPickerModal({
         className="flex-row items-center px-4 py-4 border-b"
         style={{
           borderColor: BORDER_SOFT,
-          backgroundColor: isSelected ? "rgba(26, 76, 57, 0.08)" : PARCHMENT,
+          backgroundColor: isSelected ? 'rgba(26, 76, 57, 0.08)' : PARCHMENT,
           opacity: adding && !isSelected ? 0.5 : 1,
         }}
       >
@@ -178,7 +186,7 @@ export default function TripPickerModal({
         <View className="flex-1">
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 16,
               color: TEXT_PRIMARY_STRONG,
             }}
@@ -188,7 +196,7 @@ export default function TripPickerModal({
           </Text>
           <Text
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               fontSize: 13,
               color: TEXT_SECONDARY,
               marginTop: 2,
@@ -218,16 +226,16 @@ export default function TripPickerModal({
         {/* Backdrop */}
         <Pressable
           className="absolute inset-0"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
           onPress={onClose}
         />
 
         {/* Content */}
         <View
           className="rounded-t-3xl overflow-hidden"
-          style={{ backgroundColor: PARCHMENT, maxHeight: "70%" }}
+          style={{ backgroundColor: PARCHMENT, maxHeight: '70%' }}
         >
-          <SafeAreaView edges={["bottom"]}>
+          <SafeAreaView edges={['bottom']}>
             {/* Header */}
             <View
               className="flex-row items-center justify-between px-5 py-4 border-b"
@@ -236,7 +244,7 @@ export default function TripPickerModal({
               <Pressable onPress={onClose} hitSlop={10}>
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     fontSize: 16,
                     color: EARTH_GREEN,
                   }}
@@ -247,7 +255,7 @@ export default function TripPickerModal({
 
               <Text
                 style={{
-                  fontFamily: "Raleway_700Bold",
+                  fontFamily: 'Raleway_700Bold',
                   fontSize: 17,
                   color: DEEP_FOREST,
                 }}
@@ -262,14 +270,17 @@ export default function TripPickerModal({
             {gearItem && (
               <View
                 className="px-4 py-3 border-b"
-                style={{ borderColor: BORDER_SOFT, backgroundColor: CARD_BACKGROUND_LIGHT }}
+                style={{
+                  borderColor: BORDER_SOFT,
+                  backgroundColor: CARD_BACKGROUND_LIGHT,
+                }}
               >
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     fontSize: 12,
                     color: TEXT_SECONDARY,
-                    textTransform: "uppercase",
+                    textTransform: 'uppercase',
                     letterSpacing: 0.5,
                   }}
                 >
@@ -277,7 +288,7 @@ export default function TripPickerModal({
                 </Text>
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     fontSize: 15,
                     color: TEXT_PRIMARY_STRONG,
                     marginTop: 2,
@@ -293,10 +304,10 @@ export default function TripPickerModal({
             <View className="px-4 py-2">
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 13,
                   color: TEXT_SECONDARY,
-                  textTransform: "uppercase",
+                  textTransform: 'uppercase',
                   letterSpacing: 0.5,
                 }}
               >
@@ -310,22 +321,22 @@ export default function TripPickerModal({
                 <Ionicons name="calendar-outline" size={48} color={EARTH_GREEN} />
                 <Text
                   style={{
-                    fontFamily: "Raleway_700Bold",
+                    fontFamily: 'Raleway_700Bold',
                     fontSize: 18,
                     color: DEEP_FOREST,
                     marginTop: 12,
-                    textAlign: "center",
+                    textAlign: 'center',
                   }}
                 >
                   No upcoming trips
                 </Text>
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     fontSize: 14,
                     color: TEXT_SECONDARY,
                     marginTop: 8,
-                    textAlign: "center",
+                    textAlign: 'center',
                   }}
                 >
                   Create a trip first to add gear to a packing list

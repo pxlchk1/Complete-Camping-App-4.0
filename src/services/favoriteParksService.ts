@@ -4,7 +4,7 @@
  * Path: /users/{userId}/favoriteParks/{parkId}
  */
 
-import { db } from "../config/firebase";
+import { db } from '../config/firebase';
 import {
   doc,
   getDoc,
@@ -17,10 +17,10 @@ import {
   onSnapshot,
   serverTimestamp,
   Unsubscribe,
-} from "firebase/firestore";
-import { Park } from "../types/camping";
-import { trackSavedPlaceAdded } from "./analyticsService";
-import { trackCoreAction } from "./userActionTrackerService";
+} from 'firebase/firestore';
+import { Park } from '../types/camping';
+import { trackSavedPlaceAdded } from './analyticsService';
+import { trackCoreAction } from './userActionTrackerService';
 
 /**
  * Favorite park snapshot stored in Firestore
@@ -29,7 +29,7 @@ import { trackCoreAction } from "./userActionTrackerService";
 export interface FavoritePark {
   parkId: string;
   name: string;
-  type: "State Park" | "National Park" | "National Forest" | string;
+  type: 'State Park' | 'National Park' | 'National Forest' | string;
   state?: string;
   thumbnailUrl?: string;
   lat?: number;
@@ -40,32 +40,29 @@ export interface FavoritePark {
 /**
  * Convert park filter to display type
  */
-function getTypeLabel(filter: Park["filter"]): string {
+function getTypeLabel(filter: Park['filter']): string {
   switch (filter) {
-    case "state_park":
-      return "State Park";
-    case "national_park":
-      return "National Park";
-    case "national_forest":
-      return "National Forest";
+    case 'state_park':
+      return 'State Park';
+    case 'national_park':
+      return 'National Park';
+    case 'national_forest':
+      return 'National Forest';
     default:
-      return "Park";
+      return 'Park';
   }
 }
 
 /**
  * Check if a park is favorited by the user
  */
-export async function isParkFavorited(
-  userId: string,
-  parkId: string
-): Promise<boolean> {
+export async function isParkFavorited(userId: string, parkId: string): Promise<boolean> {
   try {
-    const favRef = doc(db, "users", userId, "favoriteParks", parkId);
+    const favRef = doc(db, 'users', userId, 'favoriteParks', parkId);
     const favSnap = await getDoc(favRef);
     return favSnap.exists();
   } catch (error) {
-    console.error("[FavoriteParks] Error checking favorite:", error);
+    console.error('[FavoriteParks] Error checking favorite:', error);
     return false;
   }
 }
@@ -73,13 +70,10 @@ export async function isParkFavorited(
 /**
  * Add a park to user's favorites
  */
-export async function addFavoritePark(
-  userId: string,
-  park: Park
-): Promise<void> {
+export async function addFavoritePark(userId: string, park: Park): Promise<void> {
   try {
-    const favRef = doc(db, "users", userId, "favoriteParks", park.id);
-    
+    const favRef = doc(db, 'users', userId, 'favoriteParks', park.id);
+
     const favoritePark: FavoritePark = {
       parkId: park.id,
       name: park.name,
@@ -92,13 +86,13 @@ export async function addFavoritePark(
     };
 
     await setDoc(favRef, favoritePark);
-    console.log("[FavoriteParks] Added favorite:", park.name);
+    console.log('[FavoriteParks] Added favorite:', park.name);
 
     // Track analytics and core action
-    trackSavedPlaceAdded("park");
-    trackCoreAction(userId, "saved_place_added");
+    trackSavedPlaceAdded('park');
+    trackCoreAction(userId, 'saved_place_added');
   } catch (error) {
-    console.error("[FavoriteParks] Error adding favorite:", error);
+    console.error('[FavoriteParks] Error adding favorite:', error);
     throw error;
   }
 }
@@ -106,16 +100,13 @@ export async function addFavoritePark(
 /**
  * Remove a park from user's favorites
  */
-export async function removeFavoritePark(
-  userId: string,
-  parkId: string
-): Promise<void> {
+export async function removeFavoritePark(userId: string, parkId: string): Promise<void> {
   try {
-    const favRef = doc(db, "users", userId, "favoriteParks", parkId);
+    const favRef = doc(db, 'users', userId, 'favoriteParks', parkId);
     await deleteDoc(favRef);
-    console.log("[FavoriteParks] Removed favorite:", parkId);
+    console.log('[FavoriteParks] Removed favorite:', parkId);
   } catch (error) {
-    console.error("[FavoriteParks] Error removing favorite:", error);
+    console.error('[FavoriteParks] Error removing favorite:', error);
     throw error;
   }
 }
@@ -123,12 +114,9 @@ export async function removeFavoritePark(
 /**
  * Toggle favorite status for a park
  */
-export async function toggleFavoritePark(
-  userId: string,
-  park: Park
-): Promise<boolean> {
+export async function toggleFavoritePark(userId: string, park: Park): Promise<boolean> {
   const isFav = await isParkFavorited(userId, park.id);
-  
+
   if (isFav) {
     await removeFavoritePark(userId, park.id);
     return false;
@@ -141,20 +129,18 @@ export async function toggleFavoritePark(
 /**
  * Get all favorite parks for a user
  */
-export async function getFavoriteParks(
-  userId: string
-): Promise<FavoritePark[]> {
+export async function getFavoriteParks(userId: string): Promise<FavoritePark[]> {
   try {
-    const favsRef = collection(db, "users", userId, "favoriteParks");
-    const q = query(favsRef, orderBy("createdAt", "desc"));
+    const favsRef = collection(db, 'users', userId, 'favoriteParks');
+    const q = query(favsRef, orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
-    
+
     return snapshot.docs.map((doc) => ({
       ...doc.data(),
       parkId: doc.id,
     })) as FavoritePark[];
   } catch (error) {
-    console.error("[FavoriteParks] Error getting favorites:", error);
+    console.error('[FavoriteParks] Error getting favorites:', error);
     return [];
   }
 }
@@ -165,11 +151,11 @@ export async function getFavoriteParks(
  */
 export async function getFavoritesCount(userId: string): Promise<number> {
   try {
-    const favsRef = collection(db, "users", userId, "favoriteParks");
+    const favsRef = collection(db, 'users', userId, 'favoriteParks');
     const snapshot = await getDocs(favsRef);
     return snapshot.size;
   } catch (error) {
-    console.error("[FavoriteParks] Error counting favorites:", error);
+    console.error('[FavoriteParks] Error counting favorites:', error);
     return 0;
   }
 }
@@ -185,10 +171,10 @@ export const FREE_FAVORITES_LIMIT = 5;
 export function listenToFavoritePark(
   userId: string,
   parkId: string,
-  callback: (isFavorited: boolean) => void
+  callback: (isFavorited: boolean) => void,
 ): Unsubscribe {
-  const favRef = doc(db, "users", userId, "favoriteParks", parkId);
-  
+  const favRef = doc(db, 'users', userId, 'favoriteParks', parkId);
+
   return onSnapshot(favRef, (snap) => {
     callback(snap.exists());
   });
@@ -199,17 +185,17 @@ export function listenToFavoritePark(
  */
 export function listenToFavoriteParks(
   userId: string,
-  callback: (favorites: FavoritePark[]) => void
+  callback: (favorites: FavoritePark[]) => void,
 ): Unsubscribe {
-  const favsRef = collection(db, "users", userId, "favoriteParks");
-  const q = query(favsRef, orderBy("createdAt", "desc"));
-  
+  const favsRef = collection(db, 'users', userId, 'favoriteParks');
+  const q = query(favsRef, orderBy('createdAt', 'desc'));
+
   return onSnapshot(q, (snapshot) => {
     const favorites = snapshot.docs.map((doc) => ({
       ...doc.data(),
       parkId: doc.id,
     })) as FavoritePark[];
-    
+
     callback(favorites);
   });
 }

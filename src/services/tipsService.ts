@@ -20,27 +20,27 @@ import {
   increment,
   Timestamp,
   DocumentSnapshot,
-} from "firebase/firestore";
-import firebaseApp from "../config/firebase";
-import { Tip, TipComment } from "../types/community";
+} from 'firebase/firestore';
+import firebaseApp from '../config/firebase';
+import { Tip, TipComment } from '../types/community';
 
 const db = getFirestore(firebaseApp);
 
 // ==================== Tips ====================
 
 export async function getTips(
-  sortBy: "newest" | "helpful" = "newest",
+  sortBy: 'newest' | 'helpful' = 'newest',
   limitCount: number = 20,
-  lastDoc?: DocumentSnapshot
+  lastDoc?: DocumentSnapshot,
 ): Promise<{ tips: Tip[]; lastDoc: DocumentSnapshot | null }> {
-  const tipsRef = collection(db, "tips");
+  const tipsRef = collection(db, 'tips');
 
   let q = query(tipsRef);
 
-  if (sortBy === "newest") {
-    q = query(q, orderBy("createdAt", "desc"));
-  } else if (sortBy === "helpful") {
-    q = query(q, orderBy("upvoteCount", "desc"), orderBy("createdAt", "desc"));
+  if (sortBy === 'newest') {
+    q = query(q, orderBy('createdAt', 'desc'));
+  } else if (sortBy === 'helpful') {
+    q = query(q, orderBy('upvoteCount', 'desc'), orderBy('createdAt', 'desc'));
   }
 
   q = query(q, limit(limitCount));
@@ -50,7 +50,7 @@ export async function getTips(
   }
 
   const snapshot = await getDocs(q);
-  const tips = snapshot.docs.map(doc => {
+  const tips = snapshot.docs.map((doc) => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -67,15 +67,15 @@ export async function getTips(
 export async function getMyTips(
   userId: string,
   limitCount: number = 20,
-  lastDoc?: DocumentSnapshot
+  lastDoc?: DocumentSnapshot,
 ): Promise<{ tips: Tip[]; lastDoc: DocumentSnapshot | null }> {
-  const tipsRef = collection(db, "tips");
+  const tipsRef = collection(db, 'tips');
 
   let q = query(
     tipsRef,
-    where("authorId", "==", userId),
-    orderBy("createdAt", "desc"),
-    limit(limitCount)
+    where('authorId', '==', userId),
+    orderBy('createdAt', 'desc'),
+    limit(limitCount),
   );
 
   if (lastDoc) {
@@ -83,7 +83,7 @@ export async function getMyTips(
   }
 
   const snapshot = await getDocs(q);
-  const tips = snapshot.docs.map(doc => {
+  const tips = snapshot.docs.map((doc) => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -98,7 +98,7 @@ export async function getMyTips(
 }
 
 export async function getTipById(tipId: string): Promise<Tip | null> {
-  const tipRef = doc(db, "tips", tipId);
+  const tipRef = doc(db, 'tips', tipId);
   const tipSnap = await getDoc(tipRef);
 
   if (!tipSnap.exists()) {
@@ -119,7 +119,7 @@ export async function createTip(data: {
   tags: string[];
   authorId: string;
 }): Promise<string> {
-  const tipsRef = collection(db, "tips");
+  const tipsRef = collection(db, 'tips');
 
   const docRef = await addDoc(tipsRef, {
     title: data.title,
@@ -136,7 +136,7 @@ export async function createTip(data: {
 }
 
 export async function upvoteTip(tipId: string): Promise<void> {
-  const tipRef = doc(db, "tips", tipId);
+  const tipRef = doc(db, 'tips', tipId);
   await updateDoc(tipRef, {
     upvoteCount: increment(1),
   });
@@ -146,18 +146,18 @@ export async function upvoteTip(tipId: string): Promise<void> {
 
 export async function getTipComments(
   tipId: string,
-  limitCount: number = 50
+  limitCount: number = 50,
 ): Promise<TipComment[]> {
-  const commentsRef = collection(db, "tipComments");
+  const commentsRef = collection(db, 'tipComments');
   const q = query(
     commentsRef,
-    where("tipId", "==", tipId),
-    orderBy("createdAt", "asc"),
-    limit(limitCount)
+    where('tipId', '==', tipId),
+    orderBy('createdAt', 'asc'),
+    limit(limitCount),
   );
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => {
+  return snapshot.docs.map((doc) => {
     const data = doc.data();
     return {
       id: doc.id,
@@ -173,7 +173,7 @@ export async function addTipComment(data: {
   authorId: string;
   username?: string;
 }): Promise<string> {
-  const commentsRef = collection(db, "tipComments");
+  const commentsRef = collection(db, 'tipComments');
 
   const docRef = await addDoc(commentsRef, {
     tipId: data.tipId,
@@ -185,7 +185,7 @@ export async function addTipComment(data: {
   });
 
   // Increment comment count on tip
-  const tipRef = doc(db, "tips", data.tipId);
+  const tipRef = doc(db, 'tips', data.tipId);
   await updateDoc(tipRef, {
     commentCount: increment(1),
   });
@@ -194,7 +194,7 @@ export async function addTipComment(data: {
 }
 
 export async function upvoteTipComment(commentId: string): Promise<void> {
-  const commentRef = doc(db, "tipComments", commentId);
+  const commentRef = doc(db, 'tipComments', commentId);
   await updateDoc(commentRef, {
     upvoteCount: increment(1),
   });

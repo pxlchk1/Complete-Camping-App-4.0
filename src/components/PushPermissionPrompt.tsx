@@ -4,7 +4,7 @@
  * Increases opt-in rates by explaining value proposition first
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,17 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../context/AuthContext";
-import { userActionTracker } from "../services/userActionTrackerService";
-import { requestPushPermission } from "../services/notificationPreferencesService";
-import { trackPermissionPromptShown, trackPermissionResult } from "../services/analyticsService";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../context/AuthContext';
+import { userActionTracker } from '../services/userActionTrackerService';
+import { requestPushPermission } from '../services/notificationPreferencesService';
+import {
+  trackPermissionPromptShown,
+  trackPermissionResult,
+} from '../services/analyticsService';
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface PushPermissionPromptProps {
   onComplete?: (granted: boolean) => void;
@@ -40,10 +43,10 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
       if (shouldShow) {
         setVisible(true);
         // Track that we showed the soft prompt
-        await trackPermissionPromptShown("push");
+        await trackPermissionPromptShown('push');
       }
     } catch (error) {
-      console.error("[PushPermissionPrompt] Error checking show status:", error);
+      console.error('[PushPermissionPrompt] Error checking show status:', error);
     }
   }, [user?.uid]);
 
@@ -62,15 +65,20 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
 
       // Request OS permission (no userId param needed)
       const status = await requestPushPermission();
-      
+
       // Track result
-      const analyticsStatus = status === "granted" ? "granted" : status === "denied" ? "denied" : "undetermined";
-      await trackPermissionResult("push", analyticsStatus);
+      const analyticsStatus =
+        status === 'granted'
+          ? 'granted'
+          : status === 'denied'
+            ? 'denied'
+            : 'undetermined';
+      await trackPermissionResult('push', analyticsStatus);
 
       setVisible(false);
-      onComplete?.(status === "granted");
+      onComplete?.(status === 'granted');
     } catch (error) {
-      console.error("[PushPermissionPrompt] Error requesting permission:", error);
+      console.error('[PushPermissionPrompt] Error requesting permission:', error);
     } finally {
       setIsRequesting(false);
     }
@@ -82,9 +90,9 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
     try {
       // Mark soft prompt as shown so we don't ask again
       await userActionTracker.markSoftPromptShown(user.uid);
-      await trackPermissionResult("push", "denied");
+      await trackPermissionResult('push', 'denied');
     } catch (error) {
-      console.error("[PushPermissionPrompt] Error marking prompt shown:", error);
+      console.error('[PushPermissionPrompt] Error marking prompt shown:', error);
     }
 
     setVisible(false);
@@ -112,8 +120,8 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
 
           {/* Description */}
           <Text style={styles.description}>
-            Get helpful reminders before your camping trips, weather updates, 
-            and tips to make your outdoor adventures even better.
+            Get helpful reminders before your camping trips, weather updates, and tips to
+            make your outdoor adventures even better.
           </Text>
 
           {/* Benefits list */}
@@ -139,7 +147,7 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
             disabled={isRequesting}
           >
             <Text style={styles.enableButtonText}>
-              {isRequesting ? "Enabling..." : "Enable Notifications"}
+              {isRequesting ? 'Enabling...' : 'Enable Notifications'}
             </Text>
           </TouchableOpacity>
 
@@ -152,9 +160,7 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
           </TouchableOpacity>
 
           {/* Privacy note */}
-          <Text style={styles.privacyNote}>
-            You can change this anytime in Settings
-          </Text>
+          <Text style={styles.privacyNote}>You can change this anytime in Settings</Text>
         </View>
       </View>
     </Modal>
@@ -164,19 +170,19 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 24,
   },
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 24,
     width: SCREEN_WIDTH - 48,
     maxWidth: 360,
-    alignItems: "center",
-    shadowColor: "#000",
+    alignItems: 'center',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
@@ -186,64 +192,64 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#E8F5E9",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 16,
   },
   title: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#1B1B1B",
-    textAlign: "center",
+    fontWeight: '700',
+    color: '#1B1B1B',
+    textAlign: 'center',
     marginBottom: 12,
   },
   description: {
     fontSize: 15,
-    color: "#555555",
-    textAlign: "center",
+    color: '#555555',
+    textAlign: 'center',
     lineHeight: 22,
     marginBottom: 20,
   },
   benefitsList: {
-    width: "100%",
+    width: '100%',
     marginBottom: 24,
   },
   benefitItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 10,
   },
   benefitText: {
     fontSize: 14,
-    color: "#333333",
+    color: '#333333',
     marginLeft: 10,
   },
   enableButton: {
-    backgroundColor: "#2E7D32",
+    backgroundColor: '#2E7D32',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 32,
-    width: "100%",
-    alignItems: "center",
+    width: '100%',
+    alignItems: 'center',
     marginBottom: 12,
   },
   enableButtonText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   notNowButton: {
     paddingVertical: 10,
     paddingHorizontal: 24,
   },
   notNowText: {
-    color: "#666666",
+    color: '#666666',
     fontSize: 15,
   },
   privacyNote: {
     fontSize: 12,
-    color: "#888888",
+    color: '#888888',
     marginTop: 8,
   },
 });

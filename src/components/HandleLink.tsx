@@ -1,16 +1,16 @@
 /**
  * HandleLink Component
- * 
+ *
  * A clickable @handle that navigates to the user's My Campsite profile.
  * Use this anywhere a user's handle is displayed in the Connect section.
  */
 
-import React from "react";
-import { Text, Pressable, StyleProp, TextStyle } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../navigation/types";
-import { DEEP_FOREST } from "../constants/colors";
+import React from 'react';
+import { Text, Pressable, StyleProp, TextStyle } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+import { DEEP_FOREST } from '../constants/colors';
 
 interface HandleLinkProps {
   /** The user's handle (without @ prefix) */
@@ -39,7 +39,7 @@ export default function HandleLink({
   prefix,
   suffix,
   style,
-  fontFamily = "SourceSans3_600SemiBold",
+  fontFamily = 'SourceSans3_600SemiBold',
   fontSize = 13,
   color = DEEP_FOREST,
   showAtSymbol = true,
@@ -47,11 +47,11 @@ export default function HandleLink({
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // Normalize handle - remove any existing @ prefix
-  const normalizedHandle = handle?.replace(/^@+/, "") || "";
+  const normalizedHandle = handle?.replace(/^@+/, '') || '';
 
   const handlePress = () => {
     if (userId) {
-      navigation.navigate("MyCampsite", { userId });
+      navigation.navigate('MyCampsite', { userId });
     }
   };
 
@@ -63,8 +63,9 @@ export default function HandleLink({
     <Pressable onPress={handlePress} hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}>
       <Text style={[{ fontFamily, fontSize, color }, style]}>
         {prefix}
-        <Text style={{ textDecorationLine: "underline" }}>
-          {showAtSymbol ? "@" : ""}{normalizedHandle}
+        <Text style={{ textDecorationLine: 'underline' }}>
+          {showAtSymbol ? '@' : ''}
+          {normalizedHandle}
         </Text>
         {suffix}
       </Text>
@@ -85,11 +86,12 @@ export function HandleText({
   showAtSymbol?: boolean;
   style?: StyleProp<TextStyle>;
 }) {
-  const normalizedHandle = handle?.replace(/^@+/, "") || "";
-  
+  const normalizedHandle = handle?.replace(/^@+/, '') || '';
+
   return (
-    <Text style={[{ textDecorationLine: "underline" }, style]}>
-      {showAtSymbol ? "@" : ""}{normalizedHandle}
+    <Text style={[{ textDecorationLine: 'underline' }, style]}>
+      {showAtSymbol ? '@' : ''}
+      {normalizedHandle}
     </Text>
   );
 }

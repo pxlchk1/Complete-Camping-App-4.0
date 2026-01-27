@@ -2,24 +2,24 @@
  * 🚫 LOCKED UX: PACKING LIST (DO NOT REFACTOR BEHAVIOR)
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  * This screen displays the packing list for a specific trip.
- * 
+ *
  * PROHIBITED CHANGES:
  * - Do not auto-seed items on screen mount
  * - Do not create empty category shells
  * - Do not change the intent-based routing behavior
  * - Do not modify the canonical category key system
- * 
+ *
  * REQUIRED BEHAVIOR:
  * - intent="build": Show builder UI (no auto-seed)
  * - intent="view": Load existing items only
  * - Only show categories that have items (no 0/0)
  * - Use categoryKey from canonical enum
  * - Derive labels using getCategoryLabel()
- * 
+ *
  * Firestore path: /users/{userId}/trips/{tripId}/packingList/{itemId}
  */
 
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -30,60 +30,59 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { useTripsStore } from "../state/tripsStore";
-import { useUserStatus } from "../utils/authHelper";
-import AccountButton from "../components/AccountButton";
-import { requirePro } from "../utils/gating";
-import AccountRequiredModal from "../components/AccountRequiredModal";
-import { RootStackParamList } from "../navigation/types";
-import { PackingItem } from "../types/camping";
-import { TripPackingItem, PackingSuggestion, PackingCategoryGroup } from "../types/packingLibrary";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useTripsStore } from '../state/tripsStore';
+import { useUserStatus } from '../utils/authHelper';
+import AccountButton from '../components/AccountButton';
+import { requirePro } from '../utils/gating';
+import AccountRequiredModal from '../components/AccountRequiredModal';
+import { RootStackParamList } from '../navigation/types';
+import { PackingItem } from '../types/camping';
+import {
+  TripPackingItem,
+  PackingSuggestion,
+  PackingCategoryGroup,
+} from '../types/packingLibrary';
 import {
   getPackingList,
   addPackingItem,
   togglePackingItem,
   deletePackingItem,
   generatePackingListFromTemplate,
-} from "../api/packing-service";
-import * as LocalPackingService from "../services/localPackingService";
-import * as PackingV2 from "../services/packingListServiceV2";
-import { auth } from "../config/firebase";
-import { 
-  getCategoryLabel as getCanonicalCategoryLabel, 
+} from '../api/packing-service';
+import * as LocalPackingService from '../services/localPackingService';
+import * as PackingV2 from '../services/packingListServiceV2';
+import { auth } from '../config/firebase';
+import {
+  getCategoryLabel as getCanonicalCategoryLabel,
   normalizeCategoryKey,
   getCategoryIcon,
   getCategoryOrder,
   PACK_CATEGORIES,
-} from "../constants/packingCategories";
-import {
-  DEEP_FOREST,
-  EARTH_GREEN,
-  GRANITE_GOLD,
-  PARCHMENT,
-} from "../constants/colors";
+} from '../constants/packingCategories';
+import { DEEP_FOREST, EARTH_GREEN, GRANITE_GOLD, PARCHMENT } from '../constants/colors';
 
-type PackingListScreenRouteProp = RouteProp<RootStackParamList, "PackingList">;
+type PackingListScreenRouteProp = RouteProp<RootStackParamList, 'PackingList'>;
 type PackingListScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  "PackingList"
+  'PackingList'
 >;
 
 // Default expanded categories (using canonical keys)
 const DEFAULT_EXPANDED_CATEGORIES = [
-  "shelter",
-  "sleep",
-  "kitchen",
-  "clothing",
-  "tools",
-  "safety",
-  "personal",
-  "tripSpecific",
+  'shelter',
+  'sleep',
+  'kitchen',
+  'clothing',
+  'tools',
+  'safety',
+  'personal',
+  'tripSpecific',
 ];
 
 /**
@@ -92,7 +91,7 @@ const DEFAULT_EXPANDED_CATEGORIES = [
  */
 function determineWeatherConditions(
   startDate?: string,
-  campingStyle?: string
+  campingStyle?: string,
 ): { isCold: boolean; isRainy: boolean; isHot: boolean } {
   const conditions = {
     isCold: false,
@@ -101,7 +100,7 @@ function determineWeatherConditions(
   };
 
   // If camping style is explicitly WINTER, mark as cold
-  if (campingStyle === "WINTER") {
+  if (campingStyle === 'WINTER') {
     conditions.isCold = true;
     return conditions;
   }
@@ -137,7 +136,7 @@ function determineWeatherConditions(
         }
       }
     } catch (e) {
-      console.warn("Error parsing trip date for weather conditions:", e);
+      console.warn('Error parsing trip date for weather conditions:', e);
     }
   }
 
@@ -147,26 +146,26 @@ function determineWeatherConditions(
 export default function PackingListScreen() {
   const navigation = useNavigation<PackingListScreenNavigationProp>();
   const route = useRoute<PackingListScreenRouteProp>();
-  const { tripId, intent = "view" } = route.params;
+  const { tripId, intent = 'view' } = route.params;
   const { isGuest } = useUserStatus();
 
   const trip = useTripsStore((s) => s.getTripById(tripId));
-  const userId = auth.currentUser?.uid || "demo_user_1"; // Fallback for guests
+  const userId = auth.currentUser?.uid || 'demo_user_1'; // Fallback for guests
 
   const [packingItems, setPackingItems] = useState<PackingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [useLocalStorage, setUseLocalStorage] = useState(false);
-  
+
   // V2: Suggestions state
   const [suggestions, setSuggestions] = useState<PackingSuggestion[]>([]);
   // Show suggestions by default in build mode, collapsed in view mode
-  const [showSuggestions, setShowSuggestions] = useState(intent === "build");
+  const [showSuggestions, setShowSuggestions] = useState(intent === 'build');
   const [isInitializing, setIsInitializing] = useState(false);
 
   const [showAddItem, setShowAddItem] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(DEFAULT_EXPANDED_CATEGORIES)
+    new Set(DEFAULT_EXPANDED_CATEGORIES),
   );
   const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
   const [filterUnpackedOnly, setFilterUnpackedOnly] = useState(false);
@@ -177,28 +176,28 @@ export default function PackingListScreen() {
 
   // Add item form state
   const [newItemCategory, setNewItemCategory] = useState(PACK_CATEGORIES[0].key);
-  const [newItemLabel, setNewItemLabel] = useState("");
-  const [newItemQuantity, setNewItemQuantity] = useState("1");
-  const [newItemNotes, setNewItemNotes] = useState("");
+  const [newItemLabel, setNewItemLabel] = useState('');
+  const [newItemQuantity, setNewItemQuantity] = useState('1');
+  const [newItemNotes, setNewItemNotes] = useState('');
 
   // Add category form state
-  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   // V2: Build categories from items using categoryKey (normalized)
   // Only categories with items are included - NO empty categories
   const categoryGroups = useMemo(() => {
     if (!packingItems.length) return [];
     return PackingV2.groupItemsByCategory(
-      packingItems.map(item => ({
+      packingItems.map((item) => ({
         id: item.id,
         name: item.label,
         categoryId: normalizeCategoryKey(item.category),
         qty: item.quantity || 1,
         isPacked: item.isPacked,
-        source: (item as any).source || "base",
+        source: (item as any).source || 'base',
         libraryItemId: (item as any).libraryItemId,
         addedReason: (item as any).addedReason,
-      }))
+      })),
     );
   }, [packingItems]);
 
@@ -206,11 +205,11 @@ export default function PackingListScreen() {
   const categories = useMemo(() => {
     // Get unique normalized category keys from items
     const categoryKeys = new Set<string>();
-    packingItems.forEach(item => {
+    packingItems.forEach((item) => {
       const key = normalizeCategoryKey(item.category);
       categoryKeys.add(key);
     });
-    
+
     // Sort by canonical order
     return Array.from(categoryKeys).sort((a, b) => {
       return getCategoryOrder(a) - getCategoryOrder(b);
@@ -219,12 +218,15 @@ export default function PackingListScreen() {
 
   // Group items by normalized categoryKey
   const itemsByCategory = useMemo(() => {
-    return categories.reduce((acc, catKey) => {
-      acc[catKey] = packingItems.filter(i => 
-        normalizeCategoryKey(i.category) === catKey
-      );
-      return acc;
-    }, {} as Record<string, PackingItem[]>);
+    return categories.reduce(
+      (acc, catKey) => {
+        acc[catKey] = packingItems.filter(
+          (i) => normalizeCategoryKey(i.category) === catKey,
+        );
+        return acc;
+      },
+      {} as Record<string, PackingItem[]>,
+    );
   }, [categories, packingItems]);
 
   // Calculate stats
@@ -235,73 +237,81 @@ export default function PackingListScreen() {
   const closeAddModalAndReset = useCallback(() => {
     setShowAddItem(false);
     setShowNewCategoryInput(false);
-    setNewCategoryName("");
-    setNewItemLabel("");
-    setNewItemQuantity("1");
-    setNewItemNotes("");
+    setNewCategoryName('');
+    setNewItemLabel('');
+    setNewItemQuantity('1');
+    setNewItemNotes('');
   }, []);
 
   // V2: Load suggestions based on trip context
   const loadSuggestions = useCallback(async () => {
     if (!trip) return;
-    
+
     try {
       const result = await PackingV2.computeSuggestions(userId, tripId, trip);
       setSuggestions(result.suggestions);
-      console.log(`[PackingV2] Loaded ${result.suggestions.length} suggestions for ${result.context.season} season, ${result.context.tempBand} temps`);
+      console.log(
+        `[PackingV2] Loaded ${result.suggestions.length} suggestions for ${result.context.season} season, ${result.context.tempBand} temps`,
+      );
     } catch (err) {
-      console.error("Error loading suggestions:", err);
+      console.error('Error loading suggestions:', err);
       // Don't show error for suggestions - they're optional
     }
   }, [userId, tripId, trip]);
 
   // V2: Add a suggestion to the packing list
-  const handleAddSuggestion = useCallback(async (suggestion: PackingSuggestion) => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await PackingV2.addSuggestion(userId, tripId, suggestion, suggestion.reason);
-      
-      // Reload items and suggestions
-      const items = await getPackingList(userId, tripId);
-      setPackingItems(items);
-      await loadSuggestions();
-      
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err) {
-      console.error("Error adding suggestion:", err);
-    }
-  }, [userId, tripId, loadSuggestions]);
+  const handleAddSuggestion = useCallback(
+    async (suggestion: PackingSuggestion) => {
+      try {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await PackingV2.addSuggestion(userId, tripId, suggestion, suggestion.reason);
+
+        // Reload items and suggestions
+        const items = await getPackingList(userId, tripId);
+        setPackingItems(items);
+        await loadSuggestions();
+
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (err) {
+        console.error('Error adding suggestion:', err);
+      }
+    },
+    [userId, tripId, loadSuggestions],
+  );
 
   // V2: Dismiss a suggestion
-  const handleDismissSuggestion = useCallback(async (libraryItemId: string) => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      await PackingV2.dismissSuggestion(userId, tripId, libraryItemId);
-      
-      // Remove from local state immediately
-      setSuggestions(prev => prev.filter(s => s.id !== libraryItemId));
-    } catch (err) {
-      console.error("Error dismissing suggestion:", err);
-    }
-  }, [userId, tripId]);
+  const handleDismissSuggestion = useCallback(
+    async (libraryItemId: string) => {
+      try {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await PackingV2.dismissSuggestion(userId, tripId, libraryItemId);
+
+        // Remove from local state immediately
+        setSuggestions((prev) => prev.filter((s) => s.id !== libraryItemId));
+      } catch (err) {
+        console.error('Error dismissing suggestion:', err);
+      }
+    },
+    [userId, tripId],
+  );
 
   // V2: Add all suggestions at once
   const handleAddAllSuggestions = useCallback(async () => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      
+
       for (const suggestion of suggestions) {
         await PackingV2.addSuggestion(userId, tripId, suggestion, suggestion.reason);
       }
-      
+
       // Reload items and suggestions
       const items = await getPackingList(userId, tripId);
       setPackingItems(items);
       setSuggestions([]);
-      
+
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err) {
-      console.error("Error adding all suggestions:", err);
+      console.error('Error adding all suggestions:', err);
     }
   }, [userId, tripId, suggestions]);
 
@@ -319,7 +329,7 @@ export default function PackingListScreen() {
           // Just load existing items - DO NOT auto-initialize
           const items = await getPackingList(userId, tripId);
           setPackingItems(items);
-          
+
           // Load suggestions for user to optionally add
           await loadSuggestions();
 
@@ -335,7 +345,7 @@ export default function PackingListScreen() {
 
           return;
         } catch (fbError: any) {
-          console.log("Firebase error, falling back to local storage:", fbError);
+          console.log('Firebase error, falling back to local storage:', fbError);
           setUseLocalStorage(true);
         }
       }
@@ -353,8 +363,8 @@ export default function PackingListScreen() {
         return next;
       });
     } catch (err: any) {
-      console.error("Failed to load packing list:", err);
-      setError("Unable to load packing list. Please try again.");
+      console.error('Failed to load packing list:', err);
+      setError('Unable to load packing list. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -373,36 +383,26 @@ export default function PackingListScreen() {
 
     // Optimistic update
     setPackingItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, isPacked: !i.isPacked } : i))
+      prev.map((i) => (i.id === item.id ? { ...i, isPacked: !i.isPacked } : i)),
     );
 
     try {
       if (useLocalStorage) {
-        await LocalPackingService.togglePackingItem(
-          tripId,
-          item.id,
-          !item.isPacked
-        );
+        await LocalPackingService.togglePackingItem(tripId, item.id, !item.isPacked);
       } else {
         try {
           await togglePackingItem(userId, tripId, item.id, !item.isPacked);
         } catch (fbError: any) {
           // If Firebase fails, switch and retry locally
           setUseLocalStorage(true);
-          await LocalPackingService.togglePackingItem(
-            tripId,
-            item.id,
-            !item.isPacked
-          );
+          await LocalPackingService.togglePackingItem(tripId, item.id, !item.isPacked);
         }
       }
     } catch (err) {
-      console.error("Failed to toggle item:", err);
+      console.error('Failed to toggle item:', err);
       // Revert on error
       setPackingItems((prev) =>
-        prev.map((i) =>
-          i.id === item.id ? { ...i, isPacked: item.isPacked } : i
-        )
+        prev.map((i) => (i.id === item.id ? { ...i, isPacked: item.isPacked } : i)),
       );
     }
   };
@@ -411,17 +411,20 @@ export default function PackingListScreen() {
     if (!newItemLabel.trim()) return;
 
     // Gate: PRO required to add items
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "packing_add_item", variant }),
-    })) {
+    if (
+      !requirePro({
+        openAccountModal: () => setShowAccountModal(true),
+        openPaywallModal: (variant) =>
+          navigation.navigate('Paywall', { triggerKey: 'packing_add_item', variant }),
+      })
+    ) {
       return;
     }
 
     const quantity = Math.max(1, parseInt(newItemQuantity, 10) || 1);
 
     try {
-      const newItem: Omit<PackingItem, "id"> = {
+      const newItem: Omit<PackingItem, 'id'> = {
         category: newItemCategory,
         label: newItemLabel.trim(),
         quantity,
@@ -452,25 +455,26 @@ export default function PackingListScreen() {
       });
 
       try {
-        await Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Success
-        );
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {
         // ignore
       }
 
       closeAddModalAndReset();
     } catch (err) {
-      console.error("Failed to add item:", err);
+      console.error('Failed to add item:', err);
     }
   };
 
   const handleDeleteItem = async (item: PackingItem) => {
     // Gate: PRO required to delete items
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "packing_delete_item", variant }),
-    })) {
+    if (
+      !requirePro({
+        openAccountModal: () => setShowAccountModal(true),
+        openPaywallModal: (variant) =>
+          navigation.navigate('Paywall', { triggerKey: 'packing_delete_item', variant }),
+      })
+    ) {
       return;
     }
 
@@ -489,14 +493,12 @@ export default function PackingListScreen() {
       setPackingItems((prev) => prev.filter((i) => i.id !== item.id));
 
       try {
-        await Haptics.notificationAsync(
-          Haptics.NotificationFeedbackType.Success
-        );
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {
         // ignore
       }
     } catch (err) {
-      console.error("Failed to delete item:", err);
+      console.error('Failed to delete item:', err);
     }
   };
 
@@ -515,11 +517,8 @@ export default function PackingListScreen() {
     <>
       {/* Header with Deep Forest Background */}
       <View style={{ backgroundColor: DEEP_FOREST }}>
-        <SafeAreaView edges={["top"]} style={{ backgroundColor: DEEP_FOREST }}>
-          <View
-            className="px-5 pt-4 pb-3 border-b"
-            style={{ borderColor: PARCHMENT }}
-          >
+        <SafeAreaView edges={['top']} style={{ backgroundColor: DEEP_FOREST }}>
+          <View className="px-5 pt-4 pb-3 border-b" style={{ borderColor: PARCHMENT }}>
             <View className="flex-row items-center mb-2 justify-between">
               <View className="flex-row items-center flex-1">
                 <Pressable
@@ -531,12 +530,12 @@ export default function PackingListScreen() {
                 <Text
                   className="text-xl font-bold flex-1"
                   style={{
-                    fontFamily: "Raleway_700Bold",
+                    fontFamily: 'Raleway_700Bold',
                     color: PARCHMENT,
                   }}
                   numberOfLines={1}
                 >
-                  {packingItems.length === 0 ? trip.name : "Packing List"}
+                  {packingItems.length === 0 ? trip.name : 'Packing List'}
                 </Text>
               </View>
 
@@ -544,9 +543,7 @@ export default function PackingListScreen() {
                 <Pressable
                   onPress={async () => {
                     try {
-                      await Haptics.impactAsync(
-                        Haptics.ImpactFeedbackStyle.Light
-                      );
+                      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     } catch {
                       // ignore
                     }
@@ -557,11 +554,11 @@ export default function PackingListScreen() {
                   <Text
                     className="text-base"
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       color: editMode ? GRANITE_GOLD : PARCHMENT,
                     }}
                   >
-                    {editMode ? "Done" : "Edit"}
+                    {editMode ? 'Done' : 'Edit'}
                   </Text>
                 </Pressable>
                 <AccountButton color={PARCHMENT} />
@@ -570,10 +567,10 @@ export default function PackingListScreen() {
 
             <Text
               className="text-sm"
-              style={{ fontFamily: "SourceSans3_400Regular", color: PARCHMENT }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: PARCHMENT }}
             >
-              {packingItems.length === 0 
-                ? "Build your packing list" 
+              {packingItems.length === 0
+                ? 'Build your packing list'
                 : `For: ${trip.name}`}
             </Text>
 
@@ -583,7 +580,7 @@ export default function PackingListScreen() {
                 <Text
                   className="text-xs"
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     color: PARCHMENT,
                   }}
                 >
@@ -592,7 +589,7 @@ export default function PackingListScreen() {
                 <Text
                   className="text-xs"
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: PARCHMENT,
                   }}
                 >
@@ -601,7 +598,7 @@ export default function PackingListScreen() {
               </View>
               <View
                 className="h-2 rounded-full overflow-hidden"
-                style={{ backgroundColor: "#FFFFFF" }}
+                style={{ backgroundColor: '#FFFFFF' }}
               >
                 <View
                   className="h-full rounded-full"
@@ -616,7 +613,7 @@ export default function PackingListScreen() {
         </SafeAreaView>
       </View>
 
-      <SafeAreaView className="flex-1 bg-parchment" edges={["bottom"]}>
+      <SafeAreaView className="flex-1 bg-parchment" edges={['bottom']}>
         {/* Controls */}
         <View className="px-5 py-3 flex-row items-center justify-between border-b border-stone-200">
           <Pressable
@@ -626,7 +623,7 @@ export default function PackingListScreen() {
             <Ionicons name="add" size={18} color={PARCHMENT} />
             <Text
               className="ml-1"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+              style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
             >
               Add Item
             </Text>
@@ -639,11 +636,11 @@ export default function PackingListScreen() {
             <Text
               className="text-xs"
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 color: filterUnpackedOnly ? GRANITE_GOLD : DEEP_FOREST,
               }}
             >
-              {filterUnpackedOnly ? "All" : "Unpacked"}
+              {filterUnpackedOnly ? 'All' : 'Unpacked'}
             </Text>
           </Pressable>
         </View>
@@ -659,7 +656,7 @@ export default function PackingListScreen() {
             <Text
               className="mt-4 mb-2 text-center text-lg"
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 color: DEEP_FOREST,
               }}
             >
@@ -667,7 +664,7 @@ export default function PackingListScreen() {
             </Text>
             <Text
               className="text-center mb-6"
-              style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: EARTH_GREEN }}
             >
               {error}
             </Text>
@@ -677,7 +674,7 @@ export default function PackingListScreen() {
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   color: PARCHMENT,
                 }}
               >
@@ -698,7 +695,7 @@ export default function PackingListScreen() {
                     <Ionicons name="bulb-outline" size={20} color={GRANITE_GOLD} />
                     <Text
                       className="ml-2 text-base font-bold"
-                      style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                      style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                     >
                       Suggested for this trip
                     </Text>
@@ -710,10 +707,10 @@ export default function PackingListScreen() {
                     <Ionicons name="close" size={18} color={EARTH_GREEN} />
                   </Pressable>
                 </View>
-                
+
                 <Text
                   className="text-xs mb-3"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: EARTH_GREEN }}
                 >
                   Based on your trip dates and location
                 </Text>
@@ -726,13 +723,19 @@ export default function PackingListScreen() {
                     <View className="flex-1 mr-2">
                       <Text
                         className="text-sm"
-                        style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+                        style={{
+                          fontFamily: 'SourceSans3_600SemiBold',
+                          color: DEEP_FOREST,
+                        }}
                       >
                         {suggestion.name}
                       </Text>
                       <Text
                         className="text-xs"
-                        style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                        style={{
+                          fontFamily: 'SourceSans3_400Regular',
+                          color: EARTH_GREEN,
+                        }}
                       >
                         {suggestion.reason}
                       </Text>
@@ -742,7 +745,11 @@ export default function PackingListScreen() {
                         onPress={() => handleDismissSuggestion(suggestion.id)}
                         className="p-2 active:opacity-70"
                       >
-                        <Ionicons name="close-circle-outline" size={22} color={EARTH_GREEN} />
+                        <Ionicons
+                          name="close-circle-outline"
+                          size={22}
+                          color={EARTH_GREEN}
+                        />
                       </Pressable>
                       <Pressable
                         onPress={() => handleAddSuggestion(suggestion)}
@@ -750,7 +757,10 @@ export default function PackingListScreen() {
                       >
                         <Text
                           className="text-xs"
-                          style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                          style={{
+                            fontFamily: 'SourceSans3_600SemiBold',
+                            color: PARCHMENT,
+                          }}
                         >
                           Add
                         </Text>
@@ -766,7 +776,7 @@ export default function PackingListScreen() {
                   >
                     <Text
                       className="text-sm"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                      style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
                     >
                       Add All ({suggestions.length})
                     </Text>
@@ -785,7 +795,7 @@ export default function PackingListScreen() {
                   <Ionicons name="bulb-outline" size={18} color={GRANITE_GOLD} />
                   <Text
                     className="ml-2 text-sm"
-                    style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+                    style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
                   >
                     {suggestions.length} suggestions available
                   </Text>
@@ -800,30 +810,30 @@ export default function PackingListScreen() {
                 <Text
                   className="mt-3 mb-1 text-center text-lg"
                   style={{
-                    fontFamily: "Raleway_700Bold",
+                    fontFamily: 'Raleway_700Bold',
                     color: DEEP_FOREST,
                   }}
                 >
-                  {intent === "build" ? "Build Your Packing List" : "No items yet"}
+                  {intent === 'build' ? 'Build Your Packing List' : 'No items yet'}
                 </Text>
                 <Text
                   className="text-center px-8 mb-4"
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: EARTH_GREEN,
                   }}
                 >
-                  {intent === "build" 
-                    ? "Add items using the + button or choose from our suggestions below."
-                    : "Add items to start packing"}
+                  {intent === 'build'
+                    ? 'Add items using the + button or choose from our suggestions below.'
+                    : 'Add items to start packing'}
                 </Text>
-                
+
                 {/* Show prominent suggestions in build mode */}
-                {intent === "build" && suggestions.length > 0 && (
+                {intent === 'build' && suggestions.length > 0 && (
                   <View className="w-full mt-4 bg-amber-50 rounded-xl p-4 border border-amber-200">
                     <Text
                       className="text-base font-bold mb-3"
-                      style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                      style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                     >
                       Suggested starter items
                     </Text>
@@ -835,7 +845,10 @@ export default function PackingListScreen() {
                         <View className="flex-1 mr-2">
                           <Text
                             className="text-sm"
-                            style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+                            style={{
+                              fontFamily: 'SourceSans3_600SemiBold',
+                              color: DEEP_FOREST,
+                            }}
                           >
                             {suggestion.name}
                           </Text>
@@ -846,7 +859,10 @@ export default function PackingListScreen() {
                         >
                           <Text
                             className="text-xs"
-                            style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                            style={{
+                              fontFamily: 'SourceSans3_600SemiBold',
+                              color: PARCHMENT,
+                            }}
                           >
                             Add
                           </Text>
@@ -860,7 +876,10 @@ export default function PackingListScreen() {
                       >
                         <Text
                           className="text-sm"
-                          style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                          style={{
+                            fontFamily: 'SourceSans3_600SemiBold',
+                            color: PARCHMENT,
+                          }}
                         >
                           Add All Suggested Items ({suggestions.length})
                         </Text>
@@ -872,179 +891,177 @@ export default function PackingListScreen() {
             ) : (
               <>
                 {categories.map((categoryKey) => {
-                const items = itemsByCategory[categoryKey] || [];
-                
-                // Never show empty categories
-                if (items.length === 0) return null;
-                
-                const visibleItems = filterUnpackedOnly
-                  ? items.filter((i) => !i.isPacked)
-                  : items;
+                  const items = itemsByCategory[categoryKey] || [];
 
-                // If filtering and no visible items, skip this category
-                if (visibleItems.length === 0 && filterUnpackedOnly) return null;
+                  // Never show empty categories
+                  if (items.length === 0) return null;
 
-                const isExpanded = expandedCategories.has(categoryKey);
-                const categoryPacked = items.filter((i) => i.isPacked).length;
-                const categoryLabel = getCanonicalCategoryLabel(categoryKey);
-                const categoryIcon = getCategoryIcon(categoryKey);
+                  const visibleItems = filterUnpackedOnly
+                    ? items.filter((i) => !i.isPacked)
+                    : items;
 
-                return (
-                  <View key={categoryKey} className="mt-4">
-                    {/* Category Header */}
-                    <Pressable
-                      onPress={() => toggleCategory(categoryKey)}
-                      className="flex-row items-center justify-between py-2 active:opacity-70"
-                    >
-                      <View className="flex-row items-center flex-1">
-                        <Ionicons
-                          name={isExpanded ? "chevron-down" : "chevron-forward"}
-                          size={20}
-                          color={DEEP_FOREST}
-                        />
-                        <Ionicons
-                          name={categoryIcon as any}
-                          size={18}
-                          color={EARTH_GREEN}
-                          style={{ marginLeft: 8 }}
-                        />
-                        <Text
-                          className="ml-2 text-base font-bold"
-                          style={{
-                            fontFamily: "Raleway_700Bold",
-                            color: DEEP_FOREST,
-                          }}
-                        >
-                          {categoryLabel}
-                        </Text>
-                        <Text
-                          className="ml-2 text-sm"
-                          style={{
-                            fontFamily: "SourceSans3_400Regular",
-                            color: EARTH_GREEN,
-                          }}
-                        >
-                          ({categoryPacked}/{items.length})
-                        </Text>
-                      </View>
+                  // If filtering and no visible items, skip this category
+                  if (visibleItems.length === 0 && filterUnpackedOnly) return null;
 
-                      {editMode && (
-                        <Pressable
-                          onPress={async (e) => {
-                            e.stopPropagation();
-                            try {
-                              await Haptics.impactAsync(
-                                Haptics.ImpactFeedbackStyle.Light
-                              );
-                            } catch {
-                              // ignore
-                            }
-                            setNewItemCategory(categoryKey);
-                            setShowAddItem(true);
-                          }}
-                          className="ml-2 bg-forest rounded-full p-1 active:opacity-90"
-                        >
-                          <Ionicons name="add" size={16} color={PARCHMENT} />
-                        </Pressable>
-                      )}
-                    </Pressable>
+                  const isExpanded = expandedCategories.has(categoryKey);
+                  const categoryPacked = items.filter((i) => i.isPacked).length;
+                  const categoryLabel = getCanonicalCategoryLabel(categoryKey);
+                  const categoryIcon = getCategoryIcon(categoryKey);
 
-                    {/* Items */}
-                    {isExpanded &&
-                      visibleItems.map((item) => (
-                        <Pressable
-                          key={item.id}
-                          onPress={() => handleTogglePacked(item)}
-                          className="flex-row items-center py-3 border-b border-stone-200 active:opacity-70"
-                        >
-                          {/* Checkbox */}
-                          <View className="mr-3">
-                            <View
-                              className={`w-6 h-6 rounded border-2 ${
-                                item.isPacked
-                                  ? "bg-forest border-forest"
-                                  : "bg-transparent border-stone-300"
-                              } items-center justify-center`}
-                            >
-                              {item.isPacked && (
-                                <Ionicons
-                                  name="checkmark"
-                                  size={16}
-                                  color={PARCHMENT}
-                                />
-                              )}
+                  return (
+                    <View key={categoryKey} className="mt-4">
+                      {/* Category Header */}
+                      <Pressable
+                        onPress={() => toggleCategory(categoryKey)}
+                        className="flex-row items-center justify-between py-2 active:opacity-70"
+                      >
+                        <View className="flex-row items-center flex-1">
+                          <Ionicons
+                            name={isExpanded ? 'chevron-down' : 'chevron-forward'}
+                            size={20}
+                            color={DEEP_FOREST}
+                          />
+                          <Ionicons
+                            name={categoryIcon as any}
+                            size={18}
+                            color={EARTH_GREEN}
+                            style={{ marginLeft: 8 }}
+                          />
+                          <Text
+                            className="ml-2 text-base font-bold"
+                            style={{
+                              fontFamily: 'Raleway_700Bold',
+                              color: DEEP_FOREST,
+                            }}
+                          >
+                            {categoryLabel}
+                          </Text>
+                          <Text
+                            className="ml-2 text-sm"
+                            style={{
+                              fontFamily: 'SourceSans3_400Regular',
+                              color: EARTH_GREEN,
+                            }}
+                          >
+                            ({categoryPacked}/{items.length})
+                          </Text>
+                        </View>
+
+                        {editMode && (
+                          <Pressable
+                            onPress={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await Haptics.impactAsync(
+                                  Haptics.ImpactFeedbackStyle.Light,
+                                );
+                              } catch {
+                                // ignore
+                              }
+                              setNewItemCategory(categoryKey);
+                              setShowAddItem(true);
+                            }}
+                            className="ml-2 bg-forest rounded-full p-1 active:opacity-90"
+                          >
+                            <Ionicons name="add" size={16} color={PARCHMENT} />
+                          </Pressable>
+                        )}
+                      </Pressable>
+
+                      {/* Items */}
+                      {isExpanded &&
+                        visibleItems.map((item) => (
+                          <Pressable
+                            key={item.id}
+                            onPress={() => handleTogglePacked(item)}
+                            className="flex-row items-center py-3 border-b border-stone-200 active:opacity-70"
+                          >
+                            {/* Checkbox */}
+                            <View className="mr-3">
+                              <View
+                                className={`w-6 h-6 rounded border-2 ${
+                                  item.isPacked
+                                    ? 'bg-forest border-forest'
+                                    : 'bg-transparent border-stone-300'
+                                } items-center justify-center`}
+                              >
+                                {item.isPacked && (
+                                  <Ionicons
+                                    name="checkmark"
+                                    size={16}
+                                    color={PARCHMENT}
+                                  />
+                                )}
+                              </View>
                             </View>
-                          </View>
 
-                          {/* Item Info */}
-                          <View className="flex-1">
-                            <Text
-                              className={item.isPacked ? "line-through" : ""}
-                              style={{
-                                fontFamily: "SourceSans3_400Regular",
-                                color: item.isPacked
-                                  ? EARTH_GREEN
-                                  : DEEP_FOREST,
-                              }}
-                            >
-                              {item.label}
-                              {item.quantity > 1 ? ` (${item.quantity})` : ""}
-                            </Text>
-                            {item.notes ? (
+                            {/* Item Info */}
+                            <View className="flex-1">
                               <Text
-                                className="text-xs mt-1"
+                                className={item.isPacked ? 'line-through' : ''}
                                 style={{
-                                  fontFamily: "SourceSans3_400Regular",
-                                  color: EARTH_GREEN,
+                                  fontFamily: 'SourceSans3_400Regular',
+                                  color: item.isPacked ? EARTH_GREEN : DEEP_FOREST,
                                 }}
                               >
-                                {item.notes}
+                                {item.label}
+                                {item.quantity > 1 ? ` (${item.quantity})` : ''}
                               </Text>
-                            ) : null}
-                          </View>
+                              {item.notes ? (
+                                <Text
+                                  className="text-xs mt-1"
+                                  style={{
+                                    fontFamily: 'SourceSans3_400Regular',
+                                    color: EARTH_GREEN,
+                                  }}
+                                >
+                                  {item.notes}
+                                </Text>
+                              ) : null}
+                            </View>
 
-                          {/* Remove */}
-                          {editMode ? (
-                            <Pressable
-                              onPress={(e) => {
-                                e.stopPropagation();
-                                handleDeleteItem(item);
-                              }}
-                              className="ml-2 px-3 py-1 rounded-lg active:opacity-70"
-                              style={{ backgroundColor: "#fee2e2" }}
-                            >
-                              <Text
-                                className="text-sm"
-                                style={{
-                                  fontFamily: "SourceSans3_600SemiBold",
-                                  color: "#dc2626",
-                                }}
-                              >
-                                Remove
-                              </Text>
-                            </Pressable>
-                          ) : (
-                            !item.isAutoGenerated && (
+                            {/* Remove */}
+                            {editMode ? (
                               <Pressable
                                 onPress={(e) => {
                                   e.stopPropagation();
                                   handleDeleteItem(item);
                                 }}
-                                className="ml-2 p-2 active:opacity-70"
+                                className="ml-2 px-3 py-1 rounded-lg active:opacity-70"
+                                style={{ backgroundColor: '#fee2e2' }}
                               >
-                                <Ionicons
-                                  name="trash-outline"
-                                  size={18}
-                                  color="#dc2626"
-                                />
+                                <Text
+                                  className="text-sm"
+                                  style={{
+                                    fontFamily: 'SourceSans3_600SemiBold',
+                                    color: '#dc2626',
+                                  }}
+                                >
+                                  Remove
+                                </Text>
                               </Pressable>
-                            )
-                          )}
-                        </Pressable>
-                      ))}
-                  </View>
-                );
-              })}
+                            ) : (
+                              !item.isAutoGenerated && (
+                                <Pressable
+                                  onPress={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteItem(item);
+                                  }}
+                                  className="ml-2 p-2 active:opacity-70"
+                                >
+                                  <Ionicons
+                                    name="trash-outline"
+                                    size={18}
+                                    color="#dc2626"
+                                  />
+                                </Pressable>
+                              )
+                            )}
+                          </Pressable>
+                        ))}
+                    </View>
+                  );
+                })}
               </>
             )}
           </ScrollView>
@@ -1058,7 +1075,7 @@ export default function PackingListScreen() {
           onRequestClose={closeAddModalAndReset}
         >
           <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             className="flex-1"
           >
             <Pressable
@@ -1072,7 +1089,7 @@ export default function PackingListScreen() {
                 <Text
                   className="text-xl font-bold mb-4"
                   style={{
-                    fontFamily: "Raleway_700Bold",
+                    fontFamily: 'Raleway_700Bold',
                     color: DEEP_FOREST,
                   }}
                 >
@@ -1083,7 +1100,7 @@ export default function PackingListScreen() {
                   <Text
                     className="text-sm"
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       color: DEEP_FOREST,
                     }}
                   >
@@ -1094,21 +1111,15 @@ export default function PackingListScreen() {
                     onPress={() => setShowNewCategoryInput((v) => !v)}
                     className="flex-row items-center px-2 py-1 rounded-lg active:opacity-70"
                     style={{
-                      backgroundColor: showNewCategoryInput
-                        ? "#f0f9f4"
-                        : "transparent",
+                      backgroundColor: showNewCategoryInput ? '#f0f9f4' : 'transparent',
                       gap: 6,
                     }}
                   >
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={16}
-                      color={EARTH_GREEN}
-                    />
+                    <Ionicons name="add-circle-outline" size={16} color={EARTH_GREEN} />
                     <Text
                       className="text-xs"
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         color: EARTH_GREEN,
                       }}
                     >
@@ -1125,7 +1136,7 @@ export default function PackingListScreen() {
                       placeholder="Enter new category name"
                       className="bg-white border border-stone-300 rounded-xl px-4 py-3 mb-2"
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
+                        fontFamily: 'SourceSans3_400Regular',
                         color: DEEP_FOREST,
                       }}
                       placeholderTextColor="#6b7280"
@@ -1136,14 +1147,14 @@ export default function PackingListScreen() {
                       <Pressable
                         onPress={() => {
                           setShowNewCategoryInput(false);
-                          setNewCategoryName("");
+                          setNewCategoryName('');
                         }}
                         className="flex-1 border border-stone-300 rounded-lg py-2 active:opacity-70"
                       >
                         <Text
                           className="text-center text-xs"
                           style={{
-                            fontFamily: "SourceSans3_600SemiBold",
+                            fontFamily: 'SourceSans3_600SemiBold',
                             color: DEEP_FOREST,
                           }}
                         >
@@ -1158,7 +1169,7 @@ export default function PackingListScreen() {
 
                           setNewItemCategory(name);
                           setShowNewCategoryInput(false);
-                          setNewCategoryName("");
+                          setNewCategoryName('');
 
                           // Make it visible immediately
                           setExpandedCategories((prev) => {
@@ -1169,7 +1180,7 @@ export default function PackingListScreen() {
 
                           try {
                             await Haptics.notificationAsync(
-                              Haptics.NotificationFeedbackType.Success
+                              Haptics.NotificationFeedbackType.Success,
                             );
                           } catch {
                             // ignore
@@ -1180,7 +1191,7 @@ export default function PackingListScreen() {
                         <Text
                           className="text-center text-xs"
                           style={{
-                            fontFamily: "SourceSans3_600SemiBold",
+                            fontFamily: 'SourceSans3_600SemiBold',
                             color: PARCHMENT,
                           }}
                         >
@@ -1202,18 +1213,16 @@ export default function PackingListScreen() {
                           onPress={() => setNewItemCategory(cat.key)}
                           className={`px-3 py-2 rounded-xl border ${
                             newItemCategory === cat.key
-                              ? "bg-forest border-forest"
-                              : "bg-white border-stone-300"
+                              ? 'bg-forest border-forest'
+                              : 'bg-white border-stone-300'
                           }`}
                         >
                           <Text
                             className="text-xs"
                             style={{
-                              fontFamily: "SourceSans3_600SemiBold",
+                              fontFamily: 'SourceSans3_600SemiBold',
                               color:
-                                newItemCategory === cat.key
-                                  ? PARCHMENT
-                                  : DEEP_FOREST,
+                                newItemCategory === cat.key ? PARCHMENT : DEEP_FOREST,
                             }}
                           >
                             {cat.label}
@@ -1227,7 +1236,7 @@ export default function PackingListScreen() {
                 <Text
                   className="text-sm mb-2"
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     color: DEEP_FOREST,
                   }}
                 >
@@ -1239,7 +1248,7 @@ export default function PackingListScreen() {
                   placeholder="Enter item name"
                   className="bg-white border border-stone-300 rounded-xl px-4 py-3 mb-4"
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: DEEP_FOREST,
                   }}
                   placeholderTextColor="#6b7280"
@@ -1248,7 +1257,7 @@ export default function PackingListScreen() {
                 <Text
                   className="text-sm mb-2"
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     color: DEEP_FOREST,
                   }}
                 >
@@ -1261,7 +1270,7 @@ export default function PackingListScreen() {
                   keyboardType="number-pad"
                   className="bg-white border border-stone-300 rounded-xl px-4 py-3 mb-4"
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: DEEP_FOREST,
                   }}
                   placeholderTextColor="#6b7280"
@@ -1270,7 +1279,7 @@ export default function PackingListScreen() {
                 <Text
                   className="text-sm mb-2"
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     color: DEEP_FOREST,
                   }}
                 >
@@ -1284,7 +1293,7 @@ export default function PackingListScreen() {
                   numberOfLines={2}
                   className="bg-white border border-stone-300 rounded-xl px-4 py-3 mb-6"
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     color: DEEP_FOREST,
                   }}
                   placeholderTextColor="#6b7280"
@@ -1298,7 +1307,7 @@ export default function PackingListScreen() {
                     <Text
                       className="text-center"
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         color: DEEP_FOREST,
                       }}
                     >
@@ -1315,7 +1324,7 @@ export default function PackingListScreen() {
                     <Text
                       className="text-center"
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         color: PARCHMENT,
                       }}
                     >
@@ -1333,7 +1342,7 @@ export default function PackingListScreen() {
           visible={showAccountModal}
           onCreateAccount={() => {
             setShowAccountModal(false);
-            navigation.navigate("Auth" as any);
+            navigation.navigate('Auth' as any);
           }}
           onMaybeLater={() => setShowAccountModal(false)}
         />

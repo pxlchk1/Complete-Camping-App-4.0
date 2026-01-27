@@ -10,10 +10,10 @@ import {
   orderBy,
   limit,
   Timestamp,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-const GEAR_REVIEWS_COLLECTION = "gearReviews";
+const GEAR_REVIEWS_COLLECTION = 'gearReviews';
 
 // GearReview interface matching EXACT Firestore structure
 export interface GearReview {
@@ -37,7 +37,7 @@ export async function createGearReview(
   rating: number,
   text: string,
   userId: string,
-  imageUrl?: string
+  imageUrl?: string,
 ): Promise<string> {
   try {
     const reviewDoc = {
@@ -46,7 +46,7 @@ export async function createGearReview(
       category,
       rating,
       text,
-      imageUrl: imageUrl || "",
+      imageUrl: imageUrl || '',
       userId,
       createdAt: Timestamp.now(),
     };
@@ -54,7 +54,7 @@ export async function createGearReview(
     const docRef = await addDoc(collection(db, GEAR_REVIEWS_COLLECTION), reviewDoc);
     return docRef.id;
   } catch (error) {
-    console.error("Error creating gear review:", error);
+    console.error('Error creating gear review:', error);
     throw error;
   }
 }
@@ -64,8 +64,8 @@ export async function getGearReviews(): Promise<GearReview[]> {
   try {
     const q = query(
       collection(db, GEAR_REVIEWS_COLLECTION),
-      orderBy("createdAt", "desc"),
-      limit(100)
+      orderBy('createdAt', 'desc'),
+      limit(100),
     );
 
     const snapshot = await getDocs(q);
@@ -74,7 +74,7 @@ export async function getGearReviews(): Promise<GearReview[]> {
       ...doc.data(),
     })) as GearReview[];
   } catch (error) {
-    console.error("Error fetching gear reviews:", error);
+    console.error('Error fetching gear reviews:', error);
     return [];
   }
 }
@@ -84,9 +84,9 @@ export async function getGearReviewsByCategory(category: string): Promise<GearRe
   try {
     const q = query(
       collection(db, GEAR_REVIEWS_COLLECTION),
-      where("category", "==", category),
-      orderBy("createdAt", "desc"),
-      limit(50)
+      where('category', '==', category),
+      orderBy('createdAt', 'desc'),
+      limit(50),
     );
 
     const snapshot = await getDocs(q);
@@ -95,7 +95,7 @@ export async function getGearReviewsByCategory(category: string): Promise<GearRe
       ...doc.data(),
     })) as GearReview[];
   } catch (error) {
-    console.error("Error fetching gear reviews by category:", error);
+    console.error('Error fetching gear reviews by category:', error);
     return [];
   }
 }
@@ -114,7 +114,7 @@ export async function getGearReviewById(reviewId: string): Promise<GearReview | 
     }
     return null;
   } catch (error) {
-    console.error("Error fetching gear review:", error);
+    console.error('Error fetching gear review:', error);
     return null;
   }
 }
@@ -124,8 +124,8 @@ export async function getReviewsByUser(userId: string): Promise<GearReview[]> {
   try {
     const q = query(
       collection(db, GEAR_REVIEWS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
     );
 
     const snapshot = await getDocs(q);
@@ -134,7 +134,7 @@ export async function getReviewsByUser(userId: string): Promise<GearReview[]> {
       ...doc.data(),
     })) as GearReview[];
   } catch (error) {
-    console.error("Error fetching user reviews:", error);
+    console.error('Error fetching user reviews:', error);
     return [];
   }
 }
@@ -146,16 +146,16 @@ export async function deleteGearReview(reviewId: string, userId: string): Promis
     const reviewDoc = await getDoc(reviewRef);
 
     if (!reviewDoc.exists()) {
-      throw new Error("Review not found");
+      throw new Error('Review not found');
     }
 
     if (reviewDoc.data().userId !== userId) {
-      throw new Error("Unauthorized to delete this review");
+      throw new Error('Unauthorized to delete this review');
     }
 
     await deleteDoc(reviewRef);
   } catch (error) {
-    console.error("Error deleting review:", error);
+    console.error('Error deleting review:', error);
     throw error;
   }
 }

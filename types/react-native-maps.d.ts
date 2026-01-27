@@ -1,6 +1,6 @@
-declare module "react-native-maps" {
-  import { Component } from "react";
-  import { ViewProps, ViewStyle } from "react-native";
+declare module 'react-native-maps' {
+  import { Component } from 'react';
+  import { ViewProps, ViewStyle } from 'react-native';
 
   export interface Region {
     latitude: number;
@@ -15,7 +15,7 @@ declare module "react-native-maps" {
   }
 
   export interface MapViewProps extends ViewProps {
-    provider?: "google" | null;
+    provider?: 'google' | null;
     style?: ViewStyle;
     region?: Region;
     initialRegion?: Region;
@@ -36,13 +36,19 @@ declare module "react-native-maps" {
 
   export class MapView extends Component<MapViewProps> {
     animateToRegion(region: Region, duration?: number): void;
-    fitToCoordinates(coordinates: LatLng[], options?: { edgePadding?: { top: number; right: number; bottom: number; left: number }; animated?: boolean }): void;
+    fitToCoordinates(
+      coordinates: LatLng[],
+      options?: {
+        edgePadding?: { top: number; right: number; bottom: number; left: number };
+        animated?: boolean;
+      },
+    ): void;
   }
 
   export class Marker extends Component<MarkerProps> {}
 
   export const PROVIDER_DEFAULT: null;
-  export const PROVIDER_GOOGLE: "google";
+  export const PROVIDER_GOOGLE: 'google';
 
   export default MapView;
 }

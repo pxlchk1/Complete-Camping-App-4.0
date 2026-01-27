@@ -1,7 +1,13 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { DEEP_FOREST, EARTH_GREEN, GRANITE_GOLD, PARCHMENT, PARCHMENT_BORDER } from "../constants/colors";
+import React from 'react';
+import { View, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  DEEP_FOREST,
+  EARTH_GREEN,
+  GRANITE_GOLD,
+  PARCHMENT,
+  PARCHMENT_BORDER,
+} from '../constants/colors';
 
 interface XPBarProps {
   currentXP: number;
@@ -22,9 +28,19 @@ export function XPBar({ currentXP, level, nextLevelXP }: XPBarProps) {
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-row items-center">
           <Ionicons name="star" size={20} color={GRANITE_GOLD} />
-          <Text className="text-forest font-semibold ml-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Level {level}</Text>
+          <Text
+            className="text-forest font-semibold ml-2"
+            style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+          >
+            Level {level}
+          </Text>
         </View>
-        <Text className="text-earthGreen text-sm" style={{ fontFamily: "SourceSans3_400Regular" }}>{currentXP} XP</Text>
+        <Text
+          className="text-earthGreen text-sm"
+          style={{ fontFamily: 'SourceSans3_400Regular' }}
+        >
+          {currentXP} XP
+        </Text>
       </View>
       <View className="bg-parchmentDark/30 rounded-full h-3 mb-2">
         <View
@@ -33,7 +49,10 @@ export function XPBar({ currentXP, level, nextLevelXP }: XPBarProps) {
         />
       </View>
       {nextLevelXP && (
-        <Text className="text-earthGreen text-xs text-center" style={{ fontFamily: "SourceSans3_400Regular" }}>
+        <Text
+          className="text-earthGreen text-xs text-center"
+          style={{ fontFamily: 'SourceSans3_400Regular' }}
+        >
           {xpNeededForNextLevel} XP to unlock next track
         </Text>
       )}

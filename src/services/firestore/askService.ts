@@ -101,7 +101,7 @@ export const askService = {
       question?: string;
       description?: string;
       tags?: string[];
-    }
+    },
   ): Promise<void> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to update a question');
@@ -201,7 +201,7 @@ export const askService = {
   async updateAnswer(
     questionId: string,
     answerId: string,
-    answerText: string
+    answerText: string,
   ): Promise<void> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to update an answer');

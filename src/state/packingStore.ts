@@ -3,41 +3,41 @@
  * Stores data in AsyncStorage, no cloud sync
  */
 
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import { useShallow } from "zustand/react/shallow";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getTemplatesByKeys, DEFAULT_SECTIONS } from "../constants/packingTemplatesV2";
-import { GearItem } from "../types/gear";
-import { mergeGearIntoPacking } from "../utils/mergeGearIntoPacking";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { useShallow } from 'zustand/react/shallow';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getTemplatesByKeys, DEFAULT_SECTIONS } from '../constants/packingTemplatesV2';
+import { GearItem } from '../types/gear';
+import { mergeGearIntoPacking } from '../utils/mergeGearIntoPacking';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
 export type TripType =
-  | "one-night"
-  | "weekend"
-  | "multi-day"
-  | "backpacking"
-  | "car-camping"
-  | "day-hike";
+  | 'one-night'
+  | 'weekend'
+  | 'multi-day'
+  | 'backpacking'
+  | 'car-camping'
+  | 'day-hike';
 
-export type Season = "spring" | "summer" | "fall" | "winter";
+export type Season = 'spring' | 'summer' | 'fall' | 'winter';
 
 export type PackingTemplateKey =
-  | "essential"
-  | "cooking"
-  | "safety"
-  | "clothing"
-  | "meals"
-  | "backpacking"
-  | "car-camping"
-  | "winter"
-  | "pets"
-  | "family";
+  | 'essential'
+  | 'cooking'
+  | 'safety'
+  | 'clothing'
+  | 'meals'
+  | 'backpacking'
+  | 'car-camping'
+  | 'winter'
+  | 'pets'
+  | 'family';
 
-export type PackingItemSource = "template" | "gearCloset" | "custom";
+export type PackingItemSource = 'template' | 'gearCloset' | 'custom';
 
 export interface PackingItem {
   id: string;
@@ -86,7 +86,7 @@ interface PackingState {
     templateKeys?: PackingTemplateKey[],
     tripId?: string,
     isTemplate?: boolean,
-    gearItems?: GearItem[]
+    gearItems?: GearItem[],
   ) => string;
   deletePackingList: (listId: string) => void;
   getPackingListById: (listId: string) => PackingList | undefined;
@@ -100,8 +100,18 @@ interface PackingState {
   toggleSectionCollapsed: (listId: string, sectionId: string) => void;
 
   // Item Operations
-  addItem: (listId: string, sectionId: string, name: string, essential?: boolean) => string | null;
-  updateItem: (listId: string, sectionId: string, itemId: string, updates: Partial<PackingItem>) => void;
+  addItem: (
+    listId: string,
+    sectionId: string,
+    name: string,
+    essential?: boolean,
+  ) => string | null;
+  updateItem: (
+    listId: string,
+    sectionId: string,
+    itemId: string,
+    updates: Partial<PackingItem>,
+  ) => void;
   deleteItem: (listId: string, sectionId: string, itemId: string) => void;
   toggleItemChecked: (listId: string, sectionId: string, itemId: string) => void;
   duplicateItem: (listId: string, sectionId: string, itemId: string) => void;
@@ -112,7 +122,7 @@ interface PackingState {
 
   // Progress
   getProgress: (listId: string) => { packed: number; total: number; percentage: number };
-  
+
   // First aid prompt
   setDoNotPromptFirstAid: (listId: string, value: boolean) => void;
 
@@ -143,7 +153,15 @@ export const usePackingStore = create<PackingState>()(
       // LIST CRUD
       // ========================================================================
 
-      createPackingList: (name, tripType, season, templateKeys, tripId, isTemplate, gearItems) => {
+      createPackingList: (
+        name,
+        tripType,
+        season,
+        templateKeys,
+        tripId,
+        isTemplate,
+        gearItems,
+      ) => {
         const id = generateId();
         const now = new Date().toISOString();
 
@@ -152,29 +170,29 @@ export const usePackingStore = create<PackingState>()(
 
         if (templateKeys && templateKeys.length > 0) {
           const templates = getTemplatesByKeys(templateKeys);
-          
+
           // Group items by category
           const itemsByCategory: Record<string, PackingItem[]> = {};
-          
+
           templates.forEach((template: any) => {
             template.items.forEach((item: any) => {
-              const category = item.category || "Other";
+              const category = item.category || 'Other';
               if (!itemsByCategory[category]) {
                 itemsByCategory[category] = [];
               }
-              
+
               // Check for duplicates
               const exists = itemsByCategory[category].some(
-                (existing) => existing.name.toLowerCase() === item.name.toLowerCase()
+                (existing) => existing.name.toLowerCase() === item.name.toLowerCase(),
               );
-              
+
               if (!exists) {
                 itemsByCategory[category].push({
                   id: generateId(),
                   name: item.name,
                   checked: false,
                   essential: item.essential,
-                  source: "template",
+                  source: 'template',
                 });
               }
             });
@@ -268,7 +286,7 @@ export const usePackingStore = create<PackingState>()(
             return {
               ...list,
               sections: list.sections.map((section) =>
-                section.id === sectionId ? { ...section, title } : section
+                section.id === sectionId ? { ...section, title } : section,
               ),
               updatedAt: new Date().toISOString(),
             };
@@ -318,7 +336,7 @@ export const usePackingStore = create<PackingState>()(
               sections: list.sections.map((section) =>
                 section.id === sectionId
                   ? { ...section, collapsed: !section.collapsed }
-                  : section
+                  : section,
               ),
             };
           }),
@@ -370,7 +388,7 @@ export const usePackingStore = create<PackingState>()(
                 return {
                   ...section,
                   items: section.items.map((item) =>
-                    item.id === itemId ? { ...item, ...updates } : item
+                    item.id === itemId ? { ...item, ...updates } : item,
                   ),
                 };
               }),
@@ -414,7 +432,7 @@ export const usePackingStore = create<PackingState>()(
                 return {
                   ...section,
                   items: section.items.map((item) =>
-                    item.id === itemId ? { ...item, checked: !item.checked } : item
+                    item.id === itemId ? { ...item, checked: !item.checked } : item,
                   ),
                 };
               }),
@@ -598,7 +616,7 @@ export const usePackingStore = create<PackingState>()(
 
         const newList: PackingList = {
           id: listId,
-          name: template.name.replace(" Template", ""),
+          name: template.name.replace(' Template', ''),
           tripType: template.tripType,
           season: template.season,
           sections: clonedSections,
@@ -631,11 +649,11 @@ export const usePackingStore = create<PackingState>()(
       },
     }),
     {
-      name: "tent-lantern-packing",
+      name: 'tent-lantern-packing',
       storage: createJSONStorage(() => AsyncStorage),
       version: 1,
-    }
-  )
+    },
+  ),
 );
 
 // ============================================================================
@@ -649,18 +667,12 @@ export const usePackingListById = (listId: string) =>
 
 export const usePackingListsByTripId = (tripId: string | undefined) =>
   usePackingStore(
-    useShallow((s) =>
-      tripId ? s.packingLists.filter((l) => l.tripId === tripId) : []
-    )
+    useShallow((s) => (tripId ? s.packingLists.filter((l) => l.tripId === tripId) : [])),
   );
 
 // Template-specific selectors - useShallow for stable array references
 export const usePackingTemplates = () =>
-  usePackingStore(
-    useShallow((s) => s.packingLists.filter((l) => l.isTemplate))
-  );
+  usePackingStore(useShallow((s) => s.packingLists.filter((l) => l.isTemplate)));
 
 export const usePackingActiveLists = () =>
-  usePackingStore(
-    useShallow((s) => s.packingLists.filter((l) => !l.isTemplate))
-  );
+  usePackingStore(useShallow((s) => s.packingLists.filter((l) => !l.isTemplate)));

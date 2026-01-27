@@ -3,7 +3,7 @@
  * The main packing experience - category-based list with progress tracking
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,14 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 
-import { RootStackParamList } from "../navigation/types";
+import { RootStackParamList } from '../navigation/types';
 import {
   PackingItemV2,
   PackingCategory,
@@ -28,7 +28,7 @@ import {
   CATEGORY_ICONS,
   PackingFilter,
   calculateProgress,
-} from "../types/packingV2";
+} from '../types/packingV2';
 import {
   getTripPackingItems,
   getTripPackingList,
@@ -38,11 +38,11 @@ import {
   getCategoryProgress,
   filterItems,
   resetPackingList,
-} from "../services/packingServiceV2";
-import { useTrips } from "../state/tripsStore";
-import { useSubscriptionStore } from "../state/subscriptionStore";
-import { useAuth } from "../context/AuthContext";
-import { requirePro } from "../utils/gating";
+} from '../services/packingServiceV2';
+import { useTrips } from '../state/tripsStore';
+import { useSubscriptionStore } from '../state/subscriptionStore';
+import { useAuth } from '../context/AuthContext';
+import { requirePro } from '../utils/gating';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -52,12 +52,12 @@ import {
   TEXT_SECONDARY,
   GRANITE_GOLD,
   CARD_BACKGROUND_LIGHT,
-} from "../constants/colors";
-import AddEditPackingItemModal from "../components/AddEditPackingItemModal";
-import GearClosetPickerModal from "../components/GearClosetPickerModal";
-import SaveTemplateModal from "../components/SaveTemplateModal";
+} from '../constants/colors';
+import AddEditPackingItemModal from '../components/AddEditPackingItemModal';
+import GearClosetPickerModal from '../components/GearClosetPickerModal';
+import SaveTemplateModal from '../components/SaveTemplateModal';
 
-type PackingListDetailRouteProp = RouteProp<RootStackParamList, "PackingList">;
+type PackingListDetailRouteProp = RouteProp<RootStackParamList, 'PackingList'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // ============================================================================
@@ -79,9 +79,9 @@ export default function PackingListDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<PackingCategory>>(
-    new Set(PACKING_CATEGORIES)
+    new Set(PACKING_CATEGORIES),
   );
-  const [activeFilter, setActiveFilter] = useState<PackingFilter>("all");
+  const [activeFilter, setActiveFilter] = useState<PackingFilter>('all');
 
   // Modal state
   const [showAddItem, setShowAddItem] = useState(false);
@@ -93,12 +93,13 @@ export default function PackingListDetailScreen() {
   // Pro gating check for customization actions
   const checkProForCustomization = useCallback((): boolean => {
     if (isPro) return true;
-    
+
     // Show PaywallModal for non-Pro users (with tracking via requirePro)
     // Note: requirePro handles the async tracking internally
     return requirePro({
       openAccountModal: () => {}, // Not used for Pro gates
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "packing_customization", variant }),
+      openPaywallModal: (variant) =>
+        navigation.navigate('Paywall', { triggerKey: 'packing_customization', variant }),
     });
   }, [isPro, navigation]);
 
@@ -110,7 +111,7 @@ export default function PackingListDetailScreen() {
       const loadedItems = await getTripPackingItems(user.id, tripId);
       setItems(loadedItems);
     } catch (error) {
-      console.error("[PackingListDetail] Error loading items:", error);
+      console.error('[PackingListDetail] Error loading items:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -148,7 +149,7 @@ export default function PackingListDetailScreen() {
 
     // Optimistic update
     setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, isPacked: !i.isPacked } : i))
+      prev.map((i) => (i.id === item.id ? { ...i, isPacked: !i.isPacked } : i)),
     );
 
     try {
@@ -156,7 +157,7 @@ export default function PackingListDetailScreen() {
     } catch (error) {
       // Revert on error
       setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, isPacked: item.isPacked } : i))
+        prev.map((i) => (i.id === item.id ? { ...i, isPacked: item.isPacked } : i)),
       );
     }
   };
@@ -164,15 +165,15 @@ export default function PackingListDetailScreen() {
   // Delete item - REQUIRES PRO
   const handleDeleteItem = async (item: PackingItemV2) => {
     if (!user?.id) return;
-    
+
     // Pro gating for customization
     if (!checkProForCustomization()) return;
 
-    Alert.alert("Delete Item", `Remove "${item.name}" from your packing list?`, [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert('Delete Item', `Remove "${item.name}" from your packing list?`, [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: "Delete",
-        style: "destructive",
+        text: 'Delete',
+        style: 'destructive',
         onPress: async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           setItems((prev) => prev.filter((i) => i.id !== item.id));
@@ -190,7 +191,7 @@ export default function PackingListDetailScreen() {
   const handleEditItem = (item: PackingItemV2) => {
     // Pro gating for customization
     if (!checkProForCustomization()) return;
-    
+
     setEditingItem(item);
     setShowAddItem(true);
   };
@@ -199,7 +200,7 @@ export default function PackingListDetailScreen() {
   const handleAddToCategory = (category: PackingCategory) => {
     // Pro gating for customization
     if (!checkProForCustomization()) return;
-    
+
     setAddToCategory(category);
     setEditingItem(null);
     setShowAddItem(true);
@@ -207,31 +208,30 @@ export default function PackingListDetailScreen() {
 
   // Reset list
   const handleResetList = () => {
-    Alert.alert(
-      "Reset Packing List",
-      "Mark all items as unpacked?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          onPress: async () => {
-            if (!user?.id) return;
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            setItems((prev) => prev.map((i) => ({ ...i, isPacked: false })));
-            await resetPackingList(user.id, tripId);
-          },
+    Alert.alert('Reset Packing List', 'Mark all items as unpacked?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reset',
+        onPress: async () => {
+          if (!user?.id) return;
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          setItems((prev) => prev.map((i) => ({ ...i, isPacked: false })));
+          await resetPackingList(user.id, tripId);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   // Save as template - REQUIRES PRO
   const handleSaveAsTemplate = () => {
     // Pro gating for customization
     if (!checkProForCustomization()) return;
-    
+
     if (items.length === 0) {
-      Alert.alert("No Items", "Add items to your packing list before saving as a template.");
+      Alert.alert(
+        'No Items',
+        'Add items to your packing list before saving as a template.',
+      );
       return;
     }
     setShowSaveTemplate(true);
@@ -239,29 +239,25 @@ export default function PackingListDetailScreen() {
 
   // More menu
   const handleMoreMenu = () => {
-    Alert.alert(
-      "Packing List Options",
-      undefined,
-      [
-        { 
-          text: "Save as Template", 
-          onPress: handleSaveAsTemplate,
-        },
-        { text: "Reset to Unpacked", onPress: handleResetList },
-        { text: "Cancel", style: "cancel" },
-      ]
-    );
+    Alert.alert('Packing List Options', undefined, [
+      {
+        text: 'Save as Template',
+        onPress: handleSaveAsTemplate,
+      },
+      { text: 'Reset to Unpacked', onPress: handleResetList },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   // Calculate totals
   const filteredItems = useMemo(
     () => filterItems(items, activeFilter),
-    [items, activeFilter]
+    [items, activeFilter],
   );
 
   const groupedItems = useMemo(
     () => groupItemsByCategory(filteredItems),
-    [filteredItems]
+    [filteredItems],
   );
 
   const totalPacked = items.filter((i) => i.isPacked).length;
@@ -283,7 +279,7 @@ export default function PackingListDetailScreen() {
   return (
     <View className="flex-1 bg-parchment">
       {/* Header */}
-      <SafeAreaView edges={["top"]} style={{ backgroundColor: DEEP_FOREST }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: DEEP_FOREST }}>
         <View
           style={{
             paddingTop: 8,
@@ -297,7 +293,7 @@ export default function PackingListDetailScreen() {
             <Pressable
               onPress={() => navigation.goBack()}
               className="w-9 h-9 rounded-full items-center justify-center"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
             >
               <Ionicons name="arrow-back" size={20} color={PARCHMENT} />
             </Pressable>
@@ -305,10 +301,10 @@ export default function PackingListDetailScreen() {
             <View className="flex-1 mx-4">
               <Text
                 style={{
-                  fontFamily: "Raleway_700Bold",
+                  fontFamily: 'Raleway_700Bold',
                   fontSize: 18,
                   color: PARCHMENT,
-                  textAlign: "center",
+                  textAlign: 'center',
                 }}
                 numberOfLines={1}
               >
@@ -317,10 +313,10 @@ export default function PackingListDetailScreen() {
               {trip && (
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_400Regular",
+                    fontFamily: 'SourceSans3_400Regular',
                     fontSize: 13,
-                    color: "rgba(255,255,255,0.7)",
-                    textAlign: "center",
+                    color: 'rgba(255,255,255,0.7)',
+                    textAlign: 'center',
                   }}
                   numberOfLines={1}
                 >
@@ -332,7 +328,7 @@ export default function PackingListDetailScreen() {
             <Pressable
               onPress={handleMoreMenu}
               className="w-9 h-9 rounded-full items-center justify-center"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
             >
               <Ionicons name="ellipsis-horizontal" size={20} color={PARCHMENT} />
             </Pressable>
@@ -343,7 +339,7 @@ export default function PackingListDetailScreen() {
             <View className="flex-row justify-between mb-1">
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 13,
                   color: PARCHMENT,
                 }}
@@ -352,9 +348,9 @@ export default function PackingListDetailScreen() {
               </Text>
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   fontSize: 13,
-                  color: "rgba(255,255,255,0.7)",
+                  color: 'rgba(255,255,255,0.7)',
                 }}
               >
                 {progress}%
@@ -362,7 +358,7 @@ export default function PackingListDetailScreen() {
             </View>
             <View
               className="h-2 rounded-full overflow-hidden"
-              style={{ backgroundColor: "#FFFFFF" }}
+              style={{ backgroundColor: '#FFFFFF' }}
             >
               <View
                 className="h-full rounded-full"
@@ -383,63 +379,61 @@ export default function PackingListDetailScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ gap: 8 }}
         >
-          {(["all", "unpacked", "packed", "essentials", "gear-linked"] as PackingFilter[]).map(
-            (filter) => {
-              const isActive = activeFilter === filter;
-              const labels: Record<PackingFilter, string> = {
-                all: "All",
-                unpacked: "Unpacked",
-                packed: "Packed",
-                essentials: "Essentials",
-                "gear-linked": "Gear-linked",
-              };
-              const icons: Record<PackingFilter, string | null> = {
-                all: null,
-                unpacked: null,
-                packed: null,
-                essentials: null,
-                "gear-linked": "cube",
-              };
-              return (
-                <Pressable
-                  key={filter}
-                  onPress={() => setActiveFilter(filter)}
-                  className={`px-4 py-2 rounded-full border flex-row items-center ${
-                    isActive
-                      ? "bg-forest border-forest"
-                      : "bg-parchment border-parchmentDark"
-                  }`}
+          {(
+            ['all', 'unpacked', 'packed', 'essentials', 'gear-linked'] as PackingFilter[]
+          ).map((filter) => {
+            const isActive = activeFilter === filter;
+            const labels: Record<PackingFilter, string> = {
+              all: 'All',
+              unpacked: 'Unpacked',
+              packed: 'Packed',
+              essentials: 'Essentials',
+              'gear-linked': 'Gear-linked',
+            };
+            const icons: Record<PackingFilter, string | null> = {
+              all: null,
+              unpacked: null,
+              packed: null,
+              essentials: null,
+              'gear-linked': 'cube',
+            };
+            return (
+              <Pressable
+                key={filter}
+                onPress={() => setActiveFilter(filter)}
+                className={`px-4 py-2 rounded-full border flex-row items-center ${
+                  isActive
+                    ? 'bg-forest border-forest'
+                    : 'bg-parchment border-parchmentDark'
+                }`}
+              >
+                {icons[filter] && (
+                  <Ionicons
+                    name={icons[filter] as any}
+                    size={12}
+                    color={isActive ? PARCHMENT : DEEP_FOREST}
+                    style={{ marginRight: 4 }}
+                  />
+                )}
+                <Text
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    fontSize: 13,
+                    color: isActive ? PARCHMENT : DEEP_FOREST,
+                  }}
                 >
-                  {icons[filter] && (
-                    <Ionicons
-                      name={icons[filter] as any}
-                      size={12}
-                      color={isActive ? PARCHMENT : DEEP_FOREST}
-                      style={{ marginRight: 4 }}
-                    />
-                  )}
-                  <Text
-                    style={{
-                      fontFamily: "SourceSans3_600SemiBold",
-                      fontSize: 13,
-                      color: isActive ? PARCHMENT : DEEP_FOREST,
-                    }}
-                  >
-                    {labels[filter]}
-                  </Text>
-                </Pressable>
-              );
-            }
-          )}
+                  {labels[filter]}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </View>
 
       {/* Items List */}
       <ScrollView
         className="flex-1"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
         {PACKING_CATEGORIES.map((category) => {
@@ -450,7 +444,11 @@ export default function PackingListDetailScreen() {
           const { packed, total } = getCategoryProgress(categoryItems);
 
           return (
-            <View key={category} className="border-b" style={{ borderColor: BORDER_SOFT }}>
+            <View
+              key={category}
+              className="border-b"
+              style={{ borderColor: BORDER_SOFT }}
+            >
               {/* Category Header */}
               <Pressable
                 onPress={() => toggleCategory(category)}
@@ -470,7 +468,7 @@ export default function PackingListDetailScreen() {
                   </View>
                   <Text
                     style={{
-                      fontFamily: "Raleway_700Bold",
+                      fontFamily: 'Raleway_700Bold',
                       fontSize: 15,
                       color: DEEP_FOREST,
                       flex: 1,
@@ -483,7 +481,7 @@ export default function PackingListDetailScreen() {
                 <View className="flex-row items-center">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginRight: 8,
@@ -492,7 +490,7 @@ export default function PackingListDetailScreen() {
                     {packed}/{total}
                   </Text>
                   <Ionicons
-                    name={isExpanded ? "chevron-up" : "chevron-down"}
+                    name={isExpanded ? 'chevron-up' : 'chevron-down'}
                     size={20}
                     color={EARTH_GREEN}
                   />
@@ -521,7 +519,7 @@ export default function PackingListDetailScreen() {
                     <Ionicons name="add-circle-outline" size={20} color={EARTH_GREEN} />
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
+                        fontFamily: 'SourceSans3_400Regular',
                         fontSize: 14,
                         color: EARTH_GREEN,
                         marginLeft: 8,
@@ -542,18 +540,18 @@ export default function PackingListDetailScreen() {
             <Ionicons name="checkmark-circle" size={48} color={EARTH_GREEN} />
             <Text
               style={{
-                fontFamily: "Raleway_700Bold",
+                fontFamily: 'Raleway_700Bold',
                 fontSize: 18,
                 color: DEEP_FOREST,
                 marginTop: 12,
-                textAlign: "center",
+                textAlign: 'center',
               }}
             >
-              {activeFilter === "packed"
-                ? "Nothing packed yet"
-                : activeFilter === "unpacked"
-                ? "All packed!"
-                : "No items match this filter"}
+              {activeFilter === 'packed'
+                ? 'Nothing packed yet'
+                : activeFilter === 'unpacked'
+                  ? 'All packed!'
+                  : 'No items match this filter'}
             </Text>
           </View>
         )}
@@ -564,22 +562,22 @@ export default function PackingListDetailScreen() {
             <Ionicons name="cube-outline" size={48} color={EARTH_GREEN} />
             <Text
               style={{
-                fontFamily: "Raleway_700Bold",
+                fontFamily: 'Raleway_700Bold',
                 fontSize: 18,
                 color: DEEP_FOREST,
                 marginTop: 12,
-                textAlign: "center",
+                textAlign: 'center',
               }}
             >
               No packing list yet
             </Text>
             <Text
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 fontSize: 14,
                 color: TEXT_SECONDARY,
                 marginTop: 8,
-                textAlign: "center",
+                textAlign: 'center',
               }}
             >
               Generate a list or start adding items manually
@@ -589,7 +587,7 @@ export default function PackingListDetailScreen() {
       </ScrollView>
 
       {/* Bottom Action Bar */}
-      <SafeAreaView edges={["bottom"]} style={{ backgroundColor: PARCHMENT }}>
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: PARCHMENT }}>
         <View
           className="flex-row items-center justify-around px-4 py-3 border-t"
           style={{ borderColor: BORDER_SOFT }}
@@ -608,7 +606,7 @@ export default function PackingListDetailScreen() {
             <Ionicons name="add" size={20} color={PARCHMENT} />
             <Text
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 fontSize: 14,
                 color: PARCHMENT,
                 marginLeft: 6,
@@ -630,7 +628,7 @@ export default function PackingListDetailScreen() {
             <Ionicons name="cube-outline" size={20} color={DEEP_FOREST} />
             <Text
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 fontSize: 14,
                 color: DEEP_FOREST,
                 marginLeft: 6,
@@ -671,8 +669,8 @@ export default function PackingListDetailScreen() {
         onSaved={() => {
           setShowSaveTemplate(false);
           Alert.alert(
-            "Template Saved!",
-            "You can now use this template to generate packing lists for future trips."
+            'Template Saved!',
+            'You can now use this template to generate packing lists for future trips.',
           );
         }}
       />
@@ -699,7 +697,7 @@ function PackingItemRow({ item, onToggle, onEdit, onDelete }: PackingItemRowProp
       className="flex-row items-center px-4 py-3 border-b"
       style={{
         borderColor: BORDER_SOFT,
-        backgroundColor: item.isPacked ? "rgba(26, 76, 57, 0.05)" : PARCHMENT,
+        backgroundColor: item.isPacked ? 'rgba(26, 76, 57, 0.05)' : PARCHMENT,
       }}
     >
       {/* Checkbox */}
@@ -708,7 +706,7 @@ function PackingItemRow({ item, onToggle, onEdit, onDelete }: PackingItemRowProp
         className="w-6 h-6 rounded-md border-2 items-center justify-center mr-3"
         style={{
           borderColor: item.isPacked ? DEEP_FOREST : BORDER_SOFT,
-          backgroundColor: item.isPacked ? DEEP_FOREST : "transparent",
+          backgroundColor: item.isPacked ? DEEP_FOREST : 'transparent',
         }}
       >
         {item.isPacked && <Ionicons name="checkmark" size={16} color={PARCHMENT} />}
@@ -719,10 +717,10 @@ function PackingItemRow({ item, onToggle, onEdit, onDelete }: PackingItemRowProp
         <View className="flex-row items-center">
           <Text
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               fontSize: 15,
               color: item.isPacked ? TEXT_SECONDARY : TEXT_PRIMARY_STRONG,
-              textDecorationLine: item.isPacked ? "line-through" : "none",
+              textDecorationLine: item.isPacked ? 'line-through' : 'none',
               flex: 1,
             }}
             numberOfLines={1}
@@ -737,7 +735,7 @@ function PackingItemRow({ item, onToggle, onEdit, onDelete }: PackingItemRowProp
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 11,
                   color: TEXT_SECONDARY,
                 }}
@@ -750,11 +748,11 @@ function PackingItemRow({ item, onToggle, onEdit, onDelete }: PackingItemRowProp
           {item.isEssential && (
             <View
               className="px-2 py-0.5 rounded-full ml-2"
-              style={{ backgroundColor: "rgba(185, 89, 29, 0.15)" }}
+              style={{ backgroundColor: 'rgba(185, 89, 29, 0.15)' }}
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 10,
                   color: GRANITE_GOLD,
                 }}
@@ -777,7 +775,7 @@ function PackingItemRow({ item, onToggle, onEdit, onDelete }: PackingItemRowProp
         {item.notes && (
           <Text
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               fontSize: 12,
               color: TEXT_SECONDARY,
               marginTop: 2,

@@ -15,9 +15,13 @@ import {
   query,
   orderBy,
   serverTimestamp,
-} from "firebase/firestore";
-import firebaseApp from "../config/firebase";
-import { TripParticipant, ParticipantRole, ParticipantWithRole } from "../types/campground";
+} from 'firebase/firestore';
+import firebaseApp from '../config/firebase';
+import {
+  TripParticipant,
+  ParticipantRole,
+  ParticipantWithRole,
+} from '../types/campground';
 
 const db = getFirestore(firebaseApp);
 
@@ -25,36 +29,38 @@ const db = getFirestore(firebaseApp);
  * Get all participants for a specific trip
  */
 export async function getTripParticipants(tripId: string): Promise<TripParticipant[]> {
-  const participantsRef = collection(db, "trips", tripId, "participants");
+  const participantsRef = collection(db, 'trips', tripId, 'participants');
 
   try {
-    const q = query(participantsRef, orderBy("createdAt", "asc"));
+    const q = query(participantsRef, orderBy('createdAt', 'asc'));
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
     })) as TripParticipant[];
   } catch (error: any) {
-    console.error("Error fetching trip participants:", error);
+    console.error('Error fetching trip participants:', error);
 
     // Fallback: try without orderBy if index is missing
-    if (error.code === "failed-precondition" || error.message?.includes("index")) {
+    if (error.code === 'failed-precondition' || error.message?.includes('index')) {
       const snapshot = await getDocs(participantsRef);
 
-      const participants = snapshot.docs.map(doc => ({
+      const participants = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as TripParticipant[];
 
       // Sort client-side
       return participants.sort((a, b) => {
-        const aTime = typeof a.createdAt === "string"
-          ? new Date(a.createdAt)
-          : a.createdAt?.toDate?.() || new Date();
-        const bTime = typeof b.createdAt === "string"
-          ? new Date(b.createdAt)
-          : b.createdAt?.toDate?.() || new Date();
+        const aTime =
+          typeof a.createdAt === 'string'
+            ? new Date(a.createdAt)
+            : a.createdAt?.toDate?.() || new Date();
+        const bTime =
+          typeof b.createdAt === 'string'
+            ? new Date(b.createdAt)
+            : b.createdAt?.toDate?.() || new Date();
         return aTime.getTime() - bTime.getTime();
       });
     }
@@ -69,9 +75,9 @@ export async function getTripParticipants(tripId: string): Promise<TripParticipa
 export async function addTripParticipantsWithRoles(
   tripId: string,
   participantsWithRoles: ParticipantWithRole[],
-  tripStartDate?: Date
+  tripStartDate?: Date,
 ): Promise<void> {
-  const participantsRef = collection(db, "trips", tripId, "participants");
+  const participantsRef = collection(db, 'trips', tripId, 'participants');
 
   // Add each contact as a participant with their role
   await Promise.all(
@@ -81,7 +87,7 @@ export async function addTripParticipantsWithRoles(
         role,
         createdAt: serverTimestamp(),
       });
-    })
+    }),
   );
 }
 
@@ -91,9 +97,9 @@ export async function addTripParticipantsWithRoles(
 export async function updateParticipantRole(
   tripId: string,
   participantId: string,
-  role: ParticipantRole
+  role: ParticipantRole,
 ): Promise<void> {
-  const participantRef = doc(db, "trips", tripId, "participants", participantId);
+  const participantRef = doc(db, 'trips', tripId, 'participants', participantId);
   await updateDoc(participantRef, { role });
 }
 
@@ -102,11 +108,11 @@ export async function updateParticipantRole(
  */
 export async function addTripParticipants(
   tripId: string,
-  contactIds: string[]
+  contactIds: string[],
 ): Promise<void> {
-  const participantsWithRoles = contactIds.map(contactId => ({
+  const participantsWithRoles = contactIds.map((contactId) => ({
     contactId,
-    role: "guest" as ParticipantRole,
+    role: 'guest' as ParticipantRole,
   }));
 
   await addTripParticipantsWithRoles(tripId, participantsWithRoles);
@@ -117,8 +123,8 @@ export async function addTripParticipants(
  */
 export async function removeTripParticipant(
   tripId: string,
-  participantId: string
+  participantId: string,
 ): Promise<void> {
-  const participantRef = doc(db, "trips", tripId, "participants", participantId);
+  const participantRef = doc(db, 'trips', tripId, 'participants', participantId);
   await deleteDoc(participantRef);
 }

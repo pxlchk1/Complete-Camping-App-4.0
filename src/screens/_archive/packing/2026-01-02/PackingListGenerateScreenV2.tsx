@@ -3,7 +3,7 @@
  * Template selection and customization for generating packing lists
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,14 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 
-import { RootStackParamList } from "../navigation/types";
+import { RootStackParamList } from '../navigation/types';
 import {
   PackingTemplate,
   TripType,
@@ -26,18 +26,18 @@ import {
   AmenityFlags,
   TRIP_TYPES,
   SEASONS,
-} from "../types/packingV2";
+} from '../types/packingV2';
 import {
   generatePackingList,
   getUserTemplates,
   getTripsWithPackingLists,
   copyPackingListFromTrip,
-} from "../services/packingServiceV2";
-import { PACKING_TEMPLATES, getRecommendedTemplates } from "../data/packingTemplates";
-import { useTrips } from "../state/tripsStore";
-import { useAuth } from "../context/AuthContext";
-import { trackPackingListGenerated } from "../services/analyticsService";
-import { trackCoreAction } from "../services/userActionTrackerService";
+} from '../services/packingServiceV2';
+import { PACKING_TEMPLATES, getRecommendedTemplates } from '../data/packingTemplates';
+import { useTrips } from '../state/tripsStore';
+import { useAuth } from '../context/AuthContext';
+import { trackPackingListGenerated } from '../services/analyticsService';
+import { trackCoreAction } from '../services/userActionTrackerService';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -48,42 +48,42 @@ import {
   GRANITE_GOLD,
   CARD_BACKGROUND_LIGHT,
   FOREST_BG,
-} from "../constants/colors";
+} from '../constants/colors';
 
-type PackingListGenerateRouteProp = RouteProp<RootStackParamList, "PackingListGenerate">;
+type PackingListGenerateRouteProp = RouteProp<RootStackParamList, 'PackingListGenerate'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Trip type labels
 const TRIP_TYPE_LABELS: Record<TripType, string> = {
-  backpacking: "Backpacking",
-  "car-camping": "Car Camping",
-  "hammock-camping": "Hammock",
-  "rv-camping": "RV/Glamping",
-  "dispersed-camping": "Dispersed",
-  "family-camping": "Family",
-  winter: "Winter",
-  bikepacking: "Bikepacking",
-  kayaking: "Kayaking",
+  backpacking: 'Backpacking',
+  'car-camping': 'Car Camping',
+  'hammock-camping': 'Hammock',
+  'rv-camping': 'RV/Glamping',
+  'dispersed-camping': 'Dispersed',
+  'family-camping': 'Family',
+  winter: 'Winter',
+  bikepacking: 'Bikepacking',
+  kayaking: 'Kayaking',
 };
 
 // Season labels
 const SEASON_LABELS: Record<Season, string> = {
-  spring: "Spring",
-  summer: "Summer",
-  fall: "Fall",
-  winter: "Winter",
-  "3-season": "3-Season",
+  spring: 'Spring',
+  summer: 'Summer',
+  fall: 'Fall',
+  winter: 'Winter',
+  '3-season': '3-Season',
 };
 
 // Amenity labels
 const AMENITY_LABELS: Record<keyof AmenityFlags, { label: string; icon: string }> = {
-  hasWater: { label: "Water available", icon: "water-outline" },
-  hasElectricity: { label: "Electricity", icon: "flash-outline" },
-  hasShowers: { label: "Showers", icon: "water-outline" },
-  hasToilets: { label: "Restrooms", icon: "home-outline" },
-  hasCampStore: { label: "Camp store", icon: "storefront-outline" },
-  hasFirePit: { label: "Fire pit", icon: "flame-outline" },
-  hasBearBox: { label: "Bear box", icon: "cube-outline" },
+  hasWater: { label: 'Water available', icon: 'water-outline' },
+  hasElectricity: { label: 'Electricity', icon: 'flash-outline' },
+  hasShowers: { label: 'Showers', icon: 'water-outline' },
+  hasToilets: { label: 'Restrooms', icon: 'home-outline' },
+  hasCampStore: { label: 'Camp store', icon: 'storefront-outline' },
+  hasFirePit: { label: 'Fire pit', icon: 'flame-outline' },
+  hasBearBox: { label: 'Bear box', icon: 'cube-outline' },
 };
 
 export default function PackingListGenerateScreen() {
@@ -97,8 +97,8 @@ export default function PackingListGenerateScreen() {
 
   // State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [tripType, setTripType] = useState<TripType>("car-camping");
-  const [season, setSeason] = useState<Season>("summer");
+  const [tripType, setTripType] = useState<TripType>('car-camping');
+  const [season, setSeason] = useState<Season>('summer');
   const [nights, setNights] = useState(2);
   const [partySize, setPartySize] = useState(2);
   const [amenities, setAmenities] = useState<AmenityFlags>({
@@ -111,7 +111,9 @@ export default function PackingListGenerateScreen() {
     hasBearBox: false,
   });
   const [userTemplates, setUserTemplates] = useState<PackingTemplate[]>([]);
-  const [pastTripsWithLists, setPastTripsWithLists] = useState<Array<{ tripId: string; itemCount: number }>>([]);
+  const [pastTripsWithLists, setPastTripsWithLists] = useState<
+    Array<{ tripId: string; itemCount: number }>
+  >([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [copying, setCopying] = useState(false);
@@ -128,7 +130,7 @@ export default function PackingListGenerateScreen() {
         setUserTemplates(templates);
         setPastTripsWithLists(pastTrips);
       } catch (error) {
-        console.error("[PackingListGenerate] Error loading data:", error);
+        console.error('[PackingListGenerate] Error loading data:', error);
       } finally {
         setLoading(false);
       }
@@ -152,13 +154,13 @@ export default function PackingListGenerateScreen() {
   // Selected template
   const selectedTemplate = useMemo(
     () => allTemplates.find((t) => t.id === selectedTemplateId),
-    [allTemplates, selectedTemplateId]
+    [allTemplates, selectedTemplateId],
   );
 
   // Recommended templates
   const recommendedTemplates = useMemo(
     () => getRecommendedTemplates(tripType, season),
-    [tripType, season]
+    [tripType, season],
   );
 
   // Toggle amenity
@@ -186,51 +188,47 @@ export default function PackingListGenerateScreen() {
     if (!user?.id) return;
 
     const sourceTrip = trips.find((t) => t.id === sourceTripId);
-    const tripName = sourceTrip?.name || "previous trip";
+    const tripName = sourceTrip?.name || 'previous trip';
 
-    Alert.alert(
-      "Copy Packing List",
-      `Copy all items from "${tripName}" to this trip?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Copy",
-          onPress: async () => {
-            setCopying(true);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert('Copy Packing List', `Copy all items from "${tripName}" to this trip?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Copy',
+        onPress: async () => {
+          setCopying(true);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-            try {
-              const { copiedCount, linkedCount } = await copyPackingListFromTrip(
-                user.id,
-                sourceTripId,
-                tripId
-              );
+          try {
+            const { copiedCount, linkedCount } = await copyPackingListFromTrip(
+              user.id,
+              sourceTripId,
+              tripId,
+            );
 
-              // Track analytics
-              trackPackingListGenerated(tripId);
-              trackCoreAction(user.id, "packing_list_generated");
+            // Track analytics
+            trackPackingListGenerated(tripId);
+            trackCoreAction(user.id, 'packing_list_generated');
 
-              // Show success and navigate
-              Alert.alert(
-                "List Copied!",
-                `${copiedCount} items copied${linkedCount > 0 ? `, ${linkedCount} linked to your gear closet` : ""}`,
-                [
-                  {
-                    text: "View List",
-                    onPress: () => navigation.replace("PackingList", { tripId }),
-                  },
-                ]
-              );
-            } catch (error) {
-              console.error("[PackingListGenerate] Error copying list:", error);
-              Alert.alert("Error", "Failed to copy packing list. Please try again.");
-            } finally {
-              setCopying(false);
-            }
-          },
+            // Show success and navigate
+            Alert.alert(
+              'List Copied!',
+              `${copiedCount} items copied${linkedCount > 0 ? `, ${linkedCount} linked to your gear closet` : ''}`,
+              [
+                {
+                  text: 'View List',
+                  onPress: () => navigation.replace('PackingList', { tripId }),
+                },
+              ],
+            );
+          } catch (error) {
+            console.error('[PackingListGenerate] Error copying list:', error);
+            Alert.alert('Error', 'Failed to copy packing list. Please try again.');
+          } finally {
+            setCopying(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   // Generate list
@@ -241,28 +239,23 @@ export default function PackingListGenerateScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
-      await generatePackingList(
-        user.id,
-        tripId,
-        selectedTemplate,
-        {
-          tripType,
-          season,
-          nights,
-          partySize,
-          amenities,
-        }
-      );
+      await generatePackingList(user.id, tripId, selectedTemplate, {
+        tripType,
+        season,
+        nights,
+        partySize,
+        amenities,
+      });
 
       // Track analytics and core action
       trackPackingListGenerated(tripId);
-      trackCoreAction(user.id, "packing_list_generated");
+      trackCoreAction(user.id, 'packing_list_generated');
 
       // Navigate to the packing list
-      navigation.replace("PackingList", { tripId });
+      navigation.replace('PackingList', { tripId });
     } catch (error) {
-      console.error("[PackingListGenerate] Error generating list:", error);
-      Alert.alert("Error", "Failed to generate packing list. Please try again.");
+      console.error('[PackingListGenerate] Error generating list:', error);
+      Alert.alert('Error', 'Failed to generate packing list. Please try again.');
     } finally {
       setGenerating(false);
     }
@@ -289,7 +282,7 @@ export default function PackingListGenerateScreen() {
   return (
     <View className="flex-1 bg-parchment">
       {/* Header */}
-      <SafeAreaView edges={["top"]} style={{ backgroundColor: DEEP_FOREST }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: DEEP_FOREST }}>
         <View
           style={{
             paddingTop: 8,
@@ -302,14 +295,14 @@ export default function PackingListGenerateScreen() {
             <Pressable
               onPress={() => navigation.goBack()}
               className="w-9 h-9 rounded-full items-center justify-center"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
             >
               <Ionicons name="arrow-back" size={20} color={PARCHMENT} />
             </Pressable>
 
             <Text
               style={{
-                fontFamily: "Raleway_700Bold",
+                fontFamily: 'Raleway_700Bold',
                 fontSize: 18,
                 color: PARCHMENT,
               }}
@@ -323,10 +316,10 @@ export default function PackingListGenerateScreen() {
           {trip && (
             <Text
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 fontSize: 14,
-                color: "rgba(255,255,255,0.7)",
-                textAlign: "center",
+                color: 'rgba(255,255,255,0.7)',
+                textAlign: 'center',
                 marginTop: 8,
               }}
             >
@@ -345,11 +338,11 @@ export default function PackingListGenerateScreen() {
           <View className="mb-6">
             <Text
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 fontSize: 13,
                 color: TEXT_SECONDARY,
                 marginBottom: 8,
-                textTransform: "uppercase",
+                textTransform: 'uppercase',
                 letterSpacing: 0.5,
               }}
             >
@@ -380,7 +373,7 @@ export default function PackingListGenerateScreen() {
                     <View className="flex-1">
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           fontSize: 15,
                           color: DEEP_FOREST,
                         }}
@@ -390,7 +383,7 @@ export default function PackingListGenerateScreen() {
                       </Text>
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_400Regular",
+                          fontFamily: 'SourceSans3_400Regular',
                           fontSize: 12,
                           color: TEXT_SECONDARY,
                           marginTop: 2,
@@ -410,7 +403,7 @@ export default function PackingListGenerateScreen() {
               <View className="flex-1 h-px" style={{ backgroundColor: BORDER_SOFT }} />
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   fontSize: 12,
                   color: TEXT_SECONDARY,
                   marginHorizontal: 12,
@@ -427,11 +420,11 @@ export default function PackingListGenerateScreen() {
         <View className="mb-6">
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 13,
               color: TEXT_SECONDARY,
               marginBottom: 8,
-              textTransform: "uppercase",
+              textTransform: 'uppercase',
               letterSpacing: 0.5,
             }}
           >
@@ -454,13 +447,13 @@ export default function PackingListGenerateScreen() {
                   }}
                   className={`px-4 py-2 rounded-full border ${
                     isSelected
-                      ? "bg-forest border-forest"
-                      : "bg-parchment border-parchmentDark"
+                      ? 'bg-forest border-forest'
+                      : 'bg-parchment border-parchmentDark'
                   }`}
                 >
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: isSelected ? PARCHMENT : DEEP_FOREST,
                     }}
@@ -477,11 +470,11 @@ export default function PackingListGenerateScreen() {
         <View className="mb-6">
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 13,
               color: TEXT_SECONDARY,
               marginBottom: 8,
-              textTransform: "uppercase",
+              textTransform: 'uppercase',
               letterSpacing: 0.5,
             }}
           >
@@ -504,13 +497,13 @@ export default function PackingListGenerateScreen() {
                   }}
                   className={`px-4 py-2 rounded-full border ${
                     isSelected
-                      ? "bg-forest border-forest"
-                      : "bg-parchment border-parchmentDark"
+                      ? 'bg-forest border-forest'
+                      : 'bg-parchment border-parchmentDark'
                   }`}
                 >
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: isSelected ? PARCHMENT : DEEP_FOREST,
                     }}
@@ -529,17 +522,20 @@ export default function PackingListGenerateScreen() {
           <View className="flex-1">
             <Text
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 fontSize: 13,
                 color: TEXT_SECONDARY,
                 marginBottom: 8,
-                textTransform: "uppercase",
+                textTransform: 'uppercase',
                 letterSpacing: 0.5,
               }}
             >
               Nights
             </Text>
-            <View className="flex-row items-center justify-between p-3 rounded-xl border" style={{ borderColor: BORDER_SOFT }}>
+            <View
+              className="flex-row items-center justify-between p-3 rounded-xl border"
+              style={{ borderColor: BORDER_SOFT }}
+            >
               <Pressable
                 onPress={() => adjustNights(-1)}
                 className="w-8 h-8 rounded-lg items-center justify-center"
@@ -549,7 +545,7 @@ export default function PackingListGenerateScreen() {
               </Pressable>
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 18,
                   color: DEEP_FOREST,
                 }}
@@ -570,17 +566,20 @@ export default function PackingListGenerateScreen() {
           <View className="flex-1">
             <Text
               style={{
-                fontFamily: "SourceSans3_600SemiBold",
+                fontFamily: 'SourceSans3_600SemiBold',
                 fontSize: 13,
                 color: TEXT_SECONDARY,
                 marginBottom: 8,
-                textTransform: "uppercase",
+                textTransform: 'uppercase',
                 letterSpacing: 0.5,
               }}
             >
               Party Size
             </Text>
-            <View className="flex-row items-center justify-between p-3 rounded-xl border" style={{ borderColor: BORDER_SOFT }}>
+            <View
+              className="flex-row items-center justify-between p-3 rounded-xl border"
+              style={{ borderColor: BORDER_SOFT }}
+            >
               <Pressable
                 onPress={() => adjustPartySize(-1)}
                 className="w-8 h-8 rounded-lg items-center justify-center"
@@ -590,7 +589,7 @@ export default function PackingListGenerateScreen() {
               </Pressable>
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 18,
                   color: DEEP_FOREST,
                 }}
@@ -612,11 +611,11 @@ export default function PackingListGenerateScreen() {
         <View className="mb-6">
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 13,
               color: TEXT_SECONDARY,
               marginBottom: 8,
-              textTransform: "uppercase",
+              textTransform: 'uppercase',
               letterSpacing: 0.5,
             }}
           >
@@ -632,8 +631,8 @@ export default function PackingListGenerateScreen() {
                   onPress={() => toggleAmenity(key)}
                   className={`flex-row items-center px-3 py-2 rounded-full border ${
                     isSelected
-                      ? "bg-forest border-forest"
-                      : "bg-parchment border-parchmentDark"
+                      ? 'bg-forest border-forest'
+                      : 'bg-parchment border-parchmentDark'
                   }`}
                 >
                   <Ionicons
@@ -643,7 +642,7 @@ export default function PackingListGenerateScreen() {
                   />
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 13,
                       color: isSelected ? PARCHMENT : DEEP_FOREST,
                       marginLeft: 6,
@@ -661,11 +660,11 @@ export default function PackingListGenerateScreen() {
         <View className="mb-6">
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 13,
               color: TEXT_SECONDARY,
               marginBottom: 8,
-              textTransform: "uppercase",
+              textTransform: 'uppercase',
               letterSpacing: 0.5,
             }}
           >
@@ -677,7 +676,7 @@ export default function PackingListGenerateScreen() {
             <View className="mb-4">
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   fontSize: 12,
                   color: EARTH_GREEN,
                   marginBottom: 6,
@@ -707,7 +706,7 @@ export default function PackingListGenerateScreen() {
             <View className="mb-4">
               <Text
                 style={{
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   fontSize: 12,
                   color: TEXT_SECONDARY,
                   marginBottom: 6,
@@ -735,7 +734,7 @@ export default function PackingListGenerateScreen() {
           <View>
             <Text
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 fontSize: 12,
                 color: TEXT_SECONDARY,
                 marginBottom: 6,
@@ -745,7 +744,7 @@ export default function PackingListGenerateScreen() {
             </Text>
             <View style={{ gap: 8 }}>
               {PACKING_TEMPLATES.filter(
-                (t) => !recommendedTemplates.some((r) => r.id === t.id)
+                (t) => !recommendedTemplates.some((r) => r.id === t.id),
               ).map((template) => (
                 <TemplateCard
                   key={template.id}
@@ -763,11 +762,8 @@ export default function PackingListGenerateScreen() {
       </ScrollView>
 
       {/* Generate Button */}
-      <SafeAreaView edges={["bottom"]} style={{ backgroundColor: PARCHMENT }}>
-        <View
-          className="px-4 py-4 border-t"
-          style={{ borderColor: BORDER_SOFT }}
-        >
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: PARCHMENT }}>
+        <View className="px-4 py-4 border-t" style={{ borderColor: BORDER_SOFT }}>
           <Pressable
             onPress={handleGenerate}
             disabled={!selectedTemplate || generating}
@@ -787,7 +783,7 @@ export default function PackingListGenerateScreen() {
                 />
                 <Text
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     fontSize: 16,
                     color: selectedTemplate ? PARCHMENT : TEXT_SECONDARY,
                     marginLeft: 10,
@@ -802,10 +798,10 @@ export default function PackingListGenerateScreen() {
           {selectedTemplate && (
             <Text
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 fontSize: 12,
                 color: TEXT_SECONDARY,
-                textAlign: "center",
+                textAlign: 'center',
                 marginTop: 8,
               }}
             >
@@ -829,14 +825,19 @@ interface TemplateCardProps {
   isRecommended?: boolean;
 }
 
-function TemplateCard({ template, isSelected, onSelect, isRecommended }: TemplateCardProps) {
+function TemplateCard({
+  template,
+  isSelected,
+  onSelect,
+  isRecommended,
+}: TemplateCardProps) {
   return (
     <Pressable
       onPress={onSelect}
       className="flex-row items-center p-4 rounded-xl border"
       style={{
         borderColor: isSelected ? DEEP_FOREST : BORDER_SOFT,
-        backgroundColor: isSelected ? "rgba(26, 76, 57, 0.08)" : PARCHMENT,
+        backgroundColor: isSelected ? 'rgba(26, 76, 57, 0.08)' : PARCHMENT,
         borderWidth: isSelected ? 2 : 1,
       }}
     >
@@ -863,7 +864,7 @@ function TemplateCard({ template, isSelected, onSelect, isRecommended }: Templat
         }}
       >
         <Ionicons
-          name={template.isSystem ? "cube-outline" : "document-text-outline"}
+          name={template.isSystem ? 'cube-outline' : 'document-text-outline'}
           size={20}
           color={isRecommended ? DEEP_FOREST : EARTH_GREEN}
         />
@@ -874,7 +875,7 @@ function TemplateCard({ template, isSelected, onSelect, isRecommended }: Templat
         <View className="flex-row items-center">
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 15,
               color: DEEP_FOREST,
             }}
@@ -889,7 +890,7 @@ function TemplateCard({ template, isSelected, onSelect, isRecommended }: Templat
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 10,
                   color: PARCHMENT,
                 }}
@@ -901,7 +902,7 @@ function TemplateCard({ template, isSelected, onSelect, isRecommended }: Templat
         </View>
         <Text
           style={{
-            fontFamily: "SourceSans3_400Regular",
+            fontFamily: 'SourceSans3_400Regular',
             fontSize: 12,
             color: TEXT_SECONDARY,
             marginTop: 2,

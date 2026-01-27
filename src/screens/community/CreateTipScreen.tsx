@@ -3,7 +3,7 @@
  * Form for creating a new camping tip
  */
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,15 +14,15 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import ModalHeader from "../../components/ModalHeader";
-import * as Haptics from "expo-haptics";
-import { tipsService } from "../../services/firestore/tipsService";
-import AccountRequiredModal from "../../components/AccountRequiredModal";
-import { requireAccount } from "../../utils/gating";
-import { requireEmailVerification } from "../../utils/authHelper";
-import { RootStackNavigationProp } from "../../navigation/types";
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import ModalHeader from '../../components/ModalHeader';
+import * as Haptics from 'expo-haptics';
+import { tipsService } from '../../services/firestore/tipsService';
+import AccountRequiredModal from '../../components/AccountRequiredModal';
+import { requireAccount } from '../../utils/gating';
+import { requireEmailVerification } from '../../utils/authHelper';
+import { RootStackNavigationProp } from '../../navigation/types';
 import {
   DEEP_FOREST,
   PARCHMENT,
@@ -30,46 +30,48 @@ import {
   BORDER_SOFT,
   TEXT_PRIMARY_STRONG,
   TEXT_MUTED,
-} from "../../constants/colors";
+} from '../../constants/colors';
 
 const CATEGORIES = [
-  "Packing",
-  "Weather",
-  "Cooking",
-  "Safety",
-  "Gear",
-  "Setup",
-  "Navigation",
-  "Other"
+  'Packing',
+  'Weather',
+  'Cooking',
+  'Safety',
+  'Gear',
+  'Setup',
+  'Navigation',
+  'Other',
 ];
 
 export default function CreateTipScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("Other");
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [category, setCategory] = useState('Other');
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     // Tips only require an account, not PRO (FREE users can submit tips)
-    if (!requireAccount({
-      openAccountModal: () => setShowLoginModal(true),
-    })) {
+    if (
+      !requireAccount({
+        openAccountModal: () => setShowLoginModal(true),
+      })
+    ) {
       return;
     }
 
     // Require email verification for posting content
-    const isVerified = await requireEmailVerification("share tips");
+    const isVerified = await requireEmailVerification('share tips');
     if (!isVerified) return;
 
     if (!title.trim()) {
-      Alert.alert("Missing Title", "Please enter a title for your tip");
+      Alert.alert('Missing Title', 'Please enter a title for your tip');
       return;
     }
     if (!content.trim()) {
-      Alert.alert("Missing Content", "Please enter the tip content");
+      Alert.alert('Missing Content', 'Please enter the tip content');
       return;
     }
     try {
@@ -82,7 +84,7 @@ export default function CreateTipScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to create tip");
+      Alert.alert('Error', error.message || 'Failed to create tip');
       setSubmitting(false);
     }
   };
@@ -93,12 +95,12 @@ export default function CreateTipScreen() {
         title="New Tip"
         showTitle
         rightAction={{
-          icon: "checkmark",
-          onPress: handleSubmit
+          icon: 'checkmark',
+          onPress: handleSubmit,
         }}
       />
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         <ScrollView className="flex-1 p-5">
@@ -106,7 +108,10 @@ export default function CreateTipScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Title *
             </Text>
@@ -119,13 +124,16 @@ export default function CreateTipScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
                 fontSize: 16,
               }}
               maxLength={100}
             />
-            <Text className="text-xs mt-1" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
+            <Text
+              className="text-xs mt-1"
+              style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
+            >
               {title.length}/100
             </Text>
           </View>
@@ -134,7 +142,10 @@ export default function CreateTipScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Tip Content *
             </Text>
@@ -150,14 +161,17 @@ export default function CreateTipScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
                 fontSize: 16,
                 minHeight: 150,
               }}
               maxLength={500}
             />
-            <Text className="text-xs mt-1" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
+            <Text
+              className="text-xs mt-1"
+              style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
+            >
               {content.length}/500
             </Text>
           </View>
@@ -166,25 +180,28 @@ export default function CreateTipScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Category
             </Text>
             <View className="flex-row flex-wrap gap-2">
-              {CATEGORIES.map(cat => (
+              {CATEGORIES.map((cat) => (
                 <Pressable
                   key={cat}
                   onPress={() => {
                     setCategory(cat);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
-                  className={`px-4 py-2 rounded-full ${category === cat ? "bg-forest" : "bg-white border"}`}
+                  className={`px-4 py-2 rounded-full ${category === cat ? 'bg-forest' : 'bg-white border'}`}
                   style={category !== cat ? { borderColor: BORDER_SOFT } : undefined}
                 >
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
-                      color: category === cat ? PARCHMENT : TEXT_PRIMARY_STRONG
+                      fontFamily: 'SourceSans3_600SemiBold',
+                      color: category === cat ? PARCHMENT : TEXT_PRIMARY_STRONG,
                     }}
                   >
                     {cat}
@@ -206,7 +223,7 @@ export default function CreateTipScreen() {
             {submitting ? (
               <ActivityIndicator size="small" color={PARCHMENT} />
             ) : (
-              <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+              <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
                 Share Tip
               </Text>
             )}
@@ -217,7 +234,7 @@ export default function CreateTipScreen() {
         visible={showLoginModal}
         onCreateAccount={() => {
           setShowLoginModal(false);
-          navigation.navigate("Auth");
+          navigation.navigate('Auth');
         }}
         onMaybeLater={() => setShowLoginModal(false)}
       />

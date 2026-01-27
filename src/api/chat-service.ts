@@ -3,15 +3,15 @@ IMPORTANT NOTICE: DO NOT REMOVE
 ./src/api/chat-service.ts
 If the user wants to use AI to generate text, answer questions, or analyze images you can use the functions defined in this file to communicate with the OpenAI and Grok APIs.
 */
-import { AIMessage, AIRequestOptions, AIResponse } from "../types/ai";
-import { getOpenAIClient, isOpenAIConfigured } from "./openai";
-import { getGrokClient, isGrokConfigured } from "./grok";
+import { AIMessage, AIRequestOptions, AIResponse } from '../types/ai';
+import { getOpenAIClient, isOpenAIConfigured } from './openai';
+import { getGrokClient, isGrokConfigured } from './grok';
 
-const DEFAULT_OPENAI_MODEL = "gpt-4o-2024-11-20"; // supports vision + strong general performance
-const DEFAULT_GROK_MODEL = "grok-3-latest";
+const DEFAULT_OPENAI_MODEL = 'gpt-4o-2024-11-20'; // supports vision + strong general performance
+const DEFAULT_GROK_MODEL = 'grok-3-latest';
 
 const clampMaxTokens = (value: number | undefined, fallback: number): number => {
-  const v = typeof value === "number" ? value : fallback;
+  const v = typeof value === 'number' ? value : fallback;
   // Keep within reasonable bounds to avoid accidental huge requests.
   // (Vendors can still reject based on model context limits.)
   if (!Number.isFinite(v) || v <= 0) return fallback;
@@ -21,20 +21,18 @@ const clampMaxTokens = (value: number | undefined, fallback: number): number => 
 const normalizeMessages = (messages: AIMessage[]): AIMessage[] => {
   // Ensure every message has a valid role/content payload.
   // (Also prevents "undefined" content from causing weird API errors.)
-  return (messages || [])
-    .filter(Boolean)
-    .map((m) => ({
-      role: m.role,
-      // Some apps use array content for vision; keep as-is if not a string.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      content: (m as any).content ?? "",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    })) as AIMessage[];
+  return (messages || []).filter(Boolean).map((m) => ({
+    role: m.role,
+    // Some apps use array content for vision; keep as-is if not a string.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    content: (m as any).content ?? '',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  })) as AIMessage[];
 };
 
-const wrapProviderError = (provider: "OpenAI" | "Grok", err: unknown): Error => {
+const wrapProviderError = (provider: 'OpenAI' | 'Grok', err: unknown): Error => {
   const message =
-    err instanceof Error ? err.message : typeof err === "string" ? err : "Unknown error";
+    err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
   const e = new Error(`[${provider}] Request failed: ${message}`);
   // Preserve original error for debugging
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,7 +52,9 @@ export const getOpenAITextResponse = async (
 ): Promise<AIResponse> => {
   // Fail fast with a clear error so UI can disable/hide AI features.
   if (!isOpenAIConfigured()) {
-    throw new Error("[OpenAI] Not configured: missing EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY");
+    throw new Error(
+      '[OpenAI] Not configured: missing EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY',
+    );
   }
 
   try {
@@ -71,7 +71,7 @@ export const getOpenAITextResponse = async (
     });
 
     return {
-      content: response.choices?.[0]?.message?.content || "",
+      content: response.choices?.[0]?.message?.content || '',
       usage: {
         promptTokens: response.usage?.prompt_tokens || 0,
         completionTokens: response.usage?.completion_tokens || 0,
@@ -81,9 +81,9 @@ export const getOpenAITextResponse = async (
   } catch (error: unknown) {
     if (__DEV__) {
       // eslint-disable-next-line no-console
-      console.error("OpenAI API Error:", error);
+      console.error('OpenAI API Error:', error);
     }
-    throw wrapProviderError("OpenAI", error);
+    throw wrapProviderError('OpenAI', error);
   }
 };
 
@@ -93,7 +93,7 @@ export const getOpenAITextResponse = async (
  * @returns The response from the AI
  */
 export const getOpenAIChatResponse = async (prompt: string): Promise<AIResponse> => {
-  return await getOpenAITextResponse([{ role: "user", content: prompt }]);
+  return await getOpenAITextResponse([{ role: 'user', content: prompt }]);
 };
 
 /**
@@ -107,7 +107,7 @@ export const getGrokTextResponse = async (
   options?: AIRequestOptions,
 ): Promise<AIResponse> => {
   if (!isGrokConfigured()) {
-    throw new Error("[Grok] Not configured: missing EXPO_PUBLIC_VIBECODE_GROK_API_KEY");
+    throw new Error('[Grok] Not configured: missing EXPO_PUBLIC_VIBECODE_GROK_API_KEY');
   }
 
   try {
@@ -124,7 +124,7 @@ export const getGrokTextResponse = async (
     });
 
     return {
-      content: response.choices?.[0]?.message?.content || "",
+      content: response.choices?.[0]?.message?.content || '',
       usage: {
         promptTokens: response.usage?.prompt_tokens || 0,
         completionTokens: response.usage?.completion_tokens || 0,
@@ -134,9 +134,9 @@ export const getGrokTextResponse = async (
   } catch (error: unknown) {
     if (__DEV__) {
       // eslint-disable-next-line no-console
-      console.error("Grok API Error:", error);
+      console.error('Grok API Error:', error);
     }
-    throw wrapProviderError("Grok", error);
+    throw wrapProviderError('Grok', error);
   }
 };
 
@@ -146,5 +146,5 @@ export const getGrokTextResponse = async (
  * @returns The response from the AI
  */
 export const getGrokChatResponse = async (prompt: string): Promise<AIResponse> => {
-  return await getGrokTextResponse([{ role: "user", content: prompt }]);
+  return await getGrokTextResponse([{ role: 'user', content: prompt }]);
 };

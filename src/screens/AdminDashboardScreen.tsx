@@ -3,17 +3,35 @@
  * Central hub for all admin functions
  */
 
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, Alert, ActivityIndicator } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { auth, db, functions } from "../config/firebase";
-import { httpsCallable } from "firebase/functions";
-import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, deleteDoc, writeBatch } from "firebase/firestore";
-import ModalHeader from "../components/ModalHeader";
-import { seedLearningContent } from "../services/seedLearningContent";
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { auth, db, functions } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  limit,
+  deleteDoc,
+  writeBatch,
+} from 'firebase/firestore';
+import ModalHeader from '../components/ModalHeader';
+import { seedLearningContent } from '../services/seedLearningContent';
 import {
   PARCHMENT,
   CARD_BACKGROUND_LIGHT,
@@ -22,7 +40,7 @@ import {
   TEXT_SECONDARY,
   EARTH_GREEN,
   DEEP_FOREST,
-} from "../constants/colors";
+} from '../constants/colors';
 
 interface AdminStats {
   totalUsers: number;
@@ -52,17 +70,14 @@ export default function AdminDashboardScreen() {
   const loadAdminStats = async () => {
     try {
       // Load various stats from Firestore
-      const usersSnapshot = await getDocs(collection(db, "users"));
+      const usersSnapshot = await getDocs(collection(db, 'users'));
       const reportsQuery = query(
-        collection(db, "reports"),
-        where("status", "==", "pending")
+        collection(db, 'reports'),
+        where('status', '==', 'pending'),
       );
       const reportsSnapshot = await getDocs(reportsQuery);
 
-      const bannedQuery = query(
-        collection(db, "users"),
-        where("banned", "==", true)
-      );
+      const bannedQuery = query(collection(db, 'users'), where('banned', '==', true));
       const bannedSnapshot = await getDocs(bannedQuery);
 
       setStats({
@@ -72,7 +87,7 @@ export default function AdminDashboardScreen() {
         bannedUsers: bannedSnapshot.size,
       });
     } catch (error) {
-      console.error("Error loading admin stats:", error);
+      console.error('Error loading admin stats:', error);
     } finally {
       setLoading(false);
     }
@@ -80,194 +95,220 @@ export default function AdminDashboardScreen() {
 
   const adminActions = [
     {
-      id: "review-reports",
-      title: "Review Reports",
+      id: 'review-reports',
+      title: 'Review Reports',
       subtitle: `${stats.pendingReports} pending`,
-      icon: "flag" as const,
-      screen: "AdminReports" as const,
-      color: "#D32F2F",
+      icon: 'flag' as const,
+      screen: 'AdminReports' as const,
+      color: '#D32F2F',
     },
     {
-      id: "review-photos",
-      title: "Review Photos",
-      subtitle: "Moderate community photos",
-      icon: "images" as const,
-      screen: "AdminPhotos" as const,
+      id: 'review-photos',
+      title: 'Review Photos',
+      subtitle: 'Moderate community photos',
+      icon: 'images' as const,
+      screen: 'AdminPhotos' as const,
       color: EARTH_GREEN,
     },
     {
-      id: "manage-users",
-      title: "Manage Users",
+      id: 'manage-users',
+      title: 'Manage Users',
       subtitle: `${stats.totalUsers} total users`,
-      icon: "people" as const,
-      screen: "AdminUsers" as const,
+      icon: 'people' as const,
+      screen: 'AdminUsers' as const,
       color: DEEP_FOREST,
     },
     {
-      id: "award-subscriptions",
-      title: "Award Subscriptions",
-      subtitle: "Grant premium access",
-      icon: "gift" as const,
-      screen: "AdminSubscriptions" as const,
-      color: "#9C27B0",
+      id: 'award-subscriptions',
+      title: 'Award Subscriptions',
+      subtitle: 'Grant premium access',
+      icon: 'gift' as const,
+      screen: 'AdminSubscriptions' as const,
+      color: '#9C27B0',
     },
     {
-      id: "content-moderation",
-      title: "Content Moderation",
-      subtitle: "Review and remove content",
-      icon: "shield-checkmark" as const,
-      screen: "AdminContent" as const,
-      color: "#FF6F00",
+      id: 'content-moderation',
+      title: 'Content Moderation',
+      subtitle: 'Review and remove content',
+      icon: 'shield-checkmark' as const,
+      screen: 'AdminContent' as const,
+      color: '#FF6F00',
     },
     {
-      id: "banned-users",
-      title: "Banned Users",
+      id: 'banned-users',
+      title: 'Banned Users',
       subtitle: `${stats.bannedUsers} banned`,
-      icon: "ban" as const,
-      screen: "AdminBanned" as const,
-      color: "#455A64",
+      icon: 'ban' as const,
+      screen: 'AdminBanned' as const,
+      color: '#455A64',
     },
     {
-      id: "gating-report",
-      title: "Gating Report",
-      subtitle: "View all access gates",
-      icon: "lock-closed" as const,
-      screen: "AdminGatingReport" as const,
-      color: "#0288D1",
+      id: 'gating-report',
+      title: 'Gating Report',
+      subtitle: 'View all access gates',
+      icon: 'lock-closed' as const,
+      screen: 'AdminGatingReport' as const,
+      color: '#0288D1',
     },
   ];
 
   const handleSeedLearningContent = async () => {
     Alert.alert(
-      "Seed Learning Content",
-      "This will populate Firestore with learning tracks and modules. Continue?",
+      'Seed Learning Content',
+      'This will populate Firestore with learning tracks and modules. Continue?',
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Seed Content",
+          text: 'Seed Content',
           onPress: async () => {
             setSeeding(true);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            
+
             try {
               const result = await seedLearningContent();
-              
+
               if (result.success) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                Alert.alert("Success", result.message);
+                Alert.alert('Success', result.message);
               } else {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                Alert.alert("Error", result.message);
+                Alert.alert('Error', result.message);
               }
             } catch (error) {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert("Error", error instanceof Error ? error.message : "Failed to seed content");
+              Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Failed to seed content',
+              );
             } finally {
               setSeeding(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
   const handleClearAllPhotos = async () => {
     Alert.alert(
-      "Clear All Photos",
-      "This will permanently delete ALL photos from the photos, stories, and photoPosts collections. This action cannot be undone.",
+      'Clear All Photos',
+      'This will permanently delete ALL photos from the photos, stories, and photoPosts collections. This action cannot be undone.',
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Delete All Photos",
-          style: "destructive",
+          text: 'Delete All Photos',
+          style: 'destructive',
           onPress: async () => {
             setClearingPhotos(true);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            
+
             try {
               let totalDeleted = 0;
               let errors: string[] = [];
-              
-              console.log("[AdminDashboard] Starting photo cleanup...");
-              
+
+              console.log('[AdminDashboard] Starting photo cleanup...');
+
               // Delete from 'photos' collection
-              const photosSnapshot = await getDocs(collection(db, "photos"));
-              console.log(`[AdminDashboard] Found ${photosSnapshot.size} photos to delete`);
+              const photosSnapshot = await getDocs(collection(db, 'photos'));
+              console.log(
+                `[AdminDashboard] Found ${photosSnapshot.size} photos to delete`,
+              );
               for (const docSnap of photosSnapshot.docs) {
                 try {
-                  await deleteDoc(doc(db, "photos", docSnap.id));
+                  await deleteDoc(doc(db, 'photos', docSnap.id));
                   totalDeleted++;
                   console.log(`[AdminDashboard] Deleted photo: ${docSnap.id}`);
                 } catch (e) {
-                  console.error(`[AdminDashboard] Failed to delete photo ${docSnap.id}:`, e);
+                  console.error(
+                    `[AdminDashboard] Failed to delete photo ${docSnap.id}:`,
+                    e,
+                  );
                   errors.push(`photos/${docSnap.id}`);
                 }
               }
-              
+
               // Delete from 'stories' collection
-              const storiesSnapshot = await getDocs(collection(db, "stories"));
-              console.log(`[AdminDashboard] Found ${storiesSnapshot.size} stories to delete`);
+              const storiesSnapshot = await getDocs(collection(db, 'stories'));
+              console.log(
+                `[AdminDashboard] Found ${storiesSnapshot.size} stories to delete`,
+              );
               for (const docSnap of storiesSnapshot.docs) {
                 try {
-                  await deleteDoc(doc(db, "stories", docSnap.id));
+                  await deleteDoc(doc(db, 'stories', docSnap.id));
                   totalDeleted++;
                   console.log(`[AdminDashboard] Deleted story: ${docSnap.id}`);
                 } catch (e) {
-                  console.error(`[AdminDashboard] Failed to delete story ${docSnap.id}:`, e);
+                  console.error(
+                    `[AdminDashboard] Failed to delete story ${docSnap.id}:`,
+                    e,
+                  );
                   errors.push(`stories/${docSnap.id}`);
                 }
               }
-              
+
               // Delete from 'photoPosts' collection
-              const photoPostsSnapshot = await getDocs(collection(db, "photoPosts"));
-              console.log(`[AdminDashboard] Found ${photoPostsSnapshot.size} photoPosts to delete`);
+              const photoPostsSnapshot = await getDocs(collection(db, 'photoPosts'));
+              console.log(
+                `[AdminDashboard] Found ${photoPostsSnapshot.size} photoPosts to delete`,
+              );
               for (const docSnap of photoPostsSnapshot.docs) {
                 try {
-                  await deleteDoc(doc(db, "photoPosts", docSnap.id));
+                  await deleteDoc(doc(db, 'photoPosts', docSnap.id));
                   totalDeleted++;
                   console.log(`[AdminDashboard] Deleted photoPost: ${docSnap.id}`);
                 } catch (e) {
-                  console.error(`[AdminDashboard] Failed to delete photoPost ${docSnap.id}:`, e);
+                  console.error(
+                    `[AdminDashboard] Failed to delete photoPost ${docSnap.id}:`,
+                    e,
+                  );
                   errors.push(`photoPosts/${docSnap.id}`);
                 }
               }
-              
-              console.log(`[AdminDashboard] Cleanup complete. Deleted: ${totalDeleted}, Errors: ${errors.length}`);
-              
+
+              console.log(
+                `[AdminDashboard] Cleanup complete. Deleted: ${totalDeleted}, Errors: ${errors.length}`,
+              );
+
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               if (errors.length > 0) {
                 Alert.alert(
-                  "Partially Complete", 
-                  `Deleted ${totalDeleted} items.\n\nFailed to delete ${errors.length} items (check console for details).`
+                  'Partially Complete',
+                  `Deleted ${totalDeleted} items.\n\nFailed to delete ${errors.length} items (check console for details).`,
                 );
               } else {
-                Alert.alert("Success", `Deleted ${totalDeleted} photos from all collections.`);
+                Alert.alert(
+                  'Success',
+                  `Deleted ${totalDeleted} photos from all collections.`,
+                );
               }
             } catch (error) {
-              console.error("[AdminDashboard] Clear photos error:", error);
+              console.error('[AdminDashboard] Clear photos error:', error);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert("Error", error instanceof Error ? error.message : "Failed to clear photos");
+              Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Failed to clear photos',
+              );
             } finally {
               setClearingPhotos(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
   const handleUpdateTentAndLanternProfile = async () => {
     Alert.alert(
-      "Update @tentandlantern Profile",
-      "This will set stats to:\n• 220 Trips\n• 7 Tips\n• 3 Reviews\n• 1 Question\n• 4 Photos\n\nAnd add all Merit Badges.",
+      'Update @tentandlantern Profile',
+      'This will set stats to:\n• 220 Trips\n• 7 Tips\n• 3 Reviews\n• 1 Question\n• 4 Photos\n\nAnd add all Merit Badges.',
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Update Profile",
+          text: 'Update Profile',
           onPress: async () => {
             setUpdatingProfile(true);
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            
+
             try {
               const adminUpdateProfile = httpsCallable<
                 {
@@ -287,10 +328,10 @@ export default function AdminDashboardScreen() {
                   };
                 },
                 { success: boolean; updated: string[] }
-              >(functions, "adminUpdateProfile");
+              >(functions, 'adminUpdateProfile');
 
               // Target user: tentandlantern (alana@tentandlantern.com)
-              const targetUserId = "CumHF5enTFQJgroqRIf72uLI9N52";
+              const targetUserId = 'CumHF5enTFQJgroqRIf72uLI9N52';
 
               // First update stats
               await adminUpdateProfile({
@@ -307,10 +348,30 @@ export default function AdminDashboardScreen() {
               // Add all badges (using approved site color palette)
               // Leave No Trace first - it's the first Learning Module everyone takes
               const badges = [
-                { id: "leave-no-trace", name: "Leave No Trace", icon: "leaf", color: "#1A4C39" }, // DEEP_FOREST
-                { id: "weekend-camper", name: "Weekend Camper", icon: "bonfire", color: "#92AFB1" }, // SIERRA_SKY
-                { id: "trail-leader", name: "Trail Leader", icon: "compass", color: "#986C42" }, // GRANITE_GOLD
-                { id: "backcountry-guide", name: "Backcountry Guide", icon: "navigate", color: "#485951" }, // EARTH_GREEN
+                {
+                  id: 'leave-no-trace',
+                  name: 'Leave No Trace',
+                  icon: 'leaf',
+                  color: '#1A4C39',
+                }, // DEEP_FOREST
+                {
+                  id: 'weekend-camper',
+                  name: 'Weekend Camper',
+                  icon: 'bonfire',
+                  color: '#92AFB1',
+                }, // SIERRA_SKY
+                {
+                  id: 'trail-leader',
+                  name: 'Trail Leader',
+                  icon: 'compass',
+                  color: '#986C42',
+                }, // GRANITE_GOLD
+                {
+                  id: 'backcountry-guide',
+                  name: 'Backcountry Guide',
+                  icon: 'navigate',
+                  color: '#485951',
+                }, // EARTH_GREEN
               ];
 
               for (const badge of badges) {
@@ -321,17 +382,23 @@ export default function AdminDashboardScreen() {
               }
 
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert("Success", "Profile updated with new stats and all Merit Badges!");
+              Alert.alert(
+                'Success',
+                'Profile updated with new stats and all Merit Badges!',
+              );
             } catch (error) {
-              console.error("Error updating profile:", error);
+              console.error('Error updating profile:', error);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-              Alert.alert("Error", error instanceof Error ? error.message : "Failed to update profile");
+              Alert.alert(
+                'Error',
+                error instanceof Error ? error.message : 'Failed to update profile',
+              );
             } finally {
               setUpdatingProfile(false);
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -350,13 +417,16 @@ export default function AdminDashboardScreen() {
               >
                 <Text
                   className="text-3xl mb-1"
-                  style={{ fontFamily: "SourceSans3_700Bold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_700Bold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   {stats.totalUsers}
                 </Text>
                 <Text
                   className="text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
                 >
                   Total Users
                 </Text>
@@ -370,13 +440,13 @@ export default function AdminDashboardScreen() {
               >
                 <Text
                   className="text-3xl mb-1"
-                  style={{ fontFamily: "SourceSans3_700Bold", color: "#D32F2F" }}
+                  style={{ fontFamily: 'SourceSans3_700Bold', color: '#D32F2F' }}
                 >
                   {stats.pendingReports}
                 </Text>
                 <Text
                   className="text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
                 >
                   Pending Reports
                 </Text>
@@ -390,13 +460,16 @@ export default function AdminDashboardScreen() {
               >
                 <Text
                   className="text-3xl mb-1"
-                  style={{ fontFamily: "SourceSans3_700Bold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_700Bold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   {stats.bannedUsers}
                 </Text>
                 <Text
                   className="text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
                 >
                   Banned Users
                 </Text>
@@ -407,7 +480,7 @@ export default function AdminDashboardScreen() {
           {/* Admin Actions */}
           <Text
             className="text-lg mb-3"
-            style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+            style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
           >
             Admin Actions
           </Text>
@@ -425,20 +498,26 @@ export default function AdminDashboardScreen() {
               <View className="flex-row items-center">
                 <View
                   className="w-12 h-12 rounded-full items-center justify-center mr-3"
-                  style={{ backgroundColor: action.color + "20" }}
+                  style={{ backgroundColor: action.color + '20' }}
                 >
                   <Ionicons name={action.icon} size={24} color={action.color} />
                 </View>
                 <View className="flex-1">
                   <Text
                     className="text-base mb-1"
-                    style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                    style={{
+                      fontFamily: 'SourceSans3_600SemiBold',
+                      color: TEXT_PRIMARY_STRONG,
+                    }}
                   >
                     {action.title}
                   </Text>
                   <Text
                     className="text-sm"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: TEXT_SECONDARY,
+                    }}
                   >
                     {action.subtitle}
                   </Text>
@@ -451,7 +530,7 @@ export default function AdminDashboardScreen() {
           {/* Data Seeding Section */}
           <Text
             className="text-lg mb-3 mt-4"
-            style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+            style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
           >
             Data Management
           </Text>
@@ -460,12 +539,16 @@ export default function AdminDashboardScreen() {
             onPress={handleSeedLearningContent}
             disabled={seeding}
             className="mb-3 p-4 rounded-xl border active:opacity-70"
-            style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT, opacity: seeding ? 0.7 : 1 }}
+            style={{
+              backgroundColor: CARD_BACKGROUND_LIGHT,
+              borderColor: BORDER_SOFT,
+              opacity: seeding ? 0.7 : 1,
+            }}
           >
             <View className="flex-row items-center">
               <View
                 className="w-12 h-12 rounded-full items-center justify-center mr-3"
-                style={{ backgroundColor: EARTH_GREEN + "20" }}
+                style={{ backgroundColor: EARTH_GREEN + '20' }}
               >
                 {seeding ? (
                   <ActivityIndicator size="small" color={EARTH_GREEN} />
@@ -476,13 +559,16 @@ export default function AdminDashboardScreen() {
               <View className="flex-1">
                 <Text
                   className="text-base mb-1"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Seed Learning Content
                 </Text>
                 <Text
                   className="text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
                 >
                   Populate tracks, modules, and quizzes
                 </Text>
@@ -495,12 +581,16 @@ export default function AdminDashboardScreen() {
             onPress={handleClearAllPhotos}
             disabled={clearingPhotos}
             className="mb-3 p-4 rounded-xl border active:opacity-70"
-            style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: "#D32F2F40", opacity: clearingPhotos ? 0.7 : 1 }}
+            style={{
+              backgroundColor: CARD_BACKGROUND_LIGHT,
+              borderColor: '#D32F2F40',
+              opacity: clearingPhotos ? 0.7 : 1,
+            }}
           >
             <View className="flex-row items-center">
               <View
                 className="w-12 h-12 rounded-full items-center justify-center mr-3"
-                style={{ backgroundColor: "#D32F2F20" }}
+                style={{ backgroundColor: '#D32F2F20' }}
               >
                 {clearingPhotos ? (
                   <ActivityIndicator size="small" color="#D32F2F" />
@@ -511,13 +601,16 @@ export default function AdminDashboardScreen() {
               <View className="flex-1">
                 <Text
                   className="text-base mb-1"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Clear All Photos
                 </Text>
                 <Text
                   className="text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
                 >
                   Delete all photos from Connect
                 </Text>
@@ -530,12 +623,16 @@ export default function AdminDashboardScreen() {
             onPress={handleUpdateTentAndLanternProfile}
             disabled={updatingProfile}
             className="mb-3 p-4 rounded-xl border active:opacity-70"
-            style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT, opacity: updatingProfile ? 0.7 : 1 }}
+            style={{
+              backgroundColor: CARD_BACKGROUND_LIGHT,
+              borderColor: BORDER_SOFT,
+              opacity: updatingProfile ? 0.7 : 1,
+            }}
           >
             <View className="flex-row items-center">
               <View
                 className="w-12 h-12 rounded-full items-center justify-center mr-3"
-                style={{ backgroundColor: "#9C27B020" }}
+                style={{ backgroundColor: '#9C27B020' }}
               >
                 {updatingProfile ? (
                   <ActivityIndicator size="small" color="#9C27B0" />
@@ -546,13 +643,16 @@ export default function AdminDashboardScreen() {
               <View className="flex-1">
                 <Text
                   className="text-base mb-1"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: TEXT_PRIMARY_STRONG,
+                  }}
                 >
                   Update @tentandlantern
                 </Text>
                 <Text
                   className="text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
                 >
                   Set stats + Leave No Trace badge
                 </Text>

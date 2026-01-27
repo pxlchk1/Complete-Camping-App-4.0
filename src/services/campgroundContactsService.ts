@@ -16,47 +16,59 @@ import {
   where,
   orderBy,
   serverTimestamp,
-} from "firebase/firestore";
-import firebaseApp from "../config/firebase";
-import { CampgroundContact, CreateContactData, UpdateContactData } from "../types/campground";
+} from 'firebase/firestore';
+import firebaseApp from '../config/firebase';
+import {
+  CampgroundContact,
+  CreateContactData,
+  UpdateContactData,
+} from '../types/campground';
 
 const db = getFirestore(firebaseApp);
 
 /**
  * Get all campground contacts for a specific owner
  */
-export async function getCampgroundContacts(ownerId: string): Promise<CampgroundContact[]> {
-  const contactsRef = collection(db, "campgroundContacts");
+export async function getCampgroundContacts(
+  ownerId: string,
+): Promise<CampgroundContact[]> {
+  const contactsRef = collection(db, 'campgroundContacts');
 
   try {
     const q = query(
       contactsRef,
-      where("ownerId", "==", ownerId),
-      orderBy("createdAt", "desc")
+      where('ownerId', '==', ownerId),
+      orderBy('createdAt', 'desc'),
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    return snapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
     })) as CampgroundContact[];
   } catch (error: any) {
-    console.error("Error fetching campground contacts:", error);
+    console.error('Error fetching campground contacts:', error);
 
     // Fallback: try without orderBy if index is missing
-    if (error.code === "failed-precondition" || error.message?.includes("index")) {
-      const simpleQuery = query(contactsRef, where("ownerId", "==", ownerId));
+    if (error.code === 'failed-precondition' || error.message?.includes('index')) {
+      const simpleQuery = query(contactsRef, where('ownerId', '==', ownerId));
       const snapshot = await getDocs(simpleQuery);
 
-      const contacts = snapshot.docs.map(doc => ({
+      const contacts = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as CampgroundContact[];
 
       // Sort client-side by createdAt
       return contacts.sort((a, b) => {
-        const timeA = typeof a.createdAt === 'string' ? new Date(a.createdAt).getTime() : a.createdAt.toMillis();
-        const timeB = typeof b.createdAt === 'string' ? new Date(b.createdAt).getTime() : b.createdAt.toMillis();
+        const timeA =
+          typeof a.createdAt === 'string'
+            ? new Date(a.createdAt).getTime()
+            : a.createdAt.toMillis();
+        const timeB =
+          typeof b.createdAt === 'string'
+            ? new Date(b.createdAt).getTime()
+            : b.createdAt.toMillis();
         return timeB - timeA;
       });
     }
@@ -68,8 +80,10 @@ export async function getCampgroundContacts(ownerId: string): Promise<Campground
 /**
  * Get a single campground contact by ID
  */
-export async function getCampgroundContactById(contactId: string): Promise<CampgroundContact | null> {
-  const contactRef = doc(db, "campgroundContacts", contactId);
+export async function getCampgroundContactById(
+  contactId: string,
+): Promise<CampgroundContact | null> {
+  const contactRef = doc(db, 'campgroundContacts', contactId);
   const contactSnap = await getDoc(contactRef);
 
   if (!contactSnap.exists()) {
@@ -78,7 +92,7 @@ export async function getCampgroundContactById(contactId: string): Promise<Campg
 
   return {
     id: contactSnap.id,
-    ...contactSnap.data()
+    ...contactSnap.data(),
   } as CampgroundContact;
 }
 
@@ -87,9 +101,9 @@ export async function getCampgroundContactById(contactId: string): Promise<Campg
  */
 export async function createCampgroundContact(
   ownerId: string,
-  data: CreateContactData
+  data: CreateContactData,
 ): Promise<string> {
-  const contactsRef = collection(db, "campgroundContacts");
+  const contactsRef = collection(db, 'campgroundContacts');
 
   const docRef = await addDoc(contactsRef, {
     ownerId,
@@ -110,9 +124,9 @@ export async function createCampgroundContact(
  */
 export async function updateCampgroundContact(
   contactId: string,
-  data: UpdateContactData
+  data: UpdateContactData,
 ): Promise<void> {
-  const contactRef = doc(db, "campgroundContacts", contactId);
+  const contactRef = doc(db, 'campgroundContacts', contactId);
 
   const updateData: any = {
     updatedAt: serverTimestamp(),
@@ -130,6 +144,6 @@ export async function updateCampgroundContact(
  * Delete a campground contact
  */
 export async function deleteCampgroundContact(contactId: string): Promise<void> {
-  const contactRef = doc(db, "campgroundContacts", contactId);
+  const contactRef = doc(db, 'campgroundContacts', contactId);
   await deleteDoc(contactRef);
 }

@@ -3,7 +3,7 @@
  * Modal for saving a packing list as a reusable template
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,21 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
-import { TripType, Season, TRIP_TYPES, SEASONS, TRIP_TYPE_LABELS, SEASON_LABELS } from "../types/packingV2";
-import { saveAsTemplate } from "../services/packingServiceV2";
-import { useAuth } from "../context/AuthContext";
+import {
+  TripType,
+  Season,
+  TRIP_TYPES,
+  SEASONS,
+  TRIP_TYPE_LABELS,
+  SEASON_LABELS,
+} from '../types/packingV2';
+import { saveAsTemplate } from '../services/packingServiceV2';
+import { useAuth } from '../context/AuthContext';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -29,7 +36,7 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   CARD_BACKGROUND_LIGHT,
-} from "../constants/colors";
+} from '../constants/colors';
 
 interface SaveTemplateModalProps {
   visible: boolean;
@@ -47,8 +54,8 @@ export default function SaveTemplateModal({
   const { user } = useAuth();
 
   // Form state
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedTripTypes, setSelectedTripTypes] = useState<Set<TripType>>(new Set());
   const [selectedSeasons, setSelectedSeasons] = useState<Set<Season>>(new Set());
   const [saving, setSaving] = useState(false);
@@ -56,8 +63,8 @@ export default function SaveTemplateModal({
   // Reset form when modal opens
   useEffect(() => {
     if (visible) {
-      setName("");
-      setDescription("");
+      setName('');
+      setDescription('');
       setSelectedTripTypes(new Set());
       setSelectedSeasons(new Set());
     }
@@ -105,12 +112,12 @@ export default function SaveTemplateModal({
         name.trim(),
         description.trim() || undefined,
         Array.from(selectedTripTypes),
-        Array.from(selectedSeasons)
+        Array.from(selectedSeasons),
       );
 
       onSaved();
     } catch (error) {
-      console.error("[SaveTemplateModal] Error saving template:", error);
+      console.error('[SaveTemplateModal] Error saving template:', error);
     } finally {
       setSaving(false);
     }
@@ -130,23 +137,23 @@ export default function SaveTemplateModal({
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         className="flex-1"
       >
         <View className="flex-1 justify-end">
           {/* Backdrop */}
           <Pressable
             className="absolute inset-0"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onPress={onClose}
           />
 
           {/* Content */}
           <View
             className="rounded-t-3xl overflow-hidden"
-            style={{ backgroundColor: PARCHMENT, maxHeight: "90%" }}
+            style={{ backgroundColor: PARCHMENT, maxHeight: '90%' }}
           >
-            <SafeAreaView edges={["bottom"]}>
+            <SafeAreaView edges={['bottom']}>
               {/* Header */}
               <View
                 className="flex-row items-center justify-between px-5 py-4 border-b"
@@ -155,7 +162,7 @@ export default function SaveTemplateModal({
                 <Pressable onPress={onClose} hitSlop={10}>
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 16,
                       color: EARTH_GREEN,
                     }}
@@ -166,7 +173,7 @@ export default function SaveTemplateModal({
 
                 <Text
                   style={{
-                    fontFamily: "Raleway_700Bold",
+                    fontFamily: 'Raleway_700Bold',
                     fontSize: 17,
                     color: DEEP_FOREST,
                   }}
@@ -181,29 +188,26 @@ export default function SaveTemplateModal({
                 >
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 16,
                       color: canSave ? DEEP_FOREST : TEXT_SECONDARY,
                     }}
                   >
-                    {saving ? "Saving..." : "Save"}
+                    {saving ? 'Saving...' : 'Save'}
                   </Text>
                 </Pressable>
               </View>
 
-              <ScrollView
-                className="px-5 py-4"
-                keyboardShouldPersistTaps="handled"
-              >
+              <ScrollView className="px-5 py-4" keyboardShouldPersistTaps="handled">
                 {/* Template Name */}
                 <View className="mb-5">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginBottom: 6,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       letterSpacing: 0.5,
                     }}
                   >
@@ -218,7 +222,7 @@ export default function SaveTemplateModal({
                     style={{
                       borderColor: BORDER_SOFT,
                       backgroundColor: CARD_BACKGROUND_LIGHT,
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 16,
                       color: TEXT_PRIMARY_STRONG,
                     }}
@@ -230,11 +234,11 @@ export default function SaveTemplateModal({
                 <View className="mb-5">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginBottom: 6,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       letterSpacing: 0.5,
                     }}
                   >
@@ -251,11 +255,11 @@ export default function SaveTemplateModal({
                     style={{
                       borderColor: BORDER_SOFT,
                       backgroundColor: CARD_BACKGROUND_LIGHT,
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 16,
                       color: TEXT_PRIMARY_STRONG,
                       minHeight: 80,
-                      textAlignVertical: "top",
+                      textAlignVertical: 'top',
                     }}
                   />
                 </View>
@@ -264,11 +268,11 @@ export default function SaveTemplateModal({
                 <View className="mb-5">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginBottom: 6,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       letterSpacing: 0.5,
                     }}
                   >
@@ -283,13 +287,13 @@ export default function SaveTemplateModal({
                           onPress={() => toggleTripType(type)}
                           className={`px-3 py-2 rounded-full border ${
                             isSelected
-                              ? "bg-forest border-forest"
-                              : "bg-parchment border-parchmentDark"
+                              ? 'bg-forest border-forest'
+                              : 'bg-parchment border-parchmentDark'
                           }`}
                         >
                           <Text
                             style={{
-                              fontFamily: "SourceSans3_400Regular",
+                              fontFamily: 'SourceSans3_400Regular',
                               fontSize: 13,
                               color: isSelected ? PARCHMENT : DEEP_FOREST,
                             }}
@@ -306,11 +310,11 @@ export default function SaveTemplateModal({
                 <View className="mb-5">
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_600SemiBold",
+                      fontFamily: 'SourceSans3_600SemiBold',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       marginBottom: 6,
-                      textTransform: "uppercase",
+                      textTransform: 'uppercase',
                       letterSpacing: 0.5,
                     }}
                   >
@@ -325,13 +329,13 @@ export default function SaveTemplateModal({
                           onPress={() => toggleSeason(season)}
                           className={`px-3 py-2 rounded-full border ${
                             isSelected
-                              ? "bg-forest border-forest"
-                              : "bg-parchment border-parchmentDark"
+                              ? 'bg-forest border-forest'
+                              : 'bg-parchment border-parchmentDark'
                           }`}
                         >
                           <Text
                             style={{
-                              fontFamily: "SourceSans3_400Regular",
+                              fontFamily: 'SourceSans3_400Regular',
                               fontSize: 13,
                               color: isSelected ? PARCHMENT : DEEP_FOREST,
                             }}
@@ -357,15 +361,15 @@ export default function SaveTemplateModal({
                   />
                   <Text
                     style={{
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 13,
                       color: TEXT_SECONDARY,
                       flex: 1,
                       lineHeight: 18,
                     }}
                   >
-                    Your template will include all items from this packing list. You can use it to
-                    quickly generate lists for future trips.
+                    Your template will include all items from this packing list. You can
+                    use it to quickly generate lists for future trips.
                   </Text>
                 </View>
 

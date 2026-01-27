@@ -15,17 +15,17 @@ import {
   where,
   orderBy,
   Timestamp,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
-import { Trip } from "../types/camping";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { Trip } from '../types/camping';
 
 /**
  * Get all trips for a user
  */
 export async function getUserTrips(userId: string): Promise<Trip[]> {
   try {
-    const tripsRef = collection(db, "users", userId, "trips");
-    const q = query(tripsRef, orderBy("startDate", "desc"));
+    const tripsRef = collection(db, 'users', userId, 'trips');
+    const q = query(tripsRef, orderBy('startDate', 'desc'));
     const snapshot = await getDocs(q);
 
     return snapshot.docs.map((doc) => ({
@@ -33,7 +33,7 @@ export async function getUserTrips(userId: string): Promise<Trip[]> {
       ...doc.data(),
     })) as Trip[];
   } catch (error) {
-    console.error("Error fetching trips:", error);
+    console.error('Error fetching trips:', error);
     return [];
   }
 }
@@ -43,7 +43,7 @@ export async function getUserTrips(userId: string): Promise<Trip[]> {
  */
 export async function getTrip(userId: string, tripId: string): Promise<Trip | null> {
   try {
-    const tripRef = doc(db, "users", userId, "trips", tripId);
+    const tripRef = doc(db, 'users', userId, 'trips', tripId);
     const snapshot = await getDoc(tripRef);
 
     if (!snapshot.exists()) {
@@ -55,7 +55,7 @@ export async function getTrip(userId: string, tripId: string): Promise<Trip | nu
       ...snapshot.data(),
     } as Trip;
   } catch (error) {
-    console.error("Error fetching trip:", error);
+    console.error('Error fetching trip:', error);
     return null;
   }
 }
@@ -63,9 +63,12 @@ export async function getTrip(userId: string, tripId: string): Promise<Trip | nu
 /**
  * Create a new trip
  */
-export async function createTrip(userId: string, trip: Omit<Trip, "id" | "userId">): Promise<string> {
+export async function createTrip(
+  userId: string,
+  trip: Omit<Trip, 'id' | 'userId'>,
+): Promise<string> {
   try {
-    const tripsRef = collection(db, "users", userId, "trips");
+    const tripsRef = collection(db, 'users', userId, 'trips');
     const newTripRef = doc(tripsRef);
 
     const tripData = {
@@ -78,7 +81,7 @@ export async function createTrip(userId: string, trip: Omit<Trip, "id" | "userId
     await setDoc(newTripRef, tripData);
     return newTripRef.id;
   } catch (error) {
-    console.error("Error creating trip:", error);
+    console.error('Error creating trip:', error);
     throw error;
   }
 }
@@ -89,16 +92,16 @@ export async function createTrip(userId: string, trip: Omit<Trip, "id" | "userId
 export async function updateTrip(
   userId: string,
   tripId: string,
-  updates: Partial<Trip>
+  updates: Partial<Trip>,
 ): Promise<void> {
   try {
-    const tripRef = doc(db, "users", userId, "trips", tripId);
+    const tripRef = doc(db, 'users', userId, 'trips', tripId);
     await updateDoc(tripRef, {
       ...updates,
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("Error updating trip:", error);
+    console.error('Error updating trip:', error);
     throw error;
   }
 }
@@ -108,10 +111,10 @@ export async function updateTrip(
  */
 export async function deleteTrip(userId: string, tripId: string): Promise<void> {
   try {
-    const tripRef = doc(db, "users", userId, "trips", tripId);
+    const tripRef = doc(db, 'users', userId, 'trips', tripId);
     await deleteDoc(tripRef);
   } catch (error) {
-    console.error("Error deleting trip:", error);
+    console.error('Error deleting trip:', error);
     throw error;
   }
 }

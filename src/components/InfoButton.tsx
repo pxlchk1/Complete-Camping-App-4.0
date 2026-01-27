@@ -3,8 +3,8 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 // Theme colors
-const DEEP_FOREST = "#485952";
-const PARCHMENT = "#F4EBD0";
+const DEEP_FOREST = '#485952';
+const PARCHMENT = '#F4EBD0';
 
 interface InfoButtonProps {
   onPress: () => void;

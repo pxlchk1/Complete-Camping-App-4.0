@@ -12,11 +12,11 @@ import {
   writeBatch,
   increment,
   Timestamp,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-const TIPS_COLLECTION = "tips";
-const TIP_COMMENTS_COLLECTION = "tipComments";
+const TIPS_COLLECTION = 'tips';
+const TIP_COMMENTS_COLLECTION = 'tipComments';
 
 // Tip interface matching actual Firestore structure
 export interface Tip {
@@ -42,7 +42,7 @@ export interface TipComment {
 export async function createTip(
   text: string,
   userId: string,
-  images?: string[]
+  images?: string[],
 ): Promise<string> {
   try {
     const tipDoc = {
@@ -56,7 +56,7 @@ export async function createTip(
     const docRef = await addDoc(collection(db, TIPS_COLLECTION), tipDoc);
     return docRef.id;
   } catch (error) {
-    console.error("Error creating tip:", error);
+    console.error('Error creating tip:', error);
     throw error;
   }
 }
@@ -66,8 +66,8 @@ export async function getTips(): Promise<Tip[]> {
   try {
     const q = query(
       collection(db, TIPS_COLLECTION),
-      orderBy("createdAt", "desc"),
-      limit(100)
+      orderBy('createdAt', 'desc'),
+      limit(100),
     );
 
     const snapshot = await getDocs(q);
@@ -76,7 +76,7 @@ export async function getTips(): Promise<Tip[]> {
       ...doc.data(),
     })) as Tip[];
   } catch (error) {
-    console.error("Error fetching tips:", error);
+    console.error('Error fetching tips:', error);
     return [];
   }
 }
@@ -95,7 +95,7 @@ export async function getTipById(tipId: string): Promise<Tip | null> {
     }
     return null;
   } catch (error) {
-    console.error("Error fetching tip:", error);
+    console.error('Error fetching tip:', error);
     return null;
   }
 }
@@ -105,8 +105,8 @@ export async function getTipComments(tipId: string): Promise<TipComment[]> {
   try {
     const q = query(
       collection(db, TIP_COMMENTS_COLLECTION),
-      where("tipId", "==", tipId),
-      orderBy("createdAt", "asc")
+      where('tipId', '==', tipId),
+      orderBy('createdAt', 'asc'),
     );
 
     const snapshot = await getDocs(q);
@@ -115,7 +115,7 @@ export async function getTipComments(tipId: string): Promise<TipComment[]> {
       ...doc.data(),
     })) as TipComment[];
   } catch (error) {
-    console.error("Error fetching tip comments:", error);
+    console.error('Error fetching tip comments:', error);
     return [];
   }
 }
@@ -124,7 +124,7 @@ export async function getTipComments(tipId: string): Promise<TipComment[]> {
 export async function addTipComment(
   tipId: string,
   text: string,
-  userId: string
+  userId: string,
 ): Promise<string> {
   try {
     const commentDoc = {
@@ -137,7 +137,7 @@ export async function addTipComment(
     const docRef = await addDoc(collection(db, TIP_COMMENTS_COLLECTION), commentDoc);
     return docRef.id;
   } catch (error) {
-    console.error("Error adding tip comment:", error);
+    console.error('Error adding tip comment:', error);
     throw error;
   }
 }
@@ -149,16 +149,16 @@ export async function deleteTip(tipId: string, userId: string): Promise<void> {
     const tipDoc = await getDoc(tipRef);
 
     if (!tipDoc.exists()) {
-      throw new Error("Tip not found");
+      throw new Error('Tip not found');
     }
 
     if (tipDoc.data().userId !== userId) {
-      throw new Error("Unauthorized to delete this tip");
+      throw new Error('Unauthorized to delete this tip');
     }
 
     await deleteDoc(tipRef);
   } catch (error) {
-    console.error("Error deleting tip:", error);
+    console.error('Error deleting tip:', error);
     throw error;
   }
 }
@@ -175,7 +175,7 @@ export async function toggleTipLike(tipId: string, userId: string): Promise<void
 
     await batch.commit();
   } catch (error) {
-    console.error("Error toggling tip like:", error);
+    console.error('Error toggling tip like:', error);
     throw error;
   }
 }
@@ -185,8 +185,8 @@ export async function getTipsByUser(userId: string): Promise<Tip[]> {
   try {
     const q = query(
       collection(db, TIPS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("createdAt", "desc")
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc'),
     );
 
     const snapshot = await getDocs(q);
@@ -195,7 +195,7 @@ export async function getTipsByUser(userId: string): Promise<Tip[]> {
       ...doc.data(),
     })) as Tip[];
   } catch (error) {
-    console.error("Error fetching user tips:", error);
+    console.error('Error fetching user tips:', error);
     return [];
   }
 }

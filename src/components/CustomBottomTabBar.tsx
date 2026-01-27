@@ -1,13 +1,22 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import * as Haptics from "expo-haptics";
-import { DEEP_FOREST, EARTH_GREEN, PARCHMENT, PARCHMENT_BORDER } from "../constants/colors";
-import AboutModal from "./AboutModal";
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import * as Haptics from 'expo-haptics';
+import {
+  DEEP_FOREST,
+  EARTH_GREEN,
+  PARCHMENT,
+  PARCHMENT_BORDER,
+} from '../constants/colors';
+import AboutModal from './AboutModal';
 
-export default function CustomBottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export default function CustomBottomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
@@ -43,35 +52,38 @@ export default function CustomBottomTabBar({ state, descriptors, navigation }: B
     return () => clearTimeout(initialTimeout);
   }, []);
 
-  const getIconName = (routeName: string, focused: boolean): keyof typeof Ionicons.glyphMap => {
+  const getIconName = (
+    routeName: string,
+    focused: boolean,
+  ): keyof typeof Ionicons.glyphMap => {
     switch (routeName) {
-      case "Home":
-        return focused ? "home" : "home-outline";
-      case "Learn":
-        return focused ? "book" : "book-outline";
-      case "Plan":
-        return focused ? "map" : "map-outline";
-      case "Connect":
-        return focused ? "people" : "people-outline";
-      case "FirstAid":
-        return "medical";
+      case 'Home':
+        return focused ? 'home' : 'home-outline';
+      case 'Learn':
+        return focused ? 'book' : 'book-outline';
+      case 'Plan':
+        return focused ? 'map' : 'map-outline';
+      case 'Connect':
+        return focused ? 'people' : 'people-outline';
+      case 'FirstAid':
+        return 'medical';
       default:
-        return "home";
+        return 'home';
     }
   };
 
   const getLabel = (routeName: string): string => {
     switch (routeName) {
-      case "Home":
-        return "Home";
-      case "Learn":
-        return "Learn";
-      case "Plan":
-        return "Plan";
-      case "Connect":
-        return "Connect";
-      case "FirstAid":
-        return "First Aid";
+      case 'Home':
+        return 'Home';
+      case 'Learn':
+        return 'Learn';
+      case 'Plan':
+        return 'Plan';
+      case 'Connect':
+        return 'Connect';
+      case 'FirstAid':
+        return 'First Aid';
       default:
         return routeName;
     }
@@ -90,7 +102,7 @@ export default function CustomBottomTabBar({ state, descriptors, navigation }: B
             await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
 
             const event = navigation.emit({
-              type: "tabPress",
+              type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
             });
@@ -121,8 +133,10 @@ export default function CustomBottomTabBar({ state, descriptors, navigation }: B
                 className="text-xs mt-1"
                 style={{
                   color,
-                  fontFamily: isFocused ? "SourceSans3_600SemiBold" : "SourceSans3_400Regular",
-                  fontWeight: isFocused ? "600" : "500"
+                  fontFamily: isFocused
+                    ? 'SourceSans3_600SemiBold'
+                    : 'SourceSans3_400Regular',
+                  fontWeight: isFocused ? '600' : '500',
                 }}
               >
                 {label}
@@ -138,8 +152,11 @@ export default function CustomBottomTabBar({ state, descriptors, navigation }: B
         style={{ paddingBottom: Math.max((insets.bottom || 12) / 2, 6), paddingTop: 8 }}
       >
         <View className="flex-row items-center">
-          <Text className="text-earthGreen text-xs" style={{ fontFamily: "SourceSans3_400Regular" }}>
-            ©{currentYear} Tent and Lantern, LLC •{" "}
+          <Text
+            className="text-earthGreen text-xs"
+            style={{ fontFamily: 'SourceSans3_400Regular' }}
+          >
+            ©{currentYear} Tent and Lantern, LLC •{' '}
           </Text>
           <Pressable
             onPress={async () => {
@@ -150,7 +167,7 @@ export default function CustomBottomTabBar({ state, descriptors, navigation }: B
           >
             <Text
               className="text-earthGreen text-xs underline"
-              style={{ fontFamily: "SourceSans3_400Regular" }}
+              style={{ fontFamily: 'SourceSans3_400Regular' }}
             >
               About
             </Text>
@@ -159,7 +176,10 @@ export default function CustomBottomTabBar({ state, descriptors, navigation }: B
       </View>
 
       {/* About Modal */}
-      <AboutModal visible={aboutModalVisible} onClose={() => setAboutModalVisible(false)} />
+      <AboutModal
+        visible={aboutModalVisible}
+        onClose={() => setAboutModalVisible(false)}
+      />
     </View>
   );
 }

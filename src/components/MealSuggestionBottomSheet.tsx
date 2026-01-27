@@ -4,24 +4,20 @@
  * Features organized sections: Favorites, Quick & Easy, Already Used, More Ideas
  */
 
-import React, { useEffect, useRef } from "react";
-import { 
-  View, 
-  Text, 
-  Pressable, 
-  ScrollView, 
-  Animated, 
-  Dimensions, 
-  Modal 
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { 
-  MealSuggestion, 
-  COMPLEXITY_ICONS,
-  COOKING_METHOD_ICONS,
-} from "../types/meals";
+import React, { useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  Animated,
+  Dimensions,
+  Modal,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { MealSuggestion, COMPLEXITY_ICONS, COOKING_METHOD_ICONS } from '../types/meals';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BOTTOM_SHEET_HEIGHT = SCREEN_HEIGHT * 0.7;
 
 interface FrequentMeal {
@@ -34,7 +30,7 @@ interface MealSuggestionBottomSheetProps {
   onClose: () => void;
   suggestions: MealSuggestion[];
   onSelectSuggestion: (suggestion: MealSuggestion) => void;
-  mealType: "breakfast" | "lunch" | "dinner" | "snacks";
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snacks';
   usedMealIds?: Set<string>;
   frequentlyUsed?: FrequentMeal[];
 }
@@ -70,34 +66,27 @@ export default function MealSuggestionBottomSheet({
   if (!visible) return null;
 
   // Organize suggestions
-  const frequentSuggestions = suggestions.filter(s => 
-    frequentlyUsed.some(f => f.name.toLowerCase() === s.name.toLowerCase())
+  const frequentSuggestions = suggestions.filter((s) =>
+    frequentlyUsed.some((f) => f.name.toLowerCase() === s.name.toLowerCase()),
   );
-  const usedThisTrip = suggestions.filter(s => usedMealIds.has(s.id));
-  const quickMeals = suggestions.filter(s => 
-    (s.prepTime + s.cookTime) <= 15 && !usedMealIds.has(s.id)
+  const usedThisTrip = suggestions.filter((s) => usedMealIds.has(s.id));
+  const quickMeals = suggestions.filter(
+    (s) => s.prepTime + s.cookTime <= 15 && !usedMealIds.has(s.id),
   );
-  const otherSuggestions = suggestions.filter(s => 
-    !usedMealIds.has(s.id) && 
-    (s.prepTime + s.cookTime) > 15 &&
-    !frequentlyUsed.some(f => f.name.toLowerCase() === s.name.toLowerCase())
+  const otherSuggestions = suggestions.filter(
+    (s) =>
+      !usedMealIds.has(s.id) &&
+      s.prepTime + s.cookTime > 15 &&
+      !frequentlyUsed.some((f) => f.name.toLowerCase() === s.name.toLowerCase()),
   );
 
   const mealTypeLabel = mealType.charAt(0).toUpperCase() + mealType.slice(1);
 
   return (
-    <Modal
-      transparent
-      visible={visible}
-      onRequestClose={onClose}
-      animationType="none"
-    >
+    <Modal transparent visible={visible} onRequestClose={onClose} animationType="none">
       <View className="flex-1">
         {/* Backdrop */}
-        <Pressable 
-          className="flex-1 bg-black/50"
-          onPress={onClose}
-        />
+        <Pressable className="flex-1 bg-black/50" onPress={onClose} />
 
         {/* Bottom Sheet */}
         <Animated.View
@@ -122,19 +111,13 @@ export default function MealSuggestionBottomSheet({
                 {suggestions.length} options • Tap to use
               </Text>
             </View>
-            <Pressable
-              onPress={onClose}
-              className="bg-gray-100 rounded-full p-2"
-            >
+            <Pressable onPress={onClose} className="bg-gray-100 rounded-full p-2">
               <Ionicons name="close" size={24} color="#666" />
             </Pressable>
           </View>
 
           {/* Content */}
-          <ScrollView 
-            className="flex-1 px-6"
-            showsVerticalScrollIndicator={false}
-          >
+          <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
             {/* Frequently Used */}
             {frequentSuggestions.length > 0 && (
               <View className="mt-4">
@@ -144,7 +127,7 @@ export default function MealSuggestionBottomSheet({
                     YOUR FAVORITES
                   </Text>
                 </View>
-                {frequentSuggestions.map(suggestion => (
+                {frequentSuggestions.map((suggestion) => (
                   <SuggestionCard
                     key={suggestion.id}
                     suggestion={suggestion}
@@ -164,7 +147,7 @@ export default function MealSuggestionBottomSheet({
                     QUICK & EASY (15 min or less)
                   </Text>
                 </View>
-                {quickMeals.slice(0, 5).map(suggestion => (
+                {quickMeals.slice(0, 5).map((suggestion) => (
                   <SuggestionCard
                     key={suggestion.id}
                     suggestion={suggestion}
@@ -184,7 +167,7 @@ export default function MealSuggestionBottomSheet({
                     ALREADY USED THIS TRIP
                   </Text>
                 </View>
-                {usedThisTrip.map(suggestion => (
+                {usedThisTrip.map((suggestion) => (
                   <SuggestionCard
                     key={suggestion.id}
                     suggestion={suggestion}
@@ -204,7 +187,7 @@ export default function MealSuggestionBottomSheet({
                     MORE IDEAS
                   </Text>
                 </View>
-                {otherSuggestions.map(suggestion => (
+                {otherSuggestions.map((suggestion) => (
                   <SuggestionCard
                     key={suggestion.id}
                     suggestion={suggestion}
@@ -232,12 +215,12 @@ interface SuggestionCardProps {
 
 function SuggestionCard({ suggestion, onSelect, badge, dimmed }: SuggestionCardProps) {
   const totalTime = suggestion.prepTime + suggestion.cookTime;
-  
+
   return (
     <Pressable
       onPress={() => onSelect(suggestion)}
       className={`bg-amber-50 rounded-xl p-4 mb-3 active:bg-amber-100 ${
-        dimmed ? "opacity-50" : ""
+        dimmed ? 'opacity-50' : ''
       }`}
     >
       <View className="flex-row items-start justify-between mb-2">
@@ -249,9 +232,7 @@ function SuggestionCard({ suggestion, onSelect, badge, dimmed }: SuggestionCardP
             </Text>
           </View>
           {suggestion.description && (
-            <Text className="text-sm text-gray-600 mt-1">
-              {suggestion.description}
-            </Text>
+            <Text className="text-sm text-gray-600 mt-1">{suggestion.description}</Text>
           )}
         </View>
         <Text className="text-lg">{COMPLEXITY_ICONS[suggestion.complexity]}</Text>
@@ -271,27 +252,21 @@ function SuggestionCard({ suggestion, onSelect, badge, dimmed }: SuggestionCardP
         {/* Time */}
         <View className="flex-row items-center">
           <Ionicons name="time-outline" size={14} color="#666" />
-          <Text className="text-xs text-gray-600 ml-1">
-            {totalTime} min
-          </Text>
+          <Text className="text-xs text-gray-600 ml-1">{totalTime} min</Text>
         </View>
 
         {/* Storage */}
-        {suggestion.storage !== "none" && (
+        {suggestion.storage !== 'none' && (
           <View className="flex-row items-center">
             <Ionicons name="snow-outline" size={14} color="#666" />
-            <Text className="text-xs text-gray-600 ml-1">
-              Cooler
-            </Text>
+            <Text className="text-xs text-gray-600 ml-1">Cooler</Text>
           </View>
         )}
 
         {/* Dietary Tags */}
         {suggestion.dietaryTags.length > 0 && (
           <View className="flex-row items-center">
-            <Text className="text-xs text-amber-700">
-              {suggestion.dietaryTags[0]}
-            </Text>
+            <Text className="text-xs text-amber-700">{suggestion.dietaryTags[0]}</Text>
           </View>
         )}
       </View>
@@ -299,9 +274,7 @@ function SuggestionCard({ suggestion, onSelect, badge, dimmed }: SuggestionCardP
       {/* Prep Ahead Tip */}
       {suggestion.prepAhead && (
         <View className="mt-2 bg-amber-100 rounded-lg p-2">
-          <Text className="text-xs text-amber-800">
-            💡 {suggestion.prepAhead}
-          </Text>
+          <Text className="text-xs text-amber-800">💡 {suggestion.prepAhead}</Text>
         </View>
       )}
     </Pressable>

@@ -14,17 +14,20 @@ import {
   query,
   orderBy,
   writeBatch,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
-import { PackingItem, CampingStyle } from "../types/camping";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { PackingItem, CampingStyle } from '../types/camping';
 
 /**
  * Get all packing items for a trip
  */
-export async function getPackingList(userId: string, tripId: string): Promise<PackingItem[]> {
+export async function getPackingList(
+  userId: string,
+  tripId: string,
+): Promise<PackingItem[]> {
   try {
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
-    const q = query(packingRef, orderBy("category"));
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
+    const q = query(packingRef, orderBy('category'));
     const snapshot = await getDocs(q);
 
     return snapshot.docs.map((doc) => ({
@@ -33,11 +36,14 @@ export async function getPackingList(userId: string, tripId: string): Promise<Pa
     })) as PackingItem[];
   } catch (error: any) {
     // Don't log permissions errors as errors - they're expected and handled by fallback
-    if (error?.code === 'permission-denied' || error?.message?.includes('Missing or insufficient permissions')) {
+    if (
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
       // Silently throw to trigger fallback
       throw error;
     }
-    console.error("Error fetching packing list:", error);
+    console.error('Error fetching packing list:', error);
     throw error;
   }
 }
@@ -48,16 +54,16 @@ export async function getPackingList(userId: string, tripId: string): Promise<Pa
 export async function addPackingItem(
   userId: string,
   tripId: string,
-  item: Omit<PackingItem, "id">
+  item: Omit<PackingItem, 'id'>,
 ): Promise<string> {
   try {
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const newItemRef = doc(packingRef);
 
     await setDoc(newItemRef, item);
     return newItemRef.id;
   } catch (error) {
-    console.error("Error adding packing item:", error);
+    console.error('Error adding packing item:', error);
     throw error;
   }
 }
@@ -69,17 +75,20 @@ export async function updatePackingItem(
   userId: string,
   tripId: string,
   itemId: string,
-  updates: Partial<PackingItem>
+  updates: Partial<PackingItem>,
 ): Promise<void> {
   try {
-    const itemRef = doc(db, "users", userId, "trips", tripId, "packingList", itemId);
+    const itemRef = doc(db, 'users', userId, 'trips', tripId, 'packingList', itemId);
     await updateDoc(itemRef, updates);
   } catch (error: any) {
     // Don't log permissions errors as errors - they're expected and handled by fallback
-    if (error?.code === 'permission-denied' || error?.message?.includes('Missing or insufficient permissions')) {
+    if (
+      error?.code === 'permission-denied' ||
+      error?.message?.includes('Missing or insufficient permissions')
+    ) {
       throw error;
     }
-    console.error("Error updating packing item:", error);
+    console.error('Error updating packing item:', error);
     throw error;
   }
 }
@@ -91,7 +100,7 @@ export async function togglePackingItem(
   userId: string,
   tripId: string,
   itemId: string,
-  isPacked: boolean
+  isPacked: boolean,
 ): Promise<void> {
   return updatePackingItem(userId, tripId, itemId, { isPacked });
 }
@@ -102,13 +111,13 @@ export async function togglePackingItem(
 export async function deletePackingItem(
   userId: string,
   tripId: string,
-  itemId: string
+  itemId: string,
 ): Promise<void> {
   try {
-    const itemRef = doc(db, "users", userId, "trips", tripId, "packingList", itemId);
+    const itemRef = doc(db, 'users', userId, 'trips', tripId, 'packingList', itemId);
     await deleteDoc(itemRef);
   } catch (error) {
-    console.error("Error deleting packing item:", error);
+    console.error('Error deleting packing item:', error);
     throw error;
   }
 }
@@ -125,27 +134,27 @@ export async function generatePackingListFromTemplate(
     isCold?: boolean;
     isRainy?: boolean;
     isHot?: boolean;
-  }
+  },
 ): Promise<void> {
   try {
     // Get the template for this camping style
-    const templateRef = doc(db, "campTemplates", campStyle);
+    const templateRef = doc(db, 'campTemplates', campStyle);
     const templateSnap = await getDoc(templateRef);
 
     if (!templateSnap.exists()) {
-      console.warn("No template found for camping style:", campStyle);
+      console.warn('No template found for camping style:', campStyle);
       return;
     }
 
     const template = templateSnap.data();
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
 
     // Start a batch write
     const batch = writeBatch(db);
 
     // Add base items
     if (template.baseItems) {
-      template.baseItems.forEach((item: Omit<PackingItem, "id" | "isPacked">) => {
+      template.baseItems.forEach((item: Omit<PackingItem, 'id' | 'isPacked'>) => {
         const itemRef = doc(packingRef);
         batch.set(itemRef, {
           ...item,
@@ -157,41 +166,47 @@ export async function generatePackingListFromTemplate(
 
     // Add seasonal modifiers
     if (conditions?.isCold && template.seasonalModifiers?.cold) {
-      template.seasonalModifiers.cold.forEach((item: Omit<PackingItem, "id" | "isPacked">) => {
-        const itemRef = doc(packingRef);
-        batch.set(itemRef, {
-          ...item,
-          isPacked: false,
-          isAutoGenerated: true,
-        });
-      });
+      template.seasonalModifiers.cold.forEach(
+        (item: Omit<PackingItem, 'id' | 'isPacked'>) => {
+          const itemRef = doc(packingRef);
+          batch.set(itemRef, {
+            ...item,
+            isPacked: false,
+            isAutoGenerated: true,
+          });
+        },
+      );
     }
 
     if (conditions?.isRainy && template.seasonalModifiers?.rainy) {
-      template.seasonalModifiers.rainy.forEach((item: Omit<PackingItem, "id" | "isPacked">) => {
-        const itemRef = doc(packingRef);
-        batch.set(itemRef, {
-          ...item,
-          isPacked: false,
-          isAutoGenerated: true,
-        });
-      });
+      template.seasonalModifiers.rainy.forEach(
+        (item: Omit<PackingItem, 'id' | 'isPacked'>) => {
+          const itemRef = doc(packingRef);
+          batch.set(itemRef, {
+            ...item,
+            isPacked: false,
+            isAutoGenerated: true,
+          });
+        },
+      );
     }
 
     if (conditions?.isHot && template.seasonalModifiers?.hot) {
-      template.seasonalModifiers.hot.forEach((item: Omit<PackingItem, "id" | "isPacked">) => {
-        const itemRef = doc(packingRef);
-        batch.set(itemRef, {
-          ...item,
-          isPacked: false,
-          isAutoGenerated: true,
-        });
-      });
+      template.seasonalModifiers.hot.forEach(
+        (item: Omit<PackingItem, 'id' | 'isPacked'>) => {
+          const itemRef = doc(packingRef);
+          batch.set(itemRef, {
+            ...item,
+            isPacked: false,
+            isAutoGenerated: true,
+          });
+        },
+      );
     }
 
     await batch.commit();
   } catch (error) {
-    console.error("Error generating packing list:", error);
+    console.error('Error generating packing list:', error);
     throw error;
   }
 }
@@ -201,10 +216,10 @@ export async function generatePackingListFromTemplate(
  */
 export async function deleteAutoGeneratedItems(
   userId: string,
-  tripId: string
+  tripId: string,
 ): Promise<void> {
   try {
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const snapshot = await getDocs(packingRef);
 
     const batch = writeBatch(db);
@@ -217,7 +232,7 @@ export async function deleteAutoGeneratedItems(
 
     await batch.commit();
   } catch (error) {
-    console.error("Error deleting auto-generated items:", error);
+    console.error('Error deleting auto-generated items:', error);
     throw error;
   }
 }

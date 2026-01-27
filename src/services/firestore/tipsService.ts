@@ -96,7 +96,7 @@ export const tipsService = {
   // Update a tip (only by owner)
   async updateTip(
     tipId: string,
-    data: { title?: string; content?: string; category?: string }
+    data: { title?: string; content?: string; category?: string },
   ): Promise<void> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to update a tip');

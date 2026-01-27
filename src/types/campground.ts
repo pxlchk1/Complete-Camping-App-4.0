@@ -3,9 +3,9 @@
  * For managing camping contacts and trip people
  */
 
-import { Timestamp } from "firebase/firestore";
+import { Timestamp } from 'firebase/firestore';
 
-export type ParticipantRole = "host" | "co_host" | "guest" | "kid" | "pet" | "other";
+export type ParticipantRole = 'host' | 'co_host' | 'guest' | 'kid' | 'pet' | 'other';
 
 export interface CampgroundContact {
   id: string;
@@ -49,8 +49,8 @@ export interface ParticipantWithRole {
 // CAMPGROUND INVITE TYPES
 // ============================================
 
-export type InviteStatus = "pending" | "accepted" | "revoked" | "expired";
-export type InviteSendMethod = "email" | "text" | "copy";
+export type InviteStatus = 'pending' | 'accepted' | 'revoked' | 'expired';
+export type InviteSendMethod = 'email' | 'text' | 'copy';
 
 export interface CampgroundInvite {
   id: string;

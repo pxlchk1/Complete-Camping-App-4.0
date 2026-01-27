@@ -3,7 +3,7 @@
  * For managing trail maps, routes, permits, and plans organized by trip day
  */
 
-export type ItineraryLinkProvider = 
+export type ItineraryLinkProvider =
   | 'alltrails'
   | 'onx'
   | 'google_maps'
@@ -18,7 +18,7 @@ export type ItineraryLinkProvider =
   | 'strava'
   | 'other';
 
-export type ItineraryMoment = 
+export type ItineraryMoment =
   | 'morning'
   | 'midday'
   | 'after_lunch'

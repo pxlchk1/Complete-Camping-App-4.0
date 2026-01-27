@@ -1,12 +1,12 @@
 /**
  * Content Actions Components
- * 
+ *
  * Reusable UGC action components for consistent edit/delete/moderation across the app.
- * 
+ *
  * Usage:
  * ```tsx
  * import { ContentActionsAffordance } from "@/components/contentActions";
- * 
+ *
  * <ContentActionsAffordance
  *   itemId={post.id}
  *   itemType="feedback"
@@ -21,23 +21,20 @@
  * ```
  */
 
-export { ContentActionsMenu } from "./ContentActionsMenu";
-export type { 
-  ContentActionsMenuProps, 
-  ContentItemType, 
+export { ContentActionsMenu } from './ContentActionsMenu';
+export type {
+  ContentActionsMenuProps,
+  ContentItemType,
   RoleLabel,
   ConfirmCopy,
-} from "./ContentActionsMenu";
+} from './ContentActionsMenu';
 
-export { ModerationChip } from "./ModerationChip";
-export type { 
-  ModerationChipProps, 
-  ModerationRoleLabel,
-} from "./ModerationChip";
+export { ModerationChip } from './ModerationChip';
+export type { ModerationChipProps, ModerationRoleLabel } from './ModerationChip';
 
-export { ContentActionsAffordance } from "./ContentActionsAffordance";
-export type { 
+export { ContentActionsAffordance } from './ContentActionsAffordance';
+export type {
   ContentActionsAffordanceProps,
   LayoutVariant,
   AlignmentVariant,
-} from "./ContentActionsAffordance";
+} from './ContentActionsAffordance';

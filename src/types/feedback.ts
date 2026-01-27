@@ -1,19 +1,19 @@
 // Feedback system types
 
 export type FeedbackCategory =
-  | "feature_request"
-  | "bug_report"
-  | "improvement"
-  | "question"
-  | "other";
+  | 'feature_request'
+  | 'bug_report'
+  | 'improvement'
+  | 'question'
+  | 'other';
 
 export type FeedbackStatus =
-  | "open"
-  | "under_review"
-  | "planned"
-  | "in_progress"
-  | "completed"
-  | "closed";
+  | 'open'
+  | 'under_review'
+  | 'planned'
+  | 'in_progress'
+  | 'completed'
+  | 'closed';
 
 export interface FeedbackPost {
   id: string;
@@ -48,7 +48,7 @@ export interface FeedbackComment {
 }
 
 export interface FeedbackFilters {
-  sortBy?: "hot" | "top" | "new";
+  sortBy?: 'hot' | 'top' | 'new';
   category?: FeedbackCategory;
   status?: FeedbackStatus;
 }
@@ -56,6 +56,6 @@ export interface FeedbackFilters {
 export interface FeedbackVote {
   userId: string;
   postId: string;
-  voteType: "up" | "down";
+  voteType: 'up' | 'down';
   createdAt: string;
 }

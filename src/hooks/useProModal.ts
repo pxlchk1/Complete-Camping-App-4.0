@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback } from 'react';
 
 /**
  * Shared hook for managing the Pro/Paywall modal state.

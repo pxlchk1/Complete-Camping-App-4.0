@@ -10,7 +10,10 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "postinstall": "node scripts/patch-ios-podspecs.js"
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "postinstall": "node scripts/patch-ios-podspecs.js",
+    "prepare": "husky"
   },
   "dependencies": {
     "@expo-google-fonts/josefin-slab": "^0.4.1",
@@ -136,14 +139,22 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@commitlint/cli": "^20.3.1",
+    "@commitlint/config-conventional": "^20.3.1",
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/react": "~19.1.0",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
     "babel-plugin-module-resolver": "^5.0.2",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "prettier": "^3.8.1",
     "typescript": "~5.9.2"
   },
   "packageManager": "npm@10.9.2"

@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, LayoutChangeEvent } from 'react-native';
-import Animated, { useDerivedValue, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useDerivedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { useFireflyTime } from '../../context/FireflyTimeContext';
 
 const fireflyImg =
@@ -11,7 +16,7 @@ const FIREFLY_HEIGHT = 20;
 
 export default function FireflyLoader() {
   const frameShared = useFireflyTime();
-  
+
   // Container dimensions - use shared values for smooth updates
   const containerWidth = useSharedValue(200);
   const containerHeight = useSharedValue(200);

@@ -3,13 +3,30 @@
  * Allows admin to grant premium subscriptions to users
  */
 
-import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Alert, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { auth, db } from "../config/firebase";
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
-import ModalHeader from "../components/ModalHeader";
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { auth, db } from '../config/firebase';
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+  collection,
+  query,
+  where,
+  getDocs,
+} from 'firebase/firestore';
+import ModalHeader from '../components/ModalHeader';
 import {
   PARCHMENT,
   CARD_BACKGROUND_LIGHT,
@@ -19,24 +36,24 @@ import {
   TEXT_MUTED,
   EARTH_GREEN,
   DEEP_FOREST,
-} from "../constants/colors";
+} from '../constants/colors';
 
 const SUBSCRIPTION_DURATIONS = [
-  { id: "1_month", label: "1 Month", months: 1 },
-  { id: "3_months", label: "3 Months", months: 3 },
-  { id: "6_months", label: "6 Months", months: 6 },
-  { id: "1_year", label: "1 Year", months: 12 },
-  { id: "lifetime", label: "Lifetime", months: null },
+  { id: '1_month', label: '1 Month', months: 1 },
+  { id: '3_months', label: '3 Months', months: 3 },
+  { id: '6_months', label: '6 Months', months: 6 },
+  { id: '1_year', label: '1 Year', months: 12 },
+  { id: 'lifetime', label: 'Lifetime', months: null },
 ];
 
 export default function AdminSubscriptionsScreen() {
-  const [email, setEmail] = useState("");
-  const [selectedDuration, setSelectedDuration] = useState("");
+  const [email, setEmail] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleAwardSubscription = async () => {
     if (!email.trim() || !selectedDuration) {
-      Alert.alert("Missing Information", "Please enter an email and select a duration");
+      Alert.alert('Missing Information', 'Please enter an email and select a duration');
       return;
     }
 
@@ -44,18 +61,18 @@ export default function AdminSubscriptionsScreen() {
       setLoading(true);
 
       // Find user by email
-      const usersRef = collection(db, "users");
-      const q = query(usersRef, where("email", "==", email.trim().toLowerCase()));
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', email.trim().toLowerCase()));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        Alert.alert("User Not Found", "No user found with that email address");
+        Alert.alert('User Not Found', 'No user found with that email address');
         return;
       }
 
       const userDoc = querySnapshot.docs[0];
       const userId = userDoc.id;
-      const duration = SUBSCRIPTION_DURATIONS.find(d => d.id === selectedDuration);
+      const duration = SUBSCRIPTION_DURATIONS.find((d) => d.id === selectedDuration);
 
       if (!duration) return;
 
@@ -68,33 +85,33 @@ export default function AdminSubscriptionsScreen() {
       }
 
       // Update user document
-      await updateDoc(doc(db, "users", userId), {
-        membershipTier: "subscribed",
-        subscriptionProvider: "admin_granted",
-        subscriptionStatus: "active",
+      await updateDoc(doc(db, 'users', userId), {
+        membershipTier: 'subscribed',
+        subscriptionProvider: 'admin_granted',
+        subscriptionStatus: 'active',
         subscriptionUpdatedAt: serverTimestamp(),
         subscriptionExpiresAt: expiresAt,
-        grantedBy: auth.currentUser?.email || "admin",
+        grantedBy: auth.currentUser?.email || 'admin',
         grantedAt: serverTimestamp(),
       });
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        "Success",
+        'Success',
         `${duration.label} premium subscription awarded to ${email}`,
         [
           {
-            text: "OK",
+            text: 'OK',
             onPress: () => {
-              setEmail("");
-              setSelectedDuration("");
+              setEmail('');
+              setSelectedDuration('');
             },
           },
-        ]
+        ],
       );
     } catch (error: any) {
-      console.error("Error awarding subscription:", error);
-      Alert.alert("Error", error.message || "Failed to award subscription");
+      console.error('Error awarding subscription:', error);
+      Alert.alert('Error', error.message || 'Failed to award subscription');
     } finally {
       setLoading(false);
     }
@@ -109,15 +126,21 @@ export default function AdminSubscriptionsScreen() {
           {/* Info Card */}
           <View
             className="mb-6 p-4 rounded-xl border"
-            style={{ backgroundColor: "#E3F2FD", borderColor: "#2196F3" }}
+            style={{ backgroundColor: '#E3F2FD', borderColor: '#2196F3' }}
           >
             <View className="flex-row items-start">
-              <Ionicons name="information-circle" size={20} color="#2196F3" style={{ marginRight: 8, marginTop: 2 }} />
+              <Ionicons
+                name="information-circle"
+                size={20}
+                color="#2196F3"
+                style={{ marginRight: 8, marginTop: 2 }}
+              />
               <Text
                 className="flex-1 text-sm"
-                style={{ fontFamily: "SourceSans3_400Regular", color: "#1565C0" }}
+                style={{ fontFamily: 'SourceSans3_400Regular', color: '#1565C0' }}
               >
-                Award premium subscriptions to users by entering their email address and selecting a duration.
+                Award premium subscriptions to users by entering their email address and
+                selecting a duration.
               </Text>
             </View>
           </View>
@@ -126,7 +149,10 @@ export default function AdminSubscriptionsScreen() {
           <View className="mb-6">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               User Email *
             </Text>
@@ -142,7 +168,7 @@ export default function AdminSubscriptionsScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -152,7 +178,10 @@ export default function AdminSubscriptionsScreen() {
           <View className="mb-6">
             <Text
               className="mb-3"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Subscription Duration *
             </Text>
@@ -166,23 +195,36 @@ export default function AdminSubscriptionsScreen() {
                 }}
                 className="mb-2 p-4 rounded-xl border active:opacity-70"
                 style={{
-                  backgroundColor: selectedDuration === duration.id ? DEEP_FOREST : CARD_BACKGROUND_LIGHT,
-                  borderColor: selectedDuration === duration.id ? DEEP_FOREST : BORDER_SOFT,
+                  backgroundColor:
+                    selectedDuration === duration.id
+                      ? DEEP_FOREST
+                      : CARD_BACKGROUND_LIGHT,
+                  borderColor:
+                    selectedDuration === duration.id ? DEEP_FOREST : BORDER_SOFT,
                 }}
               >
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-center">
                     <Ionicons
-                      name={selectedDuration === duration.id ? "radio-button-on" : "radio-button-off"}
+                      name={
+                        selectedDuration === duration.id
+                          ? 'radio-button-on'
+                          : 'radio-button-off'
+                      }
                       size={24}
-                      color={selectedDuration === duration.id ? PARCHMENT : TEXT_SECONDARY}
+                      color={
+                        selectedDuration === duration.id ? PARCHMENT : TEXT_SECONDARY
+                      }
                       style={{ marginRight: 12 }}
                     />
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 16,
-                        color: selectedDuration === duration.id ? PARCHMENT : TEXT_PRIMARY_STRONG,
+                        color:
+                          selectedDuration === duration.id
+                            ? PARCHMENT
+                            : TEXT_PRIMARY_STRONG,
                       }}
                     >
                       {duration.label}
@@ -191,11 +233,11 @@ export default function AdminSubscriptionsScreen() {
                   {duration.months === null && (
                     <View
                       className="px-2 py-1 rounded"
-                      style={{ backgroundColor: "#FFD700" }}
+                      style={{ backgroundColor: '#FFD700' }}
                     >
                       <Text
                         className="text-xs"
-                        style={{ fontFamily: "SourceSans3_600SemiBold", color: "#000" }}
+                        style={{ fontFamily: 'SourceSans3_600SemiBold', color: '#000' }}
                       >
                         UNLIMITED
                       </Text>
@@ -212,7 +254,8 @@ export default function AdminSubscriptionsScreen() {
             disabled={loading || !email.trim() || !selectedDuration}
             className="p-4 rounded-xl items-center active:opacity-70"
             style={{
-              backgroundColor: (!email.trim() || !selectedDuration) ? "#CCCCCC" : DEEP_FOREST,
+              backgroundColor:
+                !email.trim() || !selectedDuration ? '#CCCCCC' : DEEP_FOREST,
             }}
           >
             {loading ? (
@@ -220,7 +263,7 @@ export default function AdminSubscriptionsScreen() {
             ) : (
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 16,
                   color: PARCHMENT,
                 }}

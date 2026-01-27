@@ -7,8 +7,8 @@ Does not support video and audio generation.
 */
 
 // API endpoint configuration
-const baseUrl = "https://api.vibecodeapp.com";
-const endpoint = "/api/storage/generate-image";
+const baseUrl = 'https://api.vibecodeapp.com';
+const endpoint = '/api/storage/generate-image';
 
 /**
  * Generate an image using the custom API endpoint
@@ -19,10 +19,10 @@ const endpoint = "/api/storage/generate-image";
 export async function generateImage(
   prompt: string,
   options?: {
-    size?: "1024x1024" | "1536x1024" | "1024x1536" | "auto";
-    quality?: "low" | "medium" | "high" | "auto";
-    format?: "png" | "jpeg" | "webp";
-    background?: undefined | "transparent";
+    size?: '1024x1024' | '1536x1024' | '1024x1536' | 'auto';
+    quality?: 'low' | 'medium' | 'high' | 'auto';
+    format?: 'png' | 'jpeg' | 'webp';
+    background?: undefined | 'transparent';
   },
 ): Promise<string> {
   try {
@@ -37,31 +37,33 @@ export async function generateImage(
 
     // Make API request
     const response = await fetch(`${baseUrl}${endpoint}`, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("[AssetGenerationService] Error response:", errorData);
-      throw new Error(`Image generation API error: ${response.status} ${JSON.stringify(errorData)}`);
+      console.error('[AssetGenerationService] Error response:', errorData);
+      throw new Error(
+        `Image generation API error: ${response.status} ${JSON.stringify(errorData)}`,
+      );
     }
 
     const result = await response.json();
-    console.log("[AssetGenerationService] Image generated successfully");
+    console.log('[AssetGenerationService] Image generated successfully');
 
     // Return the image data from the response
     if (result.success && result.data) {
       return result.data.imageUrl as string;
     } else {
-      console.error("[AssetGenerationService] Invalid response format:", result);
-      throw new Error("Invalid response format from API");
+      console.error('[AssetGenerationService] Invalid response format:', result);
+      throw new Error('Invalid response format from API');
     }
   } catch (error) {
-    console.error("Image Generation Error:", error);
+    console.error('Image Generation Error:', error);
     throw error;
   }
 }
@@ -71,15 +73,17 @@ export async function generateImage(
  * @param aspectRatio The aspect ratio to convert
  * @returns The corresponding size format
  */
-export function convertAspectRatioToSize(aspectRatio: string): "1024x1024" | "1536x1024" | "1024x1536" | "auto" {
+export function convertAspectRatioToSize(
+  aspectRatio: string,
+): '1024x1024' | '1536x1024' | '1024x1536' | 'auto' {
   switch (aspectRatio) {
-    case "1:1":
-      return "1024x1024";
-    case "3:2":
-      return "1536x1024";
-    case "2:3":
-      return "1024x1536";
+    case '1:1':
+      return '1024x1024';
+    case '3:2':
+      return '1536x1024';
+    case '2:3':
+      return '1024x1536';
     default:
-      return "auto";
+      return 'auto';
   }
 }

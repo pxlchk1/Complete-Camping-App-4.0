@@ -16,16 +16,18 @@ If you need to generate many assets, REFACTOR THIS SCRIPT TO CONCURRENTLY GENERA
 use npx tsx generate-asset-script.ts to run this script.
 */
 
-import { generateImage } from "./src/api/image-generation";
-import * as fs from "fs";
-import * as path from "path";
-import { Readable } from "stream";
-import { finished } from "stream/promises";
+import { generateImage } from './src/api/image-generation';
+import * as fs from 'fs';
+import * as path from 'path';
+import { Readable } from 'stream';
+import { finished } from 'stream/promises';
 
 async function downloadImage(url: string, outputPath: string): Promise<void> {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Failed to download image: ${response.status} ${response.statusText}`,
+    );
   }
 
   const fileStream = fs.createWriteStream(outputPath);
@@ -35,8 +37,8 @@ async function downloadImage(url: string, outputPath: string): Promise<void> {
 }
 
 async function logImageGeneration(prompt: string, imageUrl: string): Promise<void> {
-  const logDir = path.join(__dirname, "logs");
-  const logFile = path.join(logDir, "imageGenerationsLog");
+  const logDir = path.join(__dirname, 'logs');
+  const logFile = path.join(logDir, 'imageGenerationsLog');
 
   // Create logs directory if it doesn't exist
   if (!fs.existsSync(logDir)) {
@@ -50,28 +52,28 @@ async function logImageGeneration(prompt: string, imageUrl: string): Promise<voi
 async function main() {
   try {
     //update this to
-    const prompt = "describe the asset you want to generate";
+    const prompt = 'describe the asset you want to generate';
 
-    console.log("Generating image with prompt:", prompt);
+    console.log('Generating image with prompt:', prompt);
     const imageUrl = await generateImage(prompt, {
-      size: "1024x1024",
-      quality: "high",
-      format: "png",
+      size: '1024x1024',
+      quality: 'high',
+      format: 'png',
     });
 
-    console.log("Image generated successfully. URL:", imageUrl);
+    console.log('Image generated successfully. URL:', imageUrl);
 
     // Log the image generation
     await logImageGeneration(prompt, imageUrl);
 
-    const outputPath = path.join(__dirname, "assets", "japanese-art-logo.png");
+    const outputPath = path.join(__dirname, 'assets', 'japanese-art-logo.png');
     await downloadImage(imageUrl, outputPath);
 
-    console.log("Process completed successfully");
-    console.log("Image URL:", imageUrl);
-    console.log("Image saved to:", outputPath);
+    console.log('Process completed successfully');
+    console.log('Image URL:', imageUrl);
+    console.log('Image saved to:', outputPath);
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
   }
 }
 

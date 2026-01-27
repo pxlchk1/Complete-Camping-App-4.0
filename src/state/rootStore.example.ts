@@ -1,9 +1,9 @@
 // This is an example of a Zustand store, use this for async storage.
 // DO NOTE USE THIS FILE, create new ones in the state folder.
 
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface RootStore {
   someData: number;
@@ -18,7 +18,7 @@ const useRootStore = create<RootStore>()(
       addSomeData: () => set({ someData: get().someData + 1 }),
     }),
     {
-      name: "root-storage",
+      name: 'root-storage',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),

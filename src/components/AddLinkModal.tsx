@@ -1,43 +1,44 @@
-import React, { useState } from "react";
-import { Modal, View, Text, TextInput, Pressable, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { DEEP_FOREST, PARCHMENT } from "../constants/colors";
+import React, { useState } from 'react';
+import { Modal, View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { DEEP_FOREST, PARCHMENT } from '../constants/colors';
 
 /**
  * Parses a pasted string that may contain descriptive text followed by a URL.
  * Example: "Riverbed and Night Herron Trail https://alltrails.com/trail/us/ca/riverbed"
  * Returns: { title: "Riverbed and Night Herron Trail", url: "https://alltrails.com/trail/us/ca/riverbed" }
- * 
+ *
  * If no URL is found, returns the original text as title with empty url.
  * If only a URL is found (no prefix text), returns empty title with the url.
  */
 function parseDescriptiveUrl(input: string): { title: string; url: string } {
   const trimmed = input.trim();
-  
+
   // Regex to match URLs starting with http:// or https://
   const urlPattern = /(https?:\/\/[^\s]+)/i;
   const match = trimmed.match(urlPattern);
-  
+
   if (!match) {
     // No URL found - check if it looks like a URL without protocol
-    const noProtocolPattern = /^(www\.|[a-z0-9-]+\.(com|org|net|io|co|app|us|uk|ca|au|gov|edu)[^\s]*)/i;
+    const noProtocolPattern =
+      /^(www\.|[a-z0-9-]+\.(com|org|net|io|co|app|us|uk|ca|au|gov|edu)[^\s]*)/i;
     if (noProtocolPattern.test(trimmed)) {
       // It's just a URL without protocol
-      return { title: "", url: trimmed };
+      return { title: '', url: trimmed };
     }
     // No URL at all, treat as title
-    return { title: trimmed, url: "" };
+    return { title: trimmed, url: '' };
   }
-  
+
   const url = match[1];
   const urlIndex = trimmed.indexOf(url);
-  
+
   // Extract text before the URL as the title
   const titlePart = trimmed.substring(0, urlIndex).trim();
-  
+
   // Clean up common separators at the end of title (like " - ", " | ", etc.)
-  const cleanedTitle = titlePart.replace(/[\s\-–—|:]+$/, "").trim();
-  
+  const cleanedTitle = titlePart.replace(/[\s\-–—|:]+$/, '').trim();
+
   return { title: cleanedTitle, url };
 }
 
@@ -48,27 +49,27 @@ export type AddLinkModalProps = {
 };
 
 export default function AddLinkModal({ visible, onSave, onClose }: AddLinkModalProps) {
-  const [title, setTitle] = useState("");
-  const [url, setUrl] = useState("");
-  const [error, setError] = useState("");
+  const [title, setTitle] = useState('');
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
 
   React.useEffect(() => {
     if (visible) {
-      setTitle("");
-      setUrl("");
-      setError("");
+      setTitle('');
+      setUrl('');
+      setError('');
     }
   }, [visible]);
 
   /**
    * Handle URL input change - parse descriptive text if present.
-   * When user pastes "Riverbed Trail https://alltrails.com/...", 
+   * When user pastes "Riverbed Trail https://alltrails.com/...",
    * we extract the title and url separately.
    */
   function handleUrlChange(input: string) {
     // Check if this looks like a paste with descriptive text + URL
     const parsed = parseDescriptiveUrl(input);
-    
+
     if (parsed.title && parsed.url) {
       // Found both title and URL - populate both fields
       // Only auto-fill title if it's currently empty (don't overwrite user edits)
@@ -87,31 +88,36 @@ export default function AddLinkModal({ visible, onSave, onClose }: AddLinkModalP
 
   function validateAndSave() {
     if (title.trim().length < 2) {
-      setError("Title must be at least 2 characters.");
+      setError('Title must be at least 2 characters.');
       return;
     }
     let inputUrl = url.trim();
     if (!inputUrl) {
-      setError("URL is required.");
+      setError('URL is required.');
       return;
     }
     if (!/^https?:\/\//i.test(inputUrl)) {
-      inputUrl = "https://" + inputUrl;
+      inputUrl = 'https://' + inputUrl;
     }
     try {
       const u = new URL(inputUrl);
       if (!/^https?:\/\//i.test(u.href)) throw new Error();
     } catch {
-      setError("Please enter a valid URL (http/https).");
+      setError('Please enter a valid URL (http/https).');
       return;
     }
-    setError("");
+    setError('');
     onSave(title.trim(), inputUrl);
     onClose();
   }
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
       <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
         {/* Header - Deep Forest Green background */}
         <View style={styles.headerContainer}>
@@ -122,7 +128,7 @@ export default function AddLinkModal({ visible, onSave, onClose }: AddLinkModalP
             </Pressable>
           </View>
         </View>
-        
+
         <View style={styles.content}>
           <TextInput
             style={styles.input}
@@ -141,7 +147,11 @@ export default function AddLinkModal({ visible, onSave, onClose }: AddLinkModalP
           />
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <View style={styles.actions}>
-            <Pressable onPress={onClose} style={styles.cancelBtn} accessibilityLabel="Cancel">
+            <Pressable
+              onPress={onClose}
+              style={styles.cancelBtn}
+              accessibilityLabel="Cancel"
+            >
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
             <Pressable
@@ -168,12 +178,12 @@ const styles = StyleSheet.create({
     backgroundColor: DEEP_FOREST,
   },
   headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: 'Raleway_700Bold',
     fontSize: 24,
     color: PARCHMENT,
     flex: 1,
@@ -183,32 +193,32 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     padding: 20,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#E5D6C2",
+    borderColor: '#E5D6C2',
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    color: "#3D2817",
+    color: '#3D2817',
     marginBottom: 12,
-    backgroundColor: "#f9f6f2",
+    backgroundColor: '#f9f6f2',
   },
   error: {
-    color: "#dc2626",
+    color: '#dc2626',
     fontSize: 13,
     marginBottom: 8,
   },
   actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   cancelBtn: {
     marginRight: 16,
@@ -216,21 +226,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cancelText: {
-    color: "#bfae9b",
+    color: '#bfae9b',
     fontSize: 15,
   },
   saveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#3D2817",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3D2817',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 18,
   },
   saveText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 15,
     marginLeft: 6,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

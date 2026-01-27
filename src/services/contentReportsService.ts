@@ -3,14 +3,9 @@
  * Collection: contentReports
  */
 
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import firebaseApp from "../config/firebase";
-import { ReportTargetType } from "../types/community";
+import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import firebaseApp from '../config/firebase';
+import { ReportTargetType } from '../types/community';
 
 const db = getFirestore(firebaseApp);
 
@@ -20,7 +15,7 @@ export async function reportContent(data: {
   reason: string;
   reporterId: string;
 }): Promise<string> {
-  const reportsRef = collection(db, "contentReports");
+  const reportsRef = collection(db, 'contentReports');
 
   const docRef = await addDoc(reportsRef, {
     targetType: data.targetType,
@@ -28,7 +23,7 @@ export async function reportContent(data: {
     reason: data.reason,
     reporterId: data.reporterId,
     createdAt: serverTimestamp(),
-    status: "open",
+    status: 'open',
   });
 
   return docRef.id;

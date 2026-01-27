@@ -112,7 +112,7 @@ const PROVIDER_PATTERNS: ProviderPattern[] = [
  */
 export function sniffProvider(url: string): ProviderInfo {
   const normalizedUrl = url.toLowerCase().trim();
-  
+
   for (const pattern of PROVIDER_PATTERNS) {
     if (pattern.pattern.test(normalizedUrl)) {
       return {
@@ -123,16 +123,18 @@ export function sniffProvider(url: string): ProviderInfo {
       };
     }
   }
-  
+
   // Extract domain for fallback title
   let domain = 'Link';
   try {
-    const urlObj = new URL(normalizedUrl.startsWith('http') ? normalizedUrl : `https://${normalizedUrl}`);
+    const urlObj = new URL(
+      normalizedUrl.startsWith('http') ? normalizedUrl : `https://${normalizedUrl}`,
+    );
     domain = urlObj.hostname.replace(/^www\./, '');
   } catch {
     // Keep default
   }
-  
+
   return {
     provider: 'other',
     label: domain,
@@ -145,7 +147,7 @@ export function sniffProvider(url: string): ProviderInfo {
  * Get icon name for a provider
  */
 export function getProviderIcon(provider: ItineraryLinkProvider): string {
-  const pattern = PROVIDER_PATTERNS.find(p => p.provider === provider);
+  const pattern = PROVIDER_PATTERNS.find((p) => p.provider === provider);
   return pattern?.icon || 'link-outline';
 }
 
@@ -153,7 +155,7 @@ export function getProviderIcon(provider: ItineraryLinkProvider): string {
  * Get display label for a provider
  */
 export function getProviderLabel(provider: ItineraryLinkProvider): string {
-  const pattern = PROVIDER_PATTERNS.find(p => p.provider === provider);
+  const pattern = PROVIDER_PATTERNS.find((p) => p.provider === provider);
   return pattern?.label || 'Link';
 }
 
@@ -163,12 +165,12 @@ export function getProviderLabel(provider: ItineraryLinkProvider): string {
 export function normalizeUrl(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
-  
+
   let url = trimmed;
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     url = `https://${url}`;
   }
-  
+
   try {
     const parsed = new URL(url);
     if (!parsed.protocol.startsWith('http')) {

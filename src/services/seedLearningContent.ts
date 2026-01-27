@@ -1,17 +1,13 @@
 /**
  * Seed Learning Content (Client-Side Version)
- * 
+ *
  * This can be called from the app to populate Firestore with initial learning content.
  * Call seedLearningContent() from an admin action or during initial setup.
  */
 
-import {
-  doc,
-  writeBatch,
-  Timestamp,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
-import { BadgeId } from "../types/learning";
+import { doc, writeBatch, Timestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { BadgeId } from '../types/learning';
 
 // ============================================
 // TRACK DEFINITIONS
@@ -30,53 +26,43 @@ interface TrackSeed {
 
 const TRACKS: TrackSeed[] = [
   {
-    id: "leave-no-trace",
-    title: "Leave No Trace",
-    description: "Learn the 7 principles that protect the places we love",
-    icon: "leaf",
+    id: 'leave-no-trace',
+    title: 'Leave No Trace',
+    description: 'Learn the 7 principles that protect the places we love',
+    icon: 'leaf',
     order: 0,
-    badgeId: "leave-no-trace",
-    moduleIds: ["lnt-principles"],
+    badgeId: 'leave-no-trace',
+    moduleIds: ['lnt-principles'],
     isActive: true,
   },
   {
-    id: "novice",
-    title: "Weekend Camper",
-    description: "Master the fundamentals of camping",
-    icon: "bonfire",
+    id: 'novice',
+    title: 'Weekend Camper',
+    description: 'Master the fundamentals of camping',
+    icon: 'bonfire',
     order: 1,
-    badgeId: "weekend-camper",
-    moduleIds: [
-      "first-trip",
-      "choosing-tent",
-      "sleep-system",
-    ],
+    badgeId: 'weekend-camper',
+    moduleIds: ['first-trip', 'choosing-tent', 'sleep-system'],
     isActive: true,
   },
   {
-    id: "intermediate",
-    title: "Trail Leader",
-    description: "Develop advanced outdoor skills to lead groups",
-    icon: "trail-sign",
+    id: 'intermediate',
+    title: 'Trail Leader',
+    description: 'Develop advanced outdoor skills to lead groups',
+    icon: 'trail-sign',
     order: 2,
-    badgeId: "trail-leader",
-    moduleIds: [
-      "multi-day-planning",
-      "terrain-weather",
-    ],
+    badgeId: 'trail-leader',
+    moduleIds: ['multi-day-planning', 'terrain-weather'],
     isActive: true,
   },
   {
-    id: "master",
-    title: "Backcountry Guide",
-    description: "Master wilderness expertise for remote adventures",
-    icon: "compass",
+    id: 'master',
+    title: 'Backcountry Guide',
+    description: 'Master wilderness expertise for remote adventures',
+    icon: 'compass',
     order: 3,
-    badgeId: "backcountry-guide",
-    moduleIds: [
-      "advanced-navigation",
-      "wilderness-weather",
-    ],
+    badgeId: 'backcountry-guide',
+    moduleIds: ['advanced-navigation', 'wilderness-weather'],
     isActive: true,
   },
 ];
@@ -109,11 +95,11 @@ const MODULES: ModuleSeed[] = [
   // LEAVE NO TRACE
   // ============================================
   {
-    id: "lnt-principles",
-    trackId: "leave-no-trace",
-    title: "The 7 Principles of Leave No Trace",
-    description: "Learn how to minimize your impact on the environment",
-    icon: "leaf",
+    id: 'lnt-principles',
+    trackId: 'leave-no-trace',
+    title: 'The 7 Principles of Leave No Trace',
+    description: 'Learn how to minimize your impact on the environment',
+    icon: 'leaf',
     order: 0,
     estimatedMinutes: 12,
     content: `# Leave No Trace: The 7 Principles
@@ -211,54 +197,59 @@ Remember: take only photos, leave only footprints (on durable surfaces!), and ki
 `,
     quiz: [
       {
-        id: "lnt-q1",
-        question: "How far from water sources should you dispose of human waste?",
-        options: ["50 feet", "100 feet", "200 feet", "500 feet"],
+        id: 'lnt-q1',
+        question: 'How far from water sources should you dispose of human waste?',
+        options: ['50 feet', '100 feet', '200 feet', '500 feet'],
         correctAnswerIndex: 2,
-        explanation: "You should dispose of human waste at least 200 feet from water, camp, and trails to prevent contamination.",
+        explanation:
+          'You should dispose of human waste at least 200 feet from water, camp, and trails to prevent contamination.',
       },
       {
-        id: "lnt-q2",
-        question: "What is the recommended depth for a cathole?",
-        options: ["2-3 inches", "4-5 inches", "6-8 inches", "10-12 inches"],
+        id: 'lnt-q2',
+        question: 'What is the recommended depth for a cathole?',
+        options: ['2-3 inches', '4-5 inches', '6-8 inches', '10-12 inches'],
         correctAnswerIndex: 2,
-        explanation: "Catholes should be dug 6 to 8 inches deep to ensure proper decomposition.",
+        explanation:
+          'Catholes should be dug 6 to 8 inches deep to ensure proper decomposition.',
       },
       {
-        id: "lnt-q3",
-        question: "What should you do with wildlife you encounter?",
+        id: 'lnt-q3',
+        question: 'What should you do with wildlife you encounter?',
         options: [
-          "Approach slowly for photos",
-          "Feed them small amounts of food",
-          "Observe from a distance and never feed",
-          "Chase them away from camp",
+          'Approach slowly for photos',
+          'Feed them small amounts of food',
+          'Observe from a distance and never feed',
+          'Chase them away from camp',
         ],
         correctAnswerIndex: 2,
-        explanation: "Always observe wildlife from a distance. Feeding wildlife damages their health and alters natural behaviors.",
+        explanation:
+          'Always observe wildlife from a distance. Feeding wildlife damages their health and alters natural behaviors.',
       },
       {
-        id: "lnt-q4",
+        id: 'lnt-q4',
         question: "What are considered 'durable surfaces' for camping?",
         options: [
-          "Any flat ground",
-          "Grassy meadows",
-          "Established campsites, rock, gravel, or snow",
-          "Under large trees",
+          'Any flat ground',
+          'Grassy meadows',
+          'Established campsites, rock, gravel, or snow',
+          'Under large trees',
         ],
         correctAnswerIndex: 2,
-        explanation: "Durable surfaces include established trails and campsites, rock, gravel, dry grasses, or snow.",
+        explanation:
+          'Durable surfaces include established trails and campsites, rock, gravel, dry grasses, or snow.',
       },
       {
-        id: "lnt-q5",
+        id: 'lnt-q5',
         question: "Which principle says 'Pack it in, pack it out'?",
         options: [
-          "Plan Ahead and Prepare",
-          "Travel on Durable Surfaces",
-          "Dispose of Waste Properly",
-          "Leave What You Find",
+          'Plan Ahead and Prepare',
+          'Travel on Durable Surfaces',
+          'Dispose of Waste Properly',
+          'Leave What You Find',
         ],
         correctAnswerIndex: 2,
-        explanation: "The 'Dispose of Waste Properly' principle includes packing out all trash and leftover food.",
+        explanation:
+          "The 'Dispose of Waste Properly' principle includes packing out all trash and leftover food.",
       },
     ],
     isActive: true,
@@ -268,11 +259,12 @@ Remember: take only photos, leave only footprints (on durable surfaces!), and ki
   // WEEKEND CAMPER TRACK
   // ============================================
   {
-    id: "first-trip",
-    trackId: "novice",
-    title: "Planning Your First Camping Trip",
-    description: "Everything you need to know to plan a successful first camping adventure",
-    icon: "map",
+    id: 'first-trip',
+    trackId: 'novice',
+    title: 'Planning Your First Camping Trip',
+    description:
+      'Everything you need to know to plan a successful first camping adventure',
+    icon: 'map',
     order: 0,
     estimatedMinutes: 10,
     content: `# Planning Your First Camping Trip
@@ -353,45 +345,48 @@ You're now ready to plan your first camping trip! Remember, camping is a skill t
 `,
     quiz: [
       {
-        id: "ft-q1",
-        question: "What type of campground is best for beginners?",
+        id: 'ft-q1',
+        question: 'What type of campground is best for beginners?',
         options: [
-          "Backcountry sites",
-          "Developed campgrounds with amenities",
-          "Dispersed camping",
-          "Wilderness areas",
+          'Backcountry sites',
+          'Developed campgrounds with amenities',
+          'Dispersed camping',
+          'Wilderness areas',
         ],
         correctAnswerIndex: 1,
-        explanation: "Developed campgrounds with restrooms, water, and camp hosts provide a safety net for learning.",
+        explanation:
+          'Developed campgrounds with restrooms, water, and camp hosts provide a safety net for learning.',
       },
       {
-        id: "ft-q2",
-        question: "How long should your first camping trip be?",
-        options: ["One night only", "One or two nights", "A full week", "Just a day trip"],
-        correctAnswerIndex: 1,
-        explanation: "One or two nights is perfect for learning the basics without overcommitting.",
-      },
-      {
-        id: "ft-q3",
-        question: "When should you avoid camping as a beginner?",
+        id: 'ft-q2',
+        question: 'How long should your first camping trip be?',
         options: [
-          "Weekdays",
-          "Holiday weekends",
-          "Early fall",
-          "Late spring",
+          'One night only',
+          'One or two nights',
+          'A full week',
+          'Just a day trip',
         ],
         correctAnswerIndex: 1,
-        explanation: "Holiday weekends are very crowded, making them less ideal for learning.",
+        explanation:
+          'One or two nights is perfect for learning the basics without overcommitting.',
+      },
+      {
+        id: 'ft-q3',
+        question: 'When should you avoid camping as a beginner?',
+        options: ['Weekdays', 'Holiday weekends', 'Early fall', 'Late spring'],
+        correctAnswerIndex: 1,
+        explanation:
+          'Holiday weekends are very crowded, making them less ideal for learning.',
       },
     ],
     isActive: true,
   },
   {
-    id: "choosing-tent",
-    trackId: "novice",
-    title: "Choosing the Right Tent",
-    description: "How to select the perfect tent for your camping style",
-    icon: "home",
+    id: 'choosing-tent',
+    trackId: 'novice',
+    title: 'Choosing the Right Tent',
+    description: 'How to select the perfect tent for your camping style',
+    icon: 'home',
     order: 1,
     estimatedMinutes: 8,
     content: `# Choosing the Right Tent
@@ -479,40 +474,43 @@ For beginners, a mid-range tent from a reputable brand is the best value.
 `,
     quiz: [
       {
-        id: "ct-q1",
+        id: 'ct-q1',
         question: "If you're a couple, what tent capacity should you get?",
-        options: ["2-person", "3-person", "4-person", "1-person each"],
+        options: ['2-person', '3-person', '4-person', '1-person each'],
         correctAnswerIndex: 1,
-        explanation: "Adding one extra person to the rating gives you room for gear and comfort.",
+        explanation:
+          'Adding one extra person to the rating gives you room for gear and comfort.',
       },
       {
-        id: "ct-q2",
-        question: "What type of tent is best for most campers?",
-        options: ["2-season tent", "3-season tent", "4-season tent", "Bivy sack"],
+        id: 'ct-q2',
+        question: 'What type of tent is best for most campers?',
+        options: ['2-season tent', '3-season tent', '4-season tent', 'Bivy sack'],
         correctAnswerIndex: 1,
-        explanation: "3-season tents work for spring, summer, and fall—covering most camping needs.",
+        explanation:
+          '3-season tents work for spring, summer, and fall—covering most camping needs.',
       },
       {
-        id: "ct-q3",
-        question: "What is a vestibule?",
+        id: 'ct-q3',
+        question: 'What is a vestibule?',
         options: [
-          "The tent floor",
-          "A covered area outside the door for gear",
-          "The tent ceiling",
-          "The rainfly attachment point",
+          'The tent floor',
+          'A covered area outside the door for gear',
+          'The tent ceiling',
+          'The rainfly attachment point',
         ],
         correctAnswerIndex: 1,
-        explanation: "Vestibules are covered areas outside tent doors for storing muddy boots and gear.",
+        explanation:
+          'Vestibules are covered areas outside tent doors for storing muddy boots and gear.',
       },
     ],
     isActive: true,
   },
   {
-    id: "sleep-system",
-    trackId: "novice",
-    title: "Your Sleep System",
-    description: "How to stay warm and comfortable through the night",
-    icon: "bed",
+    id: 'sleep-system',
+    trackId: 'novice',
+    title: 'Your Sleep System',
+    description: 'How to stay warm and comfortable through the night',
+    icon: 'bed',
     order: 2,
     estimatedMinutes: 9,
     content: `# Your Sleep System
@@ -603,30 +601,33 @@ For optimal warmth:
 `,
     quiz: [
       {
-        id: "ss-q1",
-        question: "What does R-value measure in a sleeping pad?",
-        options: ["Comfort level", "Insulation from ground", "Weight", "Thickness"],
+        id: 'ss-q1',
+        question: 'What does R-value measure in a sleeping pad?',
+        options: ['Comfort level', 'Insulation from ground', 'Weight', 'Thickness'],
         correctAnswerIndex: 1,
-        explanation: "R-value measures how well the pad insulates you from the cold ground.",
+        explanation:
+          'R-value measures how well the pad insulates you from the cold ground.',
       },
       {
-        id: "ss-q2",
-        question: "Why should you avoid sleeping in clothes you wore all day?",
+        id: 'ss-q2',
+        question: 'Why should you avoid sleeping in clothes you wore all day?',
         options: [
           "They're dirty",
-          "They contain moisture which makes you cold",
+          'They contain moisture which makes you cold',
           "They're uncomfortable",
-          "They take up too much space",
+          'They take up too much space',
         ],
         correctAnswerIndex: 1,
-        explanation: "Day clothes contain sweat and moisture which reduces insulation and makes you colder.",
+        explanation:
+          'Day clothes contain sweat and moisture which reduces insulation and makes you colder.',
       },
       {
-        id: "ss-q3",
-        question: "Which sleeping bag fill retains insulation when wet?",
-        options: ["Down", "Synthetic", "Wool", "Cotton"],
+        id: 'ss-q3',
+        question: 'Which sleeping bag fill retains insulation when wet?',
+        options: ['Down', 'Synthetic', 'Wool', 'Cotton'],
         correctAnswerIndex: 1,
-        explanation: "Synthetic fill continues to insulate even when damp, unlike down which loses warmth when wet.",
+        explanation:
+          'Synthetic fill continues to insulate even when damp, unlike down which loses warmth when wet.',
       },
     ],
     isActive: true,
@@ -636,11 +637,11 @@ For optimal warmth:
   // TRAIL LEADER TRACK (Sample Modules)
   // ============================================
   {
-    id: "multi-day-planning",
-    trackId: "intermediate",
-    title: "Multi-Day Trip Planning",
-    description: "Plan extended backcountry adventures with confidence",
-    icon: "calendar",
+    id: 'multi-day-planning',
+    trackId: 'intermediate',
+    title: 'Multi-Day Trip Planning',
+    description: 'Plan extended backcountry adventures with confidence',
+    icon: 'calendar',
     order: 0,
     estimatedMinutes: 12,
     content: `# Multi-Day Trip Planning
@@ -729,40 +730,43 @@ Leading a group adds complexity:
 `,
     quiz: [
       {
-        id: "mdp-q1",
-        question: "How many miles per day should beginners plan for?",
-        options: ["2-4 miles", "5-8 miles", "10-12 miles", "15+ miles"],
+        id: 'mdp-q1',
+        question: 'How many miles per day should beginners plan for?',
+        options: ['2-4 miles', '5-8 miles', '10-12 miles', '15+ miles'],
         correctAnswerIndex: 1,
-        explanation: "Beginners should plan for 5-8 miles per day to allow for rest and enjoyment.",
+        explanation:
+          'Beginners should plan for 5-8 miles per day to allow for rest and enjoyment.',
       },
       {
-        id: "mdp-q2",
-        question: "How much food weight should you plan per person per day?",
-        options: ["0.5-1 lb", "1.5-2 lbs", "3-4 lbs", "5+ lbs"],
+        id: 'mdp-q2',
+        question: 'How much food weight should you plan per person per day?',
+        options: ['0.5-1 lb', '1.5-2 lbs', '3-4 lbs', '5+ lbs'],
         correctAnswerIndex: 1,
-        explanation: "Plan for 1.5-2 lbs of food per person per day for adequate nutrition.",
+        explanation:
+          'Plan for 1.5-2 lbs of food per person per day for adequate nutrition.',
       },
       {
-        id: "mdp-q3",
-        question: "Who should receive a copy of your trip plan?",
+        id: 'mdp-q3',
+        question: 'Who should receive a copy of your trip plan?',
         options: [
-          "Only the group leader",
-          "A trusted friend or family member",
-          "Posted on social media",
-          "No one—keep it private",
+          'Only the group leader',
+          'A trusted friend or family member',
+          'Posted on social media',
+          'No one—keep it private',
         ],
         correctAnswerIndex: 1,
-        explanation: "Always leave your trip plan with a trusted contact who can alert authorities if needed.",
+        explanation:
+          'Always leave your trip plan with a trusted contact who can alert authorities if needed.',
       },
     ],
     isActive: true,
   },
   {
-    id: "terrain-weather",
-    trackId: "intermediate",
-    title: "Reading Terrain and Weather",
-    description: "Understand the landscape and sky to stay safe",
-    icon: "cloudy",
+    id: 'terrain-weather',
+    trackId: 'intermediate',
+    title: 'Reading Terrain and Weather',
+    description: 'Understand the landscape and sky to stay safe',
+    icon: 'cloudy',
     order: 1,
     estimatedMinutes: 11,
     content: `# Reading Terrain and Weather
@@ -852,30 +856,29 @@ Before and during your trip:
 `,
     quiz: [
       {
-        id: "tw-q1",
-        question: "What do cumulonimbus clouds indicate?",
-        options: [
-          "Fair weather",
-          "Light rain",
-          "Thunderstorms",
-          "Clearing skies",
-        ],
+        id: 'tw-q1',
+        question: 'What do cumulonimbus clouds indicate?',
+        options: ['Fair weather', 'Light rain', 'Thunderstorms', 'Clearing skies'],
         correctAnswerIndex: 2,
-        explanation: "Cumulonimbus clouds are towering storm clouds that produce thunderstorms.",
+        explanation:
+          'Cumulonimbus clouds are towering storm clouds that produce thunderstorms.',
       },
       {
-        id: "tw-q2",
-        question: "By what time should you be off exposed terrain to avoid afternoon storms?",
-        options: ["8 AM", "Noon", "3 PM", "5 PM"],
+        id: 'tw-q2',
+        question:
+          'By what time should you be off exposed terrain to avoid afternoon storms?',
+        options: ['8 AM', 'Noon', '3 PM', '5 PM'],
         correctAnswerIndex: 1,
-        explanation: "Mountain thunderstorms typically form in early afternoon, so plan to be off exposed areas by noon.",
+        explanation:
+          'Mountain thunderstorms typically form in early afternoon, so plan to be off exposed areas by noon.',
       },
       {
-        id: "tw-q3",
-        question: "How much does temperature drop per 1,000 feet of elevation?",
-        options: ["1°F", "3.5°F", "5°F", "10°F"],
+        id: 'tw-q3',
+        question: 'How much does temperature drop per 1,000 feet of elevation?',
+        options: ['1°F', '3.5°F', '5°F', '10°F'],
         correctAnswerIndex: 1,
-        explanation: "Temperature drops approximately 3.5°F per 1,000 feet of elevation gain.",
+        explanation:
+          'Temperature drops approximately 3.5°F per 1,000 feet of elevation gain.',
       },
     ],
     isActive: true,
@@ -885,11 +888,11 @@ Before and during your trip:
   // BACKCOUNTRY GUIDE TRACK (Sample Modules)
   // ============================================
   {
-    id: "advanced-navigation",
-    trackId: "master",
-    title: "Advanced Navigation",
-    description: "Navigate with confidence in any conditions",
-    icon: "compass",
+    id: 'advanced-navigation',
+    trackId: 'master',
+    title: 'Advanced Navigation',
+    description: 'Navigate with confidence in any conditions',
+    icon: 'compass',
     order: 0,
     estimatedMinutes: 15,
     content: `# Advanced Navigation
@@ -980,45 +983,48 @@ Read the landscape to confirm location:
 `,
     quiz: [
       {
-        id: "an-q1",
-        question: "What is declination?",
+        id: 'an-q1',
+        question: 'What is declination?',
         options: [
-          "The angle of a slope",
-          "The difference between true north and magnetic north",
-          "The elevation above sea level",
-          "The distance between contour lines",
+          'The angle of a slope',
+          'The difference between true north and magnetic north',
+          'The elevation above sea level',
+          'The distance between contour lines',
         ],
         correctAnswerIndex: 1,
-        explanation: "Declination is the difference between true north (map) and magnetic north (compass).",
+        explanation:
+          'Declination is the difference between true north (map) and magnetic north (compass).',
       },
       {
-        id: "an-q2",
-        question: "How many landmarks do you need for triangulation?",
-        options: ["One", "Two or more", "Four", "Six"],
+        id: 'an-q2',
+        question: 'How many landmarks do you need for triangulation?',
+        options: ['One', 'Two or more', 'Four', 'Six'],
         correctAnswerIndex: 1,
-        explanation: "You need at least two visible landmarks to triangulate your position.",
+        explanation:
+          'You need at least two visible landmarks to triangulate your position.',
       },
       {
-        id: "an-q3",
+        id: 'an-q3',
         question: "What is a 'catching feature' in navigation?",
         options: [
-          "A place to rest",
-          "A water source",
-          "A feature that prevents you from going too far",
-          "A campsite",
+          'A place to rest',
+          'A water source',
+          'A feature that prevents you from going too far',
+          'A campsite',
         ],
         correctAnswerIndex: 2,
-        explanation: "Catching features are obvious landmarks that stop you from overshooting your target.",
+        explanation:
+          'Catching features are obvious landmarks that stop you from overshooting your target.',
       },
     ],
     isActive: true,
   },
   {
-    id: "wilderness-weather",
-    trackId: "master",
-    title: "Wilderness Weather Prediction",
-    description: "Read the sky and predict weather changes",
-    icon: "thunderstorm",
+    id: 'wilderness-weather',
+    trackId: 'master',
+    title: 'Wilderness Weather Prediction',
+    description: 'Read the sky and predict weather changes',
+    icon: 'thunderstorm',
     order: 1,
     estimatedMinutes: 14,
     content: `# Wilderness Weather Prediction
@@ -1116,35 +1122,40 @@ When in doubt, choose the conservative option. The mountain will always be there
 `,
     quiz: [
       {
-        id: "ww-q1",
-        question: "If cirrus clouds are increasing, how much time do you have before weather arrives?",
-        options: ["1-2 hours", "6-8 hours", "12-24 hours", "2-3 days"],
+        id: 'ww-q1',
+        question:
+          'If cirrus clouds are increasing, how much time do you have before weather arrives?',
+        options: ['1-2 hours', '6-8 hours', '12-24 hours', '2-3 days'],
         correctAnswerIndex: 2,
-        explanation: "Cirrus clouds typically appear 12-24 hours ahead of an approaching weather system.",
+        explanation:
+          'Cirrus clouds typically appear 12-24 hours ahead of an approaching weather system.',
       },
       {
-        id: "ww-q2",
-        question: "What does dropping barometric pressure indicate?",
+        id: 'ww-q2',
+        question: 'What does dropping barometric pressure indicate?',
         options: [
-          "Clearing weather",
-          "Storm approaching",
-          "Temperature rising",
-          "Wind decreasing",
+          'Clearing weather',
+          'Storm approaching',
+          'Temperature rising',
+          'Wind decreasing',
         ],
         correctAnswerIndex: 1,
-        explanation: "Dropping barometric pressure typically indicates a storm system is approaching.",
+        explanation:
+          'Dropping barometric pressure typically indicates a storm system is approaching.',
       },
       {
-        id: "ww-q3",
-        question: "What should you do when you see a 'yellow light' in weather conditions?",
+        id: 'ww-q3',
+        question:
+          "What should you do when you see a 'yellow light' in weather conditions?",
         options: [
-          "Continue as planned",
-          "Take precautions and consider alternatives",
-          "Immediately seek shelter",
-          "Set up camp immediately",
+          'Continue as planned',
+          'Take precautions and consider alternatives',
+          'Immediately seek shelter',
+          'Set up camp immediately',
         ],
         correctAnswerIndex: 1,
-        explanation: "Yellow light conditions mean caution—take precautions and be prepared to change plans.",
+        explanation:
+          'Yellow light conditions mean caution—take precautions and be prepared to change plans.',
       },
     ],
     isActive: true,
@@ -1155,48 +1166,51 @@ When in doubt, choose the conservative option. The mountain will always be there
 // SEED FUNCTION
 // ============================================
 
-export async function seedLearningContent(): Promise<{ success: boolean; message: string }> {
+export async function seedLearningContent(): Promise<{
+  success: boolean;
+  message: string;
+}> {
   try {
-    console.log("[SeedLearning] Starting seed...");
-    
+    console.log('[SeedLearning] Starting seed...');
+
     const batch = writeBatch(db);
     const now = Timestamp.now();
-    
+
     // Seed tracks
     for (const track of TRACKS) {
-      const trackRef = doc(db, "learningTracks", track.id);
+      const trackRef = doc(db, 'learningTracks', track.id);
       batch.set(trackRef, {
         ...track,
         createdAt: now,
         updatedAt: now,
       });
     }
-    
+
     // Seed modules
     for (const module of MODULES) {
-      const moduleRef = doc(db, "learningModules", module.id);
+      const moduleRef = doc(db, 'learningModules', module.id);
       batch.set(moduleRef, {
         ...module,
         createdAt: now,
         updatedAt: now,
       });
     }
-    
+
     await batch.commit();
-    
-    console.log("[SeedLearning] Successfully seeded learning content!");
+
+    console.log('[SeedLearning] Successfully seeded learning content!');
     console.log(`  - ${TRACKS.length} tracks`);
     console.log(`  - ${MODULES.length} modules`);
-    
+
     return {
       success: true,
       message: `Seeded ${TRACKS.length} tracks and ${MODULES.length} modules`,
     };
   } catch (error) {
-    console.error("[SeedLearning] Error seeding content:", error);
+    console.error('[SeedLearning] Error seeding content:', error);
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Unknown error",
+      message: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

@@ -28,11 +28,11 @@ const handleAppleSignIn = async () => {
   // Get Apple credential with email
   const appleCredential = await AppleAuthentication.signInAsync({...});
   const appleEmail = appleCredential.email;
-  
+
   if (appleEmail) {
     // Check for existing accounts
     const signInMethods = await fetchSignInMethodsForEmail(auth, appleEmail);
-    
+
     if (signInMethods includes "password") {
       // Password account exists - show linking modal
       setPendingAppleCredential(firebaseCredential);
@@ -40,7 +40,7 @@ const handleAppleSignIn = async () => {
       return; // Don't sign in yet
     }
   }
-  
+
   // No conflicts - proceed with sign-in
   await completeAppleSignIn(appleCredential, nonce);
 };
@@ -54,17 +54,14 @@ const handlePasswordLinking = async () => {
   const passwordCredential = await signInWithEmailAndPassword(
     auth,
     linkingEmail,
-    linkingPassword
+    linkingPassword,
   );
-  
+
   // Step 2: Link Apple credential to this account
-  await linkWithCredential(
-    passwordCredential.user,
-    pendingAppleCredential.credential
-  );
-  
+  await linkWithCredential(passwordCredential.user, pendingAppleCredential.credential);
+
   // Now user has both password and Apple linked to ONE account
-  console.log("✅ Accounts linked successfully");
+  console.log('✅ Accounts linked successfully');
 };
 ```
 
@@ -73,7 +70,7 @@ const handlePasswordLinking = async () => {
 ```typescript
 // Created on new user registration (both Apple and Password)
 const emailNormalized = email.toLowerCase().trim();
-await setDoc(doc(db, "userEmailIndex", emailNormalized), {
+await setDoc(doc(db, 'userEmailIndex', emailNormalized), {
   userId: firebaseUser.uid,
   email: email,
   createdAt: serverTimestamp(),
@@ -81,6 +78,7 @@ await setDoc(doc(db, "userEmailIndex", emailNormalized), {
 ```
 
 **Collection Structure:**
+
 ```
 userEmailIndex/
   user@example.com → { userId: "abc123", email: "user@example.com", createdAt: timestamp }
@@ -95,15 +93,17 @@ userEmailIndex/
 **Document ID:** Normalized email (lowercase, trimmed)
 
 **Schema:**
+
 ```typescript
 {
-  userId: string;        // Firebase Auth UID
-  email: string;         // Original email (preserves case)
-  createdAt: Timestamp;  // When mapping was created
+  userId: string; // Firebase Auth UID
+  email: string; // Original email (preserves case)
+  createdAt: Timestamp; // When mapping was created
 }
 ```
 
 **Example:**
+
 ```
 userEmailIndex/john.doe@example.com
 {
@@ -120,6 +120,7 @@ userEmailIndex/john.doe@example.com
 **Trigger:** Shown when Apple sign-in detects existing password account
 
 **Design:**
+
 - **Title:** "Link Your Accounts"
 - **Message:** Explains that an account exists with this email
 - **Email Display:** Shows the email being linked (read-only)
@@ -135,24 +136,27 @@ userEmailIndex/john.doe@example.com
 
 ### Common Linking Errors
 
-| Error Code | User-Friendly Message |
-|------------|----------------------|
-| `auth/wrong-password` | "Incorrect password. Please try again." |
-| `auth/invalid-credential` | "Incorrect password. Please try again." |
-| `auth/provider-already-linked` | "This Apple account is already linked to another account." |
+| Error Code                       | User-Friendly Message                                      |
+| -------------------------------- | ---------------------------------------------------------- |
+| `auth/wrong-password`            | "Incorrect password. Please try again."                    |
+| `auth/invalid-credential`        | "Incorrect password. Please try again."                    |
+| `auth/provider-already-linked`   | "This Apple account is already linked to another account." |
 | `auth/credential-already-in-use` | "This Apple account is already in use by another account." |
 
 ### Edge Cases
 
 **1. Apple Provides No Email**
+
 - **Behavior:** Skip duplicate detection, proceed with direct sign-in
 - **Reason:** Can't check for duplicates without email
 
 **2. User Cancels Linking**
+
 - **Behavior:** Modal dismissed, Apple credential discarded, user returns to auth screen
 - **Reason:** User chose not to link accounts
 
 **3. Multiple Failed Password Attempts**
+
 - **Behavior:** Error message updates, user can retry
 - **Future Enhancement:** Rate limiting, password reset link
 
@@ -165,15 +169,16 @@ userEmailIndex/john.doe@example.com
 **Function:** `mergeDuplicateAccounts`
 
 **Callable Function Signature:**
+
 ```typescript
 exports.mergeDuplicateAccounts = functions.https.onCall(async (data, context) => {
   // Verify user is authenticated
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
   }
-  
+
   const { canonicalUserId, duplicateUserId } = data;
-  
+
   // 1. Verify user owns both accounts (check email match)
   // 2. Transfer data from duplicate to canonical:
   //    - Merge profiles data
@@ -182,7 +187,7 @@ exports.mergeDuplicateAccounts = functions.https.onCall(async (data, context) =>
   // 3. Delete duplicate user account
   // 4. Update userEmailIndex to point to canonical
   // 5. Return merged user data
-  
+
   return { success: true, userId: canonicalUserId };
 });
 ```
@@ -192,10 +197,11 @@ exports.mergeDuplicateAccounts = functions.https.onCall(async (data, context) =>
 ### 2. Google Sign-In Support
 
 Same pattern can be extended to Google OAuth:
+
 ```typescript
 if (googleEmail) {
   const methods = await fetchSignInMethodsForEmail(auth, googleEmail);
-  if (methods.includes("password")) {
+  if (methods.includes('password')) {
     // Show linking modal
   }
 }
@@ -204,11 +210,12 @@ if (googleEmail) {
 ### 3. Email Verification Requirement
 
 Add email verification step before allowing account linking:
+
 ```typescript
 if (!passwordCredential.user.emailVerified) {
   // Send verification email
   await sendEmailVerification(passwordCredential.user);
-  setLinkingError("Please verify your email first");
+  setLinkingError('Please verify your email first');
 }
 ```
 
@@ -217,6 +224,7 @@ if (!passwordCredential.user.emailVerified) {
 ### Manual Testing Steps
 
 **Test 1: Password → Apple Linking**
+
 - [ ] Create password account with `test1@example.com`
 - [ ] Sign out
 - [ ] Sign in with Apple using `test1@example.com`
@@ -227,6 +235,7 @@ if (!passwordCredential.user.emailVerified) {
 - [ ] Sign out, sign in with password (should still work)
 
 **Test 2: Apple → Password Linking**
+
 - [ ] Sign in with Apple using `test2@example.com`
 - [ ] Sign out
 - [ ] Try to create password account with `test2@example.com`
@@ -234,6 +243,7 @@ if (!passwordCredential.user.emailVerified) {
 - [ ] (This scenario requires manual linking in Firebase Console)
 
 **Test 3: Wrong Password**
+
 - [ ] Create password account with `test3@example.com`
 - [ ] Sign out
 - [ ] Sign in with Apple using `test3@example.com`
@@ -244,6 +254,7 @@ if (!passwordCredential.user.emailVerified) {
 - [ ] Verify successful linking
 
 **Test 4: Cancel Linking**
+
 - [ ] Create password account with `test4@example.com`
 - [ ] Sign out
 - [ ] Sign in with Apple using `test4@example.com`
@@ -253,6 +264,7 @@ if (!passwordCredential.user.emailVerified) {
 - [ ] No duplicate account created
 
 **Test 5: No Email from Apple**
+
 - [ ] Sign in with Apple (without email scope)
 - [ ] Verify direct sign-in (no duplicate detection)
 - [ ] Profile created with Apple ID
@@ -262,6 +274,7 @@ if (!passwordCredential.user.emailVerified) {
 ### Password Verification
 
 **Why it's safe:**
+
 - User must prove ownership of existing account by entering password
 - Apple credential is only linked AFTER successful password authentication
 - Prevents account hijacking via Apple sign-in
@@ -269,17 +282,20 @@ if (!passwordCredential.user.emailVerified) {
 ### Email Normalization
 
 **Implementation:**
+
 ```typescript
 const emailNormalized = email.toLowerCase().trim();
 ```
 
 **Prevents:**
+
 - Case-sensitive duplicates: `User@Example.com` vs `user@example.com`
 - Whitespace issues: `user@example.com ` vs `user@example.com`
 
 ### Credential Storage
 
 **Security:**
+
 - `pendingAppleCredential` stored in component state (memory only)
 - Cleared on modal dismiss or successful linking
 - Never persisted to disk or Firestore
@@ -293,10 +309,10 @@ const emailNormalized = email.toLowerCase().trim();
 match /userEmailIndex/{email} {
   // Only system can write (via Admin SDK or authenticated users creating their own)
   allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-  
+
   // Users can read their own email mapping
   allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-  
+
   // Admin can read all (for duplicate detection)
   // Note: Regular users use Firebase Auth's fetchSignInMethodsForEmail (client SDK)
 }
@@ -307,10 +323,12 @@ match /userEmailIndex/{email} {
 ## Related Files
 
 ### Implementation
+
 - `src/screens/AuthLanding.tsx` - Main implementation
 - `src/services/createUserProfile.ts` - Profile creation logic
 
 ### Documentation
+
 - `ACCOUNT_LINKING.md` - This file
 - `AUTH_FLOW_GUIDE.md` - Overall authentication flow
 

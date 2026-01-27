@@ -3,33 +3,39 @@
 ## Overview
 
 Two-gate system for controlling feature access:
+
 1. **AccountRequiredModal** - First gate (not logged in)
 2. **PaywallModal** - Second gate (logged in but not Pro)
 
 ## Components
 
 ### 1. AccountRequiredModal
+
 **Location:** `src/components/AccountRequiredModal.tsx`
 
 **Trigger:** User is NOT logged in and attempts to save/modify data
 
 **Content:**
+
 - Title: "Let's get you set up"
 - Message: "Saving your plans and gear requires a free account..."
 - Primary button: "Create an Account" → navigates to LoginScreen
 - Secondary button: "Maybe Later" → closes modal
 
 ### 2. PaywallModal
+
 **Location:** `src/components/PaywallModal.tsx`
 
 **Trigger:** User IS logged in but does NOT have Pro entitlement
 
 **Content:**
+
 - Pricing options (Annual & Monthly)
 - Feature list
 - Purchase/restore actions (placeholders for now)
 
 ### 3. Access Control Hook
+
 **Location:** `src/hooks/useAccessControl.ts`
 
 Centralized logic for checking authentication and subscription status.
@@ -39,12 +45,12 @@ Centralized logic for checking authentication and subscription status.
 ### Basic Implementation
 
 ```tsx
-import React from "react";
-import { View, Pressable, Text } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useAccessControl } from "../hooks/useAccessControl";
-import AccountRequiredModal from "../components/AccountRequiredModal";
-import PaywallModal from "../components/PaywallModal";
+import React from 'react';
+import { View, Pressable, Text } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useAccessControl } from '../hooks/useAccessControl';
+import AccountRequiredModal from '../components/AccountRequiredModal';
+import PaywallModal from '../components/PaywallModal';
 
 export default function MyScreen() {
   const navigation = useNavigation();
@@ -65,9 +71,9 @@ export default function MyScreen() {
       requestAccess(); // Shows AccountRequiredModal
       return;
     }
-    
+
     // User is logged in, proceed
-    console.log("Saving trip...");
+    console.log('Saving trip...');
   };
 
   // Example: Pro feature (requires login + Pro)
@@ -76,9 +82,9 @@ export default function MyScreen() {
       requestAccess(true); // Shows appropriate modal
       return;
     }
-    
+
     // User is logged in AND has Pro
-    console.log("Saving park...");
+    console.log('Saving park...');
   };
 
   return (
@@ -96,15 +102,12 @@ export default function MyScreen() {
         visible={showAccountModal}
         onCreateAccount={() => {
           closeAccountModal();
-          navigation.navigate("AuthLanding");
+          navigation.navigate('AuthLanding');
         }}
         onMaybeLater={closeAccountModal}
       />
 
-      <PaywallModal
-        visible={showPaywallModal}
-        onClose={closePaywallModal}
-      />
+      <PaywallModal visible={showPaywallModal} onClose={closePaywallModal} />
     </View>
   );
 }
@@ -113,7 +116,9 @@ export default function MyScreen() {
 ## Access Rules
 
 ### Not Logged In → AccountRequiredModal
+
 These actions require an account:
+
 - New Trip
 - Duplicate Trip
 - Save Trip
@@ -132,18 +137,22 @@ These actions require an account:
 - Any button that modifies data
 
 ### Logged In (Free) → PaywallModal
+
 Free users get:
+
 - ✅ One trip
 - ✅ Browse and view
 - ❌ Cannot save parks
 - ❌ Cannot customize
 
 Pro features trigger PaywallModal:
+
 - Additional trips (beyond first one)
 - Saving parks
 - Any customization
 
 ### Logged In (Pro) → Full Access
+
 - ✅ Unlimited trips
 - ✅ Save unlimited parks
 - ✅ All customization features
@@ -151,6 +160,7 @@ Pro features trigger PaywallModal:
 ## Implementation Checklist
 
 ### Phase 1: Modals (CURRENT)
+
 - ✅ AccountRequiredModal created
 - ✅ PaywallModal created
 - ✅ useAccessControl hook created
@@ -158,6 +168,7 @@ Pro features trigger PaywallModal:
 - ⏳ Verify styling and behavior
 
 ### Phase 2: Feature Gates
+
 - ⏳ Add to New Trip button
 - ⏳ Add to Save Park buttons
 - ⏳ Add to Gear Closet
@@ -165,6 +176,7 @@ Pro features trigger PaywallModal:
 - ⏳ Add to all modify/save actions
 
 ### Phase 3: RevenueCat (LATER)
+
 - ⏳ Wire up purchase functions
 - ⏳ Implement subscription checking
 - ⏳ Add restore purchases

@@ -1,7 +1,12 @@
-import React from "react";
-import { View, Text, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { DEEP_FOREST, PARCHMENT, TEXT_PRIMARY_STRONG, TEXT_SECONDARY } from "../constants/colors";
+import React from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  DEEP_FOREST,
+  PARCHMENT,
+  TEXT_PRIMARY_STRONG,
+  TEXT_SECONDARY,
+} from '../constants/colors';
 
 interface Props {
   children: React.ReactNode;
@@ -24,7 +29,7 @@ export class CommunityErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("Community stack crashed:", error, info);
+    console.error('Community stack crashed:', error, info);
     // TODO: send to Sentry/Crashlytics if available
   }
 
@@ -35,7 +40,7 @@ export class CommunityErrorBoundary extends React.Component<Props, State> {
   handleGoHome = () => {
     this.setState({ hasError: false, error: null });
     if (this.props.navigation) {
-      this.props.navigation.navigate("Home");
+      this.props.navigation.navigate('Home');
     }
   };
 
@@ -46,30 +51,30 @@ export class CommunityErrorBoundary extends React.Component<Props, State> {
           style={{
             flex: 1,
             backgroundColor: PARCHMENT,
-            justifyContent: "center",
-            alignItems: "center",
+            justifyContent: 'center',
+            alignItems: 'center',
             paddingHorizontal: 24,
           }}
         >
           <Ionicons name="alert-circle-outline" size={64} color={DEEP_FOREST} />
           <Text
             style={{
-              fontFamily: "Raleway_700Bold",
+              fontFamily: 'Raleway_700Bold',
               fontSize: 24,
               color: TEXT_PRIMARY_STRONG,
               marginTop: 16,
-              textAlign: "center",
+              textAlign: 'center',
             }}
           >
             Something went wrong
           </Text>
           <Text
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               fontSize: 16,
               color: TEXT_SECONDARY,
               marginTop: 8,
-              textAlign: "center",
+              textAlign: 'center',
             }}
           >
             We hit a snag loading this section.
@@ -77,17 +82,17 @@ export class CommunityErrorBoundary extends React.Component<Props, State> {
           {__DEV__ && this.state.error && (
             <Text
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 fontSize: 12,
-                color: "#dc2626",
+                color: '#dc2626',
                 marginTop: 12,
-                textAlign: "center",
+                textAlign: 'center',
               }}
             >
               {this.state.error.message}
             </Text>
           )}
-          <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 24 }}>
             <Pressable
               onPress={this.handleRetry}
               style={{
@@ -99,7 +104,7 @@ export class CommunityErrorBoundary extends React.Component<Props, State> {
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 15,
                   color: PARCHMENT,
                 }}
@@ -110,7 +115,7 @@ export class CommunityErrorBoundary extends React.Component<Props, State> {
             <Pressable
               onPress={this.handleGoHome}
               style={{
-                backgroundColor: "transparent",
+                backgroundColor: 'transparent',
                 borderWidth: 1,
                 borderColor: DEEP_FOREST,
                 paddingVertical: 12,
@@ -120,7 +125,7 @@ export class CommunityErrorBoundary extends React.Component<Props, State> {
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
+                  fontFamily: 'SourceSans3_600SemiBold',
                   fontSize: 15,
                   color: DEEP_FOREST,
                 }}

@@ -3,7 +3,7 @@
  * Manage users, memberships, bans, and roles
  */
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,9 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import {
   getUserByHandle,
   getUserByEmail,
@@ -22,45 +22,50 @@ import {
   unbanUser,
   grantMembership,
   updateUserRole,
-} from "../services/userService";
-import { MembershipDuration } from "../types/user";
+} from '../services/userService';
+import { MembershipDuration } from '../types/user';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
   GRANITE_GOLD,
   PARCHMENT,
   SIERRA_SKY,
-} from "../constants/colors";
+} from '../constants/colors';
 
 interface AdminPanelProps {
   currentUserId: string;
 }
 
 export default function AdminPanel({ currentUserId }: AdminPanelProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<"membership" | "ban" | "role">("membership");
+  const [activeSection, setActiveSection] = useState<'membership' | 'ban' | 'role'>(
+    'membership',
+  );
 
   // Membership form
-  const [membershipDuration, setMembershipDuration] = useState<MembershipDuration>("1_month");
+  const [membershipDuration, setMembershipDuration] =
+    useState<MembershipDuration>('1_month');
 
   // Ban form
-  const [banReason, setBanReason] = useState("");
+  const [banReason, setBanReason] = useState('');
 
   // Role form
-  const [newRole, setNewRole] = useState<"user" | "moderator" | "administrator">("moderator");
+  const [newRole, setNewRole] = useState<'user' | 'moderator' | 'administrator'>(
+    'moderator',
+  );
 
   const membershipOptions: { value: MembershipDuration; label: string }[] = [
-    { value: "1_month", label: "1 Month" },
-    { value: "3_months", label: "3 Months" },
-    { value: "6_months", label: "6 Months" },
-    { value: "1_year", label: "1 Year" },
-    { value: "lifetime", label: "Lifetime" },
+    { value: '1_month', label: '1 Month' },
+    { value: '3_months', label: '3 Months' },
+    { value: '6_months', label: '6 Months' },
+    { value: '1_year', label: '1 Year' },
+    { value: 'lifetime', label: 'Lifetime' },
   ];
 
   const handleGrantMembership = async () => {
     if (!searchQuery.trim()) {
-      Alert.alert("Error", "Please enter a user handle or email");
+      Alert.alert('Error', 'Please enter a user handle or email');
       return;
     }
 
@@ -73,20 +78,20 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
       }
 
       if (!user) {
-        Alert.alert("Error", "User not found");
+        Alert.alert('Error', 'User not found');
         return;
       }
 
       await grantMembership(currentUserId, user.id, membershipDuration);
 
       Alert.alert(
-        "Success",
-        `Granted ${membershipDuration.replace("_", " ")} membership to ${user.displayName}`
+        'Success',
+        `Granted ${membershipDuration.replace('_', ' ')} membership to ${user.displayName}`,
       );
-      setSearchQuery("");
+      setSearchQuery('');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to grant membership");
+      Alert.alert('Error', error.message || 'Failed to grant membership');
     } finally {
       setLoading(false);
     }
@@ -94,12 +99,12 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
 
   const handleBanUser = async () => {
     if (!searchQuery.trim()) {
-      Alert.alert("Error", "Please enter a user handle or email");
+      Alert.alert('Error', 'Please enter a user handle or email');
       return;
     }
 
     if (!banReason.trim()) {
-      Alert.alert("Error", "Please provide a ban reason");
+      Alert.alert('Error', 'Please provide a ban reason');
       return;
     }
 
@@ -111,23 +116,23 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
       }
 
       if (!user) {
-        Alert.alert("Error", "User not found");
+        Alert.alert('Error', 'User not found');
         return;
       }
 
       if (user.id === currentUserId) {
-        Alert.alert("Error", "You cannot ban yourself");
+        Alert.alert('Error', 'You cannot ban yourself');
         return;
       }
 
       await banUser(currentUserId, user.id, banReason.trim());
 
-      Alert.alert("Success", `Banned user: ${user.displayName}`);
-      setSearchQuery("");
-      setBanReason("");
+      Alert.alert('Success', `Banned user: ${user.displayName}`);
+      setSearchQuery('');
+      setBanReason('');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to ban user");
+      Alert.alert('Error', error.message || 'Failed to ban user');
     } finally {
       setLoading(false);
     }
@@ -135,7 +140,7 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
 
   const handleUnbanUser = async () => {
     if (!searchQuery.trim()) {
-      Alert.alert("Error", "Please enter a user handle or email");
+      Alert.alert('Error', 'Please enter a user handle or email');
       return;
     }
 
@@ -147,22 +152,22 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
       }
 
       if (!user) {
-        Alert.alert("Error", "User not found");
+        Alert.alert('Error', 'User not found');
         return;
       }
 
       if (!user.isBanned) {
-        Alert.alert("Info", "This user is not banned");
+        Alert.alert('Info', 'This user is not banned');
         return;
       }
 
       await unbanUser(currentUserId, user.id);
 
-      Alert.alert("Success", `Unbanned user: ${user.displayName}`);
-      setSearchQuery("");
+      Alert.alert('Success', `Unbanned user: ${user.displayName}`);
+      setSearchQuery('');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to unban user");
+      Alert.alert('Error', error.message || 'Failed to unban user');
     } finally {
       setLoading(false);
     }
@@ -170,7 +175,7 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
 
   const handleUpdateRole = async () => {
     if (!searchQuery.trim()) {
-      Alert.alert("Error", "Please enter a user handle or email");
+      Alert.alert('Error', 'Please enter a user handle or email');
       return;
     }
 
@@ -182,22 +187,22 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
       }
 
       if (!user) {
-        Alert.alert("Error", "User not found");
+        Alert.alert('Error', 'User not found');
         return;
       }
 
       if (user.id === currentUserId) {
-        Alert.alert("Error", "You cannot change your own role");
+        Alert.alert('Error', 'You cannot change your own role');
         return;
       }
 
       await updateUserRole(currentUserId, user.id, newRole);
 
-      Alert.alert("Success", `Updated ${user.displayName} to ${newRole}`);
-      setSearchQuery("");
+      Alert.alert('Success', `Updated ${user.displayName} to ${newRole}`);
+      setSearchQuery('');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to update role");
+      Alert.alert('Error', error.message || 'Failed to update role');
     } finally {
       setLoading(false);
     }
@@ -207,7 +212,7 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
     <ScrollView className="flex-1 px-5 py-6">
       <Text
         className="text-lg mb-4"
-        style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+        style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
       >
         Administrator Panel
       </Text>
@@ -217,18 +222,20 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setActiveSection("membership");
+            setActiveSection('membership');
           }}
           className={`flex-1 px-3 py-2 rounded-xl ${
-            activeSection === "membership" ? "bg-granite" : "bg-white border border-stone-300"
+            activeSection === 'membership'
+              ? 'bg-granite'
+              : 'bg-white border border-stone-300'
           }`}
-          style={activeSection === "membership" ? { backgroundColor: GRANITE_GOLD } : {}}
+          style={activeSection === 'membership' ? { backgroundColor: GRANITE_GOLD } : {}}
         >
           <Text
             className="text-center text-sm"
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
-              color: activeSection === "membership" ? PARCHMENT : DEEP_FOREST,
+              fontFamily: 'SourceSans3_600SemiBold',
+              color: activeSection === 'membership' ? PARCHMENT : DEEP_FOREST,
             }}
           >
             Membership
@@ -238,17 +245,17 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setActiveSection("ban");
+            setActiveSection('ban');
           }}
           className={`flex-1 px-3 py-2 rounded-xl ${
-            activeSection === "ban" ? "bg-red-600" : "bg-white border border-stone-300"
+            activeSection === 'ban' ? 'bg-red-600' : 'bg-white border border-stone-300'
           }`}
         >
           <Text
             className="text-center text-sm"
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
-              color: activeSection === "ban" ? PARCHMENT : DEEP_FOREST,
+              fontFamily: 'SourceSans3_600SemiBold',
+              color: activeSection === 'ban' ? PARCHMENT : DEEP_FOREST,
             }}
           >
             Ban/Unban
@@ -258,18 +265,18 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            setActiveSection("role");
+            setActiveSection('role');
           }}
           className={`flex-1 px-3 py-2 rounded-xl ${
-            activeSection === "role" ? "bg-sierra" : "bg-white border border-stone-300"
+            activeSection === 'role' ? 'bg-sierra' : 'bg-white border border-stone-300'
           }`}
-          style={activeSection === "role" ? { backgroundColor: SIERRA_SKY } : {}}
+          style={activeSection === 'role' ? { backgroundColor: SIERRA_SKY } : {}}
         >
           <Text
             className="text-center text-sm"
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
-              color: activeSection === "role" ? PARCHMENT : DEEP_FOREST,
+              fontFamily: 'SourceSans3_600SemiBold',
+              color: activeSection === 'role' ? PARCHMENT : DEEP_FOREST,
             }}
           >
             Roles
@@ -281,7 +288,7 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
       <View className="mb-4">
         <Text
           className="text-sm mb-2"
-          style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+          style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
         >
           User Handle or Email
         </Text>
@@ -290,18 +297,18 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
           onChangeText={setSearchQuery}
           placeholder="Enter @handle or email"
           className="bg-white border border-stone-300 rounded-xl px-4 py-3"
-          style={{ fontFamily: "SourceSans3_400Regular", color: DEEP_FOREST }}
+          style={{ fontFamily: 'SourceSans3_400Regular', color: DEEP_FOREST }}
           placeholderTextColor="#999"
           autoCapitalize="none"
         />
       </View>
 
       {/* Membership Section */}
-      {activeSection === "membership" && (
+      {activeSection === 'membership' && (
         <View>
           <Text
             className="text-sm mb-2"
-            style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+            style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
           >
             Membership Duration
           </Text>
@@ -315,15 +322,19 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
                 }}
                 className={`px-3 py-2 rounded-xl ${
                   membershipDuration === option.value
-                    ? "bg-granite"
-                    : "bg-white border border-stone-300"
+                    ? 'bg-granite'
+                    : 'bg-white border border-stone-300'
                 }`}
-                style={membershipDuration === option.value ? { backgroundColor: GRANITE_GOLD } : {}}
+                style={
+                  membershipDuration === option.value
+                    ? { backgroundColor: GRANITE_GOLD }
+                    : {}
+                }
               >
                 <Text
                   className="text-sm"
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     color: membershipDuration === option.value ? PARCHMENT : DEEP_FOREST,
                   }}
                 >
@@ -336,15 +347,13 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
           <Pressable
             onPress={handleGrantMembership}
             disabled={loading}
-            className={`bg-granite rounded-xl py-3 items-center ${loading ? "opacity-50" : "active:opacity-90"}`}
+            className={`bg-granite rounded-xl py-3 items-center ${loading ? 'opacity-50' : 'active:opacity-90'}`}
             style={{ backgroundColor: GRANITE_GOLD }}
           >
             {loading ? (
               <ActivityIndicator size="small" color={PARCHMENT} />
             ) : (
-              <Text
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
-              >
+              <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
                 Grant Membership
               </Text>
             )}
@@ -353,11 +362,11 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
       )}
 
       {/* Ban Section */}
-      {activeSection === "ban" && (
+      {activeSection === 'ban' && (
         <View>
           <Text
             className="text-sm mb-2"
-            style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+            style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
           >
             Ban Reason
           </Text>
@@ -369,9 +378,9 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
             numberOfLines={3}
             className="bg-white border border-stone-300 rounded-xl px-4 py-3 mb-4"
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               color: DEEP_FOREST,
-              textAlignVertical: "top",
+              textAlignVertical: 'top',
             }}
             placeholderTextColor="#999"
           />
@@ -380,14 +389,12 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
             <Pressable
               onPress={handleBanUser}
               disabled={loading}
-              className={`flex-1 bg-red-600 rounded-xl py-3 items-center ${loading ? "opacity-50" : "active:opacity-90"}`}
+              className={`flex-1 bg-red-600 rounded-xl py-3 items-center ${loading ? 'opacity-50' : 'active:opacity-90'}`}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={PARCHMENT} />
               ) : (
-                <Text
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
-                >
+                <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
                   Ban User
                 </Text>
               )}
@@ -396,15 +403,13 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
             <Pressable
               onPress={handleUnbanUser}
               disabled={loading}
-              className={`flex-1 bg-forest rounded-xl py-3 items-center ${loading ? "opacity-50" : "active:opacity-90"}`}
+              className={`flex-1 bg-forest rounded-xl py-3 items-center ${loading ? 'opacity-50' : 'active:opacity-90'}`}
               style={{ backgroundColor: DEEP_FOREST }}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={PARCHMENT} />
               ) : (
-                <Text
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
-                >
+                <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
                   Unban User
                 </Text>
               )}
@@ -414,16 +419,16 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
       )}
 
       {/* Role Section */}
-      {activeSection === "role" && (
+      {activeSection === 'role' && (
         <View>
           <Text
             className="text-sm mb-2"
-            style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+            style={{ fontFamily: 'SourceSans3_600SemiBold', color: DEEP_FOREST }}
           >
             New Role
           </Text>
           <View className="flex-row gap-2 mb-4">
-            {["user", "moderator", "administrator"].map((role) => (
+            {['user', 'moderator', 'administrator'].map((role) => (
               <Pressable
                 key={role}
                 onPress={() => {
@@ -431,14 +436,14 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
                   setNewRole(role as typeof newRole);
                 }}
                 className={`flex-1 px-3 py-2 rounded-xl ${
-                  newRole === role ? "bg-sierra" : "bg-white border border-stone-300"
+                  newRole === role ? 'bg-sierra' : 'bg-white border border-stone-300'
                 }`}
                 style={newRole === role ? { backgroundColor: SIERRA_SKY } : {}}
               >
                 <Text
                   className="text-center text-sm capitalize"
                   style={{
-                    fontFamily: "SourceSans3_600SemiBold",
+                    fontFamily: 'SourceSans3_600SemiBold',
                     color: newRole === role ? PARCHMENT : DEEP_FOREST,
                   }}
                 >
@@ -451,15 +456,13 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
           <Pressable
             onPress={handleUpdateRole}
             disabled={loading}
-            className={`bg-sierra rounded-xl py-3 items-center ${loading ? "opacity-50" : "active:opacity-90"}`}
+            className={`bg-sierra rounded-xl py-3 items-center ${loading ? 'opacity-50' : 'active:opacity-90'}`}
             style={{ backgroundColor: SIERRA_SKY }}
           >
             {loading ? (
               <ActivityIndicator size="small" color={PARCHMENT} />
             ) : (
-              <Text
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
-              >
+              <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
                 Update Role
               </Text>
             )}
@@ -473,13 +476,13 @@ export default function AdminPanel({ currentUserId }: AdminPanelProps) {
           <Ionicons name="information-circle" size={20} color={GRANITE_GOLD} />
           <Text
             className="flex-1 ml-2 text-sm"
-            style={{ fontFamily: "SourceSans3_400Regular", color: "#92400e" }}
+            style={{ fontFamily: 'SourceSans3_400Regular', color: '#92400e' }}
           >
-            <Text style={{ fontFamily: "SourceSans3_600SemiBold" }}>Admin Powers:</Text>
-            {"\n"}• Grant premium memberships to users
-            {"\n"}• Ban and unban user accounts
-            {"\n"}• Promote users to moderator or admin
-            {"\n"}• All changes are logged in the audit trail
+            <Text style={{ fontFamily: 'SourceSans3_600SemiBold' }}>Admin Powers:</Text>
+            {'\n'}• Grant premium memberships to users
+            {'\n'}• Ban and unban user accounts
+            {'\n'}• Promote users to moderator or admin
+            {'\n'}• All changes are logged in the audit trail
           </Text>
         </View>
       </View>

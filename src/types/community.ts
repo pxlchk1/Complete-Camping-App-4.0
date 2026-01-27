@@ -3,7 +3,7 @@
  * Based on existing Firestore collections - DO NOT rename collections
  */
 
-import { Timestamp } from "firebase/firestore";
+import { Timestamp } from 'firebase/firestore';
 
 // ==================== Tips ====================
 
@@ -19,7 +19,7 @@ export interface Tip {
   downvoteCount: number;
   score: number; // upvotes - downvotes
   commentCount: number;
-  userVote?: "up" | "down" | null;
+  userVote?: 'up' | 'down' | null;
 }
 
 export interface TipComment {
@@ -34,17 +34,17 @@ export interface TipComment {
 // ==================== Gear Reviews ====================
 
 export type GearCategory =
-  | "stove"
-  | "tent"
-  | "sleep"
-  | "pack"
-  | "clothing"
-  | "lighting"
-  | "misc"
-  | "shelter"
-  | "kitchen"
-  | "water"
-  | "safety";
+  | 'stove'
+  | 'tent'
+  | 'sleep'
+  | 'pack'
+  | 'clothing'
+  | 'lighting'
+  | 'misc'
+  | 'shelter'
+  | 'kitchen'
+  | 'water'
+  | 'safety';
 
 export interface GearReview {
   id: string;
@@ -68,12 +68,12 @@ export interface GearReview {
   downvoteCount: number;
   score: number; // upvotes - downvotes
   commentCount: number;
-  userVote?: "up" | "down" | null;
+  userVote?: 'up' | 'down' | null;
 }
 
 // ==================== Questions (Ask a Camper) ====================
 
-export type QuestionStatus = "open" | "answered" | "closed";
+export type QuestionStatus = 'open' | 'answered' | 'closed';
 
 export interface Question {
   id: string;
@@ -95,7 +95,7 @@ export interface Question {
   score: number; // upvotes - downvotes
   hasAcceptedAnswer: boolean;
   acceptedAnswerId?: string;
-  userVote?: "up" | "down" | null;
+  userVote?: 'up' | 'down' | null;
 }
 
 export interface Answer {
@@ -114,11 +114,11 @@ export interface Answer {
   downvotes: number;
   score: number; // upvotes - downvotes
   isAccepted: boolean;
-  userVote?: "up" | "down" | null;
+  userVote?: 'up' | 'down' | null;
 }
 
 export interface QAFilters {
-  sortBy?: "new" | "unanswered" | "popular";
+  sortBy?: 'new' | 'unanswered' | 'popular';
   category?: string;
 }
 
@@ -162,8 +162,8 @@ export interface StoryVote {
 
 // ==================== Feedback ====================
 
-export type FeedbackCategory = "feature" | "bug" | "improvement" | "question" | "other";
-export type FeedbackStatus = "open" | "planned" | "in_progress" | "done" | "declined";
+export type FeedbackCategory = 'feature' | 'bug' | 'improvement' | 'question' | 'other';
+export type FeedbackStatus = 'open' | 'planned' | 'in_progress' | 'done' | 'declined';
 
 export interface FeedbackPost {
   id: string;
@@ -178,7 +178,7 @@ export interface FeedbackPost {
   downvoteCount: number;
   score: number; // upvotes - downvotes
   commentCount: number;
-  userVote?: "up" | "down" | null;
+  userVote?: 'up' | 'down' | null;
 }
 
 export interface FeedbackComment {
@@ -191,8 +191,15 @@ export interface FeedbackComment {
 
 // ==================== Content Reports ====================
 
-export type ReportTargetType = "tip" | "gearReview" | "question" | "answer" | "story" | "comment" | "feedback";
-export type ReportStatus = "open" | "resolved" | "dismissed";
+export type ReportTargetType =
+  | 'tip'
+  | 'gearReview'
+  | 'question'
+  | 'answer'
+  | 'story'
+  | 'comment'
+  | 'feedback';
+export type ReportStatus = 'open' | 'resolved' | 'dismissed';
 
 export interface ContentReport {
   id: string;
@@ -249,16 +256,16 @@ export interface TipCategory {
 }
 
 export type ImageCategory =
-  | "camping"
-  | "nature"
-  | "gear"
-  | "food"
-  | "wildlife"
-  | "people"
-  | "trails"
-  | "sunrise-sunset"
-  | "tips"
-  | "other";
+  | 'camping'
+  | 'nature'
+  | 'gear'
+  | 'food'
+  | 'wildlife'
+  | 'people'
+  | 'trails'
+  | 'sunrise-sunset'
+  | 'tips'
+  | 'other';
 
 export interface LibraryImage {
   id: string;
@@ -277,7 +284,7 @@ export interface LibraryImage {
   score: number;
   views: number;
   isPrivate?: boolean;
-  userVote?: "up" | "down" | null;
+  userVote?: 'up' | 'down' | null;
 }
 
 export interface Campsite {

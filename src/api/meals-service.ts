@@ -18,17 +18,17 @@ import {
   where,
   orderBy,
   writeBatch,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
-import { Meal, MealLibraryItem } from "../types/camping";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { Meal, MealLibraryItem } from '../types/camping';
 
 /**
  * Get all meals for a trip
  */
 export async function getTripMeals(userId: string, tripId: string): Promise<Meal[]> {
   try {
-    const mealsRef = collection(db, "users", userId, "trips", tripId, "meals");
-    const q = query(mealsRef, orderBy("dayIndex"), orderBy("category"));
+    const mealsRef = collection(db, 'users', userId, 'trips', tripId, 'meals');
+    const q = query(mealsRef, orderBy('dayIndex'), orderBy('category'));
     const snapshot = await getDocs(q);
 
     return snapshot.docs.map((doc) => ({
@@ -36,7 +36,7 @@ export async function getTripMeals(userId: string, tripId: string): Promise<Meal
       ...doc.data(),
     })) as Meal[];
   } catch (error) {
-    console.error("Error fetching trip meals:", error);
+    console.error('Error fetching trip meals:', error);
     return [];
   }
 }
@@ -47,16 +47,16 @@ export async function getTripMeals(userId: string, tripId: string): Promise<Meal
 export async function addTripMeal(
   userId: string,
   tripId: string,
-  meal: Omit<Meal, "id">
+  meal: Omit<Meal, 'id'>,
 ): Promise<string> {
   try {
-    const mealsRef = collection(db, "users", userId, "trips", tripId, "meals");
+    const mealsRef = collection(db, 'users', userId, 'trips', tripId, 'meals');
     const newMealRef = doc(mealsRef);
 
     await setDoc(newMealRef, meal);
     return newMealRef.id;
   } catch (error) {
-    console.error("Error adding meal:", error);
+    console.error('Error adding meal:', error);
     throw error;
   }
 }
@@ -68,13 +68,13 @@ export async function updateTripMeal(
   userId: string,
   tripId: string,
   mealId: string,
-  updates: Partial<Meal>
+  updates: Partial<Meal>,
 ): Promise<void> {
   try {
-    const mealRef = doc(db, "users", userId, "trips", tripId, "meals", mealId);
+    const mealRef = doc(db, 'users', userId, 'trips', tripId, 'meals', mealId);
     await updateDoc(mealRef, updates);
   } catch (error) {
-    console.error("Error updating meal:", error);
+    console.error('Error updating meal:', error);
     throw error;
   }
 }
@@ -85,13 +85,13 @@ export async function updateTripMeal(
 export async function deleteTripMeal(
   userId: string,
   tripId: string,
-  mealId: string
+  mealId: string,
 ): Promise<void> {
   try {
-    const mealRef = doc(db, "users", userId, "trips", tripId, "meals", mealId);
+    const mealRef = doc(db, 'users', userId, 'trips', tripId, 'meals', mealId);
     await deleteDoc(mealRef);
   } catch (error) {
-    console.error("Error deleting meal:", error);
+    console.error('Error deleting meal:', error);
     throw error;
   }
 }
@@ -100,26 +100,26 @@ export async function deleteTripMeal(
  * Get meals from the global meal library
  */
 export async function getMealLibrary(
-  category?: "breakfast" | "lunch" | "dinner" | "snack",
+  category?: 'breakfast' | 'lunch' | 'dinner' | 'snack',
   filters?: {
     prepType?: string;
-    difficulty?: "easy" | "moderate";
-  }
+    difficulty?: 'easy' | 'moderate';
+  },
 ): Promise<MealLibraryItem[]> {
   try {
-    const libraryRef = collection(db, "mealLibrary");
+    const libraryRef = collection(db, 'mealLibrary');
     let q = query(libraryRef);
 
     if (category) {
-      q = query(q, where("category", "==", category));
+      q = query(q, where('category', '==', category));
     }
 
     if (filters?.difficulty) {
-      q = query(q, where("difficulty", "==", filters.difficulty));
+      q = query(q, where('difficulty', '==', filters.difficulty));
     }
 
     if (filters?.prepType) {
-      q = query(q, where("prepType", "==", filters.prepType));
+      q = query(q, where('prepType', '==', filters.prepType));
     }
 
     const snapshot = await getDocs(q);
@@ -129,7 +129,7 @@ export async function getMealLibrary(
       ...doc.data(),
     })) as MealLibraryItem[];
   } catch (error) {
-    console.error("Error fetching meal library:", error);
+    console.error('Error fetching meal library:', error);
     return [];
   }
 }
@@ -139,7 +139,7 @@ export async function getMealLibrary(
  */
 export async function getUserMeals(userId: string): Promise<MealLibraryItem[]> {
   try {
-    const mealsRef = collection(db, "users", userId, "userMeals");
+    const mealsRef = collection(db, 'users', userId, 'userMeals');
     const snapshot = await getDocs(mealsRef);
 
     return snapshot.docs.map((doc) => ({
@@ -147,7 +147,7 @@ export async function getUserMeals(userId: string): Promise<MealLibraryItem[]> {
       ...doc.data(),
     })) as MealLibraryItem[];
   } catch (error) {
-    console.error("Error fetching user meals:", error);
+    console.error('Error fetching user meals:', error);
     return [];
   }
 }
@@ -157,16 +157,16 @@ export async function getUserMeals(userId: string): Promise<MealLibraryItem[]> {
  */
 export async function saveUserMeal(
   userId: string,
-  meal: Omit<MealLibraryItem, "id">
+  meal: Omit<MealLibraryItem, 'id'>,
 ): Promise<string> {
   try {
-    const mealsRef = collection(db, "users", userId, "userMeals");
+    const mealsRef = collection(db, 'users', userId, 'userMeals');
     const newMealRef = doc(mealsRef);
 
     await setDoc(newMealRef, meal);
     return newMealRef.id;
   } catch (error) {
-    console.error("Error saving user meal:", error);
+    console.error('Error saving user meal:', error);
     throw error;
   }
 }
@@ -177,16 +177,16 @@ export async function saveUserMeal(
 export async function addIngredientsToPackingList(
   userId: string,
   tripId: string,
-  ingredients: string[]
+  ingredients: string[],
 ): Promise<void> {
   try {
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const batch = writeBatch(db);
 
     // Check existing items to avoid duplicates
     const existingSnapshot = await getDocs(packingRef);
     const existingItems = new Map(
-      existingSnapshot.docs.map((doc) => [doc.data().label?.toLowerCase(), doc])
+      existingSnapshot.docs.map((doc) => [doc.data().label?.toLowerCase(), doc]),
     );
 
     ingredients.forEach((ingredient) => {
@@ -201,7 +201,7 @@ export async function addIngredientsToPackingList(
         // Create new item
         const newItemRef = doc(packingRef);
         batch.set(newItemRef, {
-          category: "Food and Kitchen",
+          category: 'Food and Kitchen',
           label: ingredient,
           quantity: 1,
           isPacked: false,
@@ -212,7 +212,7 @@ export async function addIngredientsToPackingList(
 
     await batch.commit();
   } catch (error) {
-    console.error("Error adding ingredients to packing list:", error);
+    console.error('Error adding ingredients to packing list:', error);
     throw error;
   }
 }

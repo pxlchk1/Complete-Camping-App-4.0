@@ -1,23 +1,23 @@
 /**
  * useGating Hook
- * 
+ *
  * Provides easy access to the gating system for components.
  * Manages modal state and provides gating functions.
- * 
+ *
  * Usage:
  * ```tsx
  * const { accessState, checkAccount, checkPro, AccountModal, PaywallModal } = useGating();
- * 
+ *
  * const handleVote = () => {
  *   if (!checkAccount()) return; // Will show modal if needed
  *   // ... do vote
  * };
- * 
+ *
  * const handleCreateTrip = () => {
  *   if (!checkPro('trip')) return; // Will show modal if needed
  *   // ... create trip
  * };
- * 
+ *
  * return (
  *   <>
  *     {content}
@@ -34,7 +34,7 @@ import { useAccessState, requireAccount, requirePro } from '../utils/gating';
 import type { RootStackNavigationProp } from '../navigation/types';
 
 // Paywall context for messaging
-export type PaywallContext = 
+export type PaywallContext =
   | 'feedback'
   | 'gearReview'
   | 'trip'
@@ -46,31 +46,31 @@ export type PaywallContext =
 interface UseGatingResult {
   /** Current access state: 'NO_ACCOUNT' | 'FREE' | 'PRO' */
   accessState: 'NO_ACCOUNT' | 'FREE' | 'PRO';
-  
+
   /** Is user logged in? */
   isLoggedIn: boolean;
-  
+
   /** Is user Pro (or in trial)? */
   isPro: boolean;
-  
+
   /** Is user Free (logged in but not Pro)? */
   isFree: boolean;
-  
+
   /** Check if user has account, show modal if not. Returns true if can proceed. */
   checkAccount: () => boolean;
-  
+
   /** Check if user has Pro, show modal if not. Returns true if can proceed. */
   checkPro: (context?: PaywallContext) => boolean;
-  
+
   /** Modal visibility states */
   showAccountModal: boolean;
   showPaywallModal: boolean;
   paywallContext: PaywallContext;
-  
+
   /** Modal close handlers */
   closeAccountModal: () => void;
   closePaywallModal: () => void;
-  
+
   /** Open modals directly */
   openAccountModal: () => void;
   openPaywallModal: (context?: PaywallContext) => void;
@@ -79,32 +79,32 @@ interface UseGatingResult {
 export function useGating(): UseGatingResult {
   const navigation = useNavigation<RootStackNavigationProp>();
   const accessState = useAccessState();
-  
+
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showPaywallModal, setShowPaywallModal] = useState(false);
   const [paywallContext, setPaywallContext] = useState<PaywallContext>('general');
-  
+
   const isLoggedIn = accessState !== 'NO_ACCOUNT';
   const isPro = accessState === 'PRO';
   const isFree = accessState === 'FREE';
-  
+
   const openAccountModal = useCallback(() => {
     setShowAccountModal(true);
   }, []);
-  
+
   const closeAccountModal = useCallback(() => {
     setShowAccountModal(false);
   }, []);
-  
+
   const openPaywallModal = useCallback((context: PaywallContext = 'general') => {
     setPaywallContext(context);
     setShowPaywallModal(true);
   }, []);
-  
+
   const closePaywallModal = useCallback(() => {
     setShowPaywallModal(false);
   }, []);
-  
+
   /**
    * Check if user has account, show modal if not
    * Use for: Voting, Profile editing, any Connect submissions
@@ -114,47 +114,53 @@ export function useGating(): UseGatingResult {
       openAccountModal,
     });
   }, [openAccountModal]);
-  
+
   /**
    * Check if user has Pro, show modal if not
    * Use for: Feedback, Trip creation, Packing/Meal plan edits
    */
-  const checkPro = useCallback((context: PaywallContext = 'general'): boolean => {
-    return requirePro({
+  const checkPro = useCallback(
+    (context: PaywallContext = 'general'): boolean => {
+      return requirePro({
+        openAccountModal,
+        openPaywallModal: () => openPaywallModal(context),
+      });
+    },
+    [openAccountModal, openPaywallModal],
+  );
+
+  return useMemo(
+    () => ({
+      accessState,
+      isLoggedIn,
+      isPro,
+      isFree,
+      checkAccount,
+      checkPro,
+      showAccountModal,
+      showPaywallModal,
+      paywallContext,
+      closeAccountModal,
+      closePaywallModal,
       openAccountModal,
-      openPaywallModal: () => openPaywallModal(context),
-    });
-  }, [openAccountModal, openPaywallModal]);
-  
-  return useMemo(() => ({
-    accessState,
-    isLoggedIn,
-    isPro,
-    isFree,
-    checkAccount,
-    checkPro,
-    showAccountModal,
-    showPaywallModal,
-    paywallContext,
-    closeAccountModal,
-    closePaywallModal,
-    openAccountModal,
-    openPaywallModal,
-  }), [
-    accessState,
-    isLoggedIn,
-    isPro,
-    isFree,
-    checkAccount,
-    checkPro,
-    showAccountModal,
-    showPaywallModal,
-    paywallContext,
-    closeAccountModal,
-    closePaywallModal,
-    openAccountModal,
-    openPaywallModal,
-  ]);
+      openPaywallModal,
+    }),
+    [
+      accessState,
+      isLoggedIn,
+      isPro,
+      isFree,
+      checkAccount,
+      checkPro,
+      showAccountModal,
+      showPaywallModal,
+      paywallContext,
+      closeAccountModal,
+      closePaywallModal,
+      openAccountModal,
+      openPaywallModal,
+    ],
+  );
 }
 
 /**

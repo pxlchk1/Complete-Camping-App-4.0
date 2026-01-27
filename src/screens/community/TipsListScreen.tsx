@@ -1,48 +1,63 @@
 /**
  * Tips List Screen
  * Uses tipsService for Firestore queries
- * 
+ *
  * Connect-only actions: Edit/Delete for owners, Remove for admins/mods
  */
-
-import React, { useState, useEffect } from "react";
-import { View, Text, Pressable, FlatList, ActivityIndicator, TextInput, Alert } from "react-native";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { tipsService, TipPost } from "../../services/firestore/tipsService";
-import { deleteTip } from "../../services/connectDeletionService";
-import { tipVotesService } from "../../services/firestore/tipVotesService";
-import { auth } from "../../config/firebase";
-import AccountRequiredModal from "../../components/AccountRequiredModal";
-import OnboardingModal from "../../components/OnboardingModal";
-import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
-import { requireAccount } from "../../utils/gating";
-import { shouldShowInFeed } from "../../services/moderationService";
-import { isAdmin, isModerator, canModerateContent, getUser } from "../../services/userService";
-import { useCurrentUser } from "../../state/userStore";
-import { User } from "../../types/user";
-import { ContentActionsAffordance } from "../../components/contentActions";
-import { RootStackNavigationProp } from "../../navigation/types";
-import CommunitySectionHeader from "../../components/CommunitySectionHeader";
+import React, { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+
+import * as Haptics from 'expo-haptics';
+
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import AccountRequiredModal from '../../components/AccountRequiredModal';
+import CommunitySectionHeader from '../../components/CommunitySectionHeader';
+import OnboardingModal from '../../components/OnboardingModal';
+import { ContentActionsAffordance } from '../../components/contentActions';
+import { auth } from '../../config/firebase';
+import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   GRANITE_GOLD,
   PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  TEXT_MUTED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_MUTED,
-} from "../../constants/colors";
+} from '../../constants/colors';
+import { useScreenOnboarding } from '../../hooks/useScreenOnboarding';
+import { RootStackNavigationProp } from '../../navigation/types';
+import { deleteTip } from '../../services/connectDeletionService';
+import { tipVotesService } from '../../services/firestore/tipVotesService';
+import { TipPost, tipsService } from '../../services/firestore/tipsService';
+import { shouldShowInFeed } from '../../services/moderationService';
+import {
+  canModerateContent,
+  getUser,
+  isAdmin,
+  isModerator,
+} from '../../services/userService';
+import { useCurrentUser } from '../../state/userStore';
+import { User } from '../../types/user';
+import { requireAccount } from '../../utils/gating';
 
-
-type SortOption = "newest" | "my";
+type SortOption = 'newest' | 'my';
 
 interface TipWithVotes extends TipPost {
   voteScore: number;
-  userVote: "up" | "down" | null;
+  userVote: 'up' | 'down' | null;
 }
 
 export default function TipsListScreen() {
@@ -52,24 +67,25 @@ export default function TipsListScreen() {
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Onboarding modal
-  const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("Tips");
+  const { showModal, currentTooltip, dismissModal, openModal } =
+    useScreenOnboarding('Tips');
 
   // Connect-only actions: Permission checks for content actions
   const canModerate = currentUser ? canModerateContent(currentUser as User) : false;
-  const roleLabel = currentUser 
-    ? isAdmin(currentUser as User) 
-      ? "ADMIN" as const
-      : isModerator(currentUser as User) 
-        ? "MOD" as const 
-        : null 
+  const roleLabel = currentUser
+    ? isAdmin(currentUser as User)
+      ? ('ADMIN' as const)
+      : isModerator(currentUser as User)
+        ? ('MOD' as const)
+        : null
     : null;
 
   const [tips, setTips] = useState<TipWithVotes[]>([]);
   const [authorHandles, setAuthorHandles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadTips = async () => {
     try {
@@ -78,10 +94,10 @@ export default function TipsListScreen() {
 
       let allTips: TipPost[];
 
-      if (sortBy === "my" && currentAuthUser) {
+      if (sortBy === 'my' && currentAuthUser) {
         // Filter tips by current user
         const allTipsData = await tipsService.getTips();
-        allTips = allTipsData.filter(tip => tip.userId === currentAuthUser.uid);
+        allTips = allTipsData.filter((tip) => tip.userId === currentAuthUser.uid);
       } else {
         allTips = await tipsService.getTips();
       }
@@ -90,33 +106,34 @@ export default function TipsListScreen() {
       const tipsWithVotes: TipWithVotes[] = await Promise.all(
         allTips
           // Filter out hidden content (unless user is author)
-          .filter(tip => shouldShowInFeed(tip, currentAuthUser?.uid))
+          .filter((tip) => shouldShowInFeed(tip, currentAuthUser?.uid))
           .map(async (tip) => {
-          let voteScore = 0;
-          let userVote: "up" | "down" | null = null;
-          try {
-            const summary = await tipVotesService.getVoteSummary(tip.id);
-            voteScore = summary.score;
-            if (currentAuthUser) {
-              const vote = await tipVotesService.getUserVote(tip.id);
-              userVote = vote?.voteType || null;
+            let voteScore = 0;
+            let userVote: 'up' | 'down' | null = null;
+            try {
+              const summary = await tipVotesService.getVoteSummary(tip.id);
+              voteScore = summary.score;
+              if (currentAuthUser) {
+                const vote = await tipVotesService.getUserVote(tip.id);
+                userVote = vote?.voteType || null;
+              }
+            } catch (e) {
+              // fallback to upvotes if error
+              voteScore = tip.upvotes || 0;
             }
-          } catch (e) {
-            // fallback to upvotes if error
-            voteScore = tip.upvotes || 0;
-          }
-          return { ...tip, voteScore, userVote };
-        })
+            return { ...tip, voteScore, userVote };
+          }),
       );
       setTips(tipsWithVotes);
 
-      // Batch fetch author handles for tips with missing/Anonymous userName
-      const authorIdsToFetch = [...new Set(
-        tipsWithVotes
-          .filter(tip => !tip.userName || tip.userName === 'Anonymous')
-          .map(tip => tip.userId || tip.authorId)
-          .filter(Boolean) as string[]
-      )];
+      // Batch fetch author handles for all tips
+      const authorIdsToFetch = [
+        ...new Set(
+          tipsWithVotes
+            .map((tip) => tip.userId || tip.authorId)
+            .filter(Boolean) as string[],
+        ),
+      ];
 
       if (authorIdsToFetch.length > 0) {
         const handleMap: Record<string, string> = {};
@@ -130,12 +147,12 @@ export default function TipsListScreen() {
             } catch {
               // Silently ignore - will fallback to Anonymous
             }
-          })
+          }),
         );
-        setAuthorHandles(prev => ({ ...prev, ...handleMap }));
+        setAuthorHandles((prev) => ({ ...prev, ...handleMap }));
       }
     } catch (err: any) {
-      setError(err.message || "Failed to load tips");
+      setError(err.message || 'Failed to load tips');
     } finally {
       setLoading(false);
     }
@@ -148,11 +165,11 @@ export default function TipsListScreen() {
   useFocusEffect(
     React.useCallback(() => {
       loadTips();
-    }, [sortBy])
+    }, [sortBy]),
   );
 
   const handleTipPress = (tipId: string) => {
-    navigation.navigate("TipDetail", { tipId });
+    navigation.navigate('TipDetail', { tipId });
   };
 
   const handleCreateTip = () => {
@@ -160,19 +177,22 @@ export default function TipsListScreen() {
     const canProceed = requireAccount({
       openAccountModal: () => setShowLoginModal(true),
     });
-    
+
     if (!canProceed) return;
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    navigation.navigate("CreateTip");
+    navigation.navigate('CreateTip');
   };
 
   const formatTimeAgo = (dateString: string | any) => {
     const now = new Date();
-    const date = typeof dateString === "string" ? new Date(dateString) : dateString.toDate?.() || new Date();
+    const date =
+      typeof dateString === 'string'
+        ? new Date(dateString)
+        : dateString.toDate?.() || new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
-    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
 
     const diffInDays = Math.floor(diffInHours / 24);
@@ -185,29 +205,36 @@ export default function TipsListScreen() {
   };
 
   const filteredTips = searchQuery
-    ? tips.filter(tip =>
-        tip.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tip.content.toLowerCase().includes(searchQuery.toLowerCase())
+    ? tips.filter(
+        (tip) =>
+          tip.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          tip.content.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     : tips;
 
-  const handleVote = async (tipId: string, voteType: "up" | "down") => {
+  const handleVote = async (tipId: string, voteType: 'up' | 'down') => {
     // Voting requires an account (but NOT Pro)
-    if (!requireAccount({
-      openAccountModal: () => setShowLoginModal(true),
-    })) {
+    if (
+      !requireAccount({
+        openAccountModal: () => setShowLoginModal(true),
+      })
+    ) {
       return;
     }
-    
+
     try {
       await tipVotesService.vote(tipId, voteType);
       // Refresh just this tip's votes
       setTips((prev) =>
         prev.map((tip) =>
           tip.id === tipId
-            ? { ...tip, userVote: voteType, voteScore: tip.voteScore + (voteType === "up" ? 1 : -1) }
-            : tip
-        )
+            ? {
+                ...tip,
+                userVote: voteType,
+                voteScore: tip.voteScore + (voteType === 'up' ? 1 : -1),
+              }
+            : tip,
+        ),
       );
       // Optionally reload all votes for accuracy
       // await loadTips();
@@ -226,35 +253,35 @@ export default function TipsListScreen() {
       <View className="flex-row items-start justify-between mb-2">
         <Text
           className="text-lg flex-1 mr-2"
-          style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+          style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
         >
           {item.title}
         </Text>
         <ContentActionsAffordance
           itemId={item.id}
           itemType="tip"
-          createdByUserId={item.userId || item.authorId || ""}
+          createdByUserId={item.userId || item.authorId || ''}
           currentUserId={currentUser?.id}
           canModerate={canModerate}
           roleLabel={roleLabel}
           onRequestEdit={() => {
             // Navigate to edit screen (if implemented)
-            navigation.navigate("TipDetail", { tipId: item.id });
+            navigation.navigate('TipDetail', { tipId: item.id });
           }}
           onRequestDelete={async () => {
             const result = await deleteTip(item.id);
             if (result.success) {
-              setTips(prev => prev.filter(t => t.id !== item.id));
+              setTips((prev) => prev.filter((t) => t.id !== item.id));
             } else {
-              Alert.alert("Error", result.error?.message || "Failed to delete tip");
+              Alert.alert('Error', result.error?.message || 'Failed to delete tip');
             }
           }}
           onRequestRemove={async () => {
             const result = await deleteTip(item.id);
             if (result.success) {
-              setTips(prev => prev.filter(t => t.id !== item.id));
+              setTips((prev) => prev.filter((t) => t.id !== item.id));
             } else {
-              Alert.alert("Error", result.error?.message || "Failed to remove tip");
+              Alert.alert('Error', result.error?.message || 'Failed to remove tip');
             }
           }}
           layout="cardHeader"
@@ -264,17 +291,29 @@ export default function TipsListScreen() {
       <Text
         className="mb-3"
         numberOfLines={2}
-        style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+        style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
       >
         {item.content}
       </Text>
 
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-        <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-          @{authorHandles[item.userId || item.authorId || ''] || item.userName || 'Anonymous'}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+        <Text
+          style={{
+            fontFamily: 'SourceSans3_600SemiBold',
+            fontSize: 12,
+            color: TEXT_MUTED,
+          }}
+        >
+          @{authorHandles[item.userId || item.authorId || ''] || 'Anonymous'}
         </Text>
         <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>
-        <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: TEXT_MUTED }}>
+        <Text
+          style={{
+            fontFamily: 'SourceSans3_400Regular',
+            fontSize: 12,
+            color: TEXT_MUTED,
+          }}
+        >
           {formatTimeAgo(item.createdAt)}
         </Text>
       </View>
@@ -287,7 +326,7 @@ export default function TipsListScreen() {
         <ActivityIndicator size="large" color={DEEP_FOREST} />
         <Text
           className="mt-4"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+          style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
         >
           Loading tips...
         </Text>
@@ -301,13 +340,13 @@ export default function TipsListScreen() {
         <Ionicons name="alert-circle-outline" size={64} color={EARTH_GREEN} />
         <Text
           className="mt-4 text-center text-lg"
-          style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+          style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_PRIMARY_STRONG }}
         >
           Failed to load tips
         </Text>
         <Text
           className="mt-2 text-center"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+          style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
         >
           {error}
         </Text>
@@ -316,7 +355,7 @@ export default function TipsListScreen() {
           className="mt-6 px-6 py-3 rounded-xl active:opacity-90"
           style={{ backgroundColor: DEEP_FOREST }}
         >
-          <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+          <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
             Retry
           </Text>
         </Pressable>
@@ -336,7 +375,10 @@ export default function TipsListScreen() {
       {/* Search and Filters */}
       <View className="px-5 py-3 border-b" style={{ borderColor: BORDER_SOFT }}>
         {/* Search */}
-        <View className="flex-row items-center bg-white rounded-xl px-4 py-2 border mb-3" style={{ borderColor: BORDER_SOFT }}>
+        <View
+          className="flex-row items-center bg-white rounded-xl px-4 py-2 border mb-3"
+          style={{ borderColor: BORDER_SOFT }}
+        >
           <Ionicons name="search" size={18} color={TEXT_MUTED} />
           <TextInput
             value={searchQuery}
@@ -344,10 +386,10 @@ export default function TipsListScreen() {
             placeholder="Search tips"
             placeholderTextColor={TEXT_MUTED}
             className="flex-1 ml-2"
-            style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_PRIMARY_STRONG }}
+            style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_PRIMARY_STRONG }}
           />
           {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery("")}>
+            <Pressable onPress={() => setSearchQuery('')}>
               <Ionicons name="close-circle" size={18} color={TEXT_MUTED} />
             </Pressable>
           )}
@@ -356,9 +398,9 @@ export default function TipsListScreen() {
         {/* Filter Chips */}
         <View className="flex-row gap-2">
           {[
-            { id: "newest" as SortOption, label: "Newest" },
-            { id: "my" as SortOption, label: "My Tips" },
-          ].map(option => (
+            { id: 'newest' as SortOption, label: 'Newest' },
+            { id: 'my' as SortOption, label: 'My Tips' },
+          ].map((option) => (
             <Pressable
               key={option.id}
               onPress={() => {
@@ -366,15 +408,15 @@ export default function TipsListScreen() {
                 setSortBy(option.id);
               }}
               className={`px-4 py-2 rounded-full ${
-                sortBy === option.id ? "bg-forest" : "bg-white border"
+                sortBy === option.id ? 'bg-forest' : 'bg-white border'
               }`}
               style={sortBy !== option.id ? { borderColor: BORDER_SOFT } : undefined}
             >
               <Text
                 className="text-sm"
                 style={{
-                  fontFamily: "SourceSans3_600SemiBold",
-                  color: sortBy === option.id ? PARCHMENT : TEXT_PRIMARY_STRONG
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: sortBy === option.id ? PARCHMENT : TEXT_PRIMARY_STRONG,
                 }}
               >
                 {option.label}
@@ -390,13 +432,13 @@ export default function TipsListScreen() {
           <Ionicons name="bulb-outline" size={64} color={GRANITE_GOLD} />
           <Text
             className="mt-4 text-xl text-center"
-            style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+            style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
           >
             No tips yet
           </Text>
           <Text
             className="mt-2 text-center"
-            style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+            style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
           >
             Be the first to share a helpful camping tip!
           </Text>
@@ -405,7 +447,7 @@ export default function TipsListScreen() {
             className="mt-6 px-6 py-3 rounded-xl active:opacity-90"
             style={{ backgroundColor: DEEP_FOREST }}
           >
-            <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+            <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
               Share Your First Tip
             </Text>
           </Pressable>
@@ -414,7 +456,7 @@ export default function TipsListScreen() {
         <FlatList
           data={filteredTips}
           renderItem={renderTip}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
         />
       )}
@@ -423,7 +465,7 @@ export default function TipsListScreen() {
         visible={showLoginModal}
         onCreateAccount={() => {
           setShowLoginModal(false);
-          navigation.navigate("Auth");
+          navigation.navigate('Auth');
         }}
         onMaybeLater={() => setShowLoginModal(false)}
       />

@@ -4,16 +4,24 @@
  * Uses Firebase Cloud Functions with SendGrid for email delivery
  */
 
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
-import firebaseApp from "../config/firebase";
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from 'firebase/firestore';
+import firebaseApp from '../config/firebase';
 import {
   CampgroundInvite,
   CreateInviteData,
   CreateInviteResult,
   SendInviteEmailResult,
   RedeemInviteResult,
-} from "../types/campground";
+} from '../types/campground';
 
 const functions = getFunctions(firebaseApp);
 const db = getFirestore(firebaseApp);
@@ -21,15 +29,15 @@ const db = getFirestore(firebaseApp);
 // Cloud Function callable references
 const createCampgroundInviteFunc = httpsCallable<CreateInviteData, CreateInviteResult>(
   functions,
-  "createCampgroundInvite"
+  'createCampgroundInvite',
 );
-const sendCampgroundInviteEmailFunc = httpsCallable<{ inviteId: string }, SendInviteEmailResult>(
-  functions,
-  "sendCampgroundInviteEmail"
-);
+const sendCampgroundInviteEmailFunc = httpsCallable<
+  { inviteId: string },
+  SendInviteEmailResult
+>(functions, 'sendCampgroundInviteEmail');
 const redeemCampgroundInviteFunc = httpsCallable<{ token: string }, RedeemInviteResult>(
   functions,
-  "redeemCampgroundInvite"
+  'redeemCampgroundInvite',
 );
 
 interface CheckPendingInvitesResult {
@@ -39,24 +47,24 @@ interface CheckPendingInvitesResult {
   inviterNames?: string[];
 }
 
-const checkPendingInvitesOnLoginFunc = httpsCallable<Record<string, never>, CheckPendingInvitesResult>(
-  functions,
-  "checkPendingInvitesOnLogin"
-);
+const checkPendingInvitesOnLoginFunc = httpsCallable<
+  Record<string, never>,
+  CheckPendingInvitesResult
+>(functions, 'checkPendingInvitesOnLogin');
 
 /**
  * Create a new campground invite
  * This creates the invite record in Firestore via Cloud Function
  */
 export async function createCampgroundInvite(
-  data: CreateInviteData
+  data: CreateInviteData,
 ): Promise<CreateInviteResult> {
   try {
     const result = await createCampgroundInviteFunc(data);
     return result.data;
   } catch (error: any) {
-    console.error("Error creating campground invite:", error);
-    throw new Error(error.message || "Failed to create invite");
+    console.error('Error creating campground invite:', error);
+    throw new Error(error.message || 'Failed to create invite');
   }
 }
 
@@ -64,15 +72,16 @@ export async function createCampgroundInvite(
  * Send invite email via Cloud Function (uses SendGrid)
  */
 export async function sendCampgroundInviteEmail(
-  inviteId: string
+  inviteId: string,
 ): Promise<SendInviteEmailResult> {
   try {
     const result = await sendCampgroundInviteEmailFunc({ inviteId });
     return result.data;
   } catch (error: any) {
-    console.error("Error sending invite email:", error);
+    console.error('Error sending invite email:', error);
     // Firebase Functions errors have specific structure
-    const errorMessage = error?.details || error?.message || "Failed to send invite email";
+    const errorMessage =
+      error?.details || error?.message || 'Failed to send invite email';
     throw new Error(errorMessage);
   }
 }
@@ -81,15 +90,13 @@ export async function sendCampgroundInviteEmail(
  * Redeem an invite by token
  * This adds the current user to the inviter's campground
  */
-export async function redeemCampgroundInvite(
-  token: string
-): Promise<RedeemInviteResult> {
+export async function redeemCampgroundInvite(token: string): Promise<RedeemInviteResult> {
   try {
     const result = await redeemCampgroundInviteFunc({ token });
     return result.data;
   } catch (error: any) {
-    console.error("Error redeeming invite:", error);
-    throw new Error(error.message || "Failed to redeem invite");
+    console.error('Error redeeming invite:', error);
+    throw new Error(error.message || 'Failed to redeem invite');
   }
 }
 
@@ -97,10 +104,10 @@ export async function redeemCampgroundInvite(
  * Get an invite by ID (for display purposes)
  */
 export async function getCampgroundInviteById(
-  inviteId: string
+  inviteId: string,
 ): Promise<CampgroundInvite | null> {
   try {
-    const inviteRef = doc(db, "campgroundInvites", inviteId);
+    const inviteRef = doc(db, 'campgroundInvites', inviteId);
     const inviteSnap = await getDoc(inviteRef);
 
     if (!inviteSnap.exists()) {
@@ -112,8 +119,8 @@ export async function getCampgroundInviteById(
       ...inviteSnap.data(),
     } as CampgroundInvite;
   } catch (error: any) {
-    console.error("Error getting invite:", error);
-    throw new Error(error.message || "Failed to get invite");
+    console.error('Error getting invite:', error);
+    throw new Error(error.message || 'Failed to get invite');
   }
 }
 
@@ -121,14 +128,14 @@ export async function getCampgroundInviteById(
  * Get all pending invites for the current user (as inviter)
  */
 export async function getPendingInvitesByInviter(
-  inviterUid: string
+  inviterUid: string,
 ): Promise<CampgroundInvite[]> {
   try {
-    const invitesRef = collection(db, "campgroundInvites");
+    const invitesRef = collection(db, 'campgroundInvites');
     const q = query(
       invitesRef,
-      where("inviterUid", "==", inviterUid),
-      where("status", "==", "pending")
+      where('inviterUid', '==', inviterUid),
+      where('status', '==', 'pending'),
     );
 
     const snapshot = await getDocs(q);
@@ -137,7 +144,7 @@ export async function getPendingInvitesByInviter(
       ...doc.data(),
     })) as CampgroundInvite[];
   } catch (error: any) {
-    console.error("Error getting pending invites:", error);
+    console.error('Error getting pending invites:', error);
     return [];
   }
 }
@@ -147,15 +154,15 @@ export async function getPendingInvitesByInviter(
  */
 export async function findPendingInviteByEmail(
   inviterUid: string,
-  email: string
+  email: string,
 ): Promise<CampgroundInvite | null> {
   try {
-    const invitesRef = collection(db, "campgroundInvites");
+    const invitesRef = collection(db, 'campgroundInvites');
     const q = query(
       invitesRef,
-      where("inviterUid", "==", inviterUid),
-      where("inviteeEmail", "==", email.toLowerCase()),
-      where("status", "==", "pending")
+      where('inviterUid', '==', inviterUid),
+      where('inviteeEmail', '==', email.toLowerCase()),
+      where('status', '==', 'pending'),
     );
 
     const snapshot = await getDocs(q);
@@ -169,7 +176,7 @@ export async function findPendingInviteByEmail(
       ...doc.data(),
     } as CampgroundInvite;
   } catch (error: any) {
-    console.error("Error finding pending invite:", error);
+    console.error('Error finding pending invite:', error);
     return null;
   }
 }
@@ -180,7 +187,7 @@ export async function findPendingInviteByEmail(
  */
 export function getInviteLink(token: string): string {
   // Import inline to avoid circular dependency
-  const { getInviteLinkUrl } = require("../constants/appLinks");
+  const { getInviteLinkUrl } = require('../constants/appLinks');
   return getInviteLinkUrl(token);
 }
 
@@ -188,9 +195,9 @@ export function getInviteLink(token: string): string {
  * Extract first name from full name
  */
 function getFirstName(fullName: string): string {
-  if (!fullName || fullName.trim() === "") return "A friend";
+  if (!fullName || fullName.trim() === '') return 'A friend';
   const firstName = fullName.trim().split(/\s+/)[0];
-  return firstName || "A friend";
+  return firstName || 'A friend';
 }
 
 /**
@@ -201,7 +208,7 @@ function getFirstName(fullName: string): string {
 export function generateInviteMessage(inviterName: string, inviteToken: string): string {
   const firstName = getFirstName(inviterName);
   // Import inline to avoid circular dependency
-  const { generateShareInviteMessage } = require("../constants/appLinks");
+  const { generateShareInviteMessage } = require('../constants/appLinks');
   return generateShareInviteMessage(firstName, inviteToken);
 }
 
@@ -213,11 +220,11 @@ export function generateInviteMessage(inviterName: string, inviteToken: string):
 export async function checkPendingInvitesOnLogin(): Promise<CheckPendingInvitesResult> {
   try {
     const result = await checkPendingInvitesOnLoginFunc({});
-    console.log("[CampgroundInvite] Check pending invites result:", result.data);
+    console.log('[CampgroundInvite] Check pending invites result:', result.data);
     return result.data;
   } catch (error: any) {
-    console.error("[CampgroundInvite] Error checking pending invites:", error);
+    console.error('[CampgroundInvite] Error checking pending invites:', error);
     // Don't throw - this is a non-critical background check
-    return { processed: 0, message: "Failed to check invites" };
+    return { processed: 0, message: 'Failed to check invites' };
   }
 }

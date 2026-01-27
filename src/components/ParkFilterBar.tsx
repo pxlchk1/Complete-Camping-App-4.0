@@ -1,74 +1,82 @@
-import React, { useState } from "react";
-import { View, Text, Pressable, Modal, ScrollView, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Location from "expo-location";
-import { colors, spacing, radius, fonts, fontSizes } from "../theme/theme";
-import { DEEP_FOREST, EARTH_GREEN, CARD_BACKGROUND_LIGHT, BORDER_SOFT, TEXT_PRIMARY_STRONG, TEXT_SECONDARY, PARCHMENT } from "../constants/colors";
+import React, { useState } from 'react';
+import { View, Text, Pressable, Modal, ScrollView, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { colors, spacing, radius, fonts, fontSizes } from '../theme/theme';
+import {
+  DEEP_FOREST,
+  EARTH_GREEN,
+  CARD_BACKGROUND_LIGHT,
+  BORDER_SOFT,
+  TEXT_PRIMARY_STRONG,
+  TEXT_SECONDARY,
+  PARCHMENT,
+} from '../constants/colors';
 
-export type FilterMode = "distance" | "state";
-export type ParkType = "all" | "state_park" | "national_park" | "national_forest";
+export type FilterMode = 'distance' | 'state';
+export type ParkType = 'all' | 'state_park' | 'national_park' | 'national_forest';
 export type DriveTime = 2 | 4 | 6 | 8 | 12;
-export type SortOption = "distance" | "name";
+export type SortOption = 'distance' | 'name';
 
 // All US States and Territories - alphabetically sorted
 export const US_STATES: { value: string; label: string }[] = [
-  { value: "", label: "Select a state" },
-  { value: "AL", label: "Alabama" },
-  { value: "AK", label: "Alaska" },
-  { value: "AS", label: "American Samoa" },
-  { value: "AZ", label: "Arizona" },
-  { value: "AR", label: "Arkansas" },
-  { value: "CA", label: "California" },
-  { value: "CO", label: "Colorado" },
-  { value: "CT", label: "Connecticut" },
-  { value: "DE", label: "Delaware" },
-  { value: "DC", label: "District of Columbia" },
-  { value: "FL", label: "Florida" },
-  { value: "GA", label: "Georgia" },
-  { value: "GU", label: "Guam" },
-  { value: "HI", label: "Hawaii" },
-  { value: "ID", label: "Idaho" },
-  { value: "IL", label: "Illinois" },
-  { value: "IN", label: "Indiana" },
-  { value: "IA", label: "Iowa" },
-  { value: "KS", label: "Kansas" },
-  { value: "KY", label: "Kentucky" },
-  { value: "LA", label: "Louisiana" },
-  { value: "ME", label: "Maine" },
-  { value: "MD", label: "Maryland" },
-  { value: "MA", label: "Massachusetts" },
-  { value: "MI", label: "Michigan" },
-  { value: "MN", label: "Minnesota" },
-  { value: "MS", label: "Mississippi" },
-  { value: "MO", label: "Missouri" },
-  { value: "MT", label: "Montana" },
-  { value: "NE", label: "Nebraska" },
-  { value: "NV", label: "Nevada" },
-  { value: "NH", label: "New Hampshire" },
-  { value: "NJ", label: "New Jersey" },
-  { value: "NM", label: "New Mexico" },
-  { value: "NY", label: "New York" },
-  { value: "NC", label: "North Carolina" },
-  { value: "ND", label: "North Dakota" },
-  { value: "MP", label: "Northern Mariana Islands" },
-  { value: "OH", label: "Ohio" },
-  { value: "OK", label: "Oklahoma" },
-  { value: "OR", label: "Oregon" },
-  { value: "PA", label: "Pennsylvania" },
-  { value: "PR", label: "Puerto Rico" },
-  { value: "RI", label: "Rhode Island" },
-  { value: "SC", label: "South Carolina" },
-  { value: "SD", label: "South Dakota" },
-  { value: "TN", label: "Tennessee" },
-  { value: "TX", label: "Texas" },
-  { value: "VI", label: "U.S. Virgin Islands" },
-  { value: "UT", label: "Utah" },
-  { value: "VT", label: "Vermont" },
-  { value: "VA", label: "Virginia" },
-  { value: "WA", label: "Washington" },
-  { value: "WV", label: "West Virginia" },
-  { value: "WI", label: "Wisconsin" },
-  { value: "WY", label: "Wyoming" },
+  { value: '', label: 'Select a state' },
+  { value: 'AL', label: 'Alabama' },
+  { value: 'AK', label: 'Alaska' },
+  { value: 'AS', label: 'American Samoa' },
+  { value: 'AZ', label: 'Arizona' },
+  { value: 'AR', label: 'Arkansas' },
+  { value: 'CA', label: 'California' },
+  { value: 'CO', label: 'Colorado' },
+  { value: 'CT', label: 'Connecticut' },
+  { value: 'DE', label: 'Delaware' },
+  { value: 'DC', label: 'District of Columbia' },
+  { value: 'FL', label: 'Florida' },
+  { value: 'GA', label: 'Georgia' },
+  { value: 'GU', label: 'Guam' },
+  { value: 'HI', label: 'Hawaii' },
+  { value: 'ID', label: 'Idaho' },
+  { value: 'IL', label: 'Illinois' },
+  { value: 'IN', label: 'Indiana' },
+  { value: 'IA', label: 'Iowa' },
+  { value: 'KS', label: 'Kansas' },
+  { value: 'KY', label: 'Kentucky' },
+  { value: 'LA', label: 'Louisiana' },
+  { value: 'ME', label: 'Maine' },
+  { value: 'MD', label: 'Maryland' },
+  { value: 'MA', label: 'Massachusetts' },
+  { value: 'MI', label: 'Michigan' },
+  { value: 'MN', label: 'Minnesota' },
+  { value: 'MS', label: 'Mississippi' },
+  { value: 'MO', label: 'Missouri' },
+  { value: 'MT', label: 'Montana' },
+  { value: 'NE', label: 'Nebraska' },
+  { value: 'NV', label: 'Nevada' },
+  { value: 'NH', label: 'New Hampshire' },
+  { value: 'NJ', label: 'New Jersey' },
+  { value: 'NM', label: 'New Mexico' },
+  { value: 'NY', label: 'New York' },
+  { value: 'NC', label: 'North Carolina' },
+  { value: 'ND', label: 'North Dakota' },
+  { value: 'MP', label: 'Northern Mariana Islands' },
+  { value: 'OH', label: 'Ohio' },
+  { value: 'OK', label: 'Oklahoma' },
+  { value: 'OR', label: 'Oregon' },
+  { value: 'PA', label: 'Pennsylvania' },
+  { value: 'PR', label: 'Puerto Rico' },
+  { value: 'RI', label: 'Rhode Island' },
+  { value: 'SC', label: 'South Carolina' },
+  { value: 'SD', label: 'South Dakota' },
+  { value: 'TN', label: 'Tennessee' },
+  { value: 'TX', label: 'Texas' },
+  { value: 'VI', label: 'U.S. Virgin Islands' },
+  { value: 'UT', label: 'Utah' },
+  { value: 'VT', label: 'Vermont' },
+  { value: 'VA', label: 'Virginia' },
+  { value: 'WA', label: 'Washington' },
+  { value: 'WV', label: 'West Virginia' },
+  { value: 'WI', label: 'Wisconsin' },
+  { value: 'WY', label: 'Wyoming' },
 ];
 
 interface ParkFilterBarProps {
@@ -88,28 +96,32 @@ interface ParkFilterBarProps {
   onLocationRequest: (location: { latitude: number; longitude: number }) => void;
   onLocationError: (error: string) => void;
   hasLocation?: boolean;
-  viewMode?: "map" | "list";
-  onViewModeChange?: (mode: "map" | "list") => void;
+  viewMode?: 'map' | 'list';
+  onViewModeChange?: (mode: 'map' | 'list') => void;
 }
 
 const DRIVE_TIME_OPTIONS: { value: DriveTime; label: string }[] = [
-  { value: 2, label: "2 hr" },
-  { value: 4, label: "4 hr" },
-  { value: 6, label: "6 hr" },
-  { value: 8, label: "8 hr" },
-  { value: 12, label: "12 hr" },
+  { value: 2, label: '2 hr' },
+  { value: 4, label: '4 hr' },
+  { value: 6, label: '6 hr' },
+  { value: 8, label: '8 hr' },
+  { value: 12, label: '12 hr' },
 ];
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "distance", label: "distance" },
-  { value: "name", label: "name" },
+  { value: 'distance', label: 'distance' },
+  { value: 'name', label: 'name' },
 ];
 
-const PARK_TYPE_OPTIONS: { value: ParkType; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { value: "all", label: "All Parks", icon: "leaf" },
-  { value: "state_park", label: "State Parks", icon: "flag" },
-  { value: "national_park", label: "National Parks", icon: "shield" },
-  { value: "national_forest", label: "National Forests", icon: "leaf-outline" },
+const PARK_TYPE_OPTIONS: {
+  value: ParkType;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}[] = [
+  { value: 'all', label: 'All Parks', icon: 'leaf' },
+  { value: 'state_park', label: 'State Parks', icon: 'flag' },
+  { value: 'national_park', label: 'National Parks', icon: 'shield' },
+  { value: 'national_forest', label: 'National Forests', icon: 'leaf-outline' },
 ];
 
 export default function ParkFilterBar({
@@ -121,15 +133,15 @@ export default function ParkFilterBar({
   onDriveTimeChange,
   parkType,
   onParkTypeChange,
-  sortBy = "distance",
+  sortBy = 'distance',
   onSortChange,
-  zipCode = "",
+  zipCode = '',
   onZipCodeChange,
   onZipCodeSubmit,
   onLocationRequest,
   onLocationError,
   hasLocation = false,
-  viewMode = "list",
+  viewMode = 'list',
   onViewModeChange,
 }: ParkFilterBarProps) {
   const [locationLoading, setLocationLoading] = useState(false);
@@ -142,8 +154,8 @@ export default function ParkFilterBar({
     setLocationLoading(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        onLocationError("Location permission not granted");
+      if (status !== 'granted') {
+        onLocationError('Location permission not granted');
         setLocationLoading(false);
         return;
       }
@@ -154,21 +166,21 @@ export default function ParkFilterBar({
         longitude: location.coords.longitude,
       });
     } catch {
-      onLocationError("Failed to get location");
+      onLocationError('Failed to get location');
     } finally {
       setLocationLoading(false);
     }
   };
 
   const getStateLabel = () => {
-    if (!selectedState) return "Select a state";
+    if (!selectedState) return 'Select a state';
     const state = US_STATES.find((s) => s.value === selectedState);
     return state?.label || selectedState;
   };
 
   const getParkTypeLabel = () => {
     const type = PARK_TYPE_OPTIONS.find((t) => t.value === parkType);
-    return type?.label || "All Parks";
+    return type?.label || 'All Parks';
   };
 
   return (
@@ -176,7 +188,7 @@ export default function ParkFilterBar({
       {/* Mode Toggle - Segmented Control Style */}
       <View
         style={{
-          flexDirection: "row",
+          flexDirection: 'row',
           backgroundColor: PARCHMENT,
           borderRadius: radius.md,
           borderWidth: 1,
@@ -186,72 +198,72 @@ export default function ParkFilterBar({
         }}
       >
         <Pressable
-          onPress={() => onModeChange("distance")}
+          onPress={() => onModeChange('distance')}
           style={{
             flex: 1,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
             paddingVertical: 6,
             paddingHorizontal: 8,
             borderRadius: radius.sm,
-            backgroundColor: mode === "distance" ? DEEP_FOREST : "transparent",
+            backgroundColor: mode === 'distance' ? DEEP_FOREST : 'transparent',
             gap: 4,
           }}
         >
           <Ionicons
             name="location"
             size={14}
-            color={mode === "distance" ? PARCHMENT : TEXT_SECONDARY}
+            color={mode === 'distance' ? PARCHMENT : TEXT_SECONDARY}
           />
           <Text
             style={{
               fontFamily: fonts.bodySemibold,
               fontSize: 11,
               lineHeight: 13,
-              color: mode === "distance" ? PARCHMENT : TEXT_SECONDARY,
+              color: mode === 'distance' ? PARCHMENT : TEXT_SECONDARY,
             }}
           >
-            Location +{"\n"}Drive Time
+            Location +{'\n'}Drive Time
           </Text>
         </Pressable>
 
         <Pressable
-          onPress={() => onModeChange("state")}
+          onPress={() => onModeChange('state')}
           style={{
             flex: 1,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
             paddingVertical: 6,
             paddingHorizontal: 8,
             borderRadius: radius.sm,
-            backgroundColor: mode === "state" ? DEEP_FOREST : "transparent",
+            backgroundColor: mode === 'state' ? DEEP_FOREST : 'transparent',
             gap: 4,
           }}
         >
           <Ionicons
             name="map"
             size={14}
-            color={mode === "state" ? PARCHMENT : TEXT_SECONDARY}
+            color={mode === 'state' ? PARCHMENT : TEXT_SECONDARY}
           />
           <Text
             style={{
               fontFamily: fonts.bodySemibold,
               fontSize: 11,
               lineHeight: 13,
-              color: mode === "state" ? PARCHMENT : TEXT_SECONDARY,
+              color: mode === 'state' ? PARCHMENT : TEXT_SECONDARY,
             }}
           >
-            Browse by{"\n"}State
+            Browse by{'\n'}State
           </Text>
         </Pressable>
 
         {/* Map/List Toggle Icons */}
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
+            flexDirection: 'row',
+            alignItems: 'center',
             borderLeftWidth: 1,
             borderLeftColor: BORDER_SOFT,
             marginLeft: 6,
@@ -259,37 +271,45 @@ export default function ParkFilterBar({
           }}
         >
           <Pressable
-            onPress={() => onViewModeChange?.("list")}
+            onPress={() => onViewModeChange?.('list')}
             style={{
               width: 32,
               height: 32,
               borderRadius: radius.sm,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: viewMode === "list" ? DEEP_FOREST : "transparent",
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: viewMode === 'list' ? DEEP_FOREST : 'transparent',
             }}
           >
-            <Ionicons name="list" size={16} color={viewMode === "list" ? PARCHMENT : TEXT_SECONDARY} />
+            <Ionicons
+              name="list"
+              size={16}
+              color={viewMode === 'list' ? PARCHMENT : TEXT_SECONDARY}
+            />
           </Pressable>
           <Pressable
-            onPress={() => onViewModeChange?.("map")}
+            onPress={() => onViewModeChange?.('map')}
             style={{
               width: 32,
               height: 32,
               borderRadius: radius.sm,
-              alignItems: "center",
-              justifyContent: "center",
+              alignItems: 'center',
+              justifyContent: 'center',
               marginLeft: 2,
-              backgroundColor: viewMode === "map" ? DEEP_FOREST : "transparent",
+              backgroundColor: viewMode === 'map' ? DEEP_FOREST : 'transparent',
             }}
           >
-            <Ionicons name="map-outline" size={16} color={viewMode === "map" ? PARCHMENT : TEXT_SECONDARY} />
+            <Ionicons
+              name="map-outline"
+              size={16}
+              color={viewMode === 'map' ? PARCHMENT : TEXT_SECONDARY}
+            />
           </Pressable>
         </View>
       </View>
 
       {/* Location Mode Controls */}
-      {mode === "distance" && (
+      {mode === 'distance' && (
         <View
           style={{
             backgroundColor: CARD_BACKGROUND_LIGHT,
@@ -300,14 +320,16 @@ export default function ParkFilterBar({
           }}
         >
           {/* Location Row */}
-          <View style={{ flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm }}>
+          <View
+            style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}
+          >
             {/* Use My Location Button */}
             <Pressable
               onPress={handleLocationPress}
               disabled={locationLoading}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
+                flexDirection: 'row',
+                alignItems: 'center',
                 paddingVertical: spacing.sm,
                 paddingHorizontal: spacing.md,
                 borderRadius: radius.md,
@@ -318,7 +340,7 @@ export default function ParkFilterBar({
               }}
             >
               <Ionicons
-                name={locationLoading ? "hourglass-outline" : "navigate"}
+                name={locationLoading ? 'hourglass-outline' : 'navigate'}
                 size={16}
                 color={hasLocation ? PARCHMENT : EARTH_GREEN}
               />
@@ -329,12 +351,12 @@ export default function ParkFilterBar({
                   color: hasLocation ? PARCHMENT : EARTH_GREEN,
                 }}
               >
-                {locationLoading ? "Getting..." : "Use my location"}
+                {locationLoading ? 'Getting...' : 'Use my location'}
               </Text>
             </Pressable>
 
             {/* Zip Code Input with Search Button */}
-            <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
               <TextInput
                 value={zipCode}
                 onChangeText={onZipCodeChange}
@@ -362,14 +384,14 @@ export default function ParkFilterBar({
                 <Pressable
                   onPress={onZipCodeSubmit}
                   style={{
-                    position: "absolute",
+                    position: 'absolute',
                     right: 8,
                     width: 28,
                     height: 28,
                     borderRadius: 14,
                     backgroundColor: EARTH_GREEN,
-                    alignItems: "center",
-                    justifyContent: "center",
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   <Ionicons name="search" size={16} color={PARCHMENT} />
@@ -379,15 +401,15 @@ export default function ParkFilterBar({
           </View>
 
           {/* Within & Sort Dropdowns */}
-          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             {/* Within Dropdown */}
             <Pressable
               onPress={() => setShowWithinModal(true)}
               style={{
                 flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 paddingVertical: 8,
                 paddingHorizontal: spacing.sm,
                 borderRadius: radius.md,
@@ -405,7 +427,7 @@ export default function ParkFilterBar({
               >
                 Within
               </Text>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Text
                   style={{
                     fontFamily: fonts.bodyRegular,
@@ -424,9 +446,9 @@ export default function ParkFilterBar({
               onPress={() => setShowSortModal(true)}
               style={{
                 flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 paddingVertical: 8,
                 paddingHorizontal: spacing.sm,
                 borderRadius: radius.md,
@@ -444,7 +466,7 @@ export default function ParkFilterBar({
               >
                 Sort
               </Text>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Text
                   style={{
                     fontFamily: fonts.bodyRegular,
@@ -462,13 +484,13 @@ export default function ParkFilterBar({
       )}
 
       {/* State Mode Controls */}
-      {mode === "state" && (
+      {mode === 'state' && (
         <Pressable
           onPress={() => setShowStateModal(true)}
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             paddingVertical: 10,
             paddingHorizontal: spacing.md,
             borderRadius: radius.md,
@@ -493,8 +515,8 @@ export default function ParkFilterBar({
       {/* Park type Filter - Label + Dropdown */}
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
+          flexDirection: 'row',
+          alignItems: 'center',
           gap: spacing.sm,
           marginTop: spacing.sm,
         }}
@@ -512,9 +534,9 @@ export default function ParkFilterBar({
           onPress={() => setShowParkTypeModal(true)}
           style={{
             flex: 1,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
             paddingVertical: 8,
             paddingHorizontal: spacing.md,
             borderRadius: radius.md,
@@ -523,9 +545,9 @@ export default function ParkFilterBar({
             borderColor: BORDER_SOFT,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Ionicons
-              name={PARK_TYPE_OPTIONS.find(o => o.value === parkType)?.icon || "leaf"}
+              name={PARK_TYPE_OPTIONS.find((o) => o.value === parkType)?.icon || 'leaf'}
               size={14}
               color={EARTH_GREEN}
             />
@@ -553,9 +575,9 @@ export default function ParkFilterBar({
         <Pressable
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
           onPress={() => setShowWithinModal(false)}
         >
@@ -563,16 +585,16 @@ export default function ParkFilterBar({
             style={{
               backgroundColor: PARCHMENT,
               borderRadius: radius.lg,
-              width: "80%",
+              width: '80%',
               maxWidth: 400,
             }}
             onPress={(e) => e.stopPropagation()}
           >
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 padding: spacing.lg,
                 borderBottomWidth: 1,
                 borderBottomColor: BORDER_SOFT,
@@ -601,9 +623,9 @@ export default function ParkFilterBar({
                     setShowWithinModal(false);
                   }}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     paddingVertical: spacing.md,
                     borderBottomWidth: 1,
                     borderBottomColor: BORDER_SOFT,
@@ -638,9 +660,9 @@ export default function ParkFilterBar({
         <Pressable
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
           onPress={() => setShowSortModal(false)}
         >
@@ -648,16 +670,16 @@ export default function ParkFilterBar({
             style={{
               backgroundColor: PARCHMENT,
               borderRadius: radius.lg,
-              width: "80%",
+              width: '80%',
               maxWidth: 400,
             }}
             onPress={(e) => e.stopPropagation()}
           >
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 padding: spacing.lg,
                 borderBottomWidth: 1,
                 borderBottomColor: BORDER_SOFT,
@@ -686,9 +708,9 @@ export default function ParkFilterBar({
                     setShowSortModal(false);
                   }}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     paddingVertical: spacing.md,
                     borderBottomWidth: 1,
                     borderBottomColor: BORDER_SOFT,
@@ -723,9 +745,9 @@ export default function ParkFilterBar({
         <Pressable
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
           onPress={() => setShowParkTypeModal(false)}
         >
@@ -733,16 +755,16 @@ export default function ParkFilterBar({
             style={{
               backgroundColor: PARCHMENT,
               borderRadius: radius.lg,
-              width: "80%",
+              width: '80%',
               maxWidth: 400,
             }}
             onPress={(e) => e.stopPropagation()}
           >
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 padding: spacing.lg,
                 borderBottomWidth: 1,
                 borderBottomColor: BORDER_SOFT,
@@ -771,15 +793,21 @@ export default function ParkFilterBar({
                     setShowParkTypeModal(false);
                   }}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     paddingVertical: spacing.md,
                     borderBottomWidth: 1,
                     borderBottomColor: BORDER_SOFT,
                   }}
                 >
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: spacing.sm,
+                    }}
+                  >
                     <Ionicons name={option.icon} size={18} color={DEEP_FOREST} />
                     <Text
                       style={{
@@ -811,9 +839,9 @@ export default function ParkFilterBar({
         <Pressable
           style={{
             flex: 1,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            justifyContent: "center",
-            alignItems: "center",
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
           onPress={() => setShowStateModal(false)}
         >
@@ -821,17 +849,17 @@ export default function ParkFilterBar({
             style={{
               backgroundColor: PARCHMENT,
               borderRadius: radius.lg,
-              width: "85%",
+              width: '85%',
               maxWidth: 400,
-              maxHeight: "70%",
+              maxHeight: '70%',
             }}
             onPress={(e) => e.stopPropagation()}
           >
             <View
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 padding: spacing.lg,
                 borderBottomWidth: 1,
                 borderBottomColor: BORDER_SOFT,
@@ -852,7 +880,7 @@ export default function ParkFilterBar({
             </View>
 
             <ScrollView style={{ padding: spacing.lg }}>
-              {US_STATES.filter((s) => s.value !== "").map((state) => (
+              {US_STATES.filter((s) => s.value !== '').map((state) => (
                 <Pressable
                   key={state.value}
                   onPress={() => {
@@ -860,9 +888,9 @@ export default function ParkFilterBar({
                     setShowStateModal(false);
                   }}
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                     paddingVertical: spacing.md,
                     borderBottomWidth: 1,
                     borderBottomColor: BORDER_SOFT,

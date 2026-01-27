@@ -7,7 +7,7 @@ gpt-4.1-2025-04-14
 o4-mini-2025-04-16
 gpt-4o-2024-11-20
 */
-import OpenAI from "openai";
+import OpenAI from 'openai';
 
 type OpenAIClient = InstanceType<typeof OpenAI>;
 
@@ -56,7 +56,7 @@ const fetchWithTimeout: typeof fetch = async (input, init) => {
     if (upstreamSignal.aborted) controller.abort();
     else {
       const onAbort = () => controller.abort();
-      upstreamSignal.addEventListener("abort", onAbort, { once: true });
+      upstreamSignal.addEventListener('abort', onAbort, { once: true });
     }
   }
 
@@ -90,10 +90,10 @@ export const getOpenAIClient = (): OpenAIClient => {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.warn(
-        "[OpenAI] EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY is missing. AI features should be hidden/disabled in the UI.",
+        '[OpenAI] EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY is missing. AI features should be hidden/disabled in the UI.',
       );
     }
-    _client = createDisabledClient("Missing EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY");
+    _client = createDisabledClient('Missing EXPO_PUBLIC_VIBECODE_OPENAI_API_KEY');
     return _client;
   }
 

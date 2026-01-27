@@ -3,10 +3,10 @@
  * Shared header component for all Community tabs with deep forest green stripe
  */
 
-import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { DEEP_FOREST, TEXT_ON_DARK } from "../constants/colors";
+import React from 'react';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { DEEP_FOREST, TEXT_ON_DARK } from '../constants/colors';
 
 interface CommunitySectionHeaderProps {
   title: string;
@@ -29,14 +29,26 @@ export default function CommunitySectionHeader({
         <View style={styles.titleRow}>
           <Text style={styles.title}>{title}</Text>
           {onInfoPress && (
-            <Pressable onPress={onInfoPress} style={styles.infoBtn} accessibilityLabel="Info">
-              <Ionicons name="information-circle-outline" size={22} color={TEXT_ON_DARK} />
+            <Pressable
+              onPress={onInfoPress}
+              style={styles.infoBtn}
+              accessibilityLabel="Info"
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={22}
+                color={TEXT_ON_DARK}
+              />
             </Pressable>
           )}
         </View>
         <View style={styles.actions}>
           {showFilter && onFilterPress && (
-            <Pressable onPress={onFilterPress} style={styles.actionBtn} accessibilityLabel="Filter">
+            <Pressable
+              onPress={onFilterPress}
+              style={styles.actionBtn}
+              accessibilityLabel="Filter"
+            >
               <Ionicons name="funnel-outline" size={24} color={TEXT_ON_DARK} />
             </Pressable>
           )}

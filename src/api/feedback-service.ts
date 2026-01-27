@@ -10,11 +10,11 @@ import {
   orderBy,
   limit,
   Timestamp,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-const FEEDBACK_POSTS_COLLECTION = "feedbackPosts";
-const FEEDBACK_COMMENTS_COLLECTION = "feedbackComments";
+const FEEDBACK_POSTS_COLLECTION = 'feedbackPosts';
+const FEEDBACK_COMMENTS_COLLECTION = 'feedbackComments';
 
 // Feedback interface matching EXACT Firestore structure
 export interface FeedbackPost {
@@ -39,8 +39,8 @@ export async function getFeedbackPosts(): Promise<FeedbackPost[]> {
   try {
     const q = query(
       collection(db, FEEDBACK_POSTS_COLLECTION),
-      orderBy("createdAt", "desc"),
-      limit(100)
+      orderBy('createdAt', 'desc'),
+      limit(100),
     );
 
     const snapshot = await getDocs(q);
@@ -49,7 +49,7 @@ export async function getFeedbackPosts(): Promise<FeedbackPost[]> {
       ...doc.data(),
     })) as FeedbackPost[];
   } catch (error) {
-    console.error("Error fetching feedback posts:", error);
+    console.error('Error fetching feedback posts:', error);
     return [];
   }
 }
@@ -68,18 +68,20 @@ export async function getFeedbackPostById(postId: string): Promise<FeedbackPost 
     }
     return null;
   } catch (error) {
-    console.error("Error fetching feedback post:", error);
+    console.error('Error fetching feedback post:', error);
     return null;
   }
 }
 
 // Get comments for a feedback post
-export async function getFeedbackComments(feedbackId: string): Promise<FeedbackComment[]> {
+export async function getFeedbackComments(
+  feedbackId: string,
+): Promise<FeedbackComment[]> {
   try {
     const q = query(
       collection(db, FEEDBACK_COMMENTS_COLLECTION),
-      where("feedbackId", "==", feedbackId),
-      orderBy("createdAt", "asc")
+      where('feedbackId', '==', feedbackId),
+      orderBy('createdAt', 'asc'),
     );
 
     const snapshot = await getDocs(q);
@@ -88,7 +90,7 @@ export async function getFeedbackComments(feedbackId: string): Promise<FeedbackC
       ...doc.data(),
     })) as FeedbackComment[];
   } catch (error) {
-    console.error("Error fetching feedback comments:", error);
+    console.error('Error fetching feedback comments:', error);
     return [];
   }
 }
@@ -97,7 +99,7 @@ export async function getFeedbackComments(feedbackId: string): Promise<FeedbackC
 export async function createFeedbackPost(
   topic: string,
   message: string,
-  userId: string
+  userId: string,
 ): Promise<string> {
   try {
     const feedbackDoc = {
@@ -110,7 +112,7 @@ export async function createFeedbackPost(
     const docRef = await addDoc(collection(db, FEEDBACK_POSTS_COLLECTION), feedbackDoc);
     return docRef.id;
   } catch (error) {
-    console.error("Error creating feedback post:", error);
+    console.error('Error creating feedback post:', error);
     throw error;
   }
 }
@@ -119,7 +121,7 @@ export async function createFeedbackPost(
 export async function addFeedbackComment(
   feedbackId: string,
   text: string,
-  userId: string
+  userId: string,
 ): Promise<string> {
   try {
     const commentDoc = {
@@ -132,7 +134,7 @@ export async function addFeedbackComment(
     const docRef = await addDoc(collection(db, FEEDBACK_COMMENTS_COLLECTION), commentDoc);
     return docRef.id;
   } catch (error) {
-    console.error("Error adding feedback comment:", error);
+    console.error('Error adding feedback comment:', error);
     throw error;
   }
 }
@@ -144,16 +146,16 @@ export async function deleteFeedbackPost(postId: string, userId: string): Promis
     const postDoc = await getDoc(postRef);
 
     if (!postDoc.exists()) {
-      throw new Error("Post not found");
+      throw new Error('Post not found');
     }
 
     if (postDoc.data().userId !== userId) {
-      throw new Error("Unauthorized to delete this post");
+      throw new Error('Unauthorized to delete this post');
     }
 
     await deleteDoc(postRef);
   } catch (error) {
-    console.error("Error deleting feedback post:", error);
+    console.error('Error deleting feedback post:', error);
     throw error;
   }
 }

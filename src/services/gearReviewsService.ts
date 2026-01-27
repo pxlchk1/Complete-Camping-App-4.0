@@ -18,21 +18,25 @@ import {
   serverTimestamp,
   increment,
   DocumentSnapshot,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
-import { GearReview, GearCategory } from "../types/community";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
+import { GearReview, GearCategory } from '../types/community';
 
 export async function getGearReviews(
-  category?: GearCategory | "all",
+  category?: GearCategory | 'all',
   limitCount: number = 20,
-  lastDoc?: DocumentSnapshot
+  lastDoc?: DocumentSnapshot,
 ): Promise<{ reviews: GearReview[]; lastDoc: DocumentSnapshot | null }> {
-  const reviewsRef = collection(db, "gearReviews");
+  const reviewsRef = collection(db, 'gearReviews');
 
-  let q = query(reviewsRef, orderBy("createdAt", "desc"));
+  let q = query(reviewsRef, orderBy('createdAt', 'desc'));
 
-  if (category && category !== "all") {
-    q = query(reviewsRef, where("category", "==", category), orderBy("createdAt", "desc"));
+  if (category && category !== 'all') {
+    q = query(
+      reviewsRef,
+      where('category', '==', category),
+      orderBy('createdAt', 'desc'),
+    );
   }
 
   q = query(q, limit(limitCount));
@@ -42,9 +46,9 @@ export async function getGearReviews(
   }
 
   const snapshot = await getDocs(q);
-  const reviews = snapshot.docs.map(doc => ({
+  const reviews = snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data()
+    ...doc.data(),
   })) as GearReview[];
 
   const lastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
@@ -53,7 +57,7 @@ export async function getGearReviews(
 }
 
 export async function getGearReviewById(reviewId: string): Promise<GearReview | null> {
-  const reviewRef = doc(db, "gearReviews", reviewId);
+  const reviewRef = doc(db, 'gearReviews', reviewId);
   const reviewSnap = await getDoc(reviewRef);
 
   if (!reviewSnap.exists()) {
@@ -62,7 +66,7 @@ export async function getGearReviewById(reviewId: string): Promise<GearReview | 
 
   return {
     id: reviewSnap.id,
-    ...reviewSnap.data()
+    ...reviewSnap.data(),
   } as GearReview;
 }
 
@@ -81,7 +85,7 @@ export async function createGearReview(data: {
   authorId: string;
   authorHandle: string;
 }): Promise<string> {
-  const reviewsRef = collection(db, "gearReviews");
+  const reviewsRef = collection(db, 'gearReviews');
 
   const docRef = await addDoc(reviewsRef, {
     gearName: data.gearName,
@@ -122,10 +126,10 @@ export async function updateGearReview(
     tags?: string[];
     photoUrls?: string[];
     productUrl?: string | null;
-  }
+  },
 ): Promise<void> {
-  const reviewRef = doc(db, "gearReviews", reviewId);
-  
+  const reviewRef = doc(db, 'gearReviews', reviewId);
+
   // Filter out undefined values - Firestore doesn't handle them well
   const cleanData: Record<string, any> = {};
   for (const [key, value] of Object.entries(data)) {
@@ -133,7 +137,7 @@ export async function updateGearReview(
       cleanData[key] = value;
     }
   }
-  
+
   await updateDoc(reviewRef, {
     ...cleanData,
     updatedAt: serverTimestamp(),
@@ -141,7 +145,7 @@ export async function updateGearReview(
 }
 
 export async function upvoteGearReview(reviewId: string): Promise<void> {
-  const reviewRef = doc(db, "gearReviews", reviewId);
+  const reviewRef = doc(db, 'gearReviews', reviewId);
   await updateDoc(reviewRef, {
     upvoteCount: increment(1),
   });

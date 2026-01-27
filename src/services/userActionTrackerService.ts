@@ -4,21 +4,21 @@
  * Increment counters, check thresholds, update lastActiveAt
  */
 
-import { db } from "../config/firebase";
-import { doc, getDoc, updateDoc, serverTimestamp, increment } from "firebase/firestore";
-import { analyticsService } from "./analyticsService";
+import { db } from '../config/firebase';
+import { doc, getDoc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { analyticsService } from './analyticsService';
 
 // ============================================
 // CORE ACTION TYPES
 // ============================================
 
-export type CoreAction = 
-  | "trip_created"
-  | "packing_list_generated"
-  | "gear_item_added"
-  | "saved_place_added"
-  | "weather_added"
-  | "buddy_invited";
+export type CoreAction =
+  | 'trip_created'
+  | 'packing_list_generated'
+  | 'gear_item_added'
+  | 'saved_place_added'
+  | 'weather_added'
+  | 'buddy_invited';
 
 // ============================================
 // ACTIVATION THRESHOLDS
@@ -37,16 +37,16 @@ class UserActionTrackerService {
    */
   async trackAction(userId: string, action: CoreAction): Promise<{ activated: boolean }> {
     if (!userId) {
-      console.warn("[UserActionTracker] No userId provided");
+      console.warn('[UserActionTracker] No userId provided');
       return { activated: false };
     }
 
     try {
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       const userDocSnap = await getDoc(userRef);
-      
+
       if (!userDocSnap.exists()) {
-        console.warn("[UserActionTracker] User document not found:", userId);
+        console.warn('[UserActionTracker] User document not found:', userId);
         return { activated: false };
       }
 
@@ -59,45 +59,47 @@ class UserActionTrackerService {
       // Update user document
       const updateData: Record<string, any> = {
         lastActiveAt: serverTimestamp(),
-        "onboarding.coreActionsCount": increment(1),
+        'onboarding.coreActionsCount': increment(1),
       };
 
       // Track specific action counters
       switch (action) {
-        case "trip_created":
+        case 'trip_created':
           updateData.tripsCreatedCount = increment(1);
           break;
-        case "packing_list_generated":
+        case 'packing_list_generated':
           updateData.packingListsGeneratedCount = increment(1);
           break;
-        case "gear_item_added":
+        case 'gear_item_added':
           updateData.gearItemsAddedCount = increment(1);
           break;
-        case "saved_place_added":
+        case 'saved_place_added':
           updateData.savedPlacesCount = increment(1);
           break;
-        case "buddy_invited":
+        case 'buddy_invited':
           updateData.buddyInvitesSentCount = increment(1);
           break;
       }
 
       // If just became activated, mark activation
       if (nowActivated) {
-        updateData["onboarding.activated"] = true;
-        updateData["onboarding.activatedAt"] = serverTimestamp();
-        
+        updateData['onboarding.activated'] = true;
+        updateData['onboarding.activatedAt'] = serverTimestamp();
+
         // Track onboarding completed via 2 core actions
-        await analyticsService.trackOnboardingCompleted("2_core_actions");
-        console.log("[UserActionTracker] User activated via 2 core actions!");
+        await analyticsService.trackOnboardingCompleted('2_core_actions');
+        console.log('[UserActionTracker] User activated via 2 core actions!');
       }
 
       await updateDoc(userRef, updateData);
 
-      console.log(`[UserActionTracker] Tracked action: ${action}, coreActions: ${newCoreActions}, activated: ${nowActivated}`);
-      
+      console.log(
+        `[UserActionTracker] Tracked action: ${action}, coreActions: ${newCoreActions}, activated: ${nowActivated}`,
+      );
+
       return { activated: nowActivated };
     } catch (error) {
-      console.error("[UserActionTracker] Failed to track action:", error);
+      console.error('[UserActionTracker] Failed to track action:', error);
       return { activated: false };
     }
   }
@@ -109,12 +111,12 @@ class UserActionTrackerService {
     if (!userId) return;
 
     try {
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, {
         lastActiveAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error("[UserActionTracker] Failed to update lastActiveAt:", error);
+      console.error('[UserActionTracker] Failed to update lastActiveAt:', error);
     }
   }
 
@@ -131,9 +133,9 @@ class UserActionTrackerService {
     }
 
     try {
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       const userDocSnap = await getDoc(userRef);
-      
+
       if (!userDocSnap.exists()) {
         return { coreActionsCount: 0, isActivated: false, pushEligible: false };
       }
@@ -141,13 +143,13 @@ class UserActionTrackerService {
       const userData = userDocSnap.data();
       const coreActionsCount = userData?.onboarding?.coreActionsCount || 0;
       const isActivated = coreActionsCount >= ACTIVATION_THRESHOLD;
-      
+
       // Push eligible after 1+ core action (not cold start)
       const pushEligible = coreActionsCount >= 1;
 
       return { coreActionsCount, isActivated, pushEligible };
     } catch (error) {
-      console.error("[UserActionTracker] Failed to get activation status:", error);
+      console.error('[UserActionTracker] Failed to get activation status:', error);
       return { coreActionsCount: 0, isActivated: false, pushEligible: false };
     }
   }
@@ -160,16 +162,16 @@ class UserActionTrackerService {
     if (!userId) return false;
 
     try {
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       const userDocSnap = await getDoc(userRef);
-      
+
       if (!userDocSnap.exists()) return false;
 
       const userData = userDocSnap.data();
-      
+
       // Check if already granted or denied OS permission
       const permissionStatus = userData?.notificationPermissionStatus;
-      if (permissionStatus === "granted" || permissionStatus === "denied") {
+      if (permissionStatus === 'granted' || permissionStatus === 'denied') {
         return false;
       }
 
@@ -182,7 +184,7 @@ class UserActionTrackerService {
       const coreActionsCount = userData?.onboarding?.coreActionsCount || 0;
       return coreActionsCount >= 1;
     } catch (error) {
-      console.error("[UserActionTracker] Failed to check push prompt status:", error);
+      console.error('[UserActionTracker] Failed to check push prompt status:', error);
       return false;
     }
   }
@@ -194,13 +196,13 @@ class UserActionTrackerService {
     if (!userId) return;
 
     try {
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       await updateDoc(userRef, {
         softPushPromptShown: true,
         softPushPromptShownAt: serverTimestamp(),
       });
     } catch (error) {
-      console.error("[UserActionTracker] Failed to mark soft prompt shown:", error);
+      console.error('[UserActionTracker] Failed to mark soft prompt shown:', error);
     }
   }
 
@@ -212,15 +214,15 @@ class UserActionTrackerService {
     if (!userId) return 0;
 
     try {
-      const userRef = doc(db, "users", userId);
+      const userRef = doc(db, 'users', userId);
       const userDocSnap = await getDoc(userRef);
-      
+
       if (!userDocSnap.exists()) return 0;
 
       const userData = userDocSnap.data();
       return userData?.tripsCreatedCount || 0;
     } catch (error) {
-      console.error("[UserActionTracker] Failed to get trips created count:", error);
+      console.error('[UserActionTracker] Failed to get trips created count:', error);
       return 0;
     }
   }
@@ -230,15 +232,15 @@ class UserActionTrackerService {
 export const userActionTracker = new UserActionTrackerService();
 
 // Convenience exports
-export const trackCoreAction = (userId: string, action: CoreAction) => 
+export const trackCoreAction = (userId: string, action: CoreAction) =>
   userActionTracker.trackAction(userId, action);
-export const updateLastActive = (userId: string) => 
+export const updateLastActive = (userId: string) =>
   userActionTracker.updateLastActive(userId);
-export const getActivationStatus = (userId: string) => 
+export const getActivationStatus = (userId: string) =>
   userActionTracker.getActivationStatus(userId);
-export const shouldShowPushPrompt = (userId: string) => 
+export const shouldShowPushPrompt = (userId: string) =>
   userActionTracker.shouldShowPushPrompt(userId);
-export const markSoftPromptShown = (userId: string) => 
+export const markSoftPromptShown = (userId: string) =>
   userActionTracker.markSoftPromptShown(userId);
 export const getTripsCreatedCount = (userId: string) =>
   userActionTracker.getTripsCreatedCount(userId);

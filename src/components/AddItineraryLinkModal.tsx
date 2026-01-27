@@ -74,7 +74,7 @@ export default function AddItineraryLinkModal({
     const start = parseISO(tripStartDate);
     const end = parseISO(tripEndDate);
     const options: DayOption[] = [];
-    
+
     let current = start;
     let day = 1;
     while (current <= end) {
@@ -86,7 +86,7 @@ export default function AddItineraryLinkModal({
       current = addDays(current, 1);
       day++;
     }
-    
+
     // Ensure at least one day
     if (options.length === 0) {
       options.push({
@@ -95,7 +95,7 @@ export default function AddItineraryLinkModal({
         date: start,
       });
     }
-    
+
     return options;
   }, [tripStartDate, tripEndDate]);
 
@@ -127,7 +127,7 @@ export default function AddItineraryLinkModal({
     if (url.trim()) {
       const info = sniffProvider(url);
       setProviderInfo(info);
-      
+
       // Auto-suggest title if empty
       if (!title.trim() && !editingLink) {
         setTitle(info.suggestedTitle);
@@ -173,18 +173,13 @@ export default function AddItineraryLinkModal({
   const isEditMode = !!editingLink;
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.overlay}
       >
         <Pressable style={styles.backdrop} onPress={onClose} />
-        
+
         <View style={styles.modal}>
           {/* Header - Deep Forest Green background */}
           <View style={styles.header}>
@@ -217,7 +212,7 @@ export default function AddItineraryLinkModal({
                 keyboardType="url"
                 autoFocus={!isEditMode}
               />
-              
+
               {/* Provider preview */}
               {providerInfo && url.trim() && (
                 <View style={styles.providerPreview}>
@@ -238,7 +233,9 @@ export default function AddItineraryLinkModal({
                 style={styles.input}
                 value={title}
                 onChangeText={setTitle}
-                placeholder={providerInfo?.suggestedTitle || 'e.g., Morning hike to summit'}
+                placeholder={
+                  providerInfo?.suggestedTitle || 'e.g., Morning hike to summit'
+                }
                 placeholderTextColor={TEXT_MUTED}
               />
             </View>
@@ -280,7 +277,9 @@ export default function AddItineraryLinkModal({
                 {MOMENT_OPTIONS.map((opt) => (
                   <Pressable
                     key={opt.value}
-                    onPress={() => setMoment(moment === opt.value ? undefined : opt.value)}
+                    onPress={() =>
+                      setMoment(moment === opt.value ? undefined : opt.value)
+                    }
                     style={[
                       styles.momentChip,
                       moment === opt.value && styles.momentChipSelected,

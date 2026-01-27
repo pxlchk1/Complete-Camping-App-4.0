@@ -1,17 +1,21 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { PackingList, GearCategory, GearItem } from "../types/camping";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { PackingList, GearCategory, GearItem } from '../types/camping';
 
 interface GearState {
   packingLists: PackingList[];
-  addPackingList: (list: Omit<PackingList, "id" | "createdAt" | "updatedAt">) => string;
+  addPackingList: (list: Omit<PackingList, 'id' | 'createdAt' | 'updatedAt'>) => string;
   updatePackingList: (id: string, updates: Partial<PackingList>) => void;
   deletePackingList: (id: string) => void;
   getPackingListById: (id: string) => PackingList | undefined;
   getPackingListsByTripId: (tripId: string) => PackingList[];
   toggleItemPacked: (listId: string, categoryId: string, itemId: string) => void;
-  getPackingProgress: (listId: string) => { packed: number; total: number; percentage: number };
+  getPackingProgress: (listId: string) => {
+    packed: number;
+    total: number;
+    percentage: number;
+  };
 }
 
 export const useGearStore = create<GearState>()(
@@ -37,7 +41,7 @@ export const useGearStore = create<GearState>()(
           packingLists: state.packingLists.map((list) =>
             list.id === id
               ? { ...list, ...updates, updatedAt: new Date().toISOString() }
-              : list
+              : list,
           ),
         }));
       },
@@ -69,7 +73,7 @@ export const useGearStore = create<GearState>()(
                 return {
                   ...category,
                   items: category.items.map((item) =>
-                    item.id === itemId ? { ...item, packed: !item.packed } : item
+                    item.id === itemId ? { ...item, packed: !item.packed } : item,
                   ),
                 };
               }),
@@ -98,8 +102,8 @@ export const useGearStore = create<GearState>()(
       },
     }),
     {
-      name: "gear-storage",
+      name: 'gear-storage',
       storage: createJSONStorage(() => AsyncStorage),
-    }
-  )
+    },
+  ),
 );

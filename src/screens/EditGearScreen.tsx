@@ -3,7 +3,7 @@
  * Form to edit an existing item in My Gear Closet
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,16 +15,20 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-} from "react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
-import { auth } from "../config/firebase";
-import { getGearItemById, updateGearItem, uploadGearImage } from "../services/gearClosetService";
-import { GearCategory, GEAR_CATEGORIES, GearItem } from "../types/gear";
-import { RootStackNavigationProp, RootStackParamList } from "../navigation/types";
-import ModalHeader from "../components/ModalHeader";
+} from 'react-native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+import { auth } from '../config/firebase';
+import {
+  getGearItemById,
+  updateGearItem,
+  uploadGearImage,
+} from '../services/gearClosetService';
+import { GearCategory, GEAR_CATEGORIES, GearItem } from '../types/gear';
+import { RootStackNavigationProp, RootStackParamList } from '../navigation/types';
+import ModalHeader from '../components/ModalHeader';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -34,9 +38,9 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
-} from "../constants/colors";
+} from '../constants/colors';
 
-type EditGearRouteProp = RouteProp<RootStackParamList, "EditGear">;
+type EditGearRouteProp = RouteProp<RootStackParamList, 'EditGear'>;
 
 export default function EditGearScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -44,12 +48,12 @@ export default function EditGearScreen() {
   const { gearId } = route.params;
 
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState<GearCategory>("optional_extras");
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
-  const [weight, setWeight] = useState("");
-  const [notes, setNotes] = useState("");
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState<GearCategory>('optional_extras');
+  const [brand, setBrand] = useState('');
+  const [model, setModel] = useState('');
+  const [weight, setWeight] = useState('');
+  const [notes, setNotes] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -58,7 +62,7 @@ export default function EditGearScreen() {
   const loadGear = useCallback(async () => {
     const user = auth.currentUser;
     if (!user) {
-      Alert.alert("Error", "You must be signed in to edit gear");
+      Alert.alert('Error', 'You must be signed in to edit gear');
       navigation.goBack();
       return;
     }
@@ -68,18 +72,18 @@ export default function EditGearScreen() {
       if (gearData) {
         setName(gearData.name);
         setCategory(gearData.category);
-        setBrand(gearData.brand || "");
-        setModel(gearData.model || "");
-        setWeight(gearData.weight || "");
-        setNotes(gearData.notes || "");
+        setBrand(gearData.brand || '');
+        setModel(gearData.model || '');
+        setWeight(gearData.weight || '');
+        setNotes(gearData.notes || '');
         setExistingImageUrl(gearData.imageUrl || null);
       } else {
-        Alert.alert("Error", "Gear item not found");
+        Alert.alert('Error', 'Gear item not found');
         navigation.goBack();
       }
     } catch (error: any) {
-      console.error("Error loading gear:", error);
-      Alert.alert("Error", error.message || "Failed to load gear");
+      console.error('Error loading gear:', error);
+      Alert.alert('Error', error.message || 'Failed to load gear');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -95,7 +99,10 @@ export default function EditGearScreen() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "Please allow access to your photos to add gear images.");
+        Alert.alert(
+          'Permission Required',
+          'Please allow access to your photos to add gear images.',
+        );
         return;
       }
 
@@ -111,8 +118,8 @@ export default function EditGearScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image");
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image');
     }
   };
 
@@ -121,7 +128,7 @@ export default function EditGearScreen() {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "Please allow camera access to take photos.");
+        Alert.alert('Permission Required', 'Please allow camera access to take photos.');
         return;
       }
 
@@ -136,39 +143,35 @@ export default function EditGearScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
-      console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo");
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo');
     }
   };
 
   const handleRemoveImage = () => {
-    Alert.alert(
-      "Remove Photo",
-      "Are you sure you want to remove this photo?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: () => {
-            setImageUri(null);
-            setExistingImageUrl(null);
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          },
+    Alert.alert('Remove Photo', 'Are you sure you want to remove this photo?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () => {
+          setImageUri(null);
+          setExistingImageUrl(null);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleSubmit = async () => {
     const user = auth.currentUser;
     if (!user) {
-      Alert.alert("Error", "You must be signed in to edit gear");
+      Alert.alert('Error', 'You must be signed in to edit gear');
       return;
     }
 
     if (!name.trim()) {
-      Alert.alert("Name Required", "Please enter a name for this gear");
+      Alert.alert('Name Required', 'Please enter a name for this gear');
       return;
     }
 
@@ -192,8 +195,11 @@ export default function EditGearScreen() {
           const imageUrl = await uploadGearImage(user.uid, gearId, imageUri);
           updateData.imageUrl = imageUrl;
         } catch (imageError) {
-          console.error("Error uploading image:", imageError);
-          Alert.alert("Warning", "Failed to upload image, but other changes will be saved.");
+          console.error('Error uploading image:', imageError);
+          Alert.alert(
+            'Warning',
+            'Failed to upload image, but other changes will be saved.',
+          );
         }
       } else if (!existingImageUrl) {
         // User removed the image
@@ -207,8 +213,8 @@ export default function EditGearScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error: any) {
-      console.error("Error updating gear:", error);
-      Alert.alert("Error", error.message || "Failed to update gear");
+      console.error('Error updating gear:', error);
+      Alert.alert('Error', error.message || 'Failed to update gear');
     } finally {
       setSubmitting(false);
     }
@@ -220,7 +226,10 @@ export default function EditGearScreen() {
         <ModalHeader title="Edit Gear" showTitle />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={DEEP_FOREST} />
-          <Text className="mt-4" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+          <Text
+            className="mt-4"
+            style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
+          >
             Loading gear...
           </Text>
         </View>
@@ -236,13 +245,13 @@ export default function EditGearScreen() {
         title="Edit Gear"
         showTitle
         rightAction={{
-          icon: "checkmark",
+          icon: 'checkmark',
           onPress: handleSubmit,
         }}
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         <ScrollView className="flex-1 px-5 pt-5">
@@ -251,44 +260,54 @@ export default function EditGearScreen() {
             <Pressable
               onPress={() => {
                 if (displayImageUri) {
-                  Alert.alert(
-                    "Photo Options",
-                    "What would you like to do?",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Change Photo", onPress: () => {
+                  Alert.alert('Photo Options', 'What would you like to do?', [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Change Photo',
+                      onPress: () => {
                         Alert.alert(
-                          "Change Photo",
-                          "How would you like to add a photo?",
+                          'Change Photo',
+                          'How would you like to add a photo?',
                           [
-                            { text: "Cancel", style: "cancel" },
-                            { text: "Take Photo", onPress: handleTakePhoto },
-                            { text: "Choose from Library", onPress: handlePickImage },
-                          ]
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Take Photo', onPress: handleTakePhoto },
+                            { text: 'Choose from Library', onPress: handlePickImage },
+                          ],
                         );
-                      }},
-                      { text: "Remove Photo", style: "destructive", onPress: handleRemoveImage },
-                    ]
-                  );
+                      },
+                    },
+                    {
+                      text: 'Remove Photo',
+                      style: 'destructive',
+                      onPress: handleRemoveImage,
+                    },
+                  ]);
                 } else {
-                  Alert.alert(
-                    "Add Photo",
-                    "Choose a photo for your gear",
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      { text: "Take Photo", onPress: handleTakePhoto },
-                      { text: "Choose from Library", onPress: handlePickImage },
-                    ]
-                  );
+                  Alert.alert('Add Photo', 'Choose a photo for your gear', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Take Photo', onPress: handleTakePhoto },
+                    { text: 'Choose from Library', onPress: handlePickImage },
+                  ]);
                 }
               }}
               className="w-32 h-32 rounded-xl items-center justify-center active:opacity-70"
-              style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT, borderWidth: 1 }}
+              style={{
+                backgroundColor: CARD_BACKGROUND_LIGHT,
+                borderColor: BORDER_SOFT,
+                borderWidth: 1,
+              }}
             >
               {displayImageUri ? (
                 <>
-                  <Image source={{ uri: displayImageUri }} className="w-full h-full rounded-xl" resizeMode="cover" />
-                  <View className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                  <Image
+                    source={{ uri: displayImageUri }}
+                    className="w-full h-full rounded-xl"
+                    resizeMode="cover"
+                  />
+                  <View
+                    className="absolute top-2 right-2 w-8 h-8 rounded-full items-center justify-center"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+                  >
                     <Ionicons name="camera-outline" size={18} color={PARCHMENT} />
                   </View>
                 </>
@@ -297,7 +316,7 @@ export default function EditGearScreen() {
                   <Ionicons name="camera-outline" size={32} color={TEXT_MUTED} />
                   <Text
                     className="mt-2 text-sm"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                    style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
                   >
                     Add Photo
                   </Text>
@@ -310,7 +329,10 @@ export default function EditGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Gear Name *
             </Text>
@@ -323,7 +345,7 @@ export default function EditGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -333,7 +355,10 @@ export default function EditGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Category *
             </Text>
@@ -345,8 +370,14 @@ export default function EditGearScreen() {
               className="px-4 py-3 rounded-xl border flex-row items-center justify-between"
               style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
             >
-              <Text style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_PRIMARY_STRONG }}>
-                {GEAR_CATEGORIES.find(c => c.value === category)?.label || "Select Category"}
+              <Text
+                style={{
+                  fontFamily: 'SourceSans3_400Regular',
+                  color: TEXT_PRIMARY_STRONG,
+                }}
+              >
+                {GEAR_CATEGORIES.find((c) => c.value === category)?.label ||
+                  'Select Category'}
               </Text>
               <Ionicons name="chevron-down" size={20} color={TEXT_SECONDARY} />
             </Pressable>
@@ -354,9 +385,12 @@ export default function EditGearScreen() {
             {showCategoryPicker && (
               <View
                 className="mt-2 rounded-xl border overflow-hidden"
-                style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
+                style={{
+                  backgroundColor: CARD_BACKGROUND_LIGHT,
+                  borderColor: BORDER_SOFT,
+                }}
               >
-                {GEAR_CATEGORIES.map(cat => (
+                {GEAR_CATEGORIES.map((cat) => (
                   <Pressable
                     key={cat.value}
                     onPress={() => {
@@ -369,7 +403,10 @@ export default function EditGearScreen() {
                   >
                     <Text
                       style={{
-                        fontFamily: category === cat.value ? "SourceSans3_600SemiBold" : "SourceSans3_400Regular",
+                        fontFamily:
+                          category === cat.value
+                            ? 'SourceSans3_600SemiBold'
+                            : 'SourceSans3_400Regular',
                         color: category === cat.value ? EARTH_GREEN : TEXT_PRIMARY_STRONG,
                       }}
                     >
@@ -385,7 +422,10 @@ export default function EditGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Brand
             </Text>
@@ -398,7 +438,7 @@ export default function EditGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -408,7 +448,10 @@ export default function EditGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Model
             </Text>
@@ -421,7 +464,7 @@ export default function EditGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -431,7 +474,10 @@ export default function EditGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Weight
             </Text>
@@ -444,7 +490,7 @@ export default function EditGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -454,7 +500,10 @@ export default function EditGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Notes
             </Text>
@@ -470,7 +519,7 @@ export default function EditGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
                 minHeight: 100,
               }}
@@ -491,7 +540,7 @@ export default function EditGearScreen() {
             ) : (
               <Text
                 className="text-center"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
               >
                 Save Changes
               </Text>

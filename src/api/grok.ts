@@ -9,13 +9,13 @@ grok-3-latest
 grok-3-fast-latest
 grok-3-mini-latest
 */
-import OpenAI from "openai";
+import OpenAI from 'openai';
 
 type GrokClient = InstanceType<typeof OpenAI>;
 
 let _client: GrokClient | null = null;
 
-const GROK_BASE_URL = "https://api.x.ai/v1";
+const GROK_BASE_URL = 'https://api.x.ai/v1';
 
 /**
  * Creates a client-like object that throws a clear error if used.
@@ -59,7 +59,7 @@ const fetchWithTimeout: typeof fetch = async (input, init) => {
     if (upstreamSignal.aborted) controller.abort();
     else {
       const onAbort = () => controller.abort();
-      upstreamSignal.addEventListener("abort", onAbort, { once: true });
+      upstreamSignal.addEventListener('abort', onAbort, { once: true });
     }
   }
 
@@ -93,10 +93,10 @@ export const getGrokClient = (): GrokClient => {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.warn(
-        "[Grok] EXPO_PUBLIC_VIBECODE_GROK_API_KEY is missing. Grok features should be hidden/disabled in the UI.",
+        '[Grok] EXPO_PUBLIC_VIBECODE_GROK_API_KEY is missing. Grok features should be hidden/disabled in the UI.',
       );
     }
-    _client = createDisabledClient("Missing EXPO_PUBLIC_VIBECODE_GROK_API_KEY");
+    _client = createDisabledClient('Missing EXPO_PUBLIC_VIBECODE_GROK_API_KEY');
     return _client;
   }
 

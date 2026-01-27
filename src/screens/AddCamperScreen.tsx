@@ -4,7 +4,7 @@
  * After adding, shows invite options sheet
  */
 
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -15,16 +15,16 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { auth } from "../config/firebase";
-import { createCampgroundContact } from "../services/campgroundContactsService";
-import { CampgroundContact } from "../types/campground";
-import { RootStackNavigationProp } from "../navigation/types";
-import ModalHeader from "../components/ModalHeader";
-import InviteOptionsSheet from "../components/InviteOptionsSheet";
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { auth } from '../config/firebase';
+import { createCampgroundContact } from '../services/campgroundContactsService';
+import { CampgroundContact } from '../types/campground';
+import { RootStackNavigationProp } from '../navigation/types';
+import ModalHeader from '../components/ModalHeader';
+import InviteOptionsSheet from '../components/InviteOptionsSheet';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -34,17 +34,17 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
-} from "../constants/colors";
+} from '../constants/colors';
 
 export default function AddCamperScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
 
-  const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [notes, setNotes] = useState("");
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Invite sheet state
   const [showInviteSheet, setShowInviteSheet] = useState(false);
   const [newContact, setNewContact] = useState<CampgroundContact | null>(null);
@@ -52,12 +52,12 @@ export default function AddCamperScreen() {
   const handleSubmit = async () => {
     const user = auth.currentUser;
     if (!user) {
-      Alert.alert("Error", "You must be signed in to add a contact");
+      Alert.alert('Error', 'You must be signed in to add a contact');
       return;
     }
 
     if (!displayName.trim()) {
-      Alert.alert("Name Required", "Please enter a name for this contact");
+      Alert.alert('Name Required', 'Please enter a name for this contact');
       return;
     }
 
@@ -86,12 +86,12 @@ export default function AddCamperScreen() {
 
       setNewContact(contact);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
+
       // Show invite options sheet
       setShowInviteSheet(true);
     } catch (error: any) {
-      console.error("Error adding contact:", error);
-      Alert.alert("Error", error.message || "Failed to add contact");
+      console.error('Error adding contact:', error);
+      Alert.alert('Error', error.message || 'Failed to add contact');
     } finally {
       setSubmitting(false);
     }
@@ -113,13 +113,13 @@ export default function AddCamperScreen() {
         title="Add Camper"
         showTitle
         rightAction={{
-          icon: "checkmark",
+          icon: 'checkmark',
           onPress: handleSubmit,
         }}
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         <ScrollView className="flex-1 px-5 pt-5">
@@ -127,7 +127,10 @@ export default function AddCamperScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Name *
             </Text>
@@ -140,7 +143,7 @@ export default function AddCamperScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
               autoFocus
@@ -151,7 +154,10 @@ export default function AddCamperScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Email
             </Text>
@@ -166,13 +172,13 @@ export default function AddCamperScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
             <Text
               className="mt-1 text-xs"
-              style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
             >
               Needed to send email invitations
             </Text>
@@ -182,7 +188,10 @@ export default function AddCamperScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Phone
             </Text>
@@ -196,7 +205,7 @@ export default function AddCamperScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -206,7 +215,10 @@ export default function AddCamperScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Notes
             </Text>
@@ -222,7 +234,7 @@ export default function AddCamperScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
                 minHeight: 100,
               }}
@@ -243,7 +255,7 @@ export default function AddCamperScreen() {
             ) : (
               <Text
                 className="text-center"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
               >
                 Add Camper
               </Text>

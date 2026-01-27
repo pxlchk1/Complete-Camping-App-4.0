@@ -3,7 +3,7 @@
  * Multi-select contacts from My Campground
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,19 +11,24 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-} from "react-native";
-import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { auth } from "../config/firebase";
-import { getCampgroundContacts } from "../services/campgroundContactsService";
-import { addTripParticipantsWithRoles } from "../services/tripParticipantsService";
-import { CampgroundContact } from "../types/campground";
-import { RootStackParamList, RootStackNavigationProp } from "../navigation/types";
-import { useTripsStore } from "../state/tripsStore";
-import ModalHeader from "../components/ModalHeader";
-import { requirePro } from "../utils/gating";
-import AccountRequiredModal from "../components/AccountRequiredModal";
+} from 'react-native';
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { auth } from '../config/firebase';
+import { getCampgroundContacts } from '../services/campgroundContactsService';
+import { addTripParticipantsWithRoles } from '../services/tripParticipantsService';
+import { CampgroundContact } from '../types/campground';
+import { RootStackParamList, RootStackNavigationProp } from '../navigation/types';
+import { useTripsStore } from '../state/tripsStore';
+import ModalHeader from '../components/ModalHeader';
+import { requirePro } from '../utils/gating';
+import AccountRequiredModal from '../components/AccountRequiredModal';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -33,11 +38,11 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
-} from "../constants/colors";
+} from '../constants/colors';
 
 export default function AddPeopleToTripScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
-  const route = useRoute<RouteProp<RootStackParamList, "AddPeopleToTrip">>();
+  const route = useRoute<RouteProp<RootStackParamList, 'AddPeopleToTrip'>>();
   const { tripId } = route.params;
 
   const trip = useTripsStore((s) => s.getTripById(tripId));
@@ -58,13 +63,13 @@ export default function AddPeopleToTripScreen() {
   useFocusEffect(
     useCallback(() => {
       loadContacts();
-    }, [])
+    }, []),
   );
 
   const loadContacts = async () => {
     const user = auth.currentUser;
     if (!user) {
-      Alert.alert("Error", "You must be signed in");
+      Alert.alert('Error', 'You must be signed in');
       navigation.goBack();
       return;
     }
@@ -73,8 +78,8 @@ export default function AddPeopleToTripScreen() {
       const contactsData = await getCampgroundContacts(user.uid);
       setContacts(contactsData);
     } catch (error: any) {
-      console.error("Error loading contacts:", error);
-      Alert.alert("Error", "Failed to load contacts");
+      console.error('Error loading contacts:', error);
+      Alert.alert('Error', 'Failed to load contacts');
     } finally {
       setLoading(false);
     }
@@ -82,7 +87,7 @@ export default function AddPeopleToTripScreen() {
 
   const toggleContact = (contactId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setSelectedContactIds(prev => {
+    setSelectedContactIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(contactId)) {
         newSet.delete(contactId);
@@ -95,24 +100,27 @@ export default function AddPeopleToTripScreen() {
 
   const handleSubmit = async () => {
     if (selectedContactIds.size === 0) {
-      Alert.alert("No Selection", "Please select at least one person to add");
+      Alert.alert('No Selection', 'Please select at least one person to add');
       return;
     }
 
     // Gate: PRO required to add people to trips
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "trip_add_people", variant }),
-    })) {
+    if (
+      !requirePro({
+        openAccountModal: () => setShowAccountModal(true),
+        openPaywallModal: (variant) =>
+          navigation.navigate('Paywall', { triggerKey: 'trip_add_people', variant }),
+      })
+    ) {
       return;
     }
 
     try {
       setSubmitting(true);
       // Add all selected contacts as "guest" role
-      const participantsWithRoles = Array.from(selectedContactIds).map(contactId => ({
+      const participantsWithRoles = Array.from(selectedContactIds).map((contactId) => ({
         contactId,
-        role: "guest" as const,
+        role: 'guest' as const,
       }));
 
       const tripStartDate = trip?.startDate ? new Date(trip.startDate) : new Date();
@@ -120,8 +128,8 @@ export default function AddPeopleToTripScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error: any) {
-      console.error("Error adding participants:", error);
-      Alert.alert("Error", error.message || "Failed to add people to trip");
+      console.error('Error adding participants:', error);
+      Alert.alert('Error', error.message || 'Failed to add people to trip');
     } finally {
       setSubmitting(false);
     }
@@ -130,7 +138,7 @@ export default function AddPeopleToTripScreen() {
   const handleAddNewPerson = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Navigate to AddCamper screen to add a new person to campground
-    navigation.navigate("AddCamper" as any);
+    navigation.navigate('AddCamper' as any);
   };
 
   if (loading) {
@@ -139,7 +147,10 @@ export default function AddPeopleToTripScreen() {
         <ModalHeader title="Add People" showTitle />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={DEEP_FOREST} />
-          <Text className="mt-4" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+          <Text
+            className="mt-4"
+            style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
+          >
             Loading contacts...
           </Text>
         </View>
@@ -153,7 +164,7 @@ export default function AddPeopleToTripScreen() {
         title="Add People"
         showTitle
         rightAction={{
-          icon: "add",
+          icon: 'add',
           onPress: handleAddNewPerson,
         }}
       />
@@ -164,19 +175,19 @@ export default function AddPeopleToTripScreen() {
             <Ionicons name="people-outline" size={64} color={BORDER_SOFT} />
             <Text
               className="mt-4 text-center mb-4"
-              style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
             >
               No contacts in your campground yet. Add people to your campground first.
             </Text>
             <Pressable
               onPress={() => {
                 navigation.goBack();
-                navigation.navigate("MyCampground");
+                navigation.navigate('MyCampground');
               }}
               className="px-6 py-3 rounded-xl active:opacity-90"
               style={{ backgroundColor: DEEP_FOREST }}
             >
-              <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+              <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
                 Go to My Campground
               </Text>
             </Pressable>
@@ -185,12 +196,12 @@ export default function AddPeopleToTripScreen() {
           <>
             <Text
               className="mb-4"
-              style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
             >
               Select people from your campground to add to this trip
             </Text>
 
-            {contacts.map(contact => {
+            {contacts.map((contact) => {
               const isSelected = selectedContactIds.has(contact.id);
               return (
                 <Pressable
@@ -208,7 +219,7 @@ export default function AddPeopleToTripScreen() {
                         <Text
                           className="text-lg"
                           style={{
-                            fontFamily: "SourceSans3_600SemiBold",
+                            fontFamily: 'SourceSans3_600SemiBold',
                             color: isSelected ? PARCHMENT : TEXT_PRIMARY_STRONG,
                           }}
                         >
@@ -220,7 +231,7 @@ export default function AddPeopleToTripScreen() {
                         <Text
                           className="mt-1"
                           style={{
-                            fontFamily: "SourceSans3_400Regular",
+                            fontFamily: 'SourceSans3_400Regular',
                             color: isSelected ? PARCHMENT : TEXT_SECONDARY,
                           }}
                         >
@@ -233,10 +244,12 @@ export default function AddPeopleToTripScreen() {
                       className="w-6 h-6 rounded border-2 items-center justify-center"
                       style={{
                         borderColor: isSelected ? PARCHMENT : BORDER_SOFT,
-                        backgroundColor: isSelected ? PARCHMENT : "transparent",
+                        backgroundColor: isSelected ? PARCHMENT : 'transparent',
                       }}
                     >
-                      {isSelected && <Ionicons name="checkmark" size={16} color={EARTH_GREEN} />}
+                      {isSelected && (
+                        <Ionicons name="checkmark" size={16} color={EARTH_GREEN} />
+                      )}
                     </View>
                   </View>
                 </Pressable>
@@ -256,11 +269,11 @@ export default function AddPeopleToTripScreen() {
               ) : (
                 <Text
                   className="text-center"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
                 >
-                  {selectedContactIds.size > 0 
-                    ? `Add ${selectedContactIds.size} ${selectedContactIds.size === 1 ? "person" : "people"} to trip`
-                    : "Select people to add"}
+                  {selectedContactIds.size > 0
+                    ? `Add ${selectedContactIds.size} ${selectedContactIds.size === 1 ? 'person' : 'people'} to trip`
+                    : 'Select people to add'}
                 </Text>
               )}
             </Pressable>
@@ -273,7 +286,7 @@ export default function AddPeopleToTripScreen() {
         visible={showAccountModal}
         onCreateAccount={() => {
           setShowAccountModal(false);
-          navigation.navigate("Auth" as any);
+          navigation.navigate('Auth' as any);
         }}
         onMaybeLater={() => setShowAccountModal(false)}
       />

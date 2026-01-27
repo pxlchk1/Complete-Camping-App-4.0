@@ -20,9 +20,9 @@ import {
   serverTimestamp,
   increment,
   DocumentSnapshot,
-} from "firebase/firestore";
-import firebaseApp from "../config/firebase";
-import { Story, StoryComment, StoryVote } from "../types/community";
+} from 'firebase/firestore';
+import firebaseApp from '../config/firebase';
+import { Story, StoryComment, StoryVote } from '../types/community';
 
 const db = getFirestore(firebaseApp);
 
@@ -32,16 +32,20 @@ export async function getStories(
   filterTag?: string,
   userId?: string,
   limitCount: number = 30,
-  lastDoc?: DocumentSnapshot
+  lastDoc?: DocumentSnapshot,
 ): Promise<{ stories: Story[]; lastDoc: DocumentSnapshot | null }> {
-  const storiesRef = collection(db, "stories");
+  const storiesRef = collection(db, 'stories');
 
-  let q = query(storiesRef, orderBy("createdAt", "desc"));
+  let q = query(storiesRef, orderBy('createdAt', 'desc'));
 
   if (filterTag) {
-    q = query(storiesRef, where("tags", "array-contains", filterTag), orderBy("createdAt", "desc"));
+    q = query(
+      storiesRef,
+      where('tags', 'array-contains', filterTag),
+      orderBy('createdAt', 'desc'),
+    );
   } else if (userId) {
-    q = query(storiesRef, where("authorId", "==", userId), orderBy("createdAt", "desc"));
+    q = query(storiesRef, where('authorId', '==', userId), orderBy('createdAt', 'desc'));
   }
 
   q = query(q, limit(limitCount));
@@ -51,9 +55,9 @@ export async function getStories(
   }
 
   const snapshot = await getDocs(q);
-  const stories = snapshot.docs.map(doc => ({
+  const stories = snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data()
+    ...doc.data(),
   })) as Story[];
 
   const lastVisible = snapshot.docs[snapshot.docs.length - 1] || null;
@@ -62,7 +66,7 @@ export async function getStories(
 }
 
 export async function getStoryById(storyId: string): Promise<Story | null> {
-  const storyRef = doc(db, "stories", storyId);
+  const storyRef = doc(db, 'stories', storyId);
   const storySnap = await getDoc(storyRef);
 
   if (!storySnap.exists()) {
@@ -71,7 +75,7 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
 
   return {
     id: storySnap.id,
-    ...storySnap.data()
+    ...storySnap.data(),
   } as Story;
 }
 
@@ -83,7 +87,7 @@ export async function createStory(data: {
   authorId: string;
   locationLabel?: string;
 }): Promise<string> {
-  const storiesRef = collection(db, "stories");
+  const storiesRef = collection(db, 'stories');
 
   const docRef = await addDoc(storiesRef, {
     imageUrl: data.imageUrl,
@@ -103,13 +107,13 @@ export async function createStory(data: {
 // ==================== Story Votes (Likes) ====================
 
 export async function likeStory(storyId: string, voterId: string): Promise<void> {
-  const votesRef = collection(db, "storyVotes");
+  const votesRef = collection(db, 'storyVotes');
 
   // Check if already liked
   const q = query(
     votesRef,
-    where("storyId", "==", storyId),
-    where("voterId", "==", voterId)
+    where('storyId', '==', storyId),
+    where('voterId', '==', voterId),
   );
   const existingVotes = await getDocs(q);
 
@@ -117,7 +121,7 @@ export async function likeStory(storyId: string, voterId: string): Promise<void>
     // Already liked, unlike it
     await deleteDoc(existingVotes.docs[0].ref);
 
-    const storyRef = doc(db, "stories", storyId);
+    const storyRef = doc(db, 'stories', storyId);
     await updateDoc(storyRef, {
       likeCount: increment(-1),
     });
@@ -130,22 +134,19 @@ export async function likeStory(storyId: string, voterId: string): Promise<void>
       createdAt: serverTimestamp(),
     });
 
-    const storyRef = doc(db, "stories", storyId);
+    const storyRef = doc(db, 'stories', storyId);
     await updateDoc(storyRef, {
       likeCount: increment(1),
     });
   }
 }
 
-export async function checkIfLiked(
-  storyId: string,
-  voterId: string
-): Promise<boolean> {
-  const votesRef = collection(db, "storyVotes");
+export async function checkIfLiked(storyId: string, voterId: string): Promise<boolean> {
+  const votesRef = collection(db, 'storyVotes');
   const q = query(
     votesRef,
-    where("storyId", "==", storyId),
-    where("voterId", "==", voterId)
+    where('storyId', '==', storyId),
+    where('voterId', '==', voterId),
   );
 
   const snapshot = await getDocs(q);
@@ -156,20 +157,20 @@ export async function checkIfLiked(
 
 export async function getStoryComments(
   storyId: string,
-  limitCount: number = 50
+  limitCount: number = 50,
 ): Promise<StoryComment[]> {
-  const commentsRef = collection(db, "storyComments");
+  const commentsRef = collection(db, 'storyComments');
   const q = query(
     commentsRef,
-    where("storyId", "==", storyId),
-    orderBy("createdAt", "asc"),
-    limit(limitCount)
+    where('storyId', '==', storyId),
+    orderBy('createdAt', 'asc'),
+    limit(limitCount),
   );
 
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
+  return snapshot.docs.map((doc) => ({
     id: doc.id,
-    ...doc.data()
+    ...doc.data(),
   })) as StoryComment[];
 }
 
@@ -178,7 +179,7 @@ export async function addStoryComment(data: {
   body: string;
   authorId: string;
 }): Promise<string> {
-  const commentsRef = collection(db, "storyComments");
+  const commentsRef = collection(db, 'storyComments');
 
   const docRef = await addDoc(commentsRef, {
     storyId: data.storyId,
@@ -188,7 +189,7 @@ export async function addStoryComment(data: {
   });
 
   // Increment comment count
-  const storyRef = doc(db, "stories", data.storyId);
+  const storyRef = doc(db, 'stories', data.storyId);
   await updateDoc(storyRef, {
     commentCount: increment(1),
   });

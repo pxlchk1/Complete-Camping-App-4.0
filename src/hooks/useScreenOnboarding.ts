@@ -20,10 +20,10 @@ export const useScreenOnboarding = (screenName: string): UseScreenOnboardingResu
     if (contextLoading) return;
 
     const tooltips = getTooltipsForScreen(screenName);
-    
+
     if (tooltips.length > 0) {
       setCurrentTooltip(tooltips[0]);
-      
+
       // Only auto-show if user hasn't seen it
       if (!hasSeenScreen(screenName)) {
         setShowModal(true);

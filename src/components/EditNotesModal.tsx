@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { Modal, View, Text, TextInput, Pressable, StyleSheet, Alert } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { DEEP_FOREST, PARCHMENT } from "../constants/colors";
+import React, { useState } from 'react';
+import { Modal, View, Text, TextInput, Pressable, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { DEEP_FOREST, PARCHMENT } from '../constants/colors';
 
 interface EditNotesModalProps {
   visible: boolean;
@@ -10,7 +10,12 @@ interface EditNotesModalProps {
   onClose: () => void;
 }
 
-export default function EditNotesModal({ visible, initialValue, onSave, onClose }: EditNotesModalProps) {
+export default function EditNotesModal({
+  visible,
+  initialValue,
+  onSave,
+  onClose,
+}: EditNotesModalProps) {
   const [notes, setNotes] = useState(initialValue);
 
   // Reset notes when modal opens
@@ -19,7 +24,12 @@ export default function EditNotesModal({ visible, initialValue, onSave, onClose 
   }, [visible, initialValue]);
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
       <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
         {/* Header - Deep Forest Green background */}
         <View style={styles.header}>
@@ -30,7 +40,7 @@ export default function EditNotesModal({ visible, initialValue, onSave, onClose 
             </Pressable>
           </View>
         </View>
-        
+
         <View style={styles.content}>
           <TextInput
             style={styles.input}
@@ -43,7 +53,11 @@ export default function EditNotesModal({ visible, initialValue, onSave, onClose 
             autoFocus
           />
           <View style={styles.actions}>
-            <Pressable onPress={onClose} style={styles.cancelBtn} accessibilityLabel="Cancel">
+            <Pressable
+              onPress={onClose}
+              style={styles.cancelBtn}
+              accessibilityLabel="Cancel"
+            >
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
             <Pressable
@@ -73,12 +87,12 @@ const styles = StyleSheet.create({
     backgroundColor: DEEP_FOREST,
   },
   headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
-    fontFamily: "Raleway_700Bold",
+    fontFamily: 'Raleway_700Bold',
     fontSize: 24,
     color: PARCHMENT,
     flex: 1,
@@ -88,28 +102,28 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     padding: 20,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#E5D6C2",
+    borderColor: '#E5D6C2',
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    color: "#3D2817",
+    color: '#3D2817',
     minHeight: 90,
     marginBottom: 18,
-    backgroundColor: "#f9f6f2",
+    backgroundColor: '#f9f6f2',
   },
   actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   cancelBtn: {
     marginRight: 16,
@@ -117,21 +131,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   cancelText: {
-    color: "#bfae9b",
+    color: '#bfae9b',
     fontSize: 15,
   },
   saveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#3D2817",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3D2817',
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 18,
   },
   saveText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 15,
     marginLeft: 6,
-    fontWeight: "600",
+    fontWeight: '600',
   },
 });

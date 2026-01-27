@@ -8,7 +8,10 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db, auth } from '../../config/firebase';
-import { checkAndApplyAutoHide, AUTO_HIDE_DOWNVOTE_THRESHOLD } from '../moderationService';
+import {
+  checkAndApplyAutoHide,
+  AUTO_HIDE_DOWNVOTE_THRESHOLD,
+} from '../moderationService';
 
 export interface GearReviewVote {
   userId: string;
@@ -39,11 +42,14 @@ export const gearReviewVotesService = {
     await deleteDoc(voteDoc);
   },
 
-  async getVoteSummary(reviewId: string): Promise<{ score: number; up: number; down: number }> {
+  async getVoteSummary(
+    reviewId: string,
+  ): Promise<{ score: number; up: number; down: number }> {
     const votesCol = collection(db, 'gearReviews', reviewId, 'votes');
     const snap = await getDocs(votesCol);
-    let up = 0, down = 0;
-    snap.forEach(doc => {
+    let up = 0,
+      down = 0;
+    snap.forEach((doc) => {
       const v = doc.data() as GearReviewVote;
       if (v.voteType === 'up') up++;
       if (v.voteType === 'down') down++;
@@ -53,14 +59,17 @@ export const gearReviewVotesService = {
 
   // Vote on a gear review with toggle behavior
   // Also checks downvote threshold for auto-hide moderation.
-  async vote(reviewId: string, voteType: 'up' | 'down'): Promise<{ wasAutoHidden?: boolean }> {
+  async vote(
+    reviewId: string,
+    voteType: 'up' | 'down',
+  ): Promise<{ wasAutoHidden?: boolean }> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to vote');
     const voteDocRef = doc(db, 'gearReviews', reviewId, 'votes', user.uid);
     const reviewDocRef = doc(db, 'gearReviews', reviewId);
-    
+
     let finalDownvotes = 0;
-    
+
     await runTransaction(db, async (transaction) => {
       const voteSnap = await transaction.get(voteDocRef);
       const reviewSnap = await transaction.get(reviewDocRef);
@@ -77,13 +86,17 @@ export const gearReviewVotesService = {
       transaction.update(reviewDocRef, { upvotes, downvotes });
       finalDownvotes = downvotes;
     });
-    
+
     // After transaction completes, check if we need to auto-hide
     let wasAutoHidden = false;
     if (finalDownvotes >= AUTO_HIDE_DOWNVOTE_THRESHOLD) {
-      wasAutoHidden = await checkAndApplyAutoHide('gearReviews', reviewId, finalDownvotes);
+      wasAutoHidden = await checkAndApplyAutoHide(
+        'gearReviews',
+        reviewId,
+        finalDownvotes,
+      );
     }
-    
+
     return { wasAutoHidden };
   },
 };

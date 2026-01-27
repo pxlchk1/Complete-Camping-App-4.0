@@ -4,12 +4,12 @@
  * Used for all modal and detail screens
  */
 
-import React from "react";
-import { View, Text, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { DEEP_FOREST, PARCHMENT } from "../constants/colors";
+import React from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DEEP_FOREST, PARCHMENT } from '../constants/colors';
 
 interface ModalHeaderProps {
   title?: string;
@@ -49,9 +49,9 @@ export default function ModalHeader({
     >
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           paddingHorizontal: 20,
           paddingVertical: 14,
         }}
@@ -67,10 +67,10 @@ export default function ModalHeader({
 
         {/* Title with optional info button */}
         {showTitle && title && (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <Text
               style={{
-                fontFamily: "Raleway_700Bold",
+                fontFamily: 'Raleway_700Bold',
                 fontSize: 16,
                 color: PARCHMENT,
               }}
@@ -78,7 +78,11 @@ export default function ModalHeader({
               {title}
             </Text>
             {onInfoPress && (
-              <Pressable onPress={onInfoPress} style={{ padding: 2 }} accessibilityLabel="Info">
+              <Pressable
+                onPress={onInfoPress}
+                style={{ padding: 2 }}
+                accessibilityLabel="Info"
+              >
                 <Ionicons name="information-circle-outline" size={20} color={PARCHMENT} />
               </Pressable>
             )}

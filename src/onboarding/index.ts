@@ -1,6 +1,6 @@
 /**
  * Onboarding Module
- * 
+ *
  * Protected layer for handling sign-up and first bootstrapping writes.
  * This module provides:
  * - Debug logging (controlled by ONBOARDING_DEBUG flag)
@@ -38,7 +38,4 @@ export {
   ONBOARDING_STEPS,
   ONBOARDING_ERROR_CODES,
 } from './onboardingSteps';
-export type {
-  BootstrapAccountParams,
-  BootstrapAccountResult,
-} from './onboardingSteps';
+export type { BootstrapAccountParams, BootstrapAccountResult } from './onboardingSteps';

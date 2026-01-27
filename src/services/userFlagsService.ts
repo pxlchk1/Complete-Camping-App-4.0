@@ -1,17 +1,17 @@
 /**
  * User Flags Service
- * 
+ *
  * Manages boolean flags for user experience state (e.g., first-time modals shown).
  * Stored in Firestore on the user document.
  */
 
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "../config/firebase";
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../config/firebase';
 
 // Flag keys
 export const USER_FLAGS = {
-  HAS_SEEN_MY_CAMPGROUND_INFO: "hasSeenMyCampgroundInfoModal",
-  HAS_SEEN_MY_CAMPSITE_WELCOME: "hasSeenMyCampsiteWelcomeModal",
+  HAS_SEEN_MY_CAMPGROUND_INFO: 'hasSeenMyCampgroundInfoModal',
+  HAS_SEEN_MY_CAMPSITE_WELCOME: 'hasSeenMyCampsiteWelcomeModal',
 } as const;
 
 /**
@@ -22,15 +22,15 @@ export async function hasSeenMyCampgroundInfo(): Promise<boolean> {
   if (!user) return false;
 
   try {
-    const userRef = doc(db, "users", user.uid);
+    const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
-    
+
     if (userSnap.exists()) {
       return userSnap.data()?.[USER_FLAGS.HAS_SEEN_MY_CAMPGROUND_INFO] === true;
     }
     return false;
   } catch (error) {
-    console.error("[UserFlags] Error checking hasSeenMyCampgroundInfo:", error);
+    console.error('[UserFlags] Error checking hasSeenMyCampgroundInfo:', error);
     return false;
   }
 }
@@ -43,14 +43,18 @@ export async function setMyCampgroundInfoSeen(): Promise<void> {
   if (!user) return;
 
   try {
-    const userRef = doc(db, "users", user.uid);
-    await setDoc(userRef, {
-      [USER_FLAGS.HAS_SEEN_MY_CAMPGROUND_INFO]: true,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-    console.log("[UserFlags] Marked hasSeenMyCampgroundInfoModal = true");
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(
+      userRef,
+      {
+        [USER_FLAGS.HAS_SEEN_MY_CAMPGROUND_INFO]: true,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+    console.log('[UserFlags] Marked hasSeenMyCampgroundInfoModal = true');
   } catch (error) {
-    console.error("[UserFlags] Error setting hasSeenMyCampgroundInfoModal:", error);
+    console.error('[UserFlags] Error setting hasSeenMyCampgroundInfoModal:', error);
   }
 }
 
@@ -60,12 +64,12 @@ export async function setMyCampgroundInfoSeen(): Promise<void> {
  */
 export async function checkAndSetMyCampgroundInfoSeen(): Promise<boolean> {
   const hasSeen = await hasSeenMyCampgroundInfo();
-  
+
   if (!hasSeen) {
     // Mark as seen (will be set after modal is dismissed in the component)
     return true; // Should show modal
   }
-  
+
   return false; // Already seen
 }
 
@@ -81,15 +85,15 @@ export async function hasSeenMyCampsiteWelcome(): Promise<boolean> {
   if (!user) return true; // Don't show to guests
 
   try {
-    const userRef = doc(db, "users", user.uid);
+    const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
-    
+
     if (userSnap.exists()) {
       return userSnap.data()?.[USER_FLAGS.HAS_SEEN_MY_CAMPSITE_WELCOME] === true;
     }
     return false;
   } catch (error) {
-    console.error("[UserFlags] Error checking hasSeenMyCampsiteWelcome:", error);
+    console.error('[UserFlags] Error checking hasSeenMyCampsiteWelcome:', error);
     return true; // On error, don't show modal to avoid blocking
   }
 }
@@ -102,13 +106,17 @@ export async function setMyCampsiteWelcomeSeen(): Promise<void> {
   if (!user) return;
 
   try {
-    const userRef = doc(db, "users", user.uid);
-    await setDoc(userRef, {
-      [USER_FLAGS.HAS_SEEN_MY_CAMPSITE_WELCOME]: true,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-    console.log("[UserFlags] Marked hasSeenMyCampsiteWelcomeModal = true");
+    const userRef = doc(db, 'users', user.uid);
+    await setDoc(
+      userRef,
+      {
+        [USER_FLAGS.HAS_SEEN_MY_CAMPSITE_WELCOME]: true,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+    console.log('[UserFlags] Marked hasSeenMyCampsiteWelcomeModal = true');
   } catch (error) {
-    console.error("[UserFlags] Error setting hasSeenMyCampsiteWelcomeModal:", error);
+    console.error('[UserFlags] Error setting hasSeenMyCampsiteWelcomeModal:', error);
   }
 }

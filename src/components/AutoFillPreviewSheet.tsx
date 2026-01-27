@@ -1,11 +1,11 @@
 /**
  * AutoFillPreviewSheet - Preview and confirm auto-fill suggestions
- * 
+ *
  * Per UX directive: Tap Auto-fill Day -> open AutoFillPreviewSheet.
  * Never write directly to day plan on tap. Requires confirm.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,40 +15,40 @@ import {
   ActivityIndicator,
   TouchableWithoutFeedback,
   Keyboard,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 
-import { SuggestibleMealCategory } from "../types/meal";
+import { SuggestibleMealCategory } from '../types/meal';
 import {
   MealSuggestion,
   getAutoFillSuggestions,
   getQuickSuggestion,
   SuggestionContext,
-} from "../services/mealSuggestionService";
+} from '../services/mealSuggestionService';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
   PARCHMENT,
   BORDER_SOFT,
   TEXT_SECONDARY,
-} from "../constants/colors";
+} from '../constants/colors';
 
-const MEAL_ORDER: SuggestibleMealCategory[] = ["breakfast", "lunch", "dinner", "snack"];
+const MEAL_ORDER: SuggestibleMealCategory[] = ['breakfast', 'lunch', 'dinner', 'snack'];
 
 const CATEGORY_LABELS: Record<SuggestibleMealCategory, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  snack: "Snacks",
+  breakfast: 'Breakfast',
+  lunch: 'Lunch',
+  dinner: 'Dinner',
+  snack: 'Snacks',
 };
 
 const CATEGORY_ICONS: Record<SuggestibleMealCategory, keyof typeof Ionicons.glyphMap> = {
-  breakfast: "sunny",
-  lunch: "restaurant",
-  dinner: "moon",
-  snack: "ice-cream",
+  breakfast: 'sunny',
+  lunch: 'restaurant',
+  dinner: 'moon',
+  snack: 'ice-cream',
 };
 
 interface AutoFillPreviewSheetProps {
@@ -58,7 +58,9 @@ interface AutoFillPreviewSheetProps {
   dayIndex: number;
   tripContext?: SuggestionContext;
   existingMealIds: string[];
-  onConfirm: (suggestions: Record<SuggestibleMealCategory, MealSuggestion | null>) => void;
+  onConfirm: (
+    suggestions: Record<SuggestibleMealCategory, MealSuggestion | null>,
+  ) => void;
   onBrowseRecipes: (mealType: SuggestibleMealCategory) => void;
 }
 
@@ -73,13 +75,16 @@ export default function AutoFillPreviewSheet({
   onBrowseRecipes,
 }: AutoFillPreviewSheetProps) {
   const [loading, setLoading] = useState(true);
-  const [suggestions, setSuggestions] = useState<Record<SuggestibleMealCategory, MealSuggestion | null>>({
+  const [suggestions, setSuggestions] = useState<
+    Record<SuggestibleMealCategory, MealSuggestion | null>
+  >({
     breakfast: null,
     lunch: null,
     dinner: null,
     snack: null,
   });
-  const [swappingCategory, setSwappingCategory] = useState<SuggestibleMealCategory | null>(null);
+  const [swappingCategory, setSwappingCategory] =
+    useState<SuggestibleMealCategory | null>(null);
 
   // Load suggestions when sheet opens
   useEffect(() => {
@@ -95,7 +100,7 @@ export default function AutoFillPreviewSheet({
       const results = await getAutoFillSuggestions(tripContext, existingMealIds);
       setSuggestions(results);
     } catch (error) {
-      console.error("[AutoFillPreviewSheet] Error loading suggestions:", error);
+      console.error('[AutoFillPreviewSheet] Error loading suggestions:', error);
     } finally {
       setLoading(false);
     }
@@ -114,7 +119,7 @@ export default function AutoFillPreviewSheet({
       }
 
       const newSuggestion = await getQuickSuggestion(category, tripContext, excludeIds);
-      
+
       if (newSuggestion) {
         setSuggestions((prev) => ({
           ...prev,
@@ -122,7 +127,7 @@ export default function AutoFillPreviewSheet({
         }));
       }
     } catch (error) {
-      console.error("[AutoFillPreviewSheet] Error swapping suggestion:", error);
+      console.error('[AutoFillPreviewSheet] Error swapping suggestion:', error);
     } finally {
       setSwappingCategory(null);
     }
@@ -154,26 +159,23 @@ export default function AutoFillPreviewSheet({
           {/* Backdrop */}
           <Pressable
             className="absolute inset-0"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
             onPress={onClose}
           />
 
           {/* Sheet Content */}
           <View
             className="rounded-t-3xl overflow-hidden"
-            style={{ backgroundColor: PARCHMENT, maxHeight: "90%" }}
+            style={{ backgroundColor: PARCHMENT, maxHeight: '90%' }}
           >
-            <SafeAreaView edges={["bottom"]} style={{ flex: 1 }}>
+            <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
               {/* Header */}
-              <View
-                className="px-5 pt-6 pb-4"
-                style={{ backgroundColor: DEEP_FOREST }}
-              >
+              <View className="px-5 pt-6 pb-4" style={{ backgroundColor: DEEP_FOREST }}>
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1">
                     <Text
                       style={{
-                        fontFamily: "Raleway_700Bold",
+                        fontFamily: 'Raleway_700Bold',
                         fontSize: 22,
                         color: PARCHMENT,
                       }}
@@ -183,9 +185,9 @@ export default function AutoFillPreviewSheet({
                     <Text
                       className="mt-1"
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
+                        fontFamily: 'SourceSans3_400Regular',
                         fontSize: 14,
-                        color: "rgba(255,255,255,0.7)",
+                        color: 'rgba(255,255,255,0.7)',
                       }}
                     >
                       Review suggestions before applying
@@ -194,7 +196,7 @@ export default function AutoFillPreviewSheet({
                   <Pressable
                     onPress={onClose}
                     className="w-9 h-9 rounded-full items-center justify-center"
-                    style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                    style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
                   >
                     <Ionicons name="close" size={20} color={PARCHMENT} />
                   </Pressable>
@@ -212,7 +214,7 @@ export default function AutoFillPreviewSheet({
                     <Text
                       className="mt-3"
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
+                        fontFamily: 'SourceSans3_400Regular',
                         fontSize: 14,
                         color: TEXT_SECONDARY,
                       }}
@@ -234,7 +236,10 @@ export default function AutoFillPreviewSheet({
                         {/* Category Header */}
                         <View
                           className="flex-row items-center px-4 py-3 border-b"
-                          style={{ borderColor: BORDER_SOFT, backgroundColor: "rgba(26, 76, 57, 0.03)" }}
+                          style={{
+                            borderColor: BORDER_SOFT,
+                            backgroundColor: 'rgba(26, 76, 57, 0.03)',
+                          }}
                         >
                           <Ionicons
                             name={CATEGORY_ICONS[category]}
@@ -244,7 +249,7 @@ export default function AutoFillPreviewSheet({
                           <Text
                             className="ml-2"
                             style={{
-                              fontFamily: "Raleway_700Bold",
+                              fontFamily: 'Raleway_700Bold',
                               fontSize: 15,
                               color: DEEP_FOREST,
                             }}
@@ -263,7 +268,7 @@ export default function AutoFillPreviewSheet({
                             <>
                               <Text
                                 style={{
-                                  fontFamily: "SourceSans3_600SemiBold",
+                                  fontFamily: 'SourceSans3_600SemiBold',
                                   fontSize: 16,
                                   color: DEEP_FOREST,
                                 }}
@@ -273,16 +278,21 @@ export default function AutoFillPreviewSheet({
 
                               {/* Tags */}
                               {suggestion.tags && suggestion.tags.length > 0 && (
-                                <View className="flex-row flex-wrap mt-2" style={{ gap: 6 }}>
+                                <View
+                                  className="flex-row flex-wrap mt-2"
+                                  style={{ gap: 6 }}
+                                >
                                   {suggestion.tags.slice(0, 3).map((tag, idx) => (
                                     <View
                                       key={idx}
                                       className="px-2 py-0.5 rounded"
-                                      style={{ backgroundColor: "rgba(26, 76, 57, 0.08)" }}
+                                      style={{
+                                        backgroundColor: 'rgba(26, 76, 57, 0.08)',
+                                      }}
                                     >
                                       <Text
                                         style={{
-                                          fontFamily: "SourceSans3_400Regular",
+                                          fontFamily: 'SourceSans3_400Regular',
                                           fontSize: 11,
                                           color: EARTH_GREEN,
                                         }}
@@ -297,10 +307,10 @@ export default function AutoFillPreviewSheet({
                           ) : (
                             <Text
                               style={{
-                                fontFamily: "SourceSans3_400Regular",
+                                fontFamily: 'SourceSans3_400Regular',
                                 fontSize: 14,
                                 color: TEXT_SECONDARY,
-                                fontStyle: "italic",
+                                fontStyle: 'italic',
                               }}
                             >
                               No suggestion available
@@ -314,13 +324,13 @@ export default function AutoFillPreviewSheet({
                               onPress={() => handleSwap(category)}
                               disabled={isSwapping}
                               className="flex-row items-center px-3 py-2 rounded-lg active:opacity-80"
-                              style={{ backgroundColor: "rgba(26, 76, 57, 0.1)" }}
+                              style={{ backgroundColor: 'rgba(26, 76, 57, 0.1)' }}
                             >
                               <Ionicons name="shuffle" size={14} color={EARTH_GREEN} />
                               <Text
                                 className="ml-1.5"
                                 style={{
-                                  fontFamily: "SourceSans3_600SemiBold",
+                                  fontFamily: 'SourceSans3_600SemiBold',
                                   fontSize: 12,
                                   color: EARTH_GREEN,
                                 }}
@@ -333,13 +343,17 @@ export default function AutoFillPreviewSheet({
                             <Pressable
                               onPress={() => handleChooseRecipe(category)}
                               className="flex-row items-center px-3 py-2 rounded-lg active:opacity-80"
-                              style={{ backgroundColor: "rgba(26, 76, 57, 0.1)" }}
+                              style={{ backgroundColor: 'rgba(26, 76, 57, 0.1)' }}
                             >
-                              <Ionicons name="book-outline" size={14} color={EARTH_GREEN} />
+                              <Ionicons
+                                name="book-outline"
+                                size={14}
+                                color={EARTH_GREEN}
+                              />
                               <Text
                                 className="ml-1.5"
                                 style={{
-                                  fontFamily: "SourceSans3_600SemiBold",
+                                  fontFamily: 'SourceSans3_600SemiBold',
                                   fontSize: 12,
                                   color: EARTH_GREEN,
                                 }}
@@ -356,20 +370,17 @@ export default function AutoFillPreviewSheet({
               </ScrollView>
 
               {/* Footer Actions */}
-              <View
-                className="px-4 py-4 border-t"
-                style={{ borderColor: BORDER_SOFT }}
-              >
+              <View className="px-4 py-4 border-t" style={{ borderColor: BORDER_SOFT }}>
                 <View className="flex-row" style={{ gap: 12 }}>
                   {/* Cancel */}
                   <Pressable
                     onPress={onClose}
                     className="flex-1 py-3 rounded-xl border items-center active:opacity-80"
-                    style={{ borderColor: BORDER_SOFT, backgroundColor: "white" }}
+                    style={{ borderColor: BORDER_SOFT, backgroundColor: 'white' }}
                   >
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 15,
                         color: DEEP_FOREST,
                       }}
@@ -384,12 +395,13 @@ export default function AutoFillPreviewSheet({
                     disabled={loading || filledCount === 0}
                     className="flex-1 py-3 rounded-xl items-center active:opacity-90"
                     style={{
-                      backgroundColor: loading || filledCount === 0 ? TEXT_SECONDARY : DEEP_FOREST,
+                      backgroundColor:
+                        loading || filledCount === 0 ? TEXT_SECONDARY : DEEP_FOREST,
                     }}
                   >
                     <Text
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 15,
                         color: PARCHMENT,
                       }}

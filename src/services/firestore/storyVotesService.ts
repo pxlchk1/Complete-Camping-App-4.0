@@ -13,7 +13,10 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db, auth } from '../../config/firebase';
-import { checkAndApplyAutoHide, AUTO_HIDE_DOWNVOTE_THRESHOLD } from '../moderationService';
+import {
+  checkAndApplyAutoHide,
+  AUTO_HIDE_DOWNVOTE_THRESHOLD,
+} from '../moderationService';
 
 export interface StoryVote {
   oderId: string;
@@ -32,11 +35,14 @@ export const storyVotesService = {
   },
 
   // Get the vote summary (score and counts) for a story
-  async getVoteSummary(storyId: string): Promise<{ score: number; up: number; down: number }> {
+  async getVoteSummary(
+    storyId: string,
+  ): Promise<{ score: number; up: number; down: number }> {
     const votesCol = collection(db, 'stories', storyId, 'votes');
     const snap = await getDocs(votesCol);
-    let up = 0, down = 0;
-    snap.forEach(doc => {
+    let up = 0,
+      down = 0;
+    snap.forEach((doc) => {
       const v = doc.data() as StoryVote;
       if (v.voteType === 'up') up++;
       if (v.voteType === 'down') down++;
@@ -46,26 +52,29 @@ export const storyVotesService = {
 
   // Transactional voting (handles toggling and score update)
   // Also checks downvote threshold for auto-hide moderation.
-  async vote(storyId: string, voteType: 'up' | 'down'): Promise<{ wasAutoHidden?: boolean }> {
+  async vote(
+    storyId: string,
+    voteType: 'up' | 'down',
+  ): Promise<{ wasAutoHidden?: boolean }> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to vote');
     const voteDocRef = doc(db, 'stories', storyId, 'votes', user.uid);
     const storyDocRef = doc(db, 'stories', storyId);
-    
+
     let finalDownvotes = 0;
-    
+
     await runTransaction(db, async (transaction) => {
       const voteSnap = await transaction.get(voteDocRef);
       const storySnap = await transaction.get(storyDocRef);
-      
+
       if (!storySnap.exists()) throw new Error('Story not found');
-      
+
       let upvotes = storySnap.data().upvotes || 0;
       let downvotes = storySnap.data().downvotes || 0;
       let prevVote: 'up' | 'down' | null = null;
-      
+
       if (voteSnap.exists()) prevVote = voteSnap.data().voteType;
-      
+
       // If same vote, remove it (toggle off)
       if (prevVote === voteType) {
         if (voteType === 'up') upvotes--;
@@ -81,18 +90,18 @@ export const storyVotesService = {
         // Write vote
         transaction.set(voteDocRef, { oderId: user.uid, voteType });
       }
-      
+
       // Update story doc
       transaction.update(storyDocRef, { upvotes, downvotes });
       finalDownvotes = downvotes;
     });
-    
+
     // After transaction completes, check if we need to auto-hide
     let wasAutoHidden = false;
     if (finalDownvotes >= AUTO_HIDE_DOWNVOTE_THRESHOLD) {
       wasAutoHidden = await checkAndApplyAutoHide('stories', storyId, finalDownvotes);
     }
-    
+
     return { wasAutoHidden };
   },
 

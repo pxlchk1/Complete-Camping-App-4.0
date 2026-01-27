@@ -1,6 +1,6 @@
 /**
  * Onboarding Firestore Write Wrappers
- * 
+ *
  * These wrappers should ONLY be used during onboarding (sign-up and first bootstrapping).
  * They provide consistent logging, error handling, and payload validation.
  */
@@ -30,21 +30,25 @@ export async function onboardingSetDoc<T extends DocumentData>(
   docRef: DocumentReference<T>,
   data: T,
   options: SetOptions | undefined,
-  meta: OnboardingWriteMeta
+  meta: OnboardingWriteMeta,
 ): Promise<void> {
   const path = docRef.path;
   const payloadKeys = getPayloadKeys(data as Record<string, unknown>);
 
   // Log before write
-  onboardingLog('before', {
-    step: meta.step,
-    op: 'setDoc',
-    path,
-  }, {
-    payloadKeys,
-    payload: data as Record<string, unknown>,
-    includePayload: true,
-  });
+  onboardingLog(
+    'before',
+    {
+      step: meta.step,
+      op: 'setDoc',
+      path,
+    },
+    {
+      payloadKeys,
+      payload: data as Record<string, unknown>,
+      includePayload: true,
+    },
+  );
 
   try {
     if (options) {
@@ -61,16 +65,21 @@ export async function onboardingSetDoc<T extends DocumentData>(
     });
   } catch (error: unknown) {
     const firebaseError = error as { code?: string; message?: string };
-    
+
     // Log error
-    onboardingLog('error', {
-      step: meta.step,
-      op: 'setDoc',
-      path,
-    }, undefined, {
-      code: firebaseError.code,
-      message: firebaseError.message,
-    });
+    onboardingLog(
+      'error',
+      {
+        step: meta.step,
+        op: 'setDoc',
+        path,
+      },
+      undefined,
+      {
+        code: firebaseError.code,
+        message: firebaseError.message,
+      },
+    );
 
     // Rethrow with step context attached
     const enhancedError = error as Error & { onboardingStep?: string };
@@ -86,21 +95,25 @@ export async function onboardingSetDoc<T extends DocumentData>(
 export async function onboardingUpdateDoc<T extends DocumentData>(
   docRef: DocumentReference<T>,
   data: Partial<T>,
-  meta: OnboardingWriteMeta
+  meta: OnboardingWriteMeta,
 ): Promise<void> {
   const path = docRef.path;
   const payloadKeys = getPayloadKeys(data as Record<string, unknown>);
 
   // Log before write
-  onboardingLog('before', {
-    step: meta.step,
-    op: 'updateDoc',
-    path,
-  }, {
-    payloadKeys,
-    payload: data as Record<string, unknown>,
-    includePayload: true,
-  });
+  onboardingLog(
+    'before',
+    {
+      step: meta.step,
+      op: 'updateDoc',
+      path,
+    },
+    {
+      payloadKeys,
+      payload: data as Record<string, unknown>,
+      includePayload: true,
+    },
+  );
 
   try {
     await updateDoc(docRef, data as DocumentData);
@@ -113,16 +126,21 @@ export async function onboardingUpdateDoc<T extends DocumentData>(
     });
   } catch (error: unknown) {
     const firebaseError = error as { code?: string; message?: string };
-    
+
     // Log error
-    onboardingLog('error', {
-      step: meta.step,
-      op: 'updateDoc',
-      path,
-    }, undefined, {
-      code: firebaseError.code,
-      message: firebaseError.message,
-    });
+    onboardingLog(
+      'error',
+      {
+        step: meta.step,
+        op: 'updateDoc',
+        path,
+      },
+      undefined,
+      {
+        code: firebaseError.code,
+        message: firebaseError.message,
+      },
+    );
 
     // Rethrow with step context attached
     const enhancedError = error as Error & { onboardingStep?: string };
@@ -138,18 +156,22 @@ export async function onboardingUpdateDoc<T extends DocumentData>(
 export async function onboardingBatchCommit(
   batch: WriteBatch,
   meta: OnboardingWriteMeta,
-  operations?: string[]
+  operations?: string[],
 ): Promise<void> {
   const path = 'batch';
 
   // Log before write
-  onboardingLog('before', {
-    step: meta.step,
-    op: 'batchCommit',
-    path,
-  }, {
-    payloadKeys: operations || ['batch operations'],
-  });
+  onboardingLog(
+    'before',
+    {
+      step: meta.step,
+      op: 'batchCommit',
+      path,
+    },
+    {
+      payloadKeys: operations || ['batch operations'],
+    },
+  );
 
   try {
     await batch.commit();
@@ -162,16 +184,21 @@ export async function onboardingBatchCommit(
     });
   } catch (error: unknown) {
     const firebaseError = error as { code?: string; message?: string };
-    
+
     // Log error
-    onboardingLog('error', {
-      step: meta.step,
-      op: 'batchCommit',
-      path,
-    }, undefined, {
-      code: firebaseError.code,
-      message: firebaseError.message,
-    });
+    onboardingLog(
+      'error',
+      {
+        step: meta.step,
+        op: 'batchCommit',
+        path,
+      },
+      undefined,
+      {
+        code: firebaseError.code,
+        message: firebaseError.message,
+      },
+    );
 
     // Rethrow with step context attached
     const enhancedError = error as Error & { onboardingStep?: string };
@@ -191,6 +218,8 @@ export function isPermissionDeniedError(error: unknown): boolean {
 /**
  * Type guard to check if an error has an onboarding step attached.
  */
-export function hasOnboardingStep(error: unknown): error is Error & { onboardingStep: string } {
+export function hasOnboardingStep(
+  error: unknown,
+): error is Error & { onboardingStep: string } {
   return (error as Error & { onboardingStep?: string })?.onboardingStep !== undefined;
 }

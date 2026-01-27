@@ -3,34 +3,34 @@
  * Shows contextual onboarding tips as dismissable banners
  */
 
-import React, { useState, useEffect } from "react";
-import { View, Text, Pressable, Animated } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import * as Haptics from "expo-haptics";
+import React, { useState, useEffect } from 'react';
+import { View, Text, Pressable, Animated } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import {
   getCurrentNudge,
   dismissNudge,
   recordNudgeShown,
   InAppNudge,
-} from "../services/inAppNudgeService";
-import { DEEP_LINK_ROUTES } from "../types/notifications";
-import { RootStackNavigationProp } from "../navigation/types";
+} from '../services/inAppNudgeService';
+import { DEEP_LINK_ROUTES } from '../types/notifications';
+import { RootStackNavigationProp } from '../navigation/types';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
   PARCHMENT,
   CARD_BACKGROUND_LIGHT,
-} from "../constants/colors";
+} from '../constants/colors';
 
 interface NudgeBannerProps {
   /** Where the banner is shown (for styling/priority) */
-  location?: "home" | "plan" | "community";
+  location?: 'home' | 'plan' | 'community';
   /** Force show a specific nudge (for testing) */
   forceNudge?: InAppNudge;
 }
 
-export default function NudgeBanner({ location = "home", forceNudge }: NudgeBannerProps) {
+export default function NudgeBanner({ location = 'home', forceNudge }: NudgeBannerProps) {
   const navigation = useNavigation<RootStackNavigationProp>();
   const [nudge, setNudge] = useState<InAppNudge | null>(forceNudge || null);
   const [visible, setVisible] = useState(!!forceNudge);
@@ -58,7 +58,7 @@ export default function NudgeBanner({ location = "home", forceNudge }: NudgeBann
         animateIn();
       }
     } catch (error) {
-      console.error("[NudgeBanner] Error loading nudge:", error);
+      console.error('[NudgeBanner] Error loading nudge:', error);
     }
   };
 
@@ -127,11 +127,11 @@ export default function NudgeBanner({ location = "home", forceNudge }: NudgeBann
           backgroundColor: CARD_BACKGROUND_LIGHT,
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: EARTH_GREEN + "30",
+          borderColor: EARTH_GREEN + '30',
           padding: 16,
-          flexDirection: "row",
-          alignItems: "center",
-          shadowColor: "#000",
+          flexDirection: 'row',
+          alignItems: 'center',
+          shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.08,
           shadowRadius: 4,
@@ -144,9 +144,9 @@ export default function NudgeBanner({ location = "home", forceNudge }: NudgeBann
             width: 40,
             height: 40,
             borderRadius: 20,
-            backgroundColor: EARTH_GREEN + "15",
-            alignItems: "center",
-            justifyContent: "center",
+            backgroundColor: EARTH_GREEN + '15',
+            alignItems: 'center',
+            justifyContent: 'center',
             marginRight: 12,
           }}
         >
@@ -157,7 +157,7 @@ export default function NudgeBanner({ location = "home", forceNudge }: NudgeBann
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 15,
               color: DEEP_FOREST,
               marginBottom: 2,
@@ -167,7 +167,7 @@ export default function NudgeBanner({ location = "home", forceNudge }: NudgeBann
           </Text>
           <Text
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               fontSize: 13,
               color: EARTH_GREEN,
             }}
@@ -178,7 +178,7 @@ export default function NudgeBanner({ location = "home", forceNudge }: NudgeBann
         </View>
 
         {/* Actions */}
-        <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8 }}>
           {nudge.dismissable && (
             <Pressable
               onPress={handleDismiss}
@@ -188,7 +188,7 @@ export default function NudgeBanner({ location = "home", forceNudge }: NudgeBann
                 marginRight: 4,
               }}
             >
-              <Ionicons name="close" size={20} color={EARTH_GREEN + "80"} />
+              <Ionicons name="close" size={20} color={EARTH_GREEN + '80'} />
             </Pressable>
           )}
           <Ionicons name="chevron-forward" size={18} color={EARTH_GREEN} />
@@ -255,28 +255,36 @@ export function MiniNudgeToast({
     <Animated.View
       style={{
         opacity: fadeAnim,
-        position: "absolute",
+        position: 'absolute',
         bottom: 100,
         left: 16,
         right: 16,
         backgroundColor: DEEP_FOREST,
         borderRadius: 12,
         padding: 12,
-        flexDirection: "row",
-        alignItems: "center",
-        shadowColor: "#000",
+        flexDirection: 'row',
+        alignItems: 'center',
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 8,
         elevation: 4,
       }}
     >
-      <Pressable onPress={handlePress} style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
-        <Ionicons name="sparkles" size={18} color={PARCHMENT} style={{ marginRight: 10 }} />
+      <Pressable
+        onPress={handlePress}
+        style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+      >
+        <Ionicons
+          name="sparkles"
+          size={18}
+          color={PARCHMENT}
+          style={{ marginRight: 10 }}
+        />
         <View style={{ flex: 1 }}>
           <Text
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
+              fontFamily: 'SourceSans3_600SemiBold',
               fontSize: 14,
               color: PARCHMENT,
             }}
@@ -285,20 +293,20 @@ export function MiniNudgeToast({
           </Text>
           <Text
             style={{
-              fontFamily: "SourceSans3_400Regular",
+              fontFamily: 'SourceSans3_400Regular',
               fontSize: 12,
-              color: PARCHMENT + "CC",
+              color: PARCHMENT + 'CC',
             }}
             numberOfLines={1}
           >
             {body}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={16} color={PARCHMENT + "80"} />
+        <Ionicons name="chevron-forward" size={16} color={PARCHMENT + '80'} />
       </Pressable>
 
       <Pressable onPress={onDismiss} hitSlop={8} style={{ padding: 4, marginLeft: 8 }}>
-        <Ionicons name="close" size={18} color={PARCHMENT + "80"} />
+        <Ionicons name="close" size={18} color={PARCHMENT + '80'} />
       </Pressable>
     </Animated.View>
   );

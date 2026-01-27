@@ -31,7 +31,11 @@ export interface Photo {
 
 export const photosService = {
   // Upload photo to Firebase Storage (returns storagePath)
-  async uploadPhoto(uri: string, userId: string, postId: string): Promise<{ downloadUrl: string; storagePath: string }> {
+  async uploadPhoto(
+    uri: string,
+    userId: string,
+    postId: string,
+  ): Promise<{ downloadUrl: string; storagePath: string }> {
     const response = await fetch(uri);
     const blob = await response.blob();
 
@@ -106,7 +110,7 @@ export const photosService = {
     const q = query(
       collection(db, 'stories'),
       where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
     );
     const snapshot = await getDocs(q);
 
@@ -139,7 +143,7 @@ export const photosService = {
       caption?: string;
       location?: string;
       tags?: string[];
-    }
+    },
   ): Promise<void> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to update a photo');
@@ -166,11 +170,11 @@ export const photosService = {
     // Get photo doc to check ownership and get storage path
     const photoDocRef = doc(db, 'stories', photoId);
     const photoDoc = await getDoc(photoDocRef);
-    
+
     if (!photoDoc.exists()) {
       throw new Error('Photo not found');
     }
-    
+
     const photoData = photoDoc.data();
     const ownerId = photoData.userId;
 
@@ -179,11 +183,11 @@ export const photosService = {
 
     // Check if user is admin
     const userDoc = await getDoc(doc(db, 'users', user.uid));
-    const isAdmin = userDoc.exists() && (
-      userDoc.data().role === 'admin' || 
-      userDoc.data().role === 'administrator' ||
-      userDoc.data().isAdmin === true
-    );
+    const isAdmin =
+      userDoc.exists() &&
+      (userDoc.data().role === 'admin' ||
+        userDoc.data().role === 'administrator' ||
+        userDoc.data().isAdmin === true);
 
     if (!isOwner && !isAdmin) {
       throw new Error('You can only delete your own photos or must be an admin');
@@ -198,7 +202,10 @@ export const photosService = {
         console.log('[photosService] Deleted from Storage:', storagePath);
       } catch (storageError: any) {
         // Log but continue - the file might already be deleted or path was wrong
-        console.warn('[photosService] Storage delete error (continuing):', storageError?.message || storageError);
+        console.warn(
+          '[photosService] Storage delete error (continuing):',
+          storageError?.message || storageError,
+        );
       }
     } else {
       // Fallback: try to delete using constructed path pattern
@@ -209,7 +216,7 @@ export const photosService = {
           `stories/${ownerId}/${photoId}.jpg`,
           `stories/${ownerId}/${photoId}/${photoId}.jpg`,
         ];
-        
+
         for (const pattern of patterns) {
           try {
             const storageRef = ref(storage, pattern);
@@ -221,7 +228,10 @@ export const photosService = {
           }
         }
       } catch (storageError: any) {
-        console.warn('[photosService] Fallback storage delete error:', storageError?.message || storageError);
+        console.warn(
+          '[photosService] Fallback storage delete error:',
+          storageError?.message || storageError,
+        );
       }
     }
 

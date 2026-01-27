@@ -2,7 +2,7 @@
  * Packing List Create Screen
  * Swipeable screen for creating new packing lists
  * Collects: name, trip type, season, and templates
- * 
+ *
  * Season Priority (when linked to a trip):
  * 1. User override (packingSeasonOverride)
  * 2. Winter camping flag or campingStyle
@@ -10,7 +10,7 @@
  * 4. Default to summer
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,46 +22,45 @@ import {
   Modal,
   Switch,
   ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 
-import {
-  DEEP_FOREST,
-  EARTH_GREEN,
-  PARCHMENT,
-  BORDER_SOFT,
-} from "../constants/colors";
+import { DEEP_FOREST, EARTH_GREEN, PARCHMENT, BORDER_SOFT } from '../constants/colors';
 import {
   PACKING_TEMPLATES,
   TRIP_TYPE_OPTIONS,
   SEASON_OPTIONS,
-} from "../constants/packingTemplatesV2";
+} from '../constants/packingTemplatesV2';
 import {
   usePackingStore,
   TripType,
   Season,
   PackingTemplateKey,
-} from "../state/packingStore";
-import { RootStackParamList } from "../navigation/types";
-import { getSeasonInfo, WINTER_NUDGE_TEXT, type SeasonSource } from "../utils/packingSeasonUtils";
-import { useUpdateTrip } from "../state/tripsStore";
-import { auth } from "../config/firebase";
-import { getUserGear } from "../services/gearClosetService";
-import { GearItem } from "../types/gear";
+} from '../state/packingStore';
+import { RootStackParamList } from '../navigation/types';
+import {
+  getSeasonInfo,
+  WINTER_NUDGE_TEXT,
+  type SeasonSource,
+} from '../utils/packingSeasonUtils';
+import { useUpdateTrip } from '../state/tripsStore';
+import { auth } from '../config/firebase';
+import { getUserGear } from '../services/gearClosetService';
+import { GearItem } from '../types/gear';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type RouteProps = RouteProp<RootStackParamList, "PackingListCreate">;
+type RouteProps = RouteProp<RootStackParamList, 'PackingListCreate'>;
 
 export default function PackingListCreateScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteProps>();
   const { createPackingList } = usePackingStore();
   const updateTrip = useUpdateTrip();
-  
+
   // Get trip context from route params (if navigating from a trip)
   const tripId = route.params?.tripId;
   const tripName = route.params?.tripName;
@@ -73,39 +72,51 @@ export default function PackingListCreateScreen() {
 
   // Calculate trip type from dates
   const calculatedTripType = useMemo((): TripType => {
-    if (!tripStartDate || !tripEndDate) return "weekend"; // default
-    
+    if (!tripStartDate || !tripEndDate) return 'weekend'; // default
+
     const start = new Date(tripStartDate);
     const end = new Date(tripEndDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     // Map days to trip type
-    if (diffDays === 0) return "day-hike";
-    if (diffDays === 1) return "one-night";
-    if (diffDays <= 3) return "weekend";
-    return "multi-day";
+    if (diffDays === 0) return 'day-hike';
+    if (diffDays === 1) return 'one-night';
+    if (diffDays <= 3) return 'weekend';
+    return 'multi-day';
   }, [tripStartDate, tripEndDate]);
 
   // Build a partial trip object for season detection
-  const tripContext = useMemo(() => tripId ? {
-    startDate: tripStartDate,
-    campingStyle: tripCampingStyle,
-    winterCamping: tripWinterCamping,
-    packingSeasonOverride: tripPackingSeasonOverride,
-  } : null, [tripId, tripStartDate, tripCampingStyle, tripWinterCamping, tripPackingSeasonOverride]);
+  const tripContext = useMemo(
+    () =>
+      tripId
+        ? {
+            startDate: tripStartDate,
+            campingStyle: tripCampingStyle,
+            winterCamping: tripWinterCamping,
+            packingSeasonOverride: tripPackingSeasonOverride,
+          }
+        : null,
+    [
+      tripId,
+      tripStartDate,
+      tripCampingStyle,
+      tripWinterCamping,
+      tripPackingSeasonOverride,
+    ],
+  );
 
   // Compute initial season based on trip context
   const initialSeasonInfo = useMemo(() => {
     if (tripContext) {
       return getSeasonInfo(tripContext as any);
     }
-    return { season: "summer" as Season, source: "default" as SeasonSource };
+    return { season: 'summer' as Season, source: 'default' as SeasonSource };
   }, [tripContext]);
 
   // Season change sheet state
   const [showSeasonSheet, setShowSeasonSheet] = useState(false);
-  
+
   // Track if user has overridden season in this session
   const [userOverrideSeason, setUserOverrideSeason] = useState<Season | null>(null);
 
@@ -120,52 +131,59 @@ export default function PackingListCreateScreen() {
     const loadGear = async () => {
       const user = auth.currentUser;
       if (!user) return;
-      
+
       setGearLoading(true);
       try {
         const gear = await getUserGear(user.uid);
         setGearItems(gear);
       } catch (error) {
-        console.error("Error loading gear closet:", error);
+        console.error('Error loading gear closet:', error);
       } finally {
         setGearLoading(false);
       }
     };
-    
+
     loadGear();
   }, []);
 
   // Form state - pre-fill with trip name if available
-  const [listName, setListName] = useState(tripName ? `${tripName} Packing List` : "");
+  const [listName, setListName] = useState(tripName ? `${tripName} Packing List` : '');
   // Trip type: use calculated value from trip dates if available, otherwise allow user selection
-  const [tripType, setTripType] = useState<TripType>(tripId ? calculatedTripType : "weekend");
-  
+  const [tripType, setTripType] = useState<TripType>(
+    tripId ? calculatedTripType : 'weekend',
+  );
+
   // Season: use user override if set, otherwise use computed initial season
   const season = userOverrideSeason ?? initialSeasonInfo.season;
-  const seasonSource: SeasonSource = userOverrideSeason ? "override" : initialSeasonInfo.source;
-  
+  const seasonSource: SeasonSource = userOverrideSeason
+    ? 'override'
+    : initialSeasonInfo.source;
+
   const [selectedTemplates, setSelectedTemplates] = useState<Set<PackingTemplateKey>>(
-    new Set(["essential"])
+    new Set(['essential']),
   );
 
   // Handle season change from the sheet
-  const handleSeasonChange = useCallback((newSeason: Season) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setUserOverrideSeason(newSeason);
-    setShowSeasonSheet(false);
-    
-    // Persist the override to the trip if we have a tripId
-    if (tripId) {
-      updateTrip(tripId, { packingSeasonOverride: newSeason });
-    }
-  }, [tripId, updateTrip]);
+  const handleSeasonChange = useCallback(
+    (newSeason: Season) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setUserOverrideSeason(newSeason);
+      setShowSeasonSheet(false);
+
+      // Persist the override to the trip if we have a tripId
+      if (tripId) {
+        updateTrip(tripId, { packingSeasonOverride: newSeason });
+      }
+    },
+    [tripId, updateTrip],
+  );
 
   // Reset to auto-detected season
   const handleResetToAuto = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setUserOverrideSeason(null);
     setShowSeasonSheet(false);
-    
+
     // Clear the override from the trip
     if (tripId) {
       updateTrip(tripId, { packingSeasonOverride: undefined });
@@ -175,12 +193,12 @@ export default function PackingListCreateScreen() {
   // Get helper text based on season source
   const getSeasonHelperText = () => {
     switch (seasonSource) {
-      case "override":
-        return "You picked this season for this trip.";
-      case "winterCamping":
-        return "Based on Winter Camping.";
-      case "dates":
-        return "Based on your trip dates.";
+      case 'override':
+        return 'You picked this season for this trip.';
+      case 'winterCamping':
+        return 'Based on Winter Camping.';
+      case 'dates':
+        return 'Based on your trip dates.';
       default:
         return null;
     }
@@ -189,10 +207,10 @@ export default function PackingListCreateScreen() {
   // Get season label with source indicator
   const getSeasonLabel = () => {
     const seasonName = season.charAt(0).toUpperCase() + season.slice(1);
-    if (seasonSource === "override") {
+    if (seasonSource === 'override') {
       return `${seasonName} (Chosen)`;
     }
-    if (tripContext && (seasonSource === "dates" || seasonSource === "winterCamping")) {
+    if (tripContext && (seasonSource === 'dates' || seasonSource === 'winterCamping')) {
       return `${seasonName} (Auto)`;
     }
     return seasonName;
@@ -221,24 +239,42 @@ export default function PackingListCreateScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const templateKeys = Array.from(selectedTemplates);
-    
+
     // Pass gear items if toggle is on
     const gearToInclude = includeGearCloset ? gearItems : undefined;
-    const listId = createPackingList(listName.trim(), tripType, season, templateKeys, tripId, false, gearToInclude);
+    const listId = createPackingList(
+      listName.trim(),
+      tripType,
+      season,
+      templateKeys,
+      tripId,
+      false,
+      gearToInclude,
+    );
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setIsCreating(false);
 
     // Navigate to the editor
-    navigation.replace("PackingListEditor" as any, { listId });
-  }, [listName, tripType, season, selectedTemplates, tripId, createPackingList, navigation, includeGearCloset, gearItems]);
+    navigation.replace('PackingListEditor' as any, { listId });
+  }, [
+    listName,
+    tripType,
+    season,
+    selectedTemplates,
+    tripId,
+    createPackingList,
+    navigation,
+    includeGearCloset,
+    gearItems,
+  ]);
 
   const canCreate = listName.trim().length > 0 && !isCreating;
 
   return (
     <View className="flex-1 bg-parchment">
       {/* Header */}
-      <SafeAreaView edges={["top"]} style={{ backgroundColor: DEEP_FOREST }}>
+      <SafeAreaView edges={['top']} style={{ backgroundColor: DEEP_FOREST }}>
         <View
           style={{
             paddingTop: 8,
@@ -251,14 +287,14 @@ export default function PackingListCreateScreen() {
             <Pressable
               onPress={() => navigation.goBack()}
               className="w-9 h-9 rounded-full items-center justify-center"
-              style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
             >
               <Ionicons name="arrow-back" size={20} color={PARCHMENT} />
             </Pressable>
 
             <Text
               style={{
-                fontFamily: "Raleway_700Bold",
+                fontFamily: 'Raleway_700Bold',
                 fontSize: 18,
                 color: PARCHMENT,
               }}
@@ -272,7 +308,7 @@ export default function PackingListCreateScreen() {
       </SafeAreaView>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -284,7 +320,7 @@ export default function PackingListCreateScreen() {
           <View className="px-4 pt-5">
             <Text
               className="text-xs mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN }}
+              style={{ fontFamily: 'SourceSans3_600SemiBold', color: EARTH_GREEN }}
             >
               LIST NAME
             </Text>
@@ -295,7 +331,7 @@ export default function PackingListCreateScreen() {
               placeholderTextColor="#999"
               className="bg-white rounded-xl px-4 py-3"
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 fontSize: 16,
                 color: DEEP_FOREST,
                 borderWidth: 1,
@@ -309,7 +345,7 @@ export default function PackingListCreateScreen() {
             <View className="px-4 pt-5">
               <Text
                 className="text-xs mb-3"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: EARTH_GREEN }}
               >
                 TRIP TYPE
               </Text>
@@ -325,7 +361,7 @@ export default function PackingListCreateScreen() {
                       }}
                       className="flex-row items-center px-4 py-2 rounded-full border"
                       style={{
-                        backgroundColor: isSelected ? DEEP_FOREST : "#FFFFFF",
+                        backgroundColor: isSelected ? DEEP_FOREST : '#FFFFFF',
                         borderColor: isSelected ? DEEP_FOREST : BORDER_SOFT,
                       }}
                     >
@@ -337,7 +373,7 @@ export default function PackingListCreateScreen() {
                       <Text
                         className="ml-2"
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           fontSize: 14,
                           color: isSelected ? PARCHMENT : DEEP_FOREST,
                         }}
@@ -355,11 +391,11 @@ export default function PackingListCreateScreen() {
           <View className="px-4 pt-5">
             <Text
               className="text-xs mb-3"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN }}
+              style={{ fontFamily: 'SourceSans3_600SemiBold', color: EARTH_GREEN }}
             >
               SEASON
             </Text>
-            
+
             {/* If linked to a trip, show smart season row with change button */}
             {tripContext ? (
               <View>
@@ -373,7 +409,10 @@ export default function PackingListCreateScreen() {
                       style={{ backgroundColor: DEEP_FOREST }}
                     >
                       <Ionicons
-                        name={SEASON_OPTIONS.find(o => o.value === season)?.icon as any ?? "sunny"}
+                        name={
+                          (SEASON_OPTIONS.find((o) => o.value === season)?.icon as any) ??
+                          'sunny'
+                        }
                         size={20}
                         color={PARCHMENT}
                       />
@@ -381,14 +420,17 @@ export default function PackingListCreateScreen() {
                     <View className="flex-1">
                       <Text
                         className="text-base"
-                        style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                        style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                       >
                         {getSeasonLabel()}
                       </Text>
                       {getSeasonHelperText() && (
                         <Text
                           className="text-xs mt-0.5"
-                          style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                          style={{
+                            fontFamily: 'SourceSans3_400Regular',
+                            color: EARTH_GREEN,
+                          }}
                         >
                           {getSeasonHelperText()}
                         </Text>
@@ -401,26 +443,39 @@ export default function PackingListCreateScreen() {
                       setShowSeasonSheet(true);
                     }}
                     className="px-3 py-1.5 rounded-full"
-                    style={{ backgroundColor: "#F4F2EC" }}
+                    style={{ backgroundColor: '#F4F2EC' }}
                   >
                     <Text
-                      style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 13, color: DEEP_FOREST }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        fontSize: 13,
+                        color: DEEP_FOREST,
+                      }}
                     >
                       Change
                     </Text>
                   </Pressable>
                 </View>
-                
+
                 {/* Winter nudge message */}
-                {season === "winter" && (
+                {season === 'winter' && (
                   <View
                     className="flex-row items-start mt-3 p-3 rounded-xl"
-                    style={{ backgroundColor: "#E8F4F8" }}
+                    style={{ backgroundColor: '#E8F4F8' }}
                   >
-                    <Ionicons name="snow-outline" size={18} color={DEEP_FOREST} style={{ marginTop: 1 }} />
+                    <Ionicons
+                      name="snow-outline"
+                      size={18}
+                      color={DEEP_FOREST}
+                      style={{ marginTop: 1 }}
+                    />
                     <Text
                       className="ml-2 flex-1"
-                      style={{ fontFamily: "SourceSans3_400Regular", fontSize: 13, color: DEEP_FOREST }}
+                      style={{
+                        fontFamily: 'SourceSans3_400Regular',
+                        fontSize: 13,
+                        color: DEEP_FOREST,
+                      }}
                     >
                       {WINTER_NUDGE_TEXT}
                     </Text>
@@ -441,7 +496,7 @@ export default function PackingListCreateScreen() {
                       }}
                       className="flex-1 items-center py-3 rounded-xl border"
                       style={{
-                        backgroundColor: isSelected ? DEEP_FOREST : "#FFFFFF",
+                        backgroundColor: isSelected ? DEEP_FOREST : '#FFFFFF',
                         borderColor: isSelected ? DEEP_FOREST : BORDER_SOFT,
                       }}
                     >
@@ -453,7 +508,7 @@ export default function PackingListCreateScreen() {
                       <Text
                         className="mt-1"
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           fontSize: 13,
                           color: isSelected ? PARCHMENT : DEEP_FOREST,
                         }}
@@ -471,13 +526,13 @@ export default function PackingListCreateScreen() {
           <View className="px-4 pt-5">
             <Text
               className="text-xs mb-1"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN }}
+              style={{ fontFamily: 'SourceSans3_600SemiBold', color: EARTH_GREEN }}
             >
               CHOOSE YOUR PACKING CATEGORIES
             </Text>
             <Text
               className="text-xs mb-3"
-              style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+              style={{ fontFamily: 'SourceSans3_400Regular', color: EARTH_GREEN }}
             >
               Pick what applies — we'll build your list and you can edit anything
             </Text>
@@ -498,7 +553,7 @@ export default function PackingListCreateScreen() {
                     <View
                       className="w-10 h-10 rounded-full items-center justify-center mr-3"
                       style={{
-                        backgroundColor: isSelected ? DEEP_FOREST : "#F4F2EC",
+                        backgroundColor: isSelected ? DEEP_FOREST : '#F4F2EC',
                       }}
                     >
                       <Ionicons
@@ -511,13 +566,16 @@ export default function PackingListCreateScreen() {
                     <View className="flex-1">
                       <Text
                         className="text-base"
-                        style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                        style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                       >
                         {template.name}
                       </Text>
                       <Text
                         className="text-xs"
-                        style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                        style={{
+                          fontFamily: 'SourceSans3_400Regular',
+                          color: EARTH_GREEN,
+                        }}
                       >
                         {template.items.length} items • {template.description}
                       </Text>
@@ -526,7 +584,7 @@ export default function PackingListCreateScreen() {
                     <View
                       className="w-6 h-6 rounded-full items-center justify-center"
                       style={{
-                        backgroundColor: isSelected ? DEEP_FOREST : "#F4F2EC",
+                        backgroundColor: isSelected ? DEEP_FOREST : '#F4F2EC',
                         borderWidth: isSelected ? 0 : 2,
                         borderColor: BORDER_SOFT,
                       }}
@@ -551,7 +609,9 @@ export default function PackingListCreateScreen() {
                 <View className="flex-row items-center flex-1 mr-3">
                   <View
                     className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                    style={{ backgroundColor: includeGearCloset ? DEEP_FOREST : "#F4F2EC" }}
+                    style={{
+                      backgroundColor: includeGearCloset ? DEEP_FOREST : '#F4F2EC',
+                    }}
                   >
                     <Ionicons
                       name="briefcase-outline"
@@ -562,21 +622,19 @@ export default function PackingListCreateScreen() {
                   <View className="flex-1">
                     <Text
                       className="text-base"
-                      style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                      style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
                     >
                       Include my Gear Closet
                     </Text>
                     <Text
                       className="text-xs"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                      style={{ fontFamily: 'SourceSans3_400Regular', color: EARTH_GREEN }}
                     >
-                      {gearLoading ? (
-                        "Loading gear..."
-                      ) : gearItems.length > 0 ? (
-                        `${gearItems.length} items from your gear collection`
-                      ) : (
-                        "No gear items yet"
-                      )}
+                      {gearLoading
+                        ? 'Loading gear...'
+                        : gearItems.length > 0
+                          ? `${gearItems.length} items from your gear collection`
+                          : 'No gear items yet'}
                     </Text>
                   </View>
                 </View>
@@ -586,7 +644,7 @@ export default function PackingListCreateScreen() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     setIncludeGearCloset(value);
                   }}
-                  trackColor={{ false: "#E6E1D6", true: DEEP_FOREST }}
+                  trackColor={{ false: '#E6E1D6', true: DEEP_FOREST }}
                   thumbColor={PARCHMENT}
                   disabled={gearItems.length === 0}
                 />
@@ -597,21 +655,24 @@ export default function PackingListCreateScreen() {
       </KeyboardAvoidingView>
 
       {/* Create Button */}
-      <SafeAreaView edges={["bottom"]} style={{ backgroundColor: PARCHMENT }}>
-        <View className="px-4 py-3" style={{ borderTopWidth: 1, borderColor: BORDER_SOFT }}>
+      <SafeAreaView edges={['bottom']} style={{ backgroundColor: PARCHMENT }}>
+        <View
+          className="px-4 py-3"
+          style={{ borderTopWidth: 1, borderColor: BORDER_SOFT }}
+        >
           <Pressable
             onPress={handleCreate}
             disabled={!canCreate}
             className="py-4 rounded-xl items-center"
             style={{
-              backgroundColor: canCreate ? DEEP_FOREST : "#E6E1D6",
+              backgroundColor: canCreate ? DEEP_FOREST : '#E6E1D6',
             }}
           >
             <Text
               style={{
-                fontFamily: "SourceSans3_700Bold",
+                fontFamily: 'SourceSans3_700Bold',
                 fontSize: 16,
-                color: canCreate ? PARCHMENT : "#999",
+                color: canCreate ? PARCHMENT : '#999',
               }}
             >
               Create Packing List
@@ -634,7 +695,7 @@ export default function PackingListCreateScreen() {
           <Pressable onPress={() => {}}>
             <View
               className="bg-parchment rounded-t-3xl"
-              style={{ paddingBottom: Platform.OS === "ios" ? 34 : 20 }}
+              style={{ paddingBottom: Platform.OS === 'ios' ? 34 : 20 }}
             >
               {/* Sheet Handle */}
               <View className="items-center py-3">
@@ -644,13 +705,21 @@ export default function PackingListCreateScreen() {
               {/* Sheet Header */}
               <View className="px-5 pb-3">
                 <Text
-                  style={{ fontFamily: "Raleway_700Bold", fontSize: 18, color: DEEP_FOREST }}
+                  style={{
+                    fontFamily: 'Raleway_700Bold',
+                    fontSize: 18,
+                    color: DEEP_FOREST,
+                  }}
                 >
                   Change Season
                 </Text>
                 <Text
                   className="mt-1"
-                  style={{ fontFamily: "SourceSans3_400Regular", fontSize: 14, color: EARTH_GREEN }}
+                  style={{
+                    fontFamily: 'SourceSans3_400Regular',
+                    fontSize: 14,
+                    color: EARTH_GREEN,
+                  }}
                 >
                   This will override the auto-detected season for this trip
                 </Text>
@@ -672,7 +741,7 @@ export default function PackingListCreateScreen() {
                     >
                       <View
                         className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                        style={{ backgroundColor: isSelected ? DEEP_FOREST : "#F4F2EC" }}
+                        style={{ backgroundColor: isSelected ? DEEP_FOREST : '#F4F2EC' }}
                       >
                         <Ionicons
                           name={option.icon as any}
@@ -682,7 +751,11 @@ export default function PackingListCreateScreen() {
                       </View>
                       <Text
                         className="flex-1"
-                        style={{ fontFamily: "Raleway_700Bold", fontSize: 16, color: DEEP_FOREST }}
+                        style={{
+                          fontFamily: 'Raleway_700Bold',
+                          fontSize: 16,
+                          color: DEEP_FOREST,
+                        }}
                       >
                         {option.label}
                       </Text>
@@ -700,10 +773,14 @@ export default function PackingListCreateScreen() {
                   <Pressable
                     onPress={handleResetToAuto}
                     className="py-3 rounded-xl items-center"
-                    style={{ backgroundColor: "#F4F2EC" }}
+                    style={{ backgroundColor: '#F4F2EC' }}
                   >
                     <Text
-                      style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: EARTH_GREEN }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        fontSize: 14,
+                        color: EARTH_GREEN,
+                      }}
                     >
                       Reset to Auto
                     </Text>
@@ -718,7 +795,11 @@ export default function PackingListCreateScreen() {
                   className="py-3 rounded-xl items-center"
                 >
                   <Text
-                    style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: EARTH_GREEN }}
+                    style={{
+                      fontFamily: 'SourceSans3_600SemiBold',
+                      fontSize: 14,
+                      color: EARTH_GREEN,
+                    }}
                   >
                     Cancel
                   </Text>

@@ -1,15 +1,15 @@
 /**
  * Moderation Service
- * 
+ *
  * Handles auto-hide moderation based on community downvotes.
- * 
+ *
  * Rule: Any content reaching 3+ downvotes becomes hidden and enters moderator review.
- * 
+ *
  * Hidden content:
  * - Not shown in public feeds
  * - Author can still see their own content with "Hidden pending review" badge
  * - Appears in moderator/admin review queues
- * 
+ *
  * Once hidden, content stays hidden until moderator action (no auto-unhide).
  */
 
@@ -43,9 +43,9 @@ export interface ModerationFields {
 /**
  * Check if content should be hidden based on downvote count
  * and apply hiding if threshold is reached.
- * 
+ *
  * Call this AFTER a vote transaction updates the counts.
- * 
+ *
  * @param collectionPath - The Firestore collection path (e.g., 'feedback', 'tips')
  * @param itemId - The document ID
  * @param currentDownvotes - The current downvote count after the vote
@@ -54,7 +54,7 @@ export interface ModerationFields {
 export async function checkAndApplyAutoHide(
   collectionPath: string,
   itemId: string,
-  currentDownvotes: number
+  currentDownvotes: number,
 ): Promise<boolean> {
   // Only trigger if we've hit the threshold
   if (currentDownvotes < AUTO_HIDE_DOWNVOTE_THRESHOLD) {
@@ -85,7 +85,9 @@ export async function checkAndApplyAutoHide(
       reviewQueueStatus: 'PENDING',
     });
 
-    console.log(`[Moderation] Auto-hidden ${collectionPath}/${itemId} - reached ${currentDownvotes} downvotes`);
+    console.log(
+      `[Moderation] Auto-hidden ${collectionPath}/${itemId} - reached ${currentDownvotes} downvotes`,
+    );
     return true;
   } catch (error) {
     console.error(`[Moderation] Failed to auto-hide ${collectionPath}/${itemId}:`, error);
@@ -100,7 +102,7 @@ export async function moderatorApprove(
   collectionPath: string,
   itemId: string,
   moderatorId: string,
-  notes?: string
+  notes?: string,
 ): Promise<void> {
   const itemRef = doc(db, collectionPath, itemId);
 
@@ -123,7 +125,7 @@ export async function moderatorReject(
   collectionPath: string,
   itemId: string,
   moderatorId: string,
-  notes?: string
+  notes?: string,
 ): Promise<void> {
   const itemRef = doc(db, collectionPath, itemId);
 
@@ -144,11 +146,11 @@ export async function moderatorReject(
  */
 export async function isContentHidden(
   collectionPath: string,
-  itemId: string
+  itemId: string,
 ): Promise<boolean> {
   const itemRef = doc(db, collectionPath, itemId);
   const snap = await getDoc(itemRef);
-  
+
   if (!snap.exists()) return false;
   return snap.data().isHidden === true;
 }
@@ -157,7 +159,10 @@ export async function isContentHidden(
  * Check if current user is the author of content
  * (for showing hidden content to its author)
  */
-export function isAuthor(itemAuthorId: string, currentUserId: string | undefined): boolean {
+export function isAuthor(
+  itemAuthorId: string,
+  currentUserId: string | undefined,
+): boolean {
   if (!currentUserId) return false;
   return itemAuthorId === currentUserId;
 }
@@ -167,14 +172,14 @@ export function isAuthor(itemAuthorId: string, currentUserId: string | undefined
  */
 export function shouldShowInFeed<T extends { isHidden?: boolean; authorId?: string }>(
   item: T,
-  currentUserId?: string
+  currentUserId?: string,
 ): boolean {
   // Not hidden - always show
   if (!item.isHidden) return true;
-  
+
   // Hidden but user is author - show with badge
   if (currentUserId && item.authorId === currentUserId) return true;
-  
+
   // Hidden and not author - don't show
   return false;
 }

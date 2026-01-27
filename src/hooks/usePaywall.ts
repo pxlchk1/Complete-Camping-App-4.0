@@ -3,12 +3,15 @@
  * Provides helper functions for paywall navigation and Pro feature gating
  */
 
-import { useNavigation } from "@react-navigation/native";
-import { useSubscriptionStore } from "../state/subscriptionStore";
-import { SUBSCRIPTIONS_ENABLED, PAYWALL_ENABLED } from "../config/subscriptions";
-import { useAuth } from "../context/AuthContext";
-import { getPaywallVariantAndTrack, type PaywallVariant } from "../services/proAttemptService";
-import type { RootStackNavigationProp } from "../navigation/types";
+import { useNavigation } from '@react-navigation/native';
+import { useSubscriptionStore } from '../state/subscriptionStore';
+import { SUBSCRIPTIONS_ENABLED, PAYWALL_ENABLED } from '../config/subscriptions';
+import { useAuth } from '../context/AuthContext';
+import {
+  getPaywallVariantAndTrack,
+  type PaywallVariant,
+} from '../services/proAttemptService';
+import type { RootStackNavigationProp } from '../navigation/types';
 
 export const usePaywall = () => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -37,21 +40,21 @@ export const usePaywall = () => {
    */
   const showPaywall = (variant?: PaywallVariant) => {
     if (!PAYWALL_ENABLED) {
-      console.log("[Paywall] Paywall disabled via feature flag");
+      console.log('[Paywall] Paywall disabled via feature flag');
       return;
     }
-    navigation.navigate("Paywall", { variant });
+    navigation.navigate('Paywall', { variant });
   };
 
   /**
    * Gate a Pro feature (sync version)
    * Returns true if user can access, false if paywall should be shown
    * Tracks Pro attempts asynchronously in background
-   * 
+   *
    * Usage:
    * ```
    * const { gateFeature } = usePaywall();
-   * 
+   *
    * const handleProFeature = () => {
    *   if (!gateFeature()) return;
    *   // Pro feature logic here
@@ -85,11 +88,11 @@ export const usePaywall = () => {
 
   /**
    * Conditional rendering helper for Pro features
-   * 
+   *
    * Usage:
    * ```
    * const { renderProFeature } = usePaywall();
-   * 
+   *
    * {renderProFeature(
    *   <ProFeatureComponent />,
    *   <UpgradePrompt />
@@ -98,7 +101,7 @@ export const usePaywall = () => {
    */
   const renderProFeature = (
     proContent: React.ReactNode,
-    fallbackContent?: React.ReactNode
+    fallbackContent?: React.ReactNode,
   ): React.ReactNode => {
     if (hasProAccess()) {
       return proContent;

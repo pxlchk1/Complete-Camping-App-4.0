@@ -65,10 +65,7 @@ export const gearReviewsService = {
 
   // Get all gear reviews ordered by createdAt desc
   async getReviews(): Promise<GearReview[]> {
-    const q = query(
-      collection(db, 'gearReviews'),
-      orderBy('createdAt', 'desc')
-    );
+    const q = query(collection(db, 'gearReviews'), orderBy('createdAt', 'desc'));
     const snapshot = await getDocs(q);
 
     return snapshot.docs.map((doc) => {
@@ -110,7 +107,7 @@ export const gearReviewsService = {
       review?: string;
       pros?: string;
       cons?: string;
-    }
+    },
   ): Promise<void> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to update a review');

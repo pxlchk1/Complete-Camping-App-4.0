@@ -9,7 +9,14 @@ This document defines the complete design system for the Complete Camping App. *
 **Import from:** `src/theme/theme.ts`
 
 ```typescript
-import { colors, fonts, spacing, radius, textStyles, componentStyles } from "../theme/theme";
+import {
+  colors,
+  fonts,
+  spacing,
+  radius,
+  textStyles,
+  componentStyles,
+} from '../theme/theme';
 ```
 
 ---
@@ -19,19 +26,19 @@ import { colors, fonts, spacing, radius, textStyles, componentStyles } from "../
 ### Primary Palette
 
 ```typescript
-colors.deepForest    // #485952 - Primary text, headings, icons, buttons
-colors.earthGreen    // #828872 - Secondary text, muted labels
-colors.graniteGold   // #AC9A6D - Accents, highlights (use sparingly)
-colors.riverRock     // #607A77 - Status badges, card accents
-colors.sierraSky     // #92AFB1 - Soft backgrounds, dividers
-colors.parchment     // #F4EBD0 - Universal background
+colors.deepForest; // #485952 - Primary text, headings, icons, buttons
+colors.earthGreen; // #828872 - Secondary text, muted labels
+colors.graniteGold; // #AC9A6D - Accents, highlights (use sparingly)
+colors.riverRock; // #607A77 - Status badges, card accents
+colors.sierraSky; // #92AFB1 - Soft backgrounds, dividers
+colors.parchment; // #F4EBD0 - Universal background
 ```
 
 ### Derived Neutrals
 
 ```typescript
-colors.borderSoft    // #D5C8A2 - Card borders, dividers
-colors.cardFill      // #F7EFD8 - Card backgrounds (warmer than parchment)
+colors.borderSoft; // #D5C8A2 - Card borders, dividers
+colors.cardFill; // #F7EFD8 - Card backgrounds (warmer than parchment)
 ```
 
 ### ❌ NEVER USE
@@ -49,27 +56,27 @@ colors.cardFill      // #F7EFD8 - Card backgrounds (warmer than parchment)
 
 ```typescript
 // Display fonts (Raleway) - for headers and titles
-fonts.displayBold         // Raleway_700Bold - Hero titles
-fonts.displaySemibold     // Raleway_600SemiBold - Section headers
-fonts.displayRegular      // Raleway_600SemiBold - Card titles
+fonts.displayBold; // Raleway_700Bold - Hero titles
+fonts.displaySemibold; // Raleway_600SemiBold - Section headers
+fonts.displayRegular; // Raleway_600SemiBold - Card titles
 
 // Body fonts (Source Sans 3) - for body text, labels, buttons
-fonts.bodyBold            // SourceSans3_700Bold
-fonts.bodySemibold        // SourceSans3_600SemiBold - Buttons, labels
-fonts.bodyRegular         // SourceSans3_400Regular - Body text
+fonts.bodyBold; // SourceSans3_700Bold
+fonts.bodySemibold; // SourceSans3_600SemiBold - Buttons, labels
+fonts.bodyRegular; // SourceSans3_400Regular - Body text
 
 // Accent font (Satisfy) - decorative only, use VERY sparingly
-fonts.accent              // Satisfy_400Regular
+fonts.accent; // Satisfy_400Regular
 ```
 
 ### Font Sizes
 
 ```typescript
-fontSizes.xl    // 38px - Hero titles
-fontSizes.lg    // 30px - Section headers
-fontSizes.md    // 20px - Card titles
-fontSizes.sm    // 16px - Body text
-fontSizes.xs    // 13px - Labels, metadata
+fontSizes.xl; // 38px - Hero titles
+fontSizes.lg; // 30px - Section headers
+fontSizes.md; // 20px - Card titles
+fontSizes.sm; // 16px - Body text
+fontSizes.xs; // 13px - Labels, metadata
 ```
 
 ### Pre-defined Text Styles
@@ -107,24 +114,24 @@ import { Heading1, Heading2, SectionTitle, BodyText, Caption } from "../componen
 ## Spacing
 
 ```typescript
-spacing.xxs    // 4px
-spacing.xs     // 8px
-spacing.sm     // 12px
-spacing.md     // 16px
-spacing.lg     // 24px
-spacing.xl     // 32px
+spacing.xxs; // 4px
+spacing.xs; // 8px
+spacing.sm; // 12px
+spacing.md; // 16px
+spacing.lg; // 24px
+spacing.xl; // 32px
 ```
 
 ### Layout Constants
 
 ```typescript
-import { layout } from "../theme/theme";
+import { layout } from '../theme/theme';
 
-layout.screenPadding          // 24 - Horizontal padding
-layout.sectionMarginTop       // 24 - Space between sections
-layout.cardSpacing            // 16 - Space between cards
-layout.scrollBottomPadding    // 32 - Bottom padding in ScrollView
-layout.minTapTarget           // 44 - Minimum touch target size
+layout.screenPadding; // 24 - Horizontal padding
+layout.sectionMarginTop; // 24 - Space between sections
+layout.cardSpacing; // 16 - Space between cards
+layout.scrollBottomPadding; // 32 - Bottom padding in ScrollView
+layout.minTapTarget; // 44 - Minimum touch target size
 ```
 
 ---
@@ -132,10 +139,10 @@ layout.minTapTarget           // 44 - Minimum touch target size
 ## Border Radius
 
 ```typescript
-radius.sm      // 8px
-radius.md      // 12px
-radius.lg      // 16px
-radius.pill    // 999px - Full rounded (buttons, pills)
+radius.sm; // 8px
+radius.md; // 12px
+radius.lg; // 16px
+radius.pill; // 999px - Full rounded (buttons, pills)
 ```
 
 ---
@@ -217,7 +224,7 @@ import { iconColors } from "../theme/theme";
 ## Shadows
 
 ```typescript
-import { shadows } from "../theme/theme";
+import { shadows } from '../theme/theme';
 
 const styles = StyleSheet.create({
   myCard: {
@@ -312,32 +319,38 @@ import { componentStyles, textStyles, layout } from "../theme/theme";
 ### Common Patterns
 
 **Screen wrapper:**
+
 ```typescript
 <View style={componentStyles.screen}>
   <View style={componentStyles.screenInner}>
 ```
 
 **Section header:**
+
 ```typescript
 <Text style={textStyles.headingSection}>Section</Text>
 ```
 
 **Body text:**
+
 ```typescript
 <Text style={textStyles.body}>Content</Text>
 ```
 
 **Card:**
+
 ```typescript
 <View style={componentStyles.card}>
 ```
 
 **Primary button:**
+
 ```typescript
 <Button variant="primary">Action</Button>
 ```
 
 **Icon:**
+
 ```typescript
 <Ionicons name="icon-name" size={24} color={iconColors.default} />
 ```

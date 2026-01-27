@@ -3,25 +3,19 @@
  * Handles campground invitation acceptance via deep link
  */
 
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { auth } from "../config/firebase";
+import React, { useEffect, useState } from 'react';
+import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { auth } from '../config/firebase';
 import {
   getInvitationData,
   acceptInvitation,
   InvitationData,
-} from "../services/deepLinkService";
-import { RootStackParamList } from "../navigation/types";
+} from '../services/deepLinkService';
+import { RootStackParamList } from '../navigation/types';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -30,9 +24,9 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
-} from "../constants/colors";
+} from '../constants/colors';
 
-type AcceptInvitationRouteProp = RouteProp<RootStackParamList, "AcceptInvitation">;
+type AcceptInvitationRouteProp = RouteProp<RootStackParamList, 'AcceptInvitation'>;
 
 export default function AcceptInvitationScreen() {
   const navigation = useNavigation();
@@ -56,24 +50,24 @@ export default function AcceptInvitationScreen() {
       const data = await getInvitationData(invitationToken);
 
       if (!data) {
-        setError("This invitation link is invalid or has been removed.");
+        setError('This invitation link is invalid or has been removed.');
         return;
       }
 
-      if (data.status === "expired") {
-        setError("This invitation has expired. Please ask for a new invitation.");
+      if (data.status === 'expired') {
+        setError('This invitation has expired. Please ask for a new invitation.');
         return;
       }
 
-      if (data.status === "accepted") {
-        setError("This invitation has already been accepted.");
+      if (data.status === 'accepted') {
+        setError('This invitation has already been accepted.');
         return;
       }
 
       setInvitation(data);
     } catch (err: any) {
-      console.error("Error loading invitation:", err);
-      setError("Failed to load invitation. Please try again.");
+      console.error('Error loading invitation:', err);
+      setError('Failed to load invitation. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -85,17 +79,17 @@ export default function AcceptInvitationScreen() {
     if (!user) {
       // Redirect to sign up with invitation token
       Alert.alert(
-        "Sign In Required",
-        "Please sign in or create an account to accept this invitation.",
+        'Sign In Required',
+        'Please sign in or create an account to accept this invitation.',
         [
           {
-            text: "Sign In",
+            text: 'Sign In',
             onPress: () => {
-              navigation.navigate("Auth" as any, { invitationToken });
+              navigation.navigate('Auth' as any, { invitationToken });
             },
           },
-          { text: "Cancel", style: "cancel" },
-        ]
+          { text: 'Cancel', style: 'cancel' },
+        ],
       );
       return;
     }
@@ -105,9 +99,9 @@ export default function AcceptInvitationScreen() {
     // Check if email matches
     if (user.email?.toLowerCase() !== invitation.recipientEmail.toLowerCase()) {
       Alert.alert(
-        "Wrong Account",
+        'Wrong Account',
         `This invitation was sent to ${invitation.recipientEmail}. Please sign out and sign in with that email address.`,
-        [{ text: "OK" }]
+        [{ text: 'OK' }],
       );
       return;
     }
@@ -119,20 +113,20 @@ export default function AcceptInvitationScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       Alert.alert(
-        "Welcome to the Campground! 🏕️",
+        'Welcome to the Campground! 🏕️',
         `You've successfully joined ${invitation.inviterName}'s campground. You'll now be included in their camping trips.`,
         [
           {
-            text: "View My Campground",
+            text: 'View My Campground',
             onPress: () => {
-              navigation.navigate("MyCampground" as any);
+              navigation.navigate('MyCampground' as any);
             },
           },
-        ]
+        ],
       );
     } catch (err: any) {
-      console.error("Error accepting invitation:", err);
-      Alert.alert("Error", err.message || "Failed to accept invitation");
+      console.error('Error accepting invitation:', err);
+      Alert.alert('Error', err.message || 'Failed to accept invitation');
     } finally {
       setAccepting(false);
     }
@@ -145,7 +139,7 @@ export default function AcceptInvitationScreen() {
           <ActivityIndicator size="large" color={EARTH_GREEN} />
           <Text
             className="mt-4"
-            style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+            style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
           >
             Loading invitation...
           </Text>
@@ -161,13 +155,13 @@ export default function AcceptInvitationScreen() {
           <Ionicons name="alert-circle" size={64} color={TEXT_MUTED} />
           <Text
             className="text-xl mt-4 mb-2 text-center"
-            style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+            style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
           >
             Invitation Not Available
           </Text>
           <Text
             className="text-center mb-6"
-            style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+            style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
           >
             {error}
           </Text>
@@ -176,7 +170,7 @@ export default function AcceptInvitationScreen() {
             className="px-6 py-3 rounded-xl active:opacity-70"
             style={{ backgroundColor: DEEP_FOREST }}
           >
-            <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}>
+            <Text style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}>
               Go Back
             </Text>
           </Pressable>
@@ -198,7 +192,7 @@ export default function AcceptInvitationScreen() {
           </View>
           <Text
             className="text-3xl text-center"
-            style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+            style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
           >
             You're Invited!
           </Text>
@@ -211,7 +205,7 @@ export default function AcceptInvitationScreen() {
         >
           <Text
             className="text-lg mb-4 text-center"
-            style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+            style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_PRIMARY_STRONG }}
           >
             {invitation.inviterName} wants you to join their campground
           </Text>
@@ -221,7 +215,7 @@ export default function AcceptInvitationScreen() {
               <Ionicons name="person" size={20} color={EARTH_GREEN} />
               <Text
                 className="ml-3"
-                style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
               >
                 Invited as: {invitation.recipientName}
               </Text>
@@ -230,7 +224,7 @@ export default function AcceptInvitationScreen() {
               <Ionicons name="mail" size={20} color={EARTH_GREEN} />
               <Text
                 className="ml-3"
-                style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
               >
                 {invitation.recipientEmail}
               </Text>
@@ -242,7 +236,7 @@ export default function AcceptInvitationScreen() {
         <View className="mb-6">
           <Text
             className="text-base mb-3"
-            style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+            style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_PRIMARY_STRONG }}
           >
             By joining their campground, you'll:
           </Text>
@@ -251,7 +245,7 @@ export default function AcceptInvitationScreen() {
               <Ionicons name="checkmark-circle" size={20} color={EARTH_GREEN} />
               <Text
                 className="ml-2 flex-1"
-                style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
               >
                 Be included in their camping trip plans
               </Text>
@@ -260,7 +254,7 @@ export default function AcceptInvitationScreen() {
               <Ionicons name="checkmark-circle" size={20} color={EARTH_GREEN} />
               <Text
                 className="ml-2 flex-1"
-                style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
               >
                 Share packing lists and meal plans
               </Text>
@@ -269,7 +263,7 @@ export default function AcceptInvitationScreen() {
               <Ionicons name="checkmark-circle" size={20} color={EARTH_GREEN} />
               <Text
                 className="ml-2 flex-1"
-                style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}
               >
                 Coordinate gear and supplies together
               </Text>
@@ -287,7 +281,13 @@ export default function AcceptInvitationScreen() {
           {accepting ? (
             <ActivityIndicator color={PARCHMENT} />
           ) : (
-            <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 15, color: PARCHMENT }}>
+            <Text
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                fontSize: 15,
+                color: PARCHMENT,
+              }}
+            >
               Accept Invitation
             </Text>
           )}
@@ -298,7 +298,7 @@ export default function AcceptInvitationScreen() {
           onPress={() => navigation.goBack()}
           className="py-3 items-center active:opacity-70"
         >
-          <Text style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+          <Text style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_SECONDARY }}>
             Not Now
           </Text>
         </Pressable>

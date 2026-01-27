@@ -105,26 +105,22 @@ export default function ItineraryLinksSection({
   };
 
   const handleDeleteLink = (link: ItineraryLink) => {
-    Alert.alert(
-      'Delete link',
-      `Are you sure you want to delete "${link.title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteItineraryLink(tripId, link.id);
-              await loadLinks();
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch {
-              Alert.alert('Error', 'Failed to delete link.');
-            }
-          },
+    Alert.alert('Delete link', `Are you sure you want to delete "${link.title}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteItineraryLink(tripId, link.id);
+            await loadLinks();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch {
+            Alert.alert('Error', 'Failed to delete link.');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleCopyLink = async (link: ItineraryLink) => {
@@ -138,17 +134,13 @@ export default function ItineraryLinksSection({
   };
 
   const handleLinkActions = (link: ItineraryLink) => {
-    Alert.alert(
-      link.title,
-      undefined,
-      [
-        { text: 'Open', onPress: () => handleOpenLink(link) },
-        { text: 'Edit', onPress: () => handleEditLink(link) },
-        { text: 'Copy link', onPress: () => handleCopyLink(link) },
-        { text: 'Delete', style: 'destructive', onPress: () => handleDeleteLink(link) },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
+    Alert.alert(link.title, undefined, [
+      { text: 'Open', onPress: () => handleOpenLink(link) },
+      { text: 'Edit', onPress: () => handleEditLink(link) },
+      { text: 'Copy link', onPress: () => handleCopyLink(link) },
+      { text: 'Delete', style: 'destructive', onPress: () => handleDeleteLink(link) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const getDayLabel = (dayIndex: number): string => {
@@ -246,7 +238,9 @@ export default function ItineraryLinksSection({
                         <Text style={styles.providerChipText}>{link.providerLabel}</Text>
                       </View>
                       {link.moment && (
-                        <Text style={styles.momentText}>{getMomentLabel(link.moment)}</Text>
+                        <Text style={styles.momentText}>
+                          {getMomentLabel(link.moment)}
+                        </Text>
                       )}
                     </View>
                   </View>

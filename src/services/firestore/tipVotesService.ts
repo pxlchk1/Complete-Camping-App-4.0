@@ -12,7 +12,10 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db, auth } from '../../config/firebase';
-import { checkAndApplyAutoHide, AUTO_HIDE_DOWNVOTE_THRESHOLD } from '../moderationService';
+import {
+  checkAndApplyAutoHide,
+  AUTO_HIDE_DOWNVOTE_THRESHOLD,
+} from '../moderationService';
 
 export interface TipVote {
   userId: string;
@@ -47,11 +50,14 @@ export const tipVotesService = {
   },
 
   // Get the vote summary (score and counts) for a tip
-  async getVoteSummary(tipId: string): Promise<{ score: number; up: number; down: number }> {
+  async getVoteSummary(
+    tipId: string,
+  ): Promise<{ score: number; up: number; down: number }> {
     const votesCol = collection(db, 'tips', tipId, 'votes');
     const snap = await getDocs(votesCol);
-    let up = 0, down = 0;
-    snap.forEach(doc => {
+    let up = 0,
+      down = 0;
+    snap.forEach((doc) => {
       const v = doc.data() as TipVote;
       if (v.voteType === 'up') up++;
       if (v.voteType === 'down') down++;
@@ -61,14 +67,17 @@ export const tipVotesService = {
 
   // Transactional voting (handles toggling and score update)
   // Also checks downvote threshold for auto-hide moderation.
-  async vote(tipId: string, voteType: 'up' | 'down'): Promise<{ wasAutoHidden?: boolean }> {
+  async vote(
+    tipId: string,
+    voteType: 'up' | 'down',
+  ): Promise<{ wasAutoHidden?: boolean }> {
     const user = auth.currentUser;
     if (!user) throw new Error('Must be signed in to vote');
     const voteDocRef = doc(db, 'tips', tipId, 'votes', user.uid);
     const tipDocRef = doc(db, 'tips', tipId);
-    
+
     let finalDownvotes = 0;
-    
+
     await runTransaction(db, async (transaction) => {
       const voteSnap = await transaction.get(voteDocRef);
       const tipSnap = await transaction.get(tipDocRef);
@@ -87,16 +96,16 @@ export const tipVotesService = {
       transaction.set(voteDocRef, { userId: user.uid, voteType });
       // Update tip doc
       transaction.update(tipDocRef, { upvotes, downvotes });
-      
+
       finalDownvotes = downvotes;
     });
-    
+
     // After transaction completes, check if we need to auto-hide
     let wasAutoHidden = false;
     if (finalDownvotes >= AUTO_HIDE_DOWNVOTE_THRESHOLD) {
       wasAutoHidden = await checkAndApplyAutoHide('tips', tipId, finalDownvotes);
     }
-    
+
     return { wasAutoHidden };
   },
 };

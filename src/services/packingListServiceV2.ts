@@ -2,18 +2,18 @@
  * 🚫 LOCKED UX: PACKING LIST SERVICE (DO NOT REFACTOR BEHAVIOR)
  * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  * This service handles packing list operations for trips.
- * 
+ *
  * PROHIBITED CHANGES:
  * - Do not call initializeTripPackingList on screen mount
  * - Do not auto-seed items without explicit user action
  * - Do not create empty category shells
  * - Do not change the Firestore path structure
- * 
+ *
  * REQUIRED BEHAVIOR:
  * - Builder is the ONLY path to create starter items
  * - Items must use categoryKey from canonical enum
  * - hasTripPackingItems is the source of truth for "has built a list"
- * 
+ *
  * Firestore path: /users/{userId}/trips/{tripId}/packingList/{itemId}
  */
 
@@ -28,29 +28,29 @@ import {
   writeBatch,
   serverTimestamp,
   Timestamp,
-} from "firebase/firestore";
-import { db } from "../config/firebase";
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 import {
   PackingLibraryCategory,
   PackingLibraryItem,
   TripPackingItem,
   PackingSuggestion,
   PackingCategoryGroup,
-} from "../types/packingLibrary";
+} from '../types/packingLibrary';
 import {
   PACKING_LIBRARY_CATEGORIES,
   PACKING_LIBRARY_ITEMS,
   getBaseItems,
   getSuggestedItems,
   getCategoryById,
-} from "../data/packingLibrarySeed";
+} from '../data/packingLibrarySeed';
 import {
   TripContext,
   buildTripContext,
   PACKING_LIST_VERSION,
   normalizeCategoryId,
-} from "../utils/packingUtils";
-import { Trip } from "../types/camping";
+} from '../utils/packingUtils';
+import { Trip } from '../types/camping';
 
 // ============================================================================
 // TYPES
@@ -96,14 +96,14 @@ export function getLibraryItems(): PackingLibraryItem[] {
  */
 export async function hasTripPackingItems(
   userId: string,
-  tripId: string
+  tripId: string,
 ): Promise<boolean> {
   try {
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const snapshot = await getDocs(packingRef);
     return !snapshot.empty;
   } catch (error) {
-    console.error("Error checking packing items:", error);
+    console.error('Error checking packing items:', error);
     return false;
   }
 }
@@ -113,20 +113,20 @@ export async function hasTripPackingItems(
  */
 export async function needsInitialization(
   userId: string,
-  tripId: string
+  tripId: string,
 ): Promise<boolean> {
   try {
     // Check trip document for initialization flag
-    const tripRef = doc(db, "users", userId, "trips", tripId);
+    const tripRef = doc(db, 'users', userId, 'trips', tripId);
     const tripSnap = await getDoc(tripRef);
-    
+
     if (!tripSnap.exists()) {
-      console.warn("Trip not found for packing initialization check:", tripId);
+      console.warn('Trip not found for packing initialization check:', tripId);
       return false;
     }
 
     const tripData = tripSnap.data();
-    
+
     // If not initialized, needs initialization
     if (!tripData.packingListInitialized) {
       return true;
@@ -138,16 +138,16 @@ export async function needsInitialization(
     }
 
     // Check if list is actually empty
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const snapshot = await getDocs(packingRef);
-    
+
     if (snapshot.empty) {
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error("Error checking packing initialization:", error);
+    console.error('Error checking packing initialization:', error);
     return false;
   }
 }
@@ -159,12 +159,13 @@ export async function needsInitialization(
 export async function initializeTripPackingList(
   userId: string,
   tripId: string,
-  trip: Trip
+  trip: Trip,
 ): Promise<InitializationResult> {
   try {
     // Build trip context from trip data
     const startDate = trip.startDate ? new Date(trip.startDate) : new Date();
-    const latitude = trip.destination?.coordinates?.latitude ?? trip.coordinates?.latitude;
+    const latitude =
+      trip.destination?.coordinates?.latitude ?? trip.coordinates?.latitude;
     const locationName = trip.destination?.name ?? trip.locationName;
 
     const context = buildTripContext(startDate, {
@@ -173,39 +174,43 @@ export async function initializeTripPackingList(
       locationName,
     });
 
-    console.log("[PackingV2] Initializing packing list with context:", context);
+    console.log('[PackingV2] Initializing packing list with context:', context);
 
     // Get base items for this camping style
     const baseItems = getBaseItems(trip.campingStyle);
 
     // Also get initial suggestions that are high-priority (priority >= 4)
-    const suggestedItems = getSuggestedItems(context).filter(item => item.priority >= 4);
+    const suggestedItems = getSuggestedItems(context).filter(
+      (item) => item.priority >= 4,
+    );
 
     // Combine base + high-priority suggestions
     const allItems = [...baseItems, ...suggestedItems];
 
     // Deduplicate by name (in case of overlaps)
     const uniqueItems = allItems.reduce((acc, item) => {
-      if (!acc.find(i => i.name === item.name)) {
+      if (!acc.find((i) => i.name === item.name)) {
         acc.push(item);
       }
       return acc;
     }, [] as PackingLibraryItem[]);
 
-    console.log(`[PackingV2] Adding ${uniqueItems.length} items (${baseItems.length} base + ${suggestedItems.length} suggested)`);
+    console.log(
+      `[PackingV2] Adding ${uniqueItems.length} items (${baseItems.length} base + ${suggestedItems.length} suggested)`,
+    );
 
     // Batch write all items
     const batch = writeBatch(db);
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
 
     uniqueItems.forEach((item) => {
       const itemRef = doc(packingRef);
-      const tripItem: Omit<TripPackingItem, "id"> = {
+      const tripItem: Omit<TripPackingItem, 'id'> = {
         name: item.name,
         categoryId: item.categoryId,
         qty: item.defaultQty,
         isPacked: false,
-        source: item.tags.base ? "base" : "suggested",
+        source: item.tags.base ? 'base' : 'suggested',
         libraryItemId: item.id,
         addedReason: item.tags.base ? undefined : getAddedReason(context),
         createdAt: serverTimestamp() as Timestamp,
@@ -215,7 +220,7 @@ export async function initializeTripPackingList(
     });
 
     // Update trip document with initialization flag
-    const tripRef = doc(db, "users", userId, "trips", tripId);
+    const tripRef = doc(db, 'users', userId, 'trips', tripId);
     batch.update(tripRef, {
       packingListInitialized: true,
       packingListVersion: PACKING_LIST_VERSION,
@@ -224,14 +229,16 @@ export async function initializeTripPackingList(
 
     await batch.commit();
 
-    console.log(`[PackingV2] Successfully initialized packing list with ${uniqueItems.length} items`);
+    console.log(
+      `[PackingV2] Successfully initialized packing list with ${uniqueItems.length} items`,
+    );
 
     return {
       success: true,
       itemCount: uniqueItems.length,
     };
   } catch (error: any) {
-    console.error("Error initializing packing list:", error);
+    console.error('Error initializing packing list:', error);
     return {
       success: false,
       itemCount: 0,
@@ -245,17 +252,17 @@ export async function initializeTripPackingList(
  */
 function getAddedReason(context: TripContext): string {
   const reasons: string[] = [];
-  
-  if (context.season === "winter") reasons.push("Winter");
-  if (context.tempBand === "below_freezing") reasons.push("Freezing temps");
-  else if (context.tempBand === "cold") reasons.push("Cold weather");
-  else if (context.tempBand === "hot") reasons.push("Hot weather");
-  
-  if (context.windy) reasons.push("Windy");
-  if (context.precip === "snow") reasons.push("Snow");
-  else if (context.precip === "rain") reasons.push("Rain");
-  
-  return reasons.slice(0, 2).join(", ") || "Recommended";
+
+  if (context.season === 'winter') reasons.push('Winter');
+  if (context.tempBand === 'below_freezing') reasons.push('Freezing temps');
+  else if (context.tempBand === 'cold') reasons.push('Cold weather');
+  else if (context.tempBand === 'hot') reasons.push('Hot weather');
+
+  if (context.windy) reasons.push('Windy');
+  if (context.precip === 'snow') reasons.push('Snow');
+  else if (context.precip === 'rain') reasons.push('Rain');
+
+  return reasons.slice(0, 2).join(', ') || 'Recommended';
 }
 
 // ============================================================================
@@ -268,12 +275,13 @@ function getAddedReason(context: TripContext): string {
 export async function computeSuggestions(
   userId: string,
   tripId: string,
-  trip: Trip
+  trip: Trip,
 ): Promise<SuggestionsResult> {
   try {
     // Build trip context
     const startDate = trip.startDate ? new Date(trip.startDate) : new Date();
-    const latitude = trip.destination?.coordinates?.latitude ?? trip.coordinates?.latitude;
+    const latitude =
+      trip.destination?.coordinates?.latitude ?? trip.coordinates?.latitude;
     const locationName = trip.destination?.name ?? trip.locationName;
 
     const context = buildTripContext(startDate, {
@@ -286,11 +294,11 @@ export async function computeSuggestions(
     const allSuggested = getSuggestedItems(context);
 
     // Get current packing list items (to exclude already added)
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const packingSnapshot = await getDocs(packingRef);
     const existingLibraryIds = new Set<string>();
     const existingNames = new Set<string>();
-    
+
     packingSnapshot.docs.forEach((doc) => {
       const data = doc.data();
       if (data.libraryItemId) existingLibraryIds.add(data.libraryItemId);
@@ -298,13 +306,20 @@ export async function computeSuggestions(
     });
 
     // Get dismissed suggestions
-    const suggestionsRef = collection(db, "users", userId, "trips", tripId, "packingSuggestions");
+    const suggestionsRef = collection(
+      db,
+      'users',
+      userId,
+      'trips',
+      tripId,
+      'packingSuggestions',
+    );
     const suggestionsSnapshot = await getDocs(suggestionsRef);
     const dismissedIds = new Set<string>();
-    
+
     suggestionsSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      if (data.status === "dismissed") {
+      if (data.status === 'dismissed') {
         dismissedIds.add(doc.id);
       }
     });
@@ -314,10 +329,10 @@ export async function computeSuggestions(
       // Skip if already in packing list
       if (existingLibraryIds.has(item.id)) return false;
       if (existingNames.has(item.name.toLowerCase())) return false;
-      
+
       // Skip if dismissed
       if (dismissedIds.has(item.id)) return false;
-      
+
       return true;
     });
 
@@ -328,17 +343,19 @@ export async function computeSuggestions(
     });
 
     // Convert to PackingSuggestion with reason
-    const suggestions: PackingSuggestion[] = filteredSuggestions.slice(0, 12).map((item) => ({
-      ...item,
-      reason: getSuggestionReason(item, context),
-    }));
+    const suggestions: PackingSuggestion[] = filteredSuggestions
+      .slice(0, 12)
+      .map((item) => ({
+        ...item,
+        reason: getSuggestionReason(item, context),
+      }));
 
     return {
       suggestions,
       context,
     };
   } catch (error) {
-    console.error("Error computing suggestions:", error);
+    console.error('Error computing suggestions:', error);
     return {
       suggestions: [],
       context: buildTripContext(new Date()),
@@ -350,28 +367,34 @@ export async function computeSuggestions(
  * Generate a user-friendly reason for a suggestion
  */
 function getSuggestionReason(item: PackingLibraryItem, context: TripContext): string {
-  if (item.tags.temps.includes("below_freezing") && context.tempBand === "below_freezing") {
-    return "Freezing temperatures";
+  if (
+    item.tags.temps.includes('below_freezing') &&
+    context.tempBand === 'below_freezing'
+  ) {
+    return 'Freezing temperatures';
   }
-  if (item.tags.temps.includes("cold") && (context.tempBand === "cold" || context.tempBand === "below_freezing")) {
-    return "Cold weather";
+  if (
+    item.tags.temps.includes('cold') &&
+    (context.tempBand === 'cold' || context.tempBand === 'below_freezing')
+  ) {
+    return 'Cold weather';
   }
-  if (item.tags.seasons.includes("winter") && context.season === "winter") {
-    return "Winter camping";
+  if (item.tags.seasons.includes('winter') && context.season === 'winter') {
+    return 'Winter camping';
   }
-  if (item.tags.precip.includes("snow") && context.precip === "snow") {
-    return "Snow expected";
+  if (item.tags.precip.includes('snow') && context.precip === 'snow') {
+    return 'Snow expected';
   }
-  if (item.tags.precip.includes("rain") && context.precip === "rain") {
-    return "Rain expected";
+  if (item.tags.precip.includes('rain') && context.precip === 'rain') {
+    return 'Rain expected';
   }
-  if (item.tags.wind.includes("windy") && context.windy) {
-    return "Windy conditions";
+  if (item.tags.wind.includes('windy') && context.windy) {
+    return 'Windy conditions';
   }
-  if (item.tags.temps.includes("hot") && context.tempBand === "hot") {
-    return "Hot weather";
+  if (item.tags.temps.includes('hot') && context.tempBand === 'hot') {
+    return 'Hot weather';
   }
-  return "Recommended for this trip";
+  return 'Recommended for this trip';
 }
 
 /**
@@ -381,21 +404,21 @@ export async function addSuggestion(
   userId: string,
   tripId: string,
   item: PackingLibraryItem,
-  reason: string
+  reason: string,
 ): Promise<void> {
   try {
     const batch = writeBatch(db);
 
     // Add to packing list
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const itemRef = doc(packingRef);
-    
-    const tripItem: Omit<TripPackingItem, "id"> = {
+
+    const tripItem: Omit<TripPackingItem, 'id'> = {
       name: item.name,
       categoryId: item.categoryId,
       qty: item.defaultQty,
       isPacked: false,
-      source: "suggested",
+      source: 'suggested',
       libraryItemId: item.id,
       addedReason: reason,
       createdAt: serverTimestamp() as Timestamp,
@@ -404,17 +427,25 @@ export async function addSuggestion(
     batch.set(itemRef, tripItem);
 
     // Mark suggestion as added
-    const suggestionRef = doc(db, "users", userId, "trips", tripId, "packingSuggestions", item.id);
+    const suggestionRef = doc(
+      db,
+      'users',
+      userId,
+      'trips',
+      tripId,
+      'packingSuggestions',
+      item.id,
+    );
     batch.set(suggestionRef, {
       libraryItemId: item.id,
-      status: "added",
+      status: 'added',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
     await batch.commit();
   } catch (error) {
-    console.error("Error adding suggestion:", error);
+    console.error('Error adding suggestion:', error);
     throw error;
   }
 }
@@ -425,18 +456,26 @@ export async function addSuggestion(
 export async function dismissSuggestion(
   userId: string,
   tripId: string,
-  libraryItemId: string
+  libraryItemId: string,
 ): Promise<void> {
   try {
-    const suggestionRef = doc(db, "users", userId, "trips", tripId, "packingSuggestions", libraryItemId);
+    const suggestionRef = doc(
+      db,
+      'users',
+      userId,
+      'trips',
+      tripId,
+      'packingSuggestions',
+      libraryItemId,
+    );
     await setDoc(suggestionRef, {
       libraryItemId,
-      status: "dismissed",
+      status: 'dismissed',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    console.error("Error dismissing suggestion:", error);
+    console.error('Error dismissing suggestion:', error);
     throw error;
   }
 }
@@ -450,10 +489,10 @@ export async function dismissSuggestion(
  */
 export async function getTripPackingItems(
   userId: string,
-  tripId: string
+  tripId: string,
 ): Promise<TripPackingItem[]> {
   try {
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const snapshot = await getDocs(packingRef);
 
     return snapshot.docs.map((doc) => ({
@@ -461,7 +500,7 @@ export async function getTripPackingItems(
       ...doc.data(),
     })) as TripPackingItem[];
   } catch (error) {
-    console.error("Error getting packing items:", error);
+    console.error('Error getting packing items:', error);
     throw error;
   }
 }
@@ -475,18 +514,18 @@ export async function addCustomItem(
   name: string,
   categoryId: string,
   qty: number = 1,
-  notes?: string
+  notes?: string,
 ): Promise<string> {
   try {
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const itemRef = doc(packingRef);
 
-    const tripItem: Omit<TripPackingItem, "id"> = {
+    const tripItem: Omit<TripPackingItem, 'id'> = {
       name,
       categoryId: normalizeCategoryId(categoryId),
       qty,
       isPacked: false,
-      source: "user",
+      source: 'user',
       createdAt: serverTimestamp() as Timestamp,
       updatedAt: serverTimestamp() as Timestamp,
     };
@@ -494,7 +533,7 @@ export async function addCustomItem(
     await setDoc(itemRef, tripItem);
     return itemRef.id;
   } catch (error) {
-    console.error("Error adding custom item:", error);
+    console.error('Error adding custom item:', error);
     throw error;
   }
 }
@@ -506,16 +545,16 @@ export async function toggleItemPacked(
   userId: string,
   tripId: string,
   itemId: string,
-  isPacked: boolean
+  isPacked: boolean,
 ): Promise<void> {
   try {
-    const itemRef = doc(db, "users", userId, "trips", tripId, "packingList", itemId);
+    const itemRef = doc(db, 'users', userId, 'trips', tripId, 'packingList', itemId);
     await updateDoc(itemRef, {
       isPacked,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    console.error("Error toggling item packed:", error);
+    console.error('Error toggling item packed:', error);
     throw error;
   }
 }
@@ -526,13 +565,13 @@ export async function toggleItemPacked(
 export async function deleteItem(
   userId: string,
   tripId: string,
-  itemId: string
+  itemId: string,
 ): Promise<void> {
   try {
-    const itemRef = doc(db, "users", userId, "trips", tripId, "packingList", itemId);
+    const itemRef = doc(db, 'users', userId, 'trips', tripId, 'packingList', itemId);
     await deleteDoc(itemRef);
   } catch (error) {
-    console.error("Error deleting item:", error);
+    console.error('Error deleting item:', error);
     throw error;
   }
 }
@@ -544,16 +583,16 @@ export async function updateItemQty(
   userId: string,
   tripId: string,
   itemId: string,
-  qty: number
+  qty: number,
 ): Promise<void> {
   try {
-    const itemRef = doc(db, "users", userId, "trips", tripId, "packingList", itemId);
+    const itemRef = doc(db, 'users', userId, 'trips', tripId, 'packingList', itemId);
     await updateDoc(itemRef, {
       qty,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
-    console.error("Error updating item quantity:", error);
+    console.error('Error updating item quantity:', error);
     throw error;
   }
 }
@@ -599,27 +638,34 @@ export function groupItemsByCategory(items: TripPackingItem[]): PackingCategoryG
 export async function forceReinitialize(
   userId: string,
   tripId: string,
-  trip: Trip
+  trip: Trip,
 ): Promise<InitializationResult> {
   try {
     // Delete all current items
-    const packingRef = collection(db, "users", userId, "trips", tripId, "packingList");
+    const packingRef = collection(db, 'users', userId, 'trips', tripId, 'packingList');
     const snapshot = await getDocs(packingRef);
-    
+
     const batch = writeBatch(db);
     snapshot.docs.forEach((doc) => {
       batch.delete(doc.ref);
     });
 
     // Also clear suggestions
-    const suggestionsRef = collection(db, "users", userId, "trips", tripId, "packingSuggestions");
+    const suggestionsRef = collection(
+      db,
+      'users',
+      userId,
+      'trips',
+      tripId,
+      'packingSuggestions',
+    );
     const suggestionsSnapshot = await getDocs(suggestionsRef);
     suggestionsSnapshot.docs.forEach((doc) => {
       batch.delete(doc.ref);
     });
 
     // Reset initialization flag
-    const tripRef = doc(db, "users", userId, "trips", tripId);
+    const tripRef = doc(db, 'users', userId, 'trips', tripId);
     batch.update(tripRef, {
       packingListInitialized: false,
       packingListVersion: null,
@@ -630,7 +676,7 @@ export async function forceReinitialize(
     // Re-initialize
     return await initializeTripPackingList(userId, tripId, trip);
   } catch (error: any) {
-    console.error("Error force reinitializing:", error);
+    console.error('Error force reinitializing:', error);
     return {
       success: false,
       itemCount: 0,

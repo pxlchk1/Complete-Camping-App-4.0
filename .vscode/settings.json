@@ -1,0 +1,11 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "prettier.requireConfig": true,
+  "errorLens.enabledDiagnosticLevels": ["error", "warning"],
+  "errorLens.excludeBySource": ["ts(80001)"],
+  "errorLens.delay": 500
+}

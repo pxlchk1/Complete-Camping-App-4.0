@@ -2668,14 +2668,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.30.2.tgz",
       "integrity": "sha512-ylTcDJBN3Hp21TdhRT5zBOIi73P6/W0qwvlFEk22fkdXchtNTOU4Qc37SkzV+EKYxLouZ6M4LG9NfZ1qkhhBWA==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "darwin"
-      ],
+      "os": ["darwin"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2688,14 +2684,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.30.2.tgz",
       "integrity": "sha512-oBZgKchomuDYxr7ilwLcyms6BCyLn0z8J0+ZZmfpjwg9fRVZIR5/GMXd7r9RH94iDhld3UmSjBM6nXWM2TfZTQ==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "darwin"
-      ],
+      "os": ["darwin"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2708,14 +2700,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.30.2.tgz",
       "integrity": "sha512-c2bH6xTrf4BDpK8MoGG4Bd6zAMZDAXS569UxCAGcA7IKbHNMlhGQ89eRmvpIUGfKWNVdbhSbkQaWhEoMGmGslA==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "freebsd"
-      ],
+      "os": ["freebsd"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2728,14 +2716,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.30.2.tgz",
       "integrity": "sha512-eVdpxh4wYcm0PofJIZVuYuLiqBIakQ9uFZmipf6LF/HRj5Bgm0eb3qL/mr1smyXIS1twwOxNWndd8z0E374hiA==",
-      "cpu": [
-        "arm"
-      ],
+      "cpu": ["arm"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2748,14 +2732,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.30.2.tgz",
       "integrity": "sha512-UK65WJAbwIJbiBFXpxrbTNArtfuznvxAJw4Q2ZGlU8kPeDIWEX1dg3rn2veBVUylA2Ezg89ktszWbaQnxD/e3A==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2768,14 +2748,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.30.2.tgz",
       "integrity": "sha512-5Vh9dGeblpTxWHpOx8iauV02popZDsCYMPIgiuw97OJ5uaDsL86cnqSFs5LZkG3ghHoX5isLgWzMs+eD1YzrnA==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2788,14 +2764,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.30.2.tgz",
       "integrity": "sha512-Cfd46gdmj1vQ+lR6VRTTadNHu6ALuw2pKR9lYq4FnhvgBc4zWY1EtZcAc6EffShbb1MFrIPfLDXD6Xprbnni4w==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2808,14 +2780,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.30.2.tgz",
       "integrity": "sha512-XJaLUUFXb6/QG2lGIW6aIk6jKdtjtcffUT0NKvIqhSBY3hh9Ch+1LCeH80dR9q9LBjG3ewbDjnumefsLsP6aiA==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2828,14 +2796,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.30.2.tgz",
       "integrity": "sha512-FZn+vaj7zLv//D/192WFFVA0RgHawIcHqLX9xuWiQt7P0PtdFEVaxgF9rjM/IRYHQXNnk61/H/gb2Ei+kUQ4xQ==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "win32"
-      ],
+      "os": ["win32"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -2848,14 +2812,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.30.2.tgz",
       "integrity": "sha512-5g1yc73p+iAkid5phb4oVFMB45417DkRevRbt/El/gKXJk4jid+vPFF/AXbxn05Aky8PapwzZrdJShv5C0avjw==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "win32"
-      ],
+      "os": ["win32"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -4529,9 +4489,7 @@
       "resolved": "https://registry.npmjs.org/@react-native-clipboard/clipboard/-/clipboard-1.16.3.tgz",
       "integrity": "sha512-cMIcvoZKIrShzJHEaHbTAp458R9WOv0fB6UyC7Ek4Qk561Ow/DrzmmJmH/rAZg21Z6ixJ4YSdFDC14crqIBmCQ==",
       "license": "MIT",
-      "workspaces": [
-        "example"
-      ],
+      "workspaces": ["example"],
       "peerDependencies": {
         "react": ">= 16.9.0",
         "react-native": ">= 0.61.5",
@@ -4610,9 +4568,7 @@
       "resolved": "https://registry.npmjs.org/@react-native-picker/picker/-/picker-2.11.1.tgz",
       "integrity": "sha512-ThklnkK4fV3yynnIIRBkxxjxR4IFbdMNJVF6tlLdOJ/zEFUEFUEdXY0KmH0iYzMwY8W4/InWsLiA7AkpAbnexA==",
       "license": "MIT",
-      "workspaces": [
-        "example"
-      ],
+      "workspaces": ["example"],
       "peerDependencies": {
         "react": "*",
         "react-native": "*"
@@ -5601,219 +5557,157 @@
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-android-arm-eabi/-/resolver-binding-android-arm-eabi-1.11.1.tgz",
       "integrity": "sha512-ppLRUgHVaGRWUx0R0Ut06Mjo9gBaBkg3v/8AxusGLhsIotbBLuRk51rAzqLC8gq6NyyAojEXglNjzf6R948DNw==",
-      "cpu": [
-        "arm"
-      ],
+      "cpu": ["arm"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "android"
-      ]
+      "os": ["android"]
     },
     "node_modules/@unrs/resolver-binding-android-arm64": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-android-arm64/-/resolver-binding-android-arm64-1.11.1.tgz",
       "integrity": "sha512-lCxkVtb4wp1v+EoN+HjIG9cIIzPkX5OtM03pQYkG+U5O/wL53LC4QbIeazgiKqluGeVEeBlZahHalCaBvU1a2g==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "android"
-      ]
+      "os": ["android"]
     },
     "node_modules/@unrs/resolver-binding-darwin-arm64": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-darwin-arm64/-/resolver-binding-darwin-arm64-1.11.1.tgz",
       "integrity": "sha512-gPVA1UjRu1Y/IsB/dQEsp2V1pm44Of6+LWvbLc9SDk1c2KhhDRDBUkQCYVWe6f26uJb3fOK8saWMgtX8IrMk3g==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "darwin"
-      ]
+      "os": ["darwin"]
     },
     "node_modules/@unrs/resolver-binding-darwin-x64": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-darwin-x64/-/resolver-binding-darwin-x64-1.11.1.tgz",
       "integrity": "sha512-cFzP7rWKd3lZaCsDze07QX1SC24lO8mPty9vdP+YVa3MGdVgPmFc59317b2ioXtgCMKGiCLxJ4HQs62oz6GfRQ==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "darwin"
-      ]
+      "os": ["darwin"]
     },
     "node_modules/@unrs/resolver-binding-freebsd-x64": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-freebsd-x64/-/resolver-binding-freebsd-x64-1.11.1.tgz",
       "integrity": "sha512-fqtGgak3zX4DCB6PFpsH5+Kmt/8CIi4Bry4rb1ho6Av2QHTREM+47y282Uqiu3ZRF5IQioJQ5qWRV6jduA+iGw==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "freebsd"
-      ]
+      "os": ["freebsd"]
     },
     "node_modules/@unrs/resolver-binding-linux-arm-gnueabihf": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm-gnueabihf/-/resolver-binding-linux-arm-gnueabihf-1.11.1.tgz",
       "integrity": "sha512-u92mvlcYtp9MRKmP+ZvMmtPN34+/3lMHlyMj7wXJDeXxuM0Vgzz0+PPJNsro1m3IZPYChIkn944wW8TYgGKFHw==",
-      "cpu": [
-        "arm"
-      ],
+      "cpu": ["arm"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-arm-musleabihf": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm-musleabihf/-/resolver-binding-linux-arm-musleabihf-1.11.1.tgz",
       "integrity": "sha512-cINaoY2z7LVCrfHkIcmvj7osTOtm6VVT16b5oQdS4beibX2SYBwgYLmqhBjA1t51CarSaBuX5YNsWLjsqfW5Cw==",
-      "cpu": [
-        "arm"
-      ],
+      "cpu": ["arm"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-arm64-gnu": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm64-gnu/-/resolver-binding-linux-arm64-gnu-1.11.1.tgz",
       "integrity": "sha512-34gw7PjDGB9JgePJEmhEqBhWvCiiWCuXsL9hYphDF7crW7UgI05gyBAi6MF58uGcMOiOqSJ2ybEeCvHcq0BCmQ==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-arm64-musl": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-arm64-musl/-/resolver-binding-linux-arm64-musl-1.11.1.tgz",
       "integrity": "sha512-RyMIx6Uf53hhOtJDIamSbTskA99sPHS96wxVE/bJtePJJtpdKGXO1wY90oRdXuYOGOTuqjT8ACccMc4K6QmT3w==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-ppc64-gnu": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-ppc64-gnu/-/resolver-binding-linux-ppc64-gnu-1.11.1.tgz",
       "integrity": "sha512-D8Vae74A4/a+mZH0FbOkFJL9DSK2R6TFPC9M+jCWYia/q2einCubX10pecpDiTmkJVUH+y8K3BZClycD8nCShA==",
-      "cpu": [
-        "ppc64"
-      ],
+      "cpu": ["ppc64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-riscv64-gnu": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-riscv64-gnu/-/resolver-binding-linux-riscv64-gnu-1.11.1.tgz",
       "integrity": "sha512-frxL4OrzOWVVsOc96+V3aqTIQl1O2TjgExV4EKgRY09AJ9leZpEg8Ak9phadbuX0BA4k8U5qtvMSQQGGmaJqcQ==",
-      "cpu": [
-        "riscv64"
-      ],
+      "cpu": ["riscv64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-riscv64-musl": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-riscv64-musl/-/resolver-binding-linux-riscv64-musl-1.11.1.tgz",
       "integrity": "sha512-mJ5vuDaIZ+l/acv01sHoXfpnyrNKOk/3aDoEdLO/Xtn9HuZlDD6jKxHlkN8ZhWyLJsRBxfv9GYM2utQ1SChKew==",
-      "cpu": [
-        "riscv64"
-      ],
+      "cpu": ["riscv64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-s390x-gnu": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-s390x-gnu/-/resolver-binding-linux-s390x-gnu-1.11.1.tgz",
       "integrity": "sha512-kELo8ebBVtb9sA7rMe1Cph4QHreByhaZ2QEADd9NzIQsYNQpt9UkM9iqr2lhGr5afh885d/cB5QeTXSbZHTYPg==",
-      "cpu": [
-        "s390x"
-      ],
+      "cpu": ["s390x"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-x64-gnu": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-x64-gnu/-/resolver-binding-linux-x64-gnu-1.11.1.tgz",
       "integrity": "sha512-C3ZAHugKgovV5YvAMsxhq0gtXuwESUKc5MhEtjBpLoHPLYM+iuwSj3lflFwK3DPm68660rZ7G8BMcwSro7hD5w==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-linux-x64-musl": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-linux-x64-musl/-/resolver-binding-linux-x64-musl-1.11.1.tgz",
       "integrity": "sha512-rV0YSoyhK2nZ4vEswT/QwqzqQXw5I6CjoaYMOX0TqBlWhojUf8P94mvI7nuJTeaCkkds3QE4+zS8Ko+GdXuZtA==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "linux"
-      ]
+      "os": ["linux"]
     },
     "node_modules/@unrs/resolver-binding-wasm32-wasi": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-wasm32-wasi/-/resolver-binding-wasm32-wasi-1.11.1.tgz",
       "integrity": "sha512-5u4RkfxJm+Ng7IWgkzi3qrFOvLvQYnPBmjmZQ8+szTK/b31fQCnleNl1GgEt7nIsZRIf5PLhPwT0WM+q45x/UQ==",
-      "cpu": [
-        "wasm32"
-      ],
+      "cpu": ["wasm32"],
       "dev": true,
       "license": "MIT",
       "optional": true,
@@ -5828,43 +5722,31 @@
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-win32-arm64-msvc/-/resolver-binding-win32-arm64-msvc-1.11.1.tgz",
       "integrity": "sha512-nRcz5Il4ln0kMhfL8S3hLkxI85BXs3o8EYoattsJNdsX4YUU89iOkVn7g0VHSRxFuVMdM4Q1jEpIId1Ihim/Uw==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "win32"
-      ]
+      "os": ["win32"]
     },
     "node_modules/@unrs/resolver-binding-win32-ia32-msvc": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-win32-ia32-msvc/-/resolver-binding-win32-ia32-msvc-1.11.1.tgz",
       "integrity": "sha512-DCEI6t5i1NmAZp6pFonpD5m7i6aFrpofcp4LA2i8IIq60Jyo28hamKBxNrZcyOwVOZkgsRp9O2sXWBWP8MnvIQ==",
-      "cpu": [
-        "ia32"
-      ],
+      "cpu": ["ia32"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "win32"
-      ]
+      "os": ["win32"]
     },
     "node_modules/@unrs/resolver-binding-win32-x64-msvc": {
       "version": "1.11.1",
       "resolved": "https://registry.npmjs.org/@unrs/resolver-binding-win32-x64-msvc/-/resolver-binding-win32-x64-msvc-1.11.1.tgz",
       "integrity": "sha512-lrW200hZdbfRtztbygyaq/6jP6AKE8qQN2KvPcJ+x7wiD038YtnYtZ82IMNJ69GJibV7bwL3y9FgK+5w/pYt6g==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "dev": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "win32"
-      ]
+      "os": ["win32"]
     },
     "node_modules/@urql/core": {
       "version": "5.2.0",
@@ -10060,9 +9942,7 @@
       "hasInstallScript": true,
       "license": "MIT",
       "optional": true,
-      "os": [
-        "darwin"
-      ],
+      "os": ["darwin"],
       "engines": {
         "node": "^8.16.0 || ^10.6.0 || >=11.0.0"
       }
@@ -11699,14 +11579,10 @@
       "version": "1.30.2",
       "resolved": "https://registry.npmjs.org/lightningcss-android-arm64/-/lightningcss-android-arm64-1.30.2.tgz",
       "integrity": "sha512-BH9sEdOCahSgmkVhBLeU7Hc9DWeZ1Eb6wNS6Da8igvUwAe0sqROHddIlvU06q3WyXVEOYDZ6ykBZQnjTbmo4+A==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "android"
-      ],
+      "os": ["android"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11719,14 +11595,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.27.0.tgz",
       "integrity": "sha512-Gl/lqIXY+d+ySmMbgDf0pgaWSqrWYxVHoc88q+Vhf2YNzZ8DwoRzGt5NZDVqqIW5ScpSnmmjcgXP87Dn2ylSSQ==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "darwin"
-      ],
+      "os": ["darwin"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11739,14 +11611,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.27.0.tgz",
       "integrity": "sha512-0+mZa54IlcNAoQS9E0+niovhyjjQWEMrwW0p2sSdLRhLDc8LMQ/b67z7+B5q4VmjYCMSfnFi3djAAQFIDuj/Tg==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "darwin"
-      ],
+      "os": ["darwin"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11759,14 +11627,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.27.0.tgz",
       "integrity": "sha512-n1sEf85fePoU2aDN2PzYjoI8gbBqnmLGEhKq7q0DKLj0UTVmOTwDC7PtLcy/zFxzASTSBlVQYJUhwIStQMIpRA==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "freebsd"
-      ],
+      "os": ["freebsd"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11779,14 +11643,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.27.0.tgz",
       "integrity": "sha512-MUMRmtdRkOkd5z3h986HOuNBD1c2lq2BSQA1Jg88d9I7bmPGx08bwGcnB75dvr17CwxjxD6XPi3Qh8ArmKFqCA==",
-      "cpu": [
-        "arm"
-      ],
+      "cpu": ["arm"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11799,14 +11659,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.27.0.tgz",
       "integrity": "sha512-cPsxo1QEWq2sfKkSq2Bq5feQDHdUEwgtA9KaB27J5AX22+l4l0ptgjMZZtYtUnteBofjee+0oW1wQ1guv04a7A==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11819,14 +11675,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.27.0.tgz",
       "integrity": "sha512-rCGBm2ax7kQ9pBSeITfCW9XSVF69VX+fm5DIpvDZQl4NnQoMQyRwhZQm9pd59m8leZ1IesRqWk2v/DntMo26lg==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11839,14 +11691,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.27.0.tgz",
       "integrity": "sha512-Dk/jovSI7qqhJDiUibvaikNKI2x6kWPN79AQiD/E/KeQWMjdGe9kw51RAgoWFDi0coP4jinaH14Nrt/J8z3U4A==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11859,14 +11707,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.27.0.tgz",
       "integrity": "sha512-QKjTxXm8A9s6v9Tg3Fk0gscCQA1t/HMoF7Woy1u68wCk5kS4fR+q3vXa1p3++REW784cRAtkYKrPy6JKibrEZA==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "linux"
-      ],
+      "os": ["linux"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11879,14 +11723,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.27.0.tgz",
       "integrity": "sha512-/wXegPS1hnhkeG4OXQKEMQeJd48RDC3qdh+OA8pCuOPCyvnm/yEayrJdJVqzBsqpy1aJklRCVxscpFur80o6iQ==",
-      "cpu": [
-        "arm64"
-      ],
+      "cpu": ["arm64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "win32"
-      ],
+      "os": ["win32"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -11899,14 +11739,10 @@
       "version": "1.27.0",
       "resolved": "https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.27.0.tgz",
       "integrity": "sha512-/OJLj94Zm/waZShL8nB5jsNj3CfNATLCTyFxZyouilfTmSoLDX7VlVAmhPHoZWVFp4vdmoiEbPEYC8HID3m6yw==",
-      "cpu": [
-        "x64"
-      ],
+      "cpu": ["x64"],
       "license": "MPL-2.0",
       "optional": true,
-      "os": [
-        "win32"
-      ],
+      "os": ["win32"],
       "engines": {
         "node": ">= 12.0.0"
       },
@@ -14228,10 +14064,7 @@
       "resolved": "https://registry.npmjs.org/react-native-ios-context-menu/-/react-native-ios-context-menu-3.1.0.tgz",
       "integrity": "sha512-qdPSXMKUp5lDgmZeUPdv5sgBFhkFrIqma+zsnqJQYOvekb6Qs17yJy1Rqhrj0bJrwuduHzZX0aYbaA8whxqpDw==",
       "license": "MIT",
-      "workspaces": [
-        "example",
-        "example-expo"
-      ],
+      "workspaces": ["example", "example-expo"],
       "dependencies": {
         "@dominicstop/ts-event-emitter": "^1.1.0"
       },
@@ -14246,9 +14079,7 @@
       "resolved": "https://registry.npmjs.org/react-native-ios-utilities/-/react-native-ios-utilities-5.1.2.tgz",
       "integrity": "sha512-H566MdgC1x0vW6D8EKweno1yRj/gQHeWiK0cRmyRexnUSk7oIecy7l2uyxXLYWFs+yvB/YIdLm+s2c19lKGfaw==",
       "license": "MIT",
-      "workspaces": [
-        "example"
-      ],
+      "workspaces": ["example"],
       "peerDependencies": {
         "react": "*",
         "react-native": "*"
@@ -14341,10 +14172,7 @@
       "resolved": "https://registry.npmjs.org/react-native-purchases/-/react-native-purchases-9.6.9.tgz",
       "integrity": "sha512-Fk5ZpMKPE0H0wNjpDjizLP1QcO+erh2uv54B6lXn6+ZKZJsHzFuUq9HUPwykT3j2yzMZ0Zd+i/tvwTpLedWmMg==",
       "license": "MIT",
-      "workspaces": [
-        "examples/purchaseTesterTypescript",
-        "react-native-purchases-ui"
-      ],
+      "workspaces": ["examples/purchaseTesterTypescript", "react-native-purchases-ui"],
       "dependencies": {
         "@revenuecat/purchases-js-hybrid-mappings": "17.21.2",
         "@revenuecat/purchases-typescript-internal": "17.21.2"

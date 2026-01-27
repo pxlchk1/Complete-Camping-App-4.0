@@ -3,6 +3,7 @@
 ## Overview
 
 The Complete Camping App uses a two-gate system for feature access:
+
 1. **Login Gate**: User must be signed in
 2. **Subscription Gate**: User must have Pro subscription (entitlement "Pro")
 
@@ -11,6 +12,7 @@ The Complete Camping App uses a two-gate system for feature access:
 **Location**: `src/screens/PaywallScreen.tsx`
 
 ### Layout (Wireframe)
+
 - **Header**: "Go Pro" with close button ("Not now")
 - **Value Props**: 5 bullet points with checkmarks
 - **Plan Cards**: Annual (with "BEST VALUE" badge) and Monthly
@@ -19,6 +21,7 @@ The Complete Camping App uses a two-gate system for feature access:
 - **Footer**: "Cancel anytime. Manage in Apple subscriptions."
 
 ### Features
+
 - ✅ Radio button selection between plans
 - ✅ Disabled state while purchase in progress
 - ✅ Loading state while fetching offerings
@@ -28,6 +31,7 @@ The Complete Camping App uses a two-gate system for feature access:
 ## Navigation Setup
 
 ### Modal Presentation
+
 Paywall is presented as a **root-level modal** in `RootNavigator`:
 
 ```typescript
@@ -42,6 +46,7 @@ Paywall is presented as a **root-level modal** in `RootNavigator`:
 ```
 
 This ensures:
+
 - User returns to previous screen after closing
 - No broken navigation or missing headers
 - Works from any screen in the app
@@ -61,7 +66,7 @@ function MyScreen() {
   const handleProFeature = () => {
     // Gate the feature - shows paywall if not Pro
     if (!requirePro()) return;
-    
+
     // Continue with Pro feature...
   };
 
@@ -88,9 +93,9 @@ function MyScreen() {
     return (
       <View>
         <Text>This feature requires Pro</Text>
-        <Button 
-          title="Upgrade to Pro" 
-          onPress={() => navigation.navigate("Paywall")} 
+        <Button
+          title="Upgrade to Pro"
+          onPress={() => navigation.navigate("Paywall")}
         />
       </View>
     );
@@ -107,7 +112,7 @@ function MyScreen() {
 **For simple checks**
 
 ```typescript
-import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useSubscriptionStore } from '../state/subscriptionStore';
 
 function MyComponent() {
   const isPro = useSubscriptionStore((s) => s.isPro);
@@ -121,19 +126,21 @@ function MyComponent() {
 ## Where to Show Paywall
 
 ### A) Feature Tap Gating
+
 When user taps a Pro-only feature:
 
 ```typescript
 const handleCreateAdvancedTrip = () => {
   const { requirePro } = usePaywallGate();
-  
+
   if (!requirePro()) return; // Shows paywall
-  
+
   // Proceed with feature...
 };
 ```
 
 ### B) Pro-Only Screens
+
 Replace entire screen content with locked state:
 
 ```typescript
@@ -157,9 +164,11 @@ function ProOnlyScreen() {
 ```
 
 ### C) Settings Entry Point
+
 **Location**: `src/screens/SettingsScreen.tsx`
 
 Shows different text based on Pro status:
+
 - **Free users**: "Upgrade to Pro" → Opens paywall
 - **Pro users**: "Pro Member" → Opens paywall (for management)
 
@@ -168,6 +177,7 @@ Also includes "Restore Purchases" button for free users.
 ## Purchase Flow
 
 ### On Successful Purchase
+
 1. `purchasePackage(pkg)` completes
 2. `getCustomerInfo()` refreshes entitlements
 3. `subscriptionStore.setSubscriptionInfo(customerInfo)` updates `isPro`
@@ -176,21 +186,26 @@ Also includes "Restore Purchases" button for free users.
 6. User returns to gated feature (now unlocked)
 
 ### On User Cancellation
+
 - Paywall remains open
 - No error message (silent)
 
 ### On Failure
+
 - Show alert: "Purchase Failed. Please try again or contact support."
 
 ## Restore Flow
 
 ### From Paywall
+
 "Restore Purchases" button always visible at bottom
 
 ### From Settings
+
 "Restore Purchases" button shown for non-Pro users
 
 ### Process
+
 1. Call `restorePurchases()`
 2. Refresh `customerInfo`
 3. Update `subscriptionStore`
@@ -207,10 +222,12 @@ export const PAYWALL_ENABLED = true; // Paywall visibility
 ```
 
 ### Behavior When Disabled
+
 - `SUBSCRIPTIONS_ENABLED = false`: All features unlocked, subscription checks bypassed
 - `PAYWALL_ENABLED = false`: Paywall navigation hidden, features unlocked
 
 This allows:
+
 - Testing without paywall friction
 - Emergency disable if RevenueCat has issues
 - Seamless re-enable without code changes
@@ -218,17 +235,21 @@ This allows:
 ## Subscription State
 
 ### Single Source of Truth
+
 ```typescript
-const isPro = Boolean(customerInfo?.entitlements?.active?.Pro)
+const isPro = Boolean(customerInfo?.entitlements?.active?.Pro);
 ```
 
 ### Persisted State
+
 - Subscription store uses Zustand + AsyncStorage
 - State survives app restarts
 - Refreshed via CustomerInfo listener on app launch
 
 ### Firestore Sync
+
 Fields written to `users/{uid}`:
+
 - `membershipTier`: "freeMember" | "subscribed"
 - `subscriptionStatus`: "active" | "expired" | "canceled" | "none"
 - `entitlements`: string[] (active entitlement IDs)
@@ -238,16 +259,19 @@ Fields written to `users/{uid}`:
 ## Testing Checklist
 
 ### Fresh Install (Not Logged In)
+
 - [ ] Paywall shows gracefully if offerings unavailable
 - [ ] "Restore Purchases" button visible
 - [ ] App doesn't crash
 
 ### After Login
+
 - [ ] RevenueCat identifies with Firebase uid
 - [ ] CustomerInfo loads
 - [ ] `isPro` updates correctly
 
 ### Purchase Flow
+
 - [ ] Select annual plan → "Start Annual" shows
 - [ ] Select monthly plan → "Start Monthly" shows
 - [ ] Button disabled during purchase
@@ -257,17 +281,20 @@ Fields written to `users/{uid}`:
 - [ ] Firestore updated
 
 ### Restore Flow
+
 - [ ] Restore from paywall works
 - [ ] Restore from settings works
 - [ ] `isPro` updates on successful restore
 - [ ] Firestore syncs
 
 ### App Restart
+
 - [ ] `isPro` state loads from AsyncStorage
 - [ ] CustomerInfo listener refreshes state
 - [ ] No UI flicker
 
 ### Feature Gating
+
 - [ ] Tapping Pro feature shows paywall when not Pro
 - [ ] After subscribing, feature unlocks without restart
 - [ ] Pro badge shows in settings
@@ -290,7 +317,7 @@ function MyTripsScreen() {
       navigation.navigate("Paywall");
       return;
     }
-    
+
     navigation.navigate("CreateTrip");
   };
 
@@ -316,13 +343,13 @@ function TripDetailScreen() {
 
   const handleExportToCalendar = () => {
     if (!requirePro()) return; // Shows paywall
-    
+
     // Export logic...
   };
 
   const handleShareWithTeam = () => {
     if (!requirePro()) return;
-    
+
     // Share logic...
   };
 
@@ -366,6 +393,7 @@ function AdvancedSettingsScreen() {
 ## Files Reference
 
 ### Core Implementation
+
 - `src/screens/PaywallScreen.tsx` - Paywall UI
 - `src/hooks/usePaywallGate.ts` - Feature gating hook
 - `src/utils/authHelper.ts` - User status helpers
@@ -374,16 +402,19 @@ function AdvancedSettingsScreen() {
 - `src/lib/revenuecatClient.ts` - RevenueCat SDK wrapper
 
 ### Configuration
+
 - `src/config/subscriptions.ts` - Feature flags
 - `src/navigation/RootNavigator.tsx` - Modal presentation
 
 ### Integration Examples
+
 - `src/screens/SettingsScreen.tsx` - Upgrade button + restore
 - `src/screens/MyTripsScreen.tsx` - Trip limit gating
 
 ## Support
 
 For issues:
+
 - Check feature flags in `src/config/subscriptions.ts`
 - Verify `PAYWALL_ENABLED = true` in `RootNavigator.tsx`
 - Check console logs for RevenueCat errors

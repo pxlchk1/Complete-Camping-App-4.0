@@ -1,2 +1,2 @@
 // Alias for CustomBottomTabBar for compatibility
-export { default } from "./CustomBottomTabBar";
+export { default } from './CustomBottomTabBar';

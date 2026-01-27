@@ -16,9 +16,9 @@ import {
   orderBy,
   writeBatch,
   Timestamp,
-} from "firebase/firestore";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { db } from "../config/firebase";
+} from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '../config/firebase';
 import {
   PackingItemV2,
   TripPackingList,
@@ -31,21 +31,25 @@ import {
   AmenityFlags,
   DEFAULT_AMENITIES,
   getTemperatureProfile,
-} from "../types/packingV2";
-import { PACKING_TEMPLATES, getRecommendedTemplates, generateTemplateId } from "../data/packingTemplates";
-import { getUserGear } from "./gearClosetService";
-import { GearItem, GearCategory } from "../types/gear";
+} from '../types/packingV2';
+import {
+  PACKING_TEMPLATES,
+  getRecommendedTemplates,
+  generateTemplateId,
+} from '../data/packingTemplates';
+import { getUserGear } from './gearClosetService';
+import { GearItem, GearCategory } from '../types/gear';
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const PACKING_ITEMS_COLLECTION = "packingItems";
-const PACKING_LISTS_COLLECTION = "packingLists";
-const PACKING_TEMPLATES_COLLECTION = "packingTemplates";
-const TEMPLATE_ITEMS_COLLECTION = "items";
+const PACKING_ITEMS_COLLECTION = 'packingItems';
+const PACKING_LISTS_COLLECTION = 'packingLists';
+const PACKING_TEMPLATES_COLLECTION = 'packingTemplates';
+const TEMPLATE_ITEMS_COLLECTION = 'items';
 
-const LOCAL_STORAGE_PREFIX = "packing_v2_";
+const LOCAL_STORAGE_PREFIX = 'packing_v2_';
 
 // ============================================================================
 // TRIP PACKING LIST OPERATIONS
@@ -56,10 +60,18 @@ const LOCAL_STORAGE_PREFIX = "packing_v2_";
  */
 export async function getTripPackingList(
   userId: string,
-  tripId: string
+  tripId: string,
 ): Promise<TripPackingList | null> {
   try {
-    const docRef = doc(db, "users", userId, "trips", tripId, PACKING_LISTS_COLLECTION, "main");
+    const docRef = doc(
+      db,
+      'users',
+      userId,
+      'trips',
+      tripId,
+      PACKING_LISTS_COLLECTION,
+      'main',
+    );
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -67,7 +79,7 @@ export async function getTripPackingList(
     }
     return null;
   } catch (error) {
-    console.log("[PackingService] Firebase error, trying local storage:", error);
+    console.log('[PackingService] Firebase error, trying local storage:', error);
     return getLocalPackingList(tripId);
   }
 }
@@ -77,18 +89,18 @@ export async function getTripPackingList(
  */
 export async function getTripPackingItems(
   userId: string,
-  tripId: string
+  tripId: string,
 ): Promise<PackingItemV2[]> {
   try {
     const itemsRef = collection(
       db,
-      "users",
+      'users',
       userId,
-      "trips",
+      'trips',
       tripId,
-      PACKING_ITEMS_COLLECTION
+      PACKING_ITEMS_COLLECTION,
     );
-    const q = query(itemsRef, orderBy("category"), orderBy("name"));
+    const q = query(itemsRef, orderBy('category'), orderBy('name'));
     const snapshot = await getDocs(q);
 
     return snapshot.docs.map((doc) => ({
@@ -96,7 +108,7 @@ export async function getTripPackingItems(
       ...doc.data(),
     })) as PackingItemV2[];
   } catch (error) {
-    console.log("[PackingService] Firebase error, trying local storage:", error);
+    console.log('[PackingService] Firebase error, trying local storage:', error);
     return getLocalPackingItems(tripId);
   }
 }
@@ -107,15 +119,16 @@ export async function getTripPackingItems(
 export async function savePackingItem(
   userId: string,
   tripId: string,
-  item: Partial<PackingItemV2> & { id?: string }
+  item: Partial<PackingItemV2> & { id?: string },
 ): Promise<string> {
   const now = new Date().toISOString();
-  const itemId = item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const itemId =
+    item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   const itemData: PackingItemV2 = {
     id: itemId,
-    name: item.name || "",
-    category: item.category || "optional_extras",
+    name: item.name || '',
+    category: item.category || 'optional_extras',
     isEssential: item.isEssential ?? false,
     isPacked: item.isPacked ?? false,
     quantity: item.quantity ?? 1,
@@ -134,21 +147,21 @@ export async function savePackingItem(
   try {
     const docRef = doc(
       db,
-      "users",
+      'users',
       userId,
-      "trips",
+      'trips',
       tripId,
       PACKING_ITEMS_COLLECTION,
-      itemId
+      itemId,
     );
     await setDoc(docRef, itemData);
-    
+
     // Update list totals
     await updatePackingListTotals(userId, tripId);
-    
+
     return itemId;
   } catch (error) {
-    console.log("[PackingService] Firebase error, saving locally:", error);
+    console.log('[PackingService] Firebase error, saving locally:', error);
     await saveLocalPackingItem(tripId, itemData);
     return itemId;
   }
@@ -161,26 +174,26 @@ export async function toggleItemPacked(
   userId: string,
   tripId: string,
   itemId: string,
-  isPacked: boolean
+  isPacked: boolean,
 ): Promise<void> {
   const now = new Date().toISOString();
 
   try {
     const docRef = doc(
       db,
-      "users",
+      'users',
       userId,
-      "trips",
+      'trips',
       tripId,
       PACKING_ITEMS_COLLECTION,
-      itemId
+      itemId,
     );
     await updateDoc(docRef, { isPacked, updatedAt: now });
-    
+
     // Update list totals
     await updatePackingListTotals(userId, tripId);
   } catch (error) {
-    console.log("[PackingService] Firebase error, updating locally:", error);
+    console.log('[PackingService] Firebase error, updating locally:', error);
     await toggleLocalItemPacked(tripId, itemId, isPacked);
   }
 }
@@ -191,24 +204,24 @@ export async function toggleItemPacked(
 export async function deletePackingItem(
   userId: string,
   tripId: string,
-  itemId: string
+  itemId: string,
 ): Promise<void> {
   try {
     const docRef = doc(
       db,
-      "users",
+      'users',
       userId,
-      "trips",
+      'trips',
       tripId,
       PACKING_ITEMS_COLLECTION,
-      itemId
+      itemId,
     );
     await deleteDoc(docRef);
-    
+
     // Update list totals
     await updatePackingListTotals(userId, tripId);
   } catch (error) {
-    console.log("[PackingService] Firebase error, deleting locally:", error);
+    console.log('[PackingService] Firebase error, deleting locally:', error);
     await deleteLocalPackingItem(tripId, itemId);
   }
 }
@@ -216,10 +229,7 @@ export async function deletePackingItem(
 /**
  * Update packing list totals
  */
-async function updatePackingListTotals(
-  userId: string,
-  tripId: string
-): Promise<void> {
+async function updatePackingListTotals(userId: string, tripId: string): Promise<void> {
   try {
     const items = await getTripPackingItems(userId, tripId);
     const totalItems = items.length;
@@ -227,12 +237,12 @@ async function updatePackingListTotals(
 
     const listRef = doc(
       db,
-      "users",
+      'users',
       userId,
-      "trips",
+      'trips',
       tripId,
       PACKING_LISTS_COLLECTION,
-      "main"
+      'main',
     );
     await updateDoc(listRef, {
       totalItems,
@@ -240,7 +250,7 @@ async function updatePackingListTotals(
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    console.log("[PackingService] Could not update totals:", error);
+    console.log('[PackingService] Could not update totals:', error);
   }
 }
 
@@ -250,25 +260,25 @@ async function updatePackingListTotals(
 
 // Map gear categories to packing categories
 const GEAR_TO_PACKING_CATEGORY: Record<GearCategory, PackingCategory> = {
-  camp_comfort: "camp_comfort",
-  campFurniture: "camp_comfort",
-  clothing: "clothing",
-  documents_essentials: "documents_essentials",
-  electronics: "electronics",
-  entertainment: "optional_extras",
-  food: "food",
-  hygiene: "hygiene",
-  kitchen: "kitchen",
-  lighting: "lighting",
-  meal_prep: "kitchen",
-  optional_extras: "optional_extras",
-  pet_supplies: "optional_extras",
-  safety: "navigation_safety",
-  seating: "camp_comfort",
-  shelter: "shelter",
-  sleep: "sleep",
-  tools: "tools_repairs",
-  water: "water",
+  camp_comfort: 'camp_comfort',
+  campFurniture: 'camp_comfort',
+  clothing: 'clothing',
+  documents_essentials: 'documents_essentials',
+  electronics: 'electronics',
+  entertainment: 'optional_extras',
+  food: 'food',
+  hygiene: 'hygiene',
+  kitchen: 'kitchen',
+  lighting: 'lighting',
+  meal_prep: 'kitchen',
+  optional_extras: 'optional_extras',
+  pet_supplies: 'optional_extras',
+  safety: 'navigation_safety',
+  seating: 'camp_comfort',
+  shelter: 'shelter',
+  sleep: 'sleep',
+  tools: 'tools_repairs',
+  water: 'water',
 };
 
 /**
@@ -277,18 +287,20 @@ const GEAR_TO_PACKING_CATEGORY: Record<GearCategory, PackingCategory> = {
  */
 function findMatchingGear(
   packingItem: PackingItemV2,
-  userGear: GearItem[]
+  userGear: GearItem[],
 ): GearItem | null {
   const normalizeString = (str: string) =>
-    str.toLowerCase().trim().replace(/[^\w\s]/g, "").replace(/\s+/g, " ");
+    str
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s]/g, '')
+      .replace(/\s+/g, ' ');
 
   const packingName = normalizeString(packingItem.name);
-  const packingWords = packingName.split(" ");
+  const packingWords = packingName.split(' ');
 
   // First try: exact match on name
-  const exactMatch = userGear.find(
-    (gear) => normalizeString(gear.name) === packingName
-  );
+  const exactMatch = userGear.find((gear) => normalizeString(gear.name) === packingName);
   if (exactMatch) return exactMatch;
 
   // Second try: find gear in matching category with similar name
@@ -299,21 +311,19 @@ function findMatchingGear(
 
   for (const gear of categoryMatches) {
     const gearName = normalizeString(gear.name);
-    const gearWords = gearName.split(" ");
+    const gearWords = gearName.split(' ');
 
     // Check if significant words match (ignoring articles, sizes, etc.)
     const significantPackingWords = packingWords.filter(
-      (w) => w.length > 2 && !["the", "for", "and", "with"].includes(w)
+      (w) => w.length > 2 && !['the', 'for', 'and', 'with'].includes(w),
     );
     const significantGearWords = gearWords.filter(
-      (w) => w.length > 2 && !["the", "for", "and", "with"].includes(w)
+      (w) => w.length > 2 && !['the', 'for', 'and', 'with'].includes(w),
     );
 
     // Count matching words
     const matchingWords = significantPackingWords.filter((pw) =>
-      significantGearWords.some(
-        (gw) => gw.includes(pw) || pw.includes(gw)
-      )
+      significantGearWords.some((gw) => gw.includes(pw) || pw.includes(gw)),
     );
 
     // If more than half the significant words match, it's a match
@@ -334,7 +344,7 @@ function findMatchingGear(
  */
 async function linkItemsToGearCloset(
   userId: string,
-  packingItems: PackingItemV2[]
+  packingItems: PackingItemV2[],
 ): Promise<{ linkedCount: number }> {
   try {
     const userGear = await getUserGear(userId);
@@ -349,7 +359,7 @@ async function linkItemsToGearCloset(
 
       const matchingGear = findMatchingGear(
         item,
-        userGear.filter((g) => !usedGearIds.has(g.id))
+        userGear.filter((g) => !usedGearIds.has(g.id)),
       );
 
       if (matchingGear) {
@@ -359,7 +369,7 @@ async function linkItemsToGearCloset(
         // Add brand/model as notes if available
         const gearInfo = [matchingGear.brand, matchingGear.model]
           .filter(Boolean)
-          .join(" ");
+          .join(' ');
         if (gearInfo && !item.notes) {
           item.notes = gearInfo;
         }
@@ -370,7 +380,7 @@ async function linkItemsToGearCloset(
 
     return { linkedCount };
   } catch (error) {
-    console.log("[PackingService] Error linking to gear closet:", error);
+    console.log('[PackingService] Error linking to gear closet:', error);
     return { linkedCount: 0 };
   }
 }
@@ -385,7 +395,7 @@ async function linkItemsToGearCloset(
 export async function generatePackingList(
   userId: string,
   tripId: string,
-  request: PackingGenerationRequest
+  request: PackingGenerationRequest,
 ): Promise<void> {
   const now = new Date().toISOString();
 
@@ -396,14 +406,14 @@ export async function generatePackingList(
     : templates[0];
 
   if (!template) {
-    throw new Error("No matching template found");
+    throw new Error('No matching template found');
   }
 
   // Determine temperature profile
   const tempProfile = getTemperatureProfile(request.season, request.forecastLow);
 
   // Filter items based on gear groups (no duplicates)
-  const selectedItems = new Map<string, typeof template.items[0]>();
+  const selectedItems = new Map<string, (typeof template.items)[0]>();
   const usedGearGroups = new Set<string>();
 
   for (const item of template.items) {
@@ -429,31 +439,33 @@ export async function generatePackingList(
   const partyMultiplier = request.partySize > 1 ? request.partySize : 1;
 
   // Create packing items
-  const packingItems: PackingItemV2[] = Array.from(selectedItems.values()).map((templateItem) => {
-    let quantity = templateItem.quantity;
+  const packingItems: PackingItemV2[] = Array.from(selectedItems.values()).map(
+    (templateItem) => {
+      let quantity = templateItem.quantity;
 
-    // Scale consumables
-    if (isConsumable(templateItem.category, templateItem.name)) {
-      quantity = Math.ceil(quantity * nightsMultiplier);
-    }
+      // Scale consumables
+      if (isConsumable(templateItem.category, templateItem.name)) {
+        quantity = Math.ceil(quantity * nightsMultiplier);
+      }
 
-    return {
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: templateItem.name,
-      category: templateItem.category,
-      isEssential: templateItem.isEssential,
-      isPacked: false,
-      quantity,
-      notes: templateItem.notes,
-      isFromGearCloset: false,
-      isFromTemplate: true,
-      templateItemId: generateTemplateId(templateItem.name),
-      gearGroup: templateItem.gearGroup,
-      variant: templateItem.variant,
-      createdAt: now,
-      updatedAt: now,
-    };
-  });
+      return {
+        id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: templateItem.name,
+        category: templateItem.category,
+        isEssential: templateItem.isEssential,
+        isPacked: false,
+        quantity,
+        notes: templateItem.notes,
+        isFromGearCloset: false,
+        isFromTemplate: true,
+        templateItemId: generateTemplateId(templateItem.name),
+        gearGroup: templateItem.gearGroup,
+        variant: templateItem.variant,
+        createdAt: now,
+        updatedAt: now,
+      };
+    },
+  );
 
   // Apply amenity-based adjustments
   applyAmenityAdjustments(packingItems, request.amenities);
@@ -468,15 +480,15 @@ export async function generatePackingList(
     // Create packing list document
     const listRef = doc(
       db,
-      "users",
+      'users',
       userId,
-      "trips",
+      'trips',
       tripId,
       PACKING_LISTS_COLLECTION,
-      "main"
+      'main',
     );
     const listData: TripPackingList = {
-      id: "main",
+      id: 'main',
       tripId,
       userId,
       generatedFrom: {
@@ -489,7 +501,7 @@ export async function generatePackingList(
       },
       totalItems: packingItems.length,
       packedItems: 0,
-      status: "active",
+      status: 'active',
       createdAt: now,
       updatedAt: now,
     };
@@ -499,19 +511,19 @@ export async function generatePackingList(
     for (const item of packingItems) {
       const itemRef = doc(
         db,
-        "users",
+        'users',
         userId,
-        "trips",
+        'trips',
         tripId,
         PACKING_ITEMS_COLLECTION,
-        item.id
+        item.id,
       );
       batch.set(itemRef, item);
     }
 
     await batch.commit();
   } catch (error) {
-    console.log("[PackingService] Firebase error, saving locally:", error);
+    console.log('[PackingService] Firebase error, saving locally:', error);
     await saveLocalPackingList(tripId, packingItems);
   }
 }
@@ -523,14 +535,14 @@ export async function generatePackingList(
 export async function copyPackingListFromTrip(
   userId: string,
   sourceTripId: string,
-  targetTripId: string
+  targetTripId: string,
 ): Promise<{ copiedCount: number; linkedCount: number }> {
   const now = new Date().toISOString();
 
   try {
     // Get source items
     const sourceItems = await getTripPackingItems(userId, sourceTripId);
-    
+
     if (sourceItems.length === 0) {
       return { copiedCount: 0, linkedCount: 0 };
     }
@@ -552,28 +564,28 @@ export async function copyPackingListFromTrip(
     // Create packing list document
     const listRef = doc(
       db,
-      "users",
+      'users',
       userId,
-      "trips",
+      'trips',
       targetTripId,
       PACKING_LISTS_COLLECTION,
-      "main"
+      'main',
     );
     const listData: TripPackingList = {
-      id: "main",
+      id: 'main',
       tripId: targetTripId,
       userId,
       generatedFrom: {
         templateId: `copied_from_${sourceTripId}`,
-        tripType: "car_camping" as TripType,
-        season: "summer" as Season,
+        tripType: 'car_camping' as TripType,
+        season: 'summer' as Season,
         nights: 2,
         partySize: 2,
         amenities: DEFAULT_AMENITIES,
       },
       totalItems: newItems.length,
       packedItems: 0,
-      status: "active",
+      status: 'active',
       createdAt: now,
       updatedAt: now,
     };
@@ -583,12 +595,12 @@ export async function copyPackingListFromTrip(
     for (const item of newItems) {
       const itemRef = doc(
         db,
-        "users",
+        'users',
         userId,
-        "trips",
+        'trips',
         targetTripId,
         PACKING_ITEMS_COLLECTION,
-        item.id
+        item.id,
       );
       batch.set(itemRef, item);
     }
@@ -596,7 +608,7 @@ export async function copyPackingListFromTrip(
     await batch.commit();
     return { copiedCount: newItems.length, linkedCount };
   } catch (error) {
-    console.error("[PackingService] Error copying packing list:", error);
+    console.error('[PackingService] Error copying packing list:', error);
     throw error;
   }
 }
@@ -606,30 +618,30 @@ export async function copyPackingListFromTrip(
  */
 export async function getTripsWithPackingLists(
   userId: string,
-  excludeTripId?: string
+  excludeTripId?: string,
 ): Promise<Array<{ tripId: string; itemCount: number }>> {
   try {
     // Get all trips for user (we'll check each one for packing lists)
-    const tripsRef = collection(db, "users", userId, "trips");
+    const tripsRef = collection(db, 'users', userId, 'trips');
     const tripsSnapshot = await getDocs(tripsRef);
-    
+
     const results: Array<{ tripId: string; itemCount: number }> = [];
-    
+
     for (const tripDoc of tripsSnapshot.docs) {
       if (tripDoc.id === excludeTripId) continue;
-      
+
       // Check if this trip has a packing list
       const listRef = doc(
         db,
-        "users",
+        'users',
         userId,
-        "trips",
+        'trips',
         tripDoc.id,
         PACKING_LISTS_COLLECTION,
-        "main"
+        'main',
       );
       const listSnap = await getDoc(listRef);
-      
+
       if (listSnap.exists()) {
         const listData = listSnap.data() as TripPackingList;
         if (listData.totalItems > 0) {
@@ -640,10 +652,10 @@ export async function getTripsWithPackingLists(
         }
       }
     }
-    
+
     return results;
   } catch (error) {
-    console.log("[PackingService] Error getting trips with packing lists:", error);
+    console.log('[PackingService] Error getting trips with packing lists:', error);
     return [];
   }
 }
@@ -653,17 +665,17 @@ export async function getTripsWithPackingLists(
  */
 function matchesTemperatureProfile(
   variant: string | undefined,
-  profile: "warm" | "mild" | "cold"
+  profile: 'warm' | 'mild' | 'cold',
 ): boolean {
   if (!variant) return true;
 
   switch (profile) {
-    case "cold":
-      return ["cold", "4season", "insulated"].includes(variant);
-    case "warm":
-      return ["warm", "3season", "standard"].includes(variant);
-    case "mild":
-      return ["mid", "3season", "standard"].includes(variant);
+    case 'cold':
+      return ['cold', '4season', 'insulated'].includes(variant);
+    case 'warm':
+      return ['warm', '3season', 'standard'].includes(variant);
+    case 'mild':
+      return ['mid', '3season', 'standard'].includes(variant);
     default:
       return true;
   }
@@ -673,45 +685,44 @@ function matchesTemperatureProfile(
  * Check if item is a consumable that should scale with trip length
  */
 function isConsumable(category: PackingCategory, name: string): boolean {
-  const consumableCategories: PackingCategory[] = ["food", "water", "hygiene"];
+  const consumableCategories: PackingCategory[] = ['food', 'water', 'hygiene'];
   if (consumableCategories.includes(category)) {
     // Check for specific non-consumables
-    const nonConsumables = ["water filter", "trowel", "toothbrush"];
+    const nonConsumables = ['water filter', 'trowel', 'toothbrush'];
     return !nonConsumables.some((nc) => name.toLowerCase().includes(nc));
   }
 
   // Check for consumable keywords
-  const consumableKeywords = ["fuel", "batteries", "ice", "wipes"];
+  const consumableKeywords = ['fuel', 'batteries', 'ice', 'wipes'];
   return consumableKeywords.some((kw) => name.toLowerCase().includes(kw));
 }
 
 /**
  * Apply amenity-based adjustments to packing list
  */
-function applyAmenityAdjustments(
-  items: PackingItemV2[],
-  amenities: AmenityFlags
-): void {
+function applyAmenityAdjustments(items: PackingItemV2[], amenities: AmenityFlags): void {
   // If running water available, reduce water storage
   if (amenities.runningWater) {
     const waterItems = items.filter(
-      (i) => i.category === "water" && i.name.toLowerCase().includes("jug")
+      (i) => i.category === 'water' && i.name.toLowerCase().includes('jug'),
     );
     waterItems.forEach((i) => {
       i.isEssential = false;
-      i.notes = (i.notes || "") + " (running water available)";
+      i.notes = (i.notes || '') + ' (running water available)';
     });
   }
 
   // If bear lockers required, ensure bear storage items
   if (amenities.bearLockers) {
     const hasBearItem = items.some(
-      (i) => i.name.toLowerCase().includes("bear") && i.name.toLowerCase().includes("canister")
+      (i) =>
+        i.name.toLowerCase().includes('bear') &&
+        i.name.toLowerCase().includes('canister'),
     );
     if (hasBearItem) {
-      const bearItem = items.find((i) => i.name.toLowerCase().includes("bear"));
+      const bearItem = items.find((i) => i.name.toLowerCase().includes('bear'));
       if (bearItem) {
-        bearItem.notes = (bearItem.notes || "") + " (bear lockers available at site)";
+        bearItem.notes = (bearItem.notes || '') + ' (bear lockers available at site)';
       }
     }
   }
@@ -726,8 +737,8 @@ function applyAmenityAdjustments(
  */
 export async function getUserTemplates(userId: string): Promise<PackingTemplate[]> {
   try {
-    const templatesRef = collection(db, "users", userId, PACKING_TEMPLATES_COLLECTION);
-    const q = query(templatesRef, orderBy("updatedAt", "desc"));
+    const templatesRef = collection(db, 'users', userId, PACKING_TEMPLATES_COLLECTION);
+    const q = query(templatesRef, orderBy('updatedAt', 'desc'));
     const snapshot = await getDocs(q);
 
     return snapshot.docs.map((doc) => ({
@@ -735,7 +746,7 @@ export async function getUserTemplates(userId: string): Promise<PackingTemplate[
       ...doc.data(),
     })) as PackingTemplate[];
   } catch (error) {
-    console.log("[PackingService] Error fetching user templates:", error);
+    console.log('[PackingService] Error fetching user templates:', error);
     return [];
   }
 }
@@ -749,7 +760,7 @@ export async function saveAsTemplate(
   templateName: string,
   description?: string,
   tripTypes?: TripType[],
-  seasons?: Season[]
+  seasons?: Season[],
 ): Promise<string> {
   const now = new Date().toISOString();
   const templateId = `template_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -761,7 +772,13 @@ export async function saveAsTemplate(
     const batch = writeBatch(db);
 
     // Create template document
-    const templateRef = doc(db, "users", userId, PACKING_TEMPLATES_COLLECTION, templateId);
+    const templateRef = doc(
+      db,
+      'users',
+      userId,
+      PACKING_TEMPLATES_COLLECTION,
+      templateId,
+    );
     const templateData: PackingTemplate = {
       id: templateId,
       name: templateName,
@@ -783,12 +800,12 @@ export async function saveAsTemplate(
     for (const item of items) {
       const itemRef = doc(
         db,
-        "users",
+        'users',
         userId,
         PACKING_TEMPLATES_COLLECTION,
         templateId,
         TEMPLATE_ITEMS_COLLECTION,
-        item.id
+        item.id,
       );
       const templateItem: PackingTemplateItem = {
         id: item.id,
@@ -808,7 +825,7 @@ export async function saveAsTemplate(
     await batch.commit();
     return templateId;
   } catch (error) {
-    console.log("[PackingService] Error saving template:", error);
+    console.log('[PackingService] Error saving template:', error);
     throw error;
   }
 }
@@ -839,35 +856,41 @@ async function saveLocalPackingItem(tripId: string, item: PackingItemV2): Promis
   try {
     const items = await getLocalPackingItems(tripId);
     const existingIndex = items.findIndex((i) => i.id === item.id);
-    
+
     if (existingIndex >= 0) {
       items[existingIndex] = item;
     } else {
       items.push(item);
     }
-    
-    await AsyncStorage.setItem(`${LOCAL_STORAGE_PREFIX}items_${tripId}`, JSON.stringify(items));
+
+    await AsyncStorage.setItem(
+      `${LOCAL_STORAGE_PREFIX}items_${tripId}`,
+      JSON.stringify(items),
+    );
   } catch (error) {
-    console.log("[PackingService] Local storage error:", error);
+    console.log('[PackingService] Local storage error:', error);
   }
 }
 
 async function toggleLocalItemPacked(
   tripId: string,
   itemId: string,
-  isPacked: boolean
+  isPacked: boolean,
 ): Promise<void> {
   try {
     const items = await getLocalPackingItems(tripId);
     const item = items.find((i) => i.id === itemId);
-    
+
     if (item) {
       item.isPacked = isPacked;
       item.updatedAt = new Date().toISOString();
-      await AsyncStorage.setItem(`${LOCAL_STORAGE_PREFIX}items_${tripId}`, JSON.stringify(items));
+      await AsyncStorage.setItem(
+        `${LOCAL_STORAGE_PREFIX}items_${tripId}`,
+        JSON.stringify(items),
+      );
     }
   } catch (error) {
-    console.log("[PackingService] Local storage error:", error);
+    console.log('[PackingService] Local storage error:', error);
   }
 }
 
@@ -875,29 +898,41 @@ async function deleteLocalPackingItem(tripId: string, itemId: string): Promise<v
   try {
     const items = await getLocalPackingItems(tripId);
     const filtered = items.filter((i) => i.id !== itemId);
-    await AsyncStorage.setItem(`${LOCAL_STORAGE_PREFIX}items_${tripId}`, JSON.stringify(filtered));
+    await AsyncStorage.setItem(
+      `${LOCAL_STORAGE_PREFIX}items_${tripId}`,
+      JSON.stringify(filtered),
+    );
   } catch (error) {
-    console.log("[PackingService] Local storage error:", error);
+    console.log('[PackingService] Local storage error:', error);
   }
 }
 
-async function saveLocalPackingList(tripId: string, items: PackingItemV2[]): Promise<void> {
+async function saveLocalPackingList(
+  tripId: string,
+  items: PackingItemV2[],
+): Promise<void> {
   try {
-    await AsyncStorage.setItem(`${LOCAL_STORAGE_PREFIX}items_${tripId}`, JSON.stringify(items));
-    
+    await AsyncStorage.setItem(
+      `${LOCAL_STORAGE_PREFIX}items_${tripId}`,
+      JSON.stringify(items),
+    );
+
     const listData: TripPackingList = {
-      id: "main",
+      id: 'main',
       tripId,
-      userId: "local",
+      userId: 'local',
       totalItems: items.length,
       packedItems: 0,
-      status: "active",
+      status: 'active',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await AsyncStorage.setItem(`${LOCAL_STORAGE_PREFIX}list_${tripId}`, JSON.stringify(listData));
+    await AsyncStorage.setItem(
+      `${LOCAL_STORAGE_PREFIX}list_${tripId}`,
+      JSON.stringify(listData),
+    );
   } catch (error) {
-    console.log("[PackingService] Local storage error:", error);
+    console.log('[PackingService] Local storage error:', error);
   }
 }
 
@@ -909,7 +944,7 @@ async function saveLocalPackingList(tripId: string, items: PackingItemV2[]): Pro
  * Get items grouped by category
  */
 export function groupItemsByCategory(
-  items: PackingItemV2[]
+  items: PackingItemV2[],
 ): Map<PackingCategory, PackingItemV2[]> {
   const grouped = new Map<PackingCategory, PackingItemV2[]>();
 
@@ -925,9 +960,10 @@ export function groupItemsByCategory(
 /**
  * Get category progress
  */
-export function getCategoryProgress(
-  items: PackingItemV2[]
-): { packed: number; total: number } {
+export function getCategoryProgress(items: PackingItemV2[]): {
+  packed: number;
+  total: number;
+} {
   return {
     packed: items.filter((i) => i.isPacked).length,
     total: items.length,
@@ -939,16 +975,16 @@ export function getCategoryProgress(
  */
 export function filterItems(
   items: PackingItemV2[],
-  filter: "all" | "unpacked" | "packed" | "essentials" | "gear-linked"
+  filter: 'all' | 'unpacked' | 'packed' | 'essentials' | 'gear-linked',
 ): PackingItemV2[] {
   switch (filter) {
-    case "unpacked":
+    case 'unpacked':
       return items.filter((i) => !i.isPacked);
-    case "packed":
+    case 'packed':
       return items.filter((i) => i.isPacked);
-    case "essentials":
+    case 'essentials':
       return items.filter((i) => i.isEssential);
-    case "gear-linked":
+    case 'gear-linked':
       return items.filter((i) => i.isFromGearCloset === true);
     default:
       return items;
@@ -958,12 +994,9 @@ export function filterItems(
 /**
  * Reset all items to unpacked
  */
-export async function resetPackingList(
-  userId: string,
-  tripId: string
-): Promise<void> {
+export async function resetPackingList(userId: string, tripId: string): Promise<void> {
   const items = await getTripPackingItems(userId, tripId);
-  
+
   for (const item of items) {
     if (item.isPacked) {
       await toggleItemPacked(userId, tripId, item.id, false);
@@ -974,12 +1007,9 @@ export async function resetPackingList(
 /**
  * Clear entire packing list
  */
-export async function clearPackingList(
-  userId: string,
-  tripId: string
-): Promise<void> {
+export async function clearPackingList(userId: string, tripId: string): Promise<void> {
   const items = await getTripPackingItems(userId, tripId);
-  
+
   for (const item of items) {
     await deletePackingItem(userId, tripId, item.id);
   }

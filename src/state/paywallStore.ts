@@ -1,6 +1,6 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-type PaywallType = "community_full" | "premium_feature" | "trial_expired";
+type PaywallType = 'community_full' | 'premium_feature' | 'trial_expired';
 
 interface PaywallContext {
   name: string;

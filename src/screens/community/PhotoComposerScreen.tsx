@@ -3,7 +3,7 @@
  * Create photo posts with post types, structured fields, and tags
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,18 +17,18 @@ import {
   Alert,
   Keyboard,
   TouchableWithoutFeedback,
-} from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import ModalHeader from "../../components/ModalHeader";
-import * as ImagePicker from "expo-image-picker";
-import * as Haptics from "expo-haptics";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useCurrentUser } from "../../state/userStore";
-import { RootStackNavigationProp } from "../../navigation/types";
-import { createPhotoPost } from "../../services/photoPostsService";
-import { requireEmailVerification } from "../../utils/authHelper";
-import { recordPhotoUpload, canUploadPhotoToday } from "../../services/photoLimitService";
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import ModalHeader from '../../components/ModalHeader';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useCurrentUser } from '../../state/userStore';
+import { RootStackNavigationProp } from '../../navigation/types';
+import { createPhotoPost } from '../../services/photoPostsService';
+import { requireEmailVerification } from '../../utils/authHelper';
+import { recordPhotoUpload, canUploadPhotoToday } from '../../services/photoLimitService';
 import {
   PhotoPostType,
   TripStyle,
@@ -37,7 +37,7 @@ import {
   TRIP_STYLE_LABELS,
   DETAIL_TAG_LABELS,
   QUICK_POST_TILES,
-} from "../../types/photoPost";
+} from '../../types/photoPost';
 import {
   DEEP_FOREST,
   PARCHMENT,
@@ -46,7 +46,7 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
-} from "../../constants/colors";
+} from '../../constants/colors';
 
 type RouteParams = {
   postType?: PhotoPostType;
@@ -54,34 +54,34 @@ type RouteParams = {
 
 // Trip style options
 const TRIP_STYLE_OPTIONS: TripStyle[] = [
-  "car-camping",
-  "tent-camping",
-  "backpacking",
-  "hiking",
-  "rv-trailer",
-  "group-camping",
-  "solo-camping",
-  "family-camping",
-  "winter-camping",
+  'car-camping',
+  'tent-camping',
+  'backpacking',
+  'hiking',
+  'rv-trailer',
+  'group-camping',
+  'solo-camping',
+  'family-camping',
+  'winter-camping',
 ];
 
 // Detail tag options
 const DETAIL_TAG_OPTIONS: DetailTag[] = [
-  "shade",
-  "privacy",
-  "flat-ground",
-  "windy",
-  "bugs",
-  "mud",
-  "snow",
-  "rain",
-  "quiet",
-  "near-bathrooms",
-  "near-water",
-  "scenic-view",
-  "pet-friendly",
-  "kid-friendly",
-  "accessible",
+  'shade',
+  'privacy',
+  'flat-ground',
+  'windy',
+  'bugs',
+  'mud',
+  'snow',
+  'rain',
+  'quiet',
+  'near-bathrooms',
+  'near-water',
+  'scenic-view',
+  'pet-friendly',
+  'kid-friendly',
+  'accessible',
 ];
 
 export default function PhotoComposerScreen() {
@@ -97,11 +97,11 @@ export default function PhotoComposerScreen() {
   const [postType, setPostType] = useState<PhotoPostType | null>(initialPostType || null);
 
   // Caption
-  const [caption, setCaption] = useState("");
+  const [caption, setCaption] = useState('');
 
   // Campsite Spotlight specific fields
-  const [campgroundName, setCampgroundName] = useState("");
-  const [campsiteNumber, setCampsiteNumber] = useState("");
+  const [campgroundName, setCampgroundName] = useState('');
+  const [campsiteNumber, setCampsiteNumber] = useState('');
   const [hideCampsiteNumber, setHideCampsiteNumber] = useState(false);
 
   // Tags
@@ -116,9 +116,11 @@ export default function PhotoComposerScreen() {
   useEffect(() => {
     if (postType) {
       // Only set template if caption is empty or is still a template
-      const isTemplate = Object.values(CAPTION_TEMPLATES).some(t => caption === t || caption === "");
+      const isTemplate = Object.values(CAPTION_TEMPLATES).some(
+        (t) => caption === t || caption === '',
+      );
       if (isTemplate || !caption) {
-        setCaption(CAPTION_TEMPLATES[postType] || "");
+        setCaption(CAPTION_TEMPLATES[postType] || '');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -129,12 +131,15 @@ export default function PhotoComposerScreen() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "Please allow access to your photo library to upload images.");
+        Alert.alert(
+          'Permission Required',
+          'Please allow access to your photo library to upload images.',
+        );
         return;
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
@@ -145,7 +150,7 @@ export default function PhotoComposerScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       }
     } catch {
-      setError("Failed to pick image");
+      setError('Failed to pick image');
     }
   };
 
@@ -153,7 +158,7 @@ export default function PhotoComposerScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPostType(type);
     // Set caption template
-    if (!caption || caption === CAPTION_TEMPLATES[postType || "campsite-spotlight"]) {
+    if (!caption || caption === CAPTION_TEMPLATES[postType || 'campsite-spotlight']) {
       setCaption(CAPTION_TEMPLATES[type]);
     }
   };
@@ -166,15 +171,18 @@ export default function PhotoComposerScreen() {
   const handleToggleDetailTag = (tag: DetailTag) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (detailTags.includes(tag)) {
-      setDetailTags(detailTags.filter(t => t !== tag));
+      setDetailTags(detailTags.filter((t) => t !== tag));
     } else if (detailTags.length < 3) {
       setDetailTags([...detailTags, tag]);
     }
   };
 
-  const uploadImageToStorage = async (uri: string, photoId: string): Promise<{ downloadURL: string; storagePath: string }> => {
+  const uploadImageToStorage = async (
+    uri: string,
+    photoId: string,
+  ): Promise<{ downloadURL: string; storagePath: string }> => {
     const storage = getStorage();
-    const userId = currentUser?.id || "anonymous";
+    const userId = currentUser?.id || 'anonymous';
     const storagePath = `photoPosts/${userId}/${photoId}.jpg`;
     const storageRef = ref(storage, storagePath);
     const response = await fetch(uri);
@@ -188,11 +196,11 @@ export default function PhotoComposerScreen() {
     if (!currentUser || !imageUri || !postType || !caption.trim() || uploading) return;
 
     // Require email verification for posting content
-    const isVerified = await requireEmailVerification("share photos");
+    const isVerified = await requireEmailVerification('share photos');
     if (!isVerified) return;
 
     if (caption.length < 10) {
-      setError("Caption must be at least 10 characters");
+      setError('Caption must be at least 10 characters');
       return;
     }
 
@@ -210,22 +218,29 @@ export default function PhotoComposerScreen() {
 
       // Generate a temporary ID for storage path
       const tempId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       // Upload image first
       const { downloadURL, storagePath } = await uploadImageToStorage(imageUri, tempId);
 
       // Create photo post
       const postId = await createPhotoPost({
         userId: currentUser.id,
-        displayName: currentUser.displayName || "Anonymous",
+        displayName: currentUser.displayName || 'Anonymous',
         userHandle: currentUser.handle,
         photoUrls: [downloadURL],
         storagePaths: [storagePath],
         postType,
         caption: caption.trim(),
-        campgroundName: postType === "campsite-spotlight" && campgroundName.trim() ? campgroundName.trim() : undefined,
-        campsiteNumber: postType === "campsite-spotlight" && campsiteNumber.trim() ? campsiteNumber.trim() : undefined,
-        hideCampsiteNumber: postType === "campsite-spotlight" ? hideCampsiteNumber : undefined,
+        campgroundName:
+          postType === 'campsite-spotlight' && campgroundName.trim()
+            ? campgroundName.trim()
+            : undefined,
+        campsiteNumber:
+          postType === 'campsite-spotlight' && campsiteNumber.trim()
+            ? campsiteNumber.trim()
+            : undefined,
+        hideCampsiteNumber:
+          postType === 'campsite-spotlight' ? hideCampsiteNumber : undefined,
         tripStyle: tripStyle || undefined,
         detailTags: detailTags.length > 0 ? detailTags : undefined,
       });
@@ -234,10 +249,10 @@ export default function PhotoComposerScreen() {
       await recordPhotoUpload();
 
       // Navigate to the photo detail
-      navigation.replace("PhotoDetail", { storyId: postId });
+      navigation.replace('PhotoDetail', { storyId: postId });
     } catch (err: any) {
-      console.error("Error creating photo post:", err);
-      setError(err.message || "Failed to upload photo");
+      console.error('Error creating photo post:', err);
+      setError(err.message || 'Failed to upload photo');
       setUploading(false);
     }
   };
@@ -249,23 +264,34 @@ export default function PhotoComposerScreen() {
       <ModalHeader
         title="Share a Photo"
         showTitle
-        rightAction={isValid && !uploading ? {
-          icon: "checkmark",
-          onPress: handleSubmit,
-        } : undefined}
+        rightAction={
+          isValid && !uploading
+            ? {
+                icon: 'checkmark',
+                onPress: handleSubmit,
+              }
+            : undefined
+        }
       />
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={90}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ padding: 20 }}
+            keyboardShouldPersistTaps="handled"
+          >
             {error && (
               <View className="rounded-xl p-4 mb-4 flex-row items-center bg-red-100 border border-red-300">
                 <Ionicons name="alert-circle" size={20} color="#dc2626" />
-                <Text className="ml-2 flex-1" style={{ fontFamily: "SourceSans3_400Regular", color: "#dc2626" }}>
+                <Text
+                  className="ml-2 flex-1"
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: '#dc2626' }}
+                >
                   {error}
                 </Text>
               </View>
@@ -274,7 +300,10 @@ export default function PhotoComposerScreen() {
             {uploading && (
               <View className="rounded-xl p-4 mb-4 flex-row items-center bg-blue-100 border border-blue-300">
                 <ActivityIndicator size="small" color="#1e40af" />
-                <Text className="ml-2 flex-1" style={{ fontFamily: "SourceSans3_400Regular", color: "#1e40af" }}>
+                <Text
+                  className="ml-2 flex-1"
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: '#1e40af' }}
+                >
                   Uploading photo...
                 </Text>
               </View>
@@ -293,13 +322,19 @@ export default function PhotoComposerScreen() {
               {imageUri ? (
                 <Image
                   source={{ uri: imageUri }}
-                  style={{ width: "100%", height: "100%" }}
+                  style={{ width: '100%', height: '100%' }}
                   resizeMode="cover"
                 />
               ) : (
                 <View className="flex-1 items-center justify-center">
                   <Ionicons name="camera" size={48} color={TEXT_MUTED} />
-                  <Text className="mt-3" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}>
+                  <Text
+                    className="mt-3"
+                    style={{
+                      fontFamily: 'SourceSans3_600SemiBold',
+                      color: TEXT_PRIMARY_STRONG,
+                    }}
+                  >
                     Tap to select photo
                   </Text>
                 </View>
@@ -308,10 +343,16 @@ export default function PhotoComposerScreen() {
 
             {/* Post Type Selector */}
             <View className="mb-5">
-              <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}>
+              <Text
+                className="mb-2"
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: TEXT_PRIMARY_STRONG,
+                }}
+              >
                 Post Type *
               </Text>
-              
+
               <View className="flex-row flex-wrap gap-2">
                 {QUICK_POST_TILES.map((tile) => (
                   <Pressable
@@ -319,21 +360,25 @@ export default function PhotoComposerScreen() {
                     onPress={() => handleSelectPostType(tile.postType)}
                     className="px-4 py-3 rounded-xl flex-row items-center"
                     style={{
-                      backgroundColor: postType === tile.postType ? tile.color + "20" : CARD_BACKGROUND_LIGHT,
+                      backgroundColor:
+                        postType === tile.postType
+                          ? tile.color + '20'
+                          : CARD_BACKGROUND_LIGHT,
                       borderWidth: 1,
                       borderColor: postType === tile.postType ? tile.color : BORDER_SOFT,
                     }}
                   >
-                    <Ionicons 
-                      name={tile.icon as any} 
-                      size={16} 
-                      color={postType === tile.postType ? tile.color : TEXT_SECONDARY} 
+                    <Ionicons
+                      name={tile.icon as any}
+                      size={16}
+                      color={postType === tile.postType ? tile.color : TEXT_SECONDARY}
                     />
-                    <Text 
+                    <Text
                       className="ml-2"
-                      style={{ 
-                        fontFamily: "SourceSans3_600SemiBold", 
-                        color: postType === tile.postType ? tile.color : TEXT_PRIMARY_STRONG,
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color:
+                          postType === tile.postType ? tile.color : TEXT_PRIMARY_STRONG,
                         fontSize: 13,
                       }}
                     >
@@ -345,15 +390,27 @@ export default function PhotoComposerScreen() {
             </View>
 
             {/* Campsite Spotlight Fields */}
-            {postType === "campsite-spotlight" && (
-              <View className="mb-5 p-4 rounded-xl border" style={{ backgroundColor: "#2563eb10", borderColor: "#2563eb40" }}>
-                <Text className="mb-3" style={{ fontFamily: "SourceSans3_600SemiBold", color: "#2563eb" }}>
+            {postType === 'campsite-spotlight' && (
+              <View
+                className="mb-5 p-4 rounded-xl border"
+                style={{ backgroundColor: '#2563eb10', borderColor: '#2563eb40' }}
+              >
+                <Text
+                  className="mb-3"
+                  style={{ fontFamily: 'SourceSans3_600SemiBold', color: '#2563eb' }}
+                >
                   📍 Campsite Details
                 </Text>
 
                 {/* Campground Name */}
                 <View className="mb-4">
-                  <Text className="mb-1 text-sm" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}>
+                  <Text
+                    className="mb-1 text-sm"
+                    style={{
+                      fontFamily: 'SourceSans3_600SemiBold',
+                      color: TEXT_PRIMARY_STRONG,
+                    }}
+                  >
                     Park or Campground
                   </Text>
                   <TextInput
@@ -364,9 +421,9 @@ export default function PhotoComposerScreen() {
                     returnKeyType="next"
                     className="rounded-xl border px-4 py-3"
                     style={{
-                      backgroundColor: "white",
+                      backgroundColor: 'white',
                       borderColor: BORDER_SOFT,
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       color: TEXT_PRIMARY_STRONG,
                     }}
                   />
@@ -374,7 +431,13 @@ export default function PhotoComposerScreen() {
 
                 {/* Campsite Number */}
                 <View className="mb-3">
-                  <Text className="mb-1 text-sm" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}>
+                  <Text
+                    className="mb-1 text-sm"
+                    style={{
+                      fontFamily: 'SourceSans3_600SemiBold',
+                      color: TEXT_PRIMARY_STRONG,
+                    }}
+                  >
                     Campsite Number (optional)
                   </Text>
                   <TextInput
@@ -385,13 +448,19 @@ export default function PhotoComposerScreen() {
                     returnKeyType="done"
                     className="rounded-xl border px-4 py-3"
                     style={{
-                      backgroundColor: "white",
+                      backgroundColor: 'white',
                       borderColor: BORDER_SOFT,
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       color: TEXT_PRIMARY_STRONG,
                     }}
                   />
-                  <Text className="mt-1 text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+                  <Text
+                    className="mt-1 text-xs"
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: TEXT_SECONDARY,
+                    }}
+                  >
                     This makes your photo useful later. Site numbers are gold.
                   </Text>
                 </View>
@@ -404,16 +473,24 @@ export default function PhotoComposerScreen() {
                   }}
                   className="flex-row items-center"
                 >
-                  <View 
+                  <View
                     className="w-5 h-5 rounded border items-center justify-center mr-2"
-                    style={{ 
-                      backgroundColor: hideCampsiteNumber ? DEEP_FOREST : "white",
+                    style={{
+                      backgroundColor: hideCampsiteNumber ? DEEP_FOREST : 'white',
                       borderColor: hideCampsiteNumber ? DEEP_FOREST : BORDER_SOFT,
                     }}
                   >
-                    {hideCampsiteNumber && <Ionicons name="checkmark" size={14} color="white" />}
+                    {hideCampsiteNumber && (
+                      <Ionicons name="checkmark" size={14} color="white" />
+                    )}
                   </View>
-                  <Text className="text-sm" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+                  <Text
+                    className="text-sm"
+                    style={{
+                      fontFamily: 'SourceSans3_400Regular',
+                      color: TEXT_SECONDARY,
+                    }}
+                  >
                     Hide exact site number from public
                   </Text>
                 </Pressable>
@@ -422,7 +499,13 @@ export default function PhotoComposerScreen() {
 
             {/* Caption Input */}
             <View className="mb-5">
-              <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}>
+              <Text
+                className="mb-2"
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: TEXT_PRIMARY_STRONG,
+                }}
+              >
                 Caption *
               </Text>
               <TextInput
@@ -435,27 +518,39 @@ export default function PhotoComposerScreen() {
                 textAlignVertical="top"
                 className="rounded-xl border px-4 py-3"
                 style={{
-                  backgroundColor: "white",
+                  backgroundColor: 'white',
                   borderColor: BORDER_SOFT,
-                  fontFamily: "SourceSans3_400Regular",
+                  fontFamily: 'SourceSans3_400Regular',
                   color: TEXT_PRIMARY_STRONG,
                   minHeight: 160,
                 }}
                 maxLength={1000}
               />
-              <Text className="mt-1 text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
+              <Text
+                className="mt-1 text-xs"
+                style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
+              >
                 {caption.length}/1000 • Minimum 10 characters
               </Text>
             </View>
 
             {/* Tag Selection */}
             <View className="mb-5">
-              <Text className="mb-3" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}>
+              <Text
+                className="mb-3"
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  color: TEXT_PRIMARY_STRONG,
+                }}
+              >
                 Add Tags
               </Text>
 
               {/* Trip Style (single select) */}
-              <Text className="mb-2 text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}>
+              <Text
+                className="mb-2 text-xs"
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_SECONDARY }}
+              >
                 TRIP STYLE (pick one)
               </Text>
               <View className="flex-row flex-wrap gap-2 mb-4">
@@ -474,7 +569,7 @@ export default function PhotoComposerScreen() {
                     >
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           color: isSelected ? PARCHMENT : TEXT_PRIMARY_STRONG,
                           fontSize: 13,
                         }}
@@ -487,7 +582,10 @@ export default function PhotoComposerScreen() {
               </View>
 
               {/* Detail Tags (multi select, max 3) */}
-              <Text className="mb-2 text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}>
+              <Text
+                className="mb-2 text-xs"
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: TEXT_SECONDARY }}
+              >
                 DETAILS (up to 3)
               </Text>
               <View className="flex-row flex-wrap gap-2">
@@ -509,7 +607,7 @@ export default function PhotoComposerScreen() {
                     >
                       <Text
                         style={{
-                          fontFamily: "SourceSans3_600SemiBold",
+                          fontFamily: 'SourceSans3_600SemiBold',
                           color: isSelected ? PARCHMENT : TEXT_PRIMARY_STRONG,
                           fontSize: 13,
                         }}
@@ -521,7 +619,10 @@ export default function PhotoComposerScreen() {
                 })}
               </View>
               {detailTags.length === 3 && (
-                <Text className="mt-2 text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
+                <Text
+                  className="mt-2 text-xs"
+                  style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
+                >
                   Maximum of 3 detail tags selected
                 </Text>
               )}
@@ -533,13 +634,19 @@ export default function PhotoComposerScreen() {
               disabled={!isValid || uploading}
               className="py-4 rounded-xl items-center active:opacity-90 mb-8"
               style={{
-                backgroundColor: isValid && !uploading ? DEEP_FOREST : "#d1d5db",
+                backgroundColor: isValid && !uploading ? DEEP_FOREST : '#d1d5db',
               }}
             >
               {uploading ? (
                 <ActivityIndicator size="small" color="white" />
               ) : (
-                <Text style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT, fontSize: 16 }}>
+                <Text
+                  style={{
+                    fontFamily: 'SourceSans3_600SemiBold',
+                    color: PARCHMENT,
+                    fontSize: 16,
+                  }}
+                >
                   Post Photo
                 </Text>
               )}

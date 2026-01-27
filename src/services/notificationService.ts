@@ -3,121 +3,121 @@
  * Handles push notifications, local notifications, and scheduling
  */
 
-import * as Notifications from "expo-notifications";
-import * as Device from "expo-device";
-import { Platform } from "react-native";
-import { auth, db } from "../config/firebase";
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  deleteDoc, 
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
+import { auth, db } from '../config/firebase';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
   serverTimestamp,
-} from "firebase/firestore";
-import Constants from "expo-constants";
+} from 'firebase/firestore';
+import Constants from 'expo-constants';
 
 // ==================== Types ====================
 
 export interface NotificationPreferences {
   // Master toggle
   enabled: boolean;
-  
+
   // Trip & Planning
-  tripReminders: boolean;           // Trip starts tomorrow, 3 days out
-  leaveTimeReminders: boolean;      // Based on drive time
-  arrivalDayNudge: boolean;         // "You're arriving today"
-  tripEndingReminder: boolean;      // Trip is ending today
-  postTripRecap: boolean;           // 1 day after trip
-  
+  tripReminders: boolean; // Trip starts tomorrow, 3 days out
+  leaveTimeReminders: boolean; // Based on drive time
+  arrivalDayNudge: boolean; // "You're arriving today"
+  tripEndingReminder: boolean; // Trip is ending today
+  postTripRecap: boolean; // 1 day after trip
+
   // Packing
-  packingListReminders: boolean;    // Not started, incomplete
-  essentialsMissing: boolean;       // Key categories empty
-  sharedPackingUpdates: boolean;    // Someone updates shared list
-  restockReminders: boolean;        // After trip consumables
-  
+  packingListReminders: boolean; // Not started, incomplete
+  essentialsMissing: boolean; // Key categories empty
+  sharedPackingUpdates: boolean; // Someone updates shared list
+  restockReminders: boolean; // After trip consumables
+
   // Weather & Safety
-  weatherAlerts: boolean;           // Rain, wind, extreme temps
-  severeWeatherWarnings: boolean;   // Storms, tornado, lightning
-  freezeWarnings: boolean;          // Overnight low threshold
-  fireWeatherAlerts: boolean;       // Burn bans
-  airQualityAlerts: boolean;        // Smoke, poor AQI
-  
+  weatherAlerts: boolean; // Rain, wind, extreme temps
+  severeWeatherWarnings: boolean; // Storms, tornado, lightning
+  freezeWarnings: boolean; // Overnight low threshold
+  fireWeatherAlerts: boolean; // Burn bans
+  airQualityAlerts: boolean; // Smoke, poor AQI
+
   // Parks & Discovery
-  parkAdvisories: boolean;          // Closures for favorites
-  seasonalSuggestions: boolean;     // Best time to visit
-  nearbyParkSuggestions: boolean;   // Location-based (opt-in)
-  
+  parkAdvisories: boolean; // Closures for favorites
+  seasonalSuggestions: boolean; // Best time to visit
+  nearbyParkSuggestions: boolean; // Location-based (opt-in)
+
   // Community
-  questionAnswers: boolean;         // Someone answered your question
-  commentReplies: boolean;          // Reply to your comment
-  tipEngagement: boolean;           // Featured, upvoted, helpful
-  moderatorMessages: boolean;       // System/mod messages
-  campgroundInvites: boolean;       // My Campground connections
-  
+  questionAnswers: boolean; // Someone answered your question
+  commentReplies: boolean; // Reply to your comment
+  tipEngagement: boolean; // Featured, upvoted, helpful
+  moderatorMessages: boolean; // System/mod messages
+  campgroundInvites: boolean; // My Campground connections
+
   // Account
-  trialReminders: boolean;          // Trial ending
-  subscriptionReminders: boolean;   // Renewal upcoming
-  paymentIssues: boolean;           // Failed payment
-  featureAnnouncements: boolean;    // New Pro features
-  
+  trialReminders: boolean; // Trial ending
+  subscriptionReminders: boolean; // Renewal upcoming
+  paymentIssues: boolean; // Failed payment
+  featureAnnouncements: boolean; // New Pro features
+
   // Learning
-  moduleProgress: boolean;          // Unlocked, completed
-  badgeEarned: boolean;             // New badges
-  
+  moduleProgress: boolean; // Unlocked, completed
+  badgeEarned: boolean; // New badges
+
   // Operational
-  permissionReminders: boolean;     // Location/notification off
+  permissionReminders: boolean; // Location/notification off
 }
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   enabled: true,
-  
+
   // Trip & Planning - all on by default (high value)
   tripReminders: true,
   leaveTimeReminders: true,
   arrivalDayNudge: true,
   tripEndingReminder: true,
   postTripRecap: true,
-  
+
   // Packing - all on (high value)
   packingListReminders: true,
   essentialsMissing: true,
   sharedPackingUpdates: true,
   restockReminders: false, // optional
-  
+
   // Weather & Safety - critical ones on
   weatherAlerts: true,
   severeWeatherWarnings: true,
   freezeWarnings: true,
   fireWeatherAlerts: true,
   airQualityAlerts: true,
-  
+
   // Parks & Discovery - conservative defaults
   parkAdvisories: true,
   seasonalSuggestions: false,
   nearbyParkSuggestions: false,
-  
+
   // Community - on by default
   questionAnswers: true,
   commentReplies: true,
   tipEngagement: true,
   moderatorMessages: true,
   campgroundInvites: true,
-  
+
   // Account - important ones on
   trialReminders: true,
   subscriptionReminders: true,
   paymentIssues: true,
   featureAnnouncements: false,
-  
+
   // Learning
   moduleProgress: true,
   badgeEarned: true,
-  
+
   // Operational
   permissionReminders: true,
 };
@@ -147,7 +147,7 @@ export async function getNotificationStatus(): Promise<{
 }> {
   const isDevice = Device.isDevice;
   const { status, canAskAgain } = await Notifications.getPermissionsAsync();
-  
+
   return {
     isDevice,
     permissionStatus: status,
@@ -160,18 +160,18 @@ export async function getNotificationStatus(): Promise<{
  */
 export async function requestNotificationPermission(): Promise<boolean> {
   if (!Device.isDevice) {
-    console.log("[Notifications] Not a physical device, skipping permission request");
+    console.log('[Notifications] Not a physical device, skipping permission request');
     return false;
   }
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  
-  if (existingStatus === "granted") {
+
+  if (existingStatus === 'granted') {
     return true;
   }
 
   const { status } = await Notifications.requestPermissionsAsync();
-  return status === "granted";
+  return status === 'granted';
 }
 
 /**
@@ -184,14 +184,14 @@ export async function getExpoPushToken(): Promise<string | null> {
 
   try {
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-    
+
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId: projectId,
     });
-    
+
     return tokenData.data;
   } catch (error) {
-    console.error("[Notifications] Error getting push token:", error);
+    console.error('[Notifications] Error getting push token:', error);
     return null;
   }
 }
@@ -202,17 +202,17 @@ export async function getExpoPushToken(): Promise<string | null> {
 export async function registerPushToken(userId: string): Promise<boolean> {
   try {
     const token = await getExpoPushToken();
-    
+
     if (!token) {
-      console.log("[Notifications] No token available");
+      console.log('[Notifications] No token available');
       return false;
     }
 
-    const pushTokensRef = collection(db, "pushTokens");
+    const pushTokensRef = collection(db, 'pushTokens');
     const q = query(
-      pushTokensRef, 
-      where("userId", "==", userId), 
-      where("token", "==", token)
+      pushTokensRef,
+      where('userId', '==', userId),
+      where('token', '==', token),
     );
     const existingTokens = await getDocs(q);
 
@@ -225,7 +225,7 @@ export async function registerPushToken(userId: string): Promise<boolean> {
         createdAt: serverTimestamp(),
         lastUsed: serverTimestamp(),
       });
-      console.log("[Notifications] Registered new push token");
+      console.log('[Notifications] Registered new push token');
     } else {
       // Update lastUsed timestamp
       const tokenDoc = existingTokens.docs[0];
@@ -236,7 +236,7 @@ export async function registerPushToken(userId: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error("[Notifications] Error registering token:", error);
+    console.error('[Notifications] Error registering token:', error);
     return false;
   }
 }
@@ -246,14 +246,14 @@ export async function registerPushToken(userId: string): Promise<boolean> {
  */
 export async function unregisterPushTokens(userId: string): Promise<void> {
   try {
-    const pushTokensRef = collection(db, "pushTokens");
-    const q = query(pushTokensRef, where("userId", "==", userId));
+    const pushTokensRef = collection(db, 'pushTokens');
+    const q = query(pushTokensRef, where('userId', '==', userId));
     const tokens = await getDocs(q);
 
-    await Promise.all(tokens.docs.map(tokenDoc => deleteDoc(tokenDoc.ref)));
-    console.log("[Notifications] Unregistered all push tokens");
+    await Promise.all(tokens.docs.map((tokenDoc) => deleteDoc(tokenDoc.ref)));
+    console.log('[Notifications] Unregistered all push tokens');
   } catch (error) {
-    console.error("[Notifications] Error unregistering tokens:", error);
+    console.error('[Notifications] Error unregistering tokens:', error);
   }
 }
 
@@ -263,18 +263,21 @@ export async function unregisterPushTokens(userId: string): Promise<void> {
  * Get notification preferences for a user
  */
 export async function getNotificationPreferences(
-  userId: string
+  userId: string,
 ): Promise<NotificationPreferences> {
   try {
-    const prefsDoc = await getDoc(doc(db, "notificationPreferences", userId));
-    
+    const prefsDoc = await getDoc(doc(db, 'notificationPreferences', userId));
+
     if (prefsDoc.exists()) {
-      return { ...DEFAULT_NOTIFICATION_PREFERENCES, ...prefsDoc.data() } as NotificationPreferences;
+      return {
+        ...DEFAULT_NOTIFICATION_PREFERENCES,
+        ...prefsDoc.data(),
+      } as NotificationPreferences;
     }
-    
+
     return DEFAULT_NOTIFICATION_PREFERENCES;
   } catch (error) {
-    console.error("[Notifications] Error loading preferences:", error);
+    console.error('[Notifications] Error loading preferences:', error);
     return DEFAULT_NOTIFICATION_PREFERENCES;
   }
 }
@@ -284,18 +287,22 @@ export async function getNotificationPreferences(
  */
 export async function saveNotificationPreferences(
   userId: string,
-  preferences: Partial<NotificationPreferences>
+  preferences: Partial<NotificationPreferences>,
 ): Promise<void> {
   try {
-    const prefsRef = doc(db, "notificationPreferences", userId);
-    await setDoc(prefsRef, {
-      ...preferences,
-      updatedAt: serverTimestamp(),
-    }, { merge: true });
-    
-    console.log("[Notifications] Preferences saved");
+    const prefsRef = doc(db, 'notificationPreferences', userId);
+    await setDoc(
+      prefsRef,
+      {
+        ...preferences,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    console.log('[Notifications] Preferences saved');
   } catch (error) {
-    console.error("[Notifications] Error saving preferences:", error);
+    console.error('[Notifications] Error saving preferences:', error);
     throw error;
   }
 }
@@ -309,13 +316,13 @@ export async function scheduleTripReminder(
   tripId: string,
   tripName: string,
   tripDate: Date,
-  daysBeforeTrip: number = 1
+  daysBeforeTrip: number = 1,
 ): Promise<string | null> {
   try {
     const reminderDate = new Date(tripDate);
     reminderDate.setDate(reminderDate.getDate() - daysBeforeTrip);
     reminderDate.setHours(9, 0, 0, 0); // 9 AM reminder
-    
+
     // Don't schedule if the reminder date is in the past
     if (reminderDate <= new Date()) {
       return null;
@@ -323,11 +330,12 @@ export async function scheduleTripReminder(
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: daysBeforeTrip === 1 
-          ? "🏕️ Your trip starts tomorrow!" 
-          : `🏕️ Your trip is in ${daysBeforeTrip} days`,
+        title:
+          daysBeforeTrip === 1
+            ? '🏕️ Your trip starts tomorrow!'
+            : `🏕️ Your trip is in ${daysBeforeTrip} days`,
         body: `${tripName} - Time to finalize your packing list!`,
-        data: { type: "trip_reminder", tripId },
+        data: { type: 'trip_reminder', tripId },
         sound: true,
       },
       trigger: {
@@ -339,7 +347,7 @@ export async function scheduleTripReminder(
     console.log(`[Notifications] Scheduled trip reminder: ${identifier}`);
     return identifier;
   } catch (error) {
-    console.error("[Notifications] Error scheduling trip reminder:", error);
+    console.error('[Notifications] Error scheduling trip reminder:', error);
     return null;
   }
 }
@@ -350,13 +358,13 @@ export async function scheduleTripReminder(
 export async function schedulePackingReminder(
   tripId: string,
   tripName: string,
-  tripDate: Date
+  tripDate: Date,
 ): Promise<string | null> {
   try {
     const reminderDate = new Date(tripDate);
     reminderDate.setDate(reminderDate.getDate() - 1);
     reminderDate.setHours(18, 0, 0, 0); // 6 PM the day before
-    
+
     if (reminderDate <= new Date()) {
       return null;
     }
@@ -365,7 +373,7 @@ export async function schedulePackingReminder(
       content: {
         title: "📦 Don't forget to pack!",
         body: `Your trip "${tripName}" starts tomorrow. Check your packing list!`,
-        data: { type: "packing_reminder", tripId },
+        data: { type: 'packing_reminder', tripId },
         sound: true,
       },
       trigger: {
@@ -377,7 +385,7 @@ export async function schedulePackingReminder(
     console.log(`[Notifications] Scheduled packing reminder: ${identifier}`);
     return identifier;
   } catch (error) {
-    console.error("[Notifications] Error scheduling packing reminder:", error);
+    console.error('[Notifications] Error scheduling packing reminder:', error);
     return null;
   }
 }
@@ -389,12 +397,12 @@ export async function scheduleArrivalDayNotification(
   tripId: string,
   tripName: string,
   tripDate: Date,
-  destinationName?: string
+  destinationName?: string,
 ): Promise<string | null> {
   try {
     const notificationDate = new Date(tripDate);
     notificationDate.setHours(7, 0, 0, 0); // 7 AM on arrival day
-    
+
     if (notificationDate <= new Date()) {
       return null;
     }
@@ -402,10 +410,10 @@ export async function scheduleArrivalDayNotification(
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: "🌲 You're arriving today!",
-        body: destinationName 
+        body: destinationName
           ? `Heading to ${destinationName}. Have a great trip!`
           : `Time to hit the road for "${tripName}"!`,
-        data: { type: "arrival_day", tripId },
+        data: { type: 'arrival_day', tripId },
         sound: true,
       },
       trigger: {
@@ -417,7 +425,7 @@ export async function scheduleArrivalDayNotification(
     console.log(`[Notifications] Scheduled arrival notification: ${identifier}`);
     return identifier;
   } catch (error) {
-    console.error("[Notifications] Error scheduling arrival notification:", error);
+    console.error('[Notifications] Error scheduling arrival notification:', error);
     return null;
   }
 }
@@ -428,22 +436,22 @@ export async function scheduleArrivalDayNotification(
 export async function schedulePostTripRecap(
   tripId: string,
   tripName: string,
-  tripEndDate: Date
+  tripEndDate: Date,
 ): Promise<string | null> {
   try {
     const reminderDate = new Date(tripEndDate);
     reminderDate.setDate(reminderDate.getDate() + 1);
     reminderDate.setHours(10, 0, 0, 0); // 10 AM the day after
-    
+
     if (reminderDate <= new Date()) {
       return null;
     }
 
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
-        title: "📸 How was your trip?",
+        title: '📸 How was your trip?',
         body: `Add photos and notes from "${tripName}" while it's fresh!`,
-        data: { type: "post_trip_recap", tripId },
+        data: { type: 'post_trip_recap', tripId },
         sound: true,
       },
       trigger: {
@@ -455,7 +463,7 @@ export async function schedulePostTripRecap(
     console.log(`[Notifications] Scheduled post-trip recap: ${identifier}`);
     return identifier;
   } catch (error) {
-    console.error("[Notifications] Error scheduling post-trip recap:", error);
+    console.error('[Notifications] Error scheduling post-trip recap:', error);
     return null;
   }
 }
@@ -465,21 +473,24 @@ export async function schedulePostTripRecap(
  */
 export async function cancelTripNotifications(tripId: string): Promise<void> {
   try {
-    const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
-    
+    const scheduledNotifications =
+      await Notifications.getAllScheduledNotificationsAsync();
+
     const tripNotifications = scheduledNotifications.filter(
-      (n) => n.content.data?.tripId === tripId
+      (n) => n.content.data?.tripId === tripId,
     );
 
     await Promise.all(
-      tripNotifications.map((n) => 
-        Notifications.cancelScheduledNotificationAsync(n.identifier)
-      )
+      tripNotifications.map((n) =>
+        Notifications.cancelScheduledNotificationAsync(n.identifier),
+      ),
     );
 
-    console.log(`[Notifications] Cancelled ${tripNotifications.length} notifications for trip ${tripId}`);
+    console.log(
+      `[Notifications] Cancelled ${tripNotifications.length} notifications for trip ${tripId}`,
+    );
   } catch (error) {
-    console.error("[Notifications] Error cancelling trip notifications:", error);
+    console.error('[Notifications] Error cancelling trip notifications:', error);
   }
 }
 
@@ -491,16 +502,16 @@ export async function scheduleAllTripNotifications(
   tripName: string,
   startDate: Date,
   endDate: Date,
-  destinationName?: string
+  destinationName?: string,
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user) return;
 
   try {
     const preferences = await getNotificationPreferences(user.uid);
-    
+
     if (!preferences.enabled) {
-      console.log("[Notifications] Notifications disabled, skipping scheduling");
+      console.log('[Notifications] Notifications disabled, skipping scheduling');
       return;
     }
 
@@ -525,9 +536,9 @@ export async function scheduleAllTripNotifications(
       await schedulePostTripRecap(tripId, tripName, endDate);
     }
 
-    console.log("[Notifications] All trip notifications scheduled");
+    console.log('[Notifications] All trip notifications scheduled');
   } catch (error) {
-    console.error("[Notifications] Error scheduling trip notifications:", error);
+    console.error('[Notifications] Error scheduling trip notifications:', error);
   }
 }
 
@@ -539,7 +550,7 @@ export async function scheduleAllTripNotifications(
 export async function sendLocalNotification(
   title: string,
   body: string,
-  data?: Record<string, any>
+  data?: Record<string, any>,
 ): Promise<string> {
   const identifier = await Notifications.scheduleNotificationAsync({
     content: {
@@ -560,13 +571,13 @@ export async function sendLocalNotification(
 export async function sendWeatherAlert(
   tripName: string,
   alertType: string,
-  details: string
+  details: string,
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user) return;
 
   const preferences = await getNotificationPreferences(user.uid);
-  
+
   if (!preferences.enabled || !preferences.weatherAlerts) {
     return;
   }
@@ -574,7 +585,7 @@ export async function sendWeatherAlert(
   await sendLocalNotification(
     `⚠️ Weather Alert: ${alertType}`,
     `${tripName}: ${details}`,
-    { type: "weather_alert" }
+    { type: 'weather_alert' },
   );
 }
 
@@ -582,43 +593,45 @@ export async function sendWeatherAlert(
  * Send a community notification (someone replied, etc.)
  */
 export async function sendCommunityNotification(
-  type: "answer" | "reply" | "upvote" | "featured",
-  contentTitle: string
+  type: 'answer' | 'reply' | 'upvote' | 'featured',
+  contentTitle: string,
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user) return;
 
   const preferences = await getNotificationPreferences(user.uid);
-  
+
   if (!preferences.enabled) return;
 
   const messages = {
     answer: {
-      title: "💬 New answer to your question",
+      title: '💬 New answer to your question',
       body: `Someone answered "${contentTitle}"`,
-      prefKey: "questionAnswers" as keyof NotificationPreferences,
+      prefKey: 'questionAnswers' as keyof NotificationPreferences,
     },
     reply: {
-      title: "💬 New reply",
+      title: '💬 New reply',
       body: `Someone replied to your comment on "${contentTitle}"`,
-      prefKey: "commentReplies" as keyof NotificationPreferences,
+      prefKey: 'commentReplies' as keyof NotificationPreferences,
     },
     upvote: {
-      title: "👍 Your tip was helpful!",
+      title: '👍 Your tip was helpful!',
       body: `"${contentTitle}" was upvoted`,
-      prefKey: "tipEngagement" as keyof NotificationPreferences,
+      prefKey: 'tipEngagement' as keyof NotificationPreferences,
     },
     featured: {
-      title: "⭐ Your tip was featured!",
+      title: '⭐ Your tip was featured!',
       body: `"${contentTitle}" is now featured`,
-      prefKey: "tipEngagement" as keyof NotificationPreferences,
+      prefKey: 'tipEngagement' as keyof NotificationPreferences,
     },
   };
 
   const message = messages[type];
-  
+
   if (preferences[message.prefKey]) {
-    await sendLocalNotification(message.title, message.body, { type: `community_${type}` });
+    await sendLocalNotification(message.title, message.body, {
+      type: `community_${type}`,
+    });
   }
 }
 
@@ -628,7 +641,7 @@ export async function sendCommunityNotification(
  * Add listener for when a notification is received while app is foregrounded
  */
 export function addNotificationReceivedListener(
-  callback: (notification: Notifications.Notification) => void
+  callback: (notification: Notifications.Notification) => void,
 ): Notifications.Subscription {
   return Notifications.addNotificationReceivedListener(callback);
 }
@@ -637,7 +650,7 @@ export function addNotificationReceivedListener(
  * Add listener for when user taps on a notification
  */
 export function addNotificationResponseListener(
-  callback: (response: Notifications.NotificationResponse) => void
+  callback: (response: Notifications.NotificationResponse) => void,
 ): Notifications.Subscription {
   return Notifications.addNotificationResponseReceivedListener(callback);
 }
@@ -670,7 +683,9 @@ export async function clearBadge(): Promise<void> {
 /**
  * Get all scheduled notifications (for debugging)
  */
-export async function getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
+export async function getScheduledNotifications(): Promise<
+  Notifications.NotificationRequest[]
+> {
   return await Notifications.getAllScheduledNotificationsAsync();
 }
 

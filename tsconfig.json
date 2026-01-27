@@ -8,12 +8,7 @@
       "react-native-maps": ["./types/react-native-maps.d.ts"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "nativewind-env.d.ts",
-    "types/**/*.d.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "types/**/*.d.ts"],
   "exclude": [
     "node_modules",
     "backend/node_modules",

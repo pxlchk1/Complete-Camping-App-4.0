@@ -1,9 +1,9 @@
-import React from "react";
-import { View, Text, Pressable } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { Park } from "../types/camping";
-import { fonts, fontSizes, spacing } from "../theme/theme";
-import { DEEP_FOREST, LIST_ROW_DEFAULT, LIST_ROW_ALT } from "../constants/colors";
+import React from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Park } from '../types/camping';
+import { fonts, fontSizes, spacing } from '../theme/theme';
+import { DEEP_FOREST, LIST_ROW_DEFAULT, LIST_ROW_ALT } from '../constants/colors';
 
 interface ParkListItemProps {
   park: Park;
@@ -13,12 +13,12 @@ interface ParkListItemProps {
 
 const getParkTypeLabel = (filter: string): string => {
   switch (filter) {
-    case "national_park":
-      return "National Park";
-    case "state_park":
-      return "State Park";
-    case "national_forest":
-      return "National Forest";
+    case 'national_park':
+      return 'National Park';
+    case 'state_park':
+      return 'State Park';
+    case 'national_forest':
+      return 'National Forest';
     default:
       return filter;
   }
@@ -39,10 +39,16 @@ export default function ParkListItem({ park, onPress, index = 0 }: ParkListItemP
         opacity: pressed ? 0.7 : 1,
         // Separator line inside the item container at bottom
         borderBottomWidth: 1,
-        borderBottomColor: "#DDD6C4",
+        borderBottomColor: '#DDD6C4',
       })}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         {/* Content block - tightly grouped */}
         <View style={{ flex: 1, marginRight: spacing.sm }}>
           {/* Park Name */}
@@ -59,11 +65,11 @@ export default function ParkListItem({ park, onPress, index = 0 }: ParkListItemP
           </Text>
 
           {/* Meta row: State pill + Park type - small gap from name */}
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
             {park.state && (
               <View
                 style={{
-                  backgroundColor: "#E8F4E8",
+                  backgroundColor: '#E8F4E8',
                   borderRadius: 999,
                   paddingHorizontal: 7,
                   paddingVertical: 1,
@@ -74,7 +80,7 @@ export default function ParkListItem({ park, onPress, index = 0 }: ParkListItemP
                   style={{
                     fontFamily: fonts.bodyRegular,
                     fontSize: 11,
-                    color: "#5A7856",
+                    color: '#5A7856',
                   }}
                 >
                   {park.state}
@@ -85,7 +91,7 @@ export default function ParkListItem({ park, onPress, index = 0 }: ParkListItemP
               style={{
                 fontFamily: fonts.bodyRegular,
                 fontSize: 11,
-                color: "#5A7856",
+                color: '#5A7856',
               }}
             >
               {getParkTypeLabel(park.filter)}
@@ -94,18 +100,20 @@ export default function ParkListItem({ park, onPress, index = 0 }: ParkListItemP
 
           {/* Address row - very tight to meta row */}
           {park.address ? (
-            <View style={{ flexDirection: "row", alignItems: "flex-start", marginTop: 3 }}>
-              <Ionicons 
-                name="location-outline" 
-                size={11} 
-                color="#8A9580" 
-                style={{ marginTop: 1 }} 
+            <View
+              style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 3 }}
+            >
+              <Ionicons
+                name="location-outline"
+                size={11}
+                color="#8A9580"
+                style={{ marginTop: 1 }}
               />
               <Text
                 style={{
                   fontFamily: fonts.bodyRegular,
                   fontSize: 11,
-                  color: "#8A9580",
+                  color: '#8A9580',
                   marginLeft: 3,
                   lineHeight: 14,
                   flex: 1,
@@ -124,9 +132,9 @@ export default function ParkListItem({ park, onPress, index = 0 }: ParkListItemP
             width: 32,
             height: 32,
             borderRadius: 999,
-            backgroundColor: "#EBE7DC",
-            alignItems: "center",
-            justifyContent: "center",
+            backgroundColor: '#EBE7DC',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
           <Ionicons name="compass-outline" size={18} color={DEEP_FOREST} />

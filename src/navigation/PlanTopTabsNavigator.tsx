@@ -3,39 +3,39 @@
  * Material top tabs for Trips, Campgrounds, Meals, Pack, Weather
  */
 
-import React, { useEffect, useRef, useState } from "react";
-import { View, ImageBackground, Text, Pressable } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import { useFocusEffect } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useEffect, useRef, useState } from 'react';
+import { View, ImageBackground, Text, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { usePlanTabStore, PlanTab } from "../state/planTabStore";
-import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
+import { usePlanTabStore, PlanTab } from '../state/planTabStore';
+import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
 
-import AccountButtonHeader from "../components/AccountButtonHeader";
-import OnboardingModal from "../components/OnboardingModal";
-import PlanTripIntroModal from "../components/PlanTripIntroModal";
+import AccountButtonHeader from '../components/AccountButtonHeader';
+import OnboardingModal from '../components/OnboardingModal';
+import PlanTripIntroModal from '../components/PlanTripIntroModal';
 
-import MyTripsScreen from "../screens/MyTripsScreen";
-import ParksBrowseScreen from "../screens/ParksBrowseScreen";
-import WeatherScreen from "../screens/WeatherScreen";
-import PlanSafeScreen from "../screens/PlanSafeScreen";
+import MyTripsScreen from '../screens/MyTripsScreen';
+import ParksBrowseScreen from '../screens/ParksBrowseScreen';
+import WeatherScreen from '../screens/WeatherScreen';
+import PlanSafeScreen from '../screens/PlanSafeScreen';
 
-import { DEEP_FOREST, PARCHMENT, BORDER_SOFT, TEXT_ON_DARK } from "../constants/colors";
-import { HERO_IMAGES } from "../constants/images";
+import { DEEP_FOREST, PARCHMENT, BORDER_SOFT, TEXT_ON_DARK } from '../constants/colors';
+import { HERO_IMAGES } from '../constants/images';
 
 const Tab = createMaterialTopTabNavigator();
 
 // Map tab routes to hero images
 const getHeroImage = (routeName: string) => {
   switch (routeName) {
-    case "Plan":
+    case 'Plan':
       return HERO_IMAGES.PLAN_TRIP;
-    case "Parks":
+    case 'Parks':
       return HERO_IMAGES.HEADER;
-    case "Weather":
+    case 'Weather':
       return HERO_IMAGES.WEATHER;
     default:
       return HERO_IMAGES.PLAN_TRIP;
@@ -45,29 +45,51 @@ const getHeroImage = (routeName: string) => {
 // Map tab routes to titles and descriptions
 const getHeroContent = (routeName: string) => {
   switch (routeName) {
-    case "Plan":
-      return { title: "Plan Your Trip", description: "Organize everything here—destination, packing, meals, and weather—all in one place." };
-    case "Parks":
-      return { title: "Find a Park", description: "Search thousands of National Park, National Forest, and State Park campgrounds across all US states & territories." };
-    case "Weather":
-      return { title: "Weather", description: "Check conditions for your camping destination" };
+    case 'Plan':
+      return {
+        title: 'Plan Your Trip',
+        description:
+          'Organize everything here—destination, packing, meals, and weather—all in one place.',
+      };
+    case 'Parks':
+      return {
+        title: 'Find a Park',
+        description:
+          'Search thousands of National Park, National Forest, and State Park campgrounds across all US states & territories.',
+      };
+    case 'Weather':
+      return {
+        title: 'Weather',
+        description: 'Check conditions for your camping destination',
+      };
     default:
-      return { title: "Plan Your Trip", description: "Organize everything here—destination, packing, meals, and weather—all in one place." };
+      return {
+        title: 'Plan Your Trip',
+        description:
+          'Organize everything here—destination, packing, meals, and weather—all in one place.',
+      };
   }
 };
 
-function HeroHeader({ activeTab, onInfoPress }: { activeTab: string; onInfoPress?: () => void }) {
+function HeroHeader({
+  activeTab,
+  onInfoPress,
+}: {
+  activeTab: string;
+  onInfoPress?: () => void;
+}) {
   const insets = useSafeAreaInsets();
 
   const heroImage = getHeroImage(activeTab);
   const { title, description } = getHeroContent(activeTab);
 
   // Darker gradient for Plan tab specifically
-  const gradientColors = activeTab === "Plan" 
-    ? ["rgba(0,0,0,0.25)", "rgba(0,0,0,0.7)"] as const
-    : ["rgba(0,0,0,0.1)", "rgba(0,0,0,0.6)"] as const;
+  const gradientColors =
+    activeTab === 'Plan'
+      ? (['rgba(0,0,0,0.25)', 'rgba(0,0,0,0.7)'] as const)
+      : (['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)'] as const);
 
-  console.log("[HERO_DEBUG] activeTab:", activeTab, "heroImage:", heroImage);
+  console.log('[HERO_DEBUG] activeTab:', activeTab, 'heroImage:', heroImage);
 
   return (
     <View style={{ height: 200 + insets.top }}>
@@ -81,7 +103,7 @@ function HeroHeader({ activeTab, onInfoPress }: { activeTab: string; onInfoPress
         <LinearGradient
           colors={gradientColors}
           style={{
-            position: "absolute",
+            position: 'absolute',
             top: 0,
             bottom: 0,
             left: 0,
@@ -92,14 +114,21 @@ function HeroHeader({ activeTab, onInfoPress }: { activeTab: string; onInfoPress
           {/* Account Button - Top Right */}
           <AccountButtonHeader color={TEXT_ON_DARK} />
 
-          <View style={{ flex: 1, justifyContent: "flex-end", paddingHorizontal: 24, paddingBottom: 16 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'flex-end',
+              paddingHorizontal: 24,
+              paddingBottom: 16,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <Text
                 style={{
-                  fontFamily: "Raleway_700Bold",
+                  fontFamily: 'Raleway_700Bold',
                   fontSize: 30,
                   color: PARCHMENT,
-                  textShadowColor: "rgba(0, 0, 0, 0.5)",
+                  textShadowColor: 'rgba(0, 0, 0, 0.5)',
                   textShadowOffset: { width: 0, height: 1 },
                   textShadowRadius: 4,
                   zIndex: 1,
@@ -108,17 +137,25 @@ function HeroHeader({ activeTab, onInfoPress }: { activeTab: string; onInfoPress
                 {title}
               </Text>
               {onInfoPress && (
-                <Pressable onPress={onInfoPress} style={{ padding: 4 }} accessibilityLabel="Info">
-                  <Ionicons name="information-circle-outline" size={24} color={PARCHMENT} />
+                <Pressable
+                  onPress={onInfoPress}
+                  style={{ padding: 4 }}
+                  accessibilityLabel="Info"
+                >
+                  <Ionicons
+                    name="information-circle-outline"
+                    size={24}
+                    color={PARCHMENT}
+                  />
                 </Pressable>
               )}
             </View>
             <Text
               style={{
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 marginTop: 8,
                 color: PARCHMENT,
-                textShadowColor: "rgba(0, 0, 0, 0.5)",
+                textShadowColor: 'rgba(0, 0, 0, 0.5)',
                 textShadowOffset: { width: 0, height: 1 },
                 textShadowRadius: 3,
                 zIndex: 1,
@@ -134,7 +171,7 @@ function HeroHeader({ activeTab, onInfoPress }: { activeTab: string; onInfoPress
 }
 
 export default function PlanTopTabsNavigator() {
-  console.log("[PLAN_TRACE] Enter PlanTopTabsNavigator");
+  console.log('[PLAN_TRACE] Enter PlanTopTabsNavigator');
 
   // Zustand store for tab state
   const activeTab = usePlanTabStore((s) => s.activeTab);
@@ -144,17 +181,17 @@ export default function PlanTopTabsNavigator() {
   const [showPlanIntro, setShowPlanIntro] = useState(false);
 
   // Onboarding hooks for Parks and Weather tabs only
-  const parksOnboarding = useScreenOnboarding("Parks");
-  const weatherOnboarding = useScreenOnboarding("Weather");
+  const parksOnboarding = useScreenOnboarding('Parks');
+  const weatherOnboarding = useScreenOnboarding('Weather');
 
   // Get the right onInfoPress based on active tab
   const getOnInfoPress = () => {
     switch (activeTab) {
-      case "trips":
+      case 'trips':
         return () => setShowPlanIntro(true);
-      case "parks":
+      case 'parks':
         return parksOnboarding.openModal;
-      case "weather":
+      case 'weather':
         return weatherOnboarding.openModal;
       default:
         return () => setShowPlanIntro(true);
@@ -164,9 +201,9 @@ export default function PlanTopTabsNavigator() {
   // Get the current onboarding state for rendering modal (Parks and Weather only)
   const getCurrentOnboarding = () => {
     switch (activeTab) {
-      case "parks":
+      case 'parks':
         return parksOnboarding;
-      case "weather":
+      case 'weather':
         return weatherOnboarding;
       default:
         return null;
@@ -181,20 +218,20 @@ export default function PlanTopTabsNavigator() {
   const [isNavigationReady, setIsNavigationReady] = useState(false);
 
   const tabKeyToRoute: Record<string, string> = {
-    trips: "Plan",
-    parks: "Parks",
-    weather: "Weather",
+    trips: 'Plan',
+    parks: 'Parks',
+    weather: 'Weather',
   };
 
   const routeToTabKey: Record<string, PlanTab> = {
-    Plan: "trips",
-    Parks: "parks",
-    Weather: "weather",
+    Plan: 'trips',
+    Parks: 'parks',
+    Weather: 'weather',
   };
 
   // Ref to prevent initial tab reset on every render
   const isFirstRender = useRef(true);
-  const [initialTab, setInitialTab] = useState(tabKeyToRoute[activeTab] || "Plan");
+  const [initialTab, setInitialTab] = useState(tabKeyToRoute[activeTab] || 'Plan');
 
   // Track the previous activeTab to detect external changes
   const prevActiveTabRef = useRef(activeTab);
@@ -203,7 +240,7 @@ export default function PlanTopTabsNavigator() {
 
   useEffect(() => {
     if (isFirstRender.current) {
-      setInitialTab(tabKeyToRoute[activeTab] || "Plan");
+      setInitialTab(tabKeyToRoute[activeTab] || 'Plan');
       isFirstRender.current = false;
     }
   }, [activeTab]);
@@ -215,15 +252,15 @@ export default function PlanTopTabsNavigator() {
       const targetRoute = tabKeyToRoute[activeTab];
       if (targetRoute) {
         if (tabNavigationRef.current) {
-          console.log("[PLAN_TRACE] Navigating to tab:", targetRoute);
+          console.log('[PLAN_TRACE] Navigating to tab:', targetRoute);
           try {
             tabNavigationRef.current.navigate(targetRoute);
           } catch (e) {
-            console.log("[PLAN_TRACE] Navigation error:", e);
+            console.log('[PLAN_TRACE] Navigation error:', e);
           }
         } else {
           // Store pending navigation for when ref becomes available
-          console.log("[PLAN_TRACE] Navigation pending, ref not ready:", targetRoute);
+          console.log('[PLAN_TRACE] Navigation pending, ref not ready:', targetRoute);
           pendingNavigationRef.current = targetRoute;
         }
       }
@@ -234,11 +271,14 @@ export default function PlanTopTabsNavigator() {
   // Handle pending navigation when ref becomes available
   useEffect(() => {
     if (isNavigationReady && pendingNavigationRef.current && tabNavigationRef.current) {
-      console.log("[PLAN_TRACE] Executing pending navigation:", pendingNavigationRef.current);
+      console.log(
+        '[PLAN_TRACE] Executing pending navigation:',
+        pendingNavigationRef.current,
+      );
       try {
         tabNavigationRef.current.navigate(pendingNavigationRef.current);
       } catch (e) {
-        console.log("[PLAN_TRACE] Pending navigation error:", e);
+        console.log('[PLAN_TRACE] Pending navigation error:', e);
       }
       pendingNavigationRef.current = null;
     }
@@ -253,20 +293,25 @@ export default function PlanTopTabsNavigator() {
         // Check if the current tab matches what we expect
         const currentState = tabNavigationRef.current.getState?.();
         const currentRouteName = currentState?.routes?.[currentState?.index]?.name;
-        
+
         if (currentRouteName && currentRouteName !== targetRoute) {
-          console.log("[PLAN_TRACE] Focus: syncing tab from", currentRouteName, "to", targetRoute);
+          console.log(
+            '[PLAN_TRACE] Focus: syncing tab from',
+            currentRouteName,
+            'to',
+            targetRoute,
+          );
           try {
             tabNavigationRef.current.navigate(targetRoute);
           } catch (e) {
-            console.log("[PLAN_TRACE] Focus navigation error:", e);
+            console.log('[PLAN_TRACE] Focus navigation error:', e);
           }
         }
       }
-    }, [activeTab])
+    }, [activeTab]),
   );
 
-  const activeRouteName = tabKeyToRoute[activeTab] || "Plan";
+  const activeRouteName = tabKeyToRoute[activeTab] || 'Plan';
 
   return (
     <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
@@ -285,15 +330,15 @@ export default function PlanTopTabsNavigator() {
             shadowOpacity: 0,
           },
           tabBarActiveTintColor: DEEP_FOREST,
-          tabBarInactiveTintColor: "#696969",
+          tabBarInactiveTintColor: '#696969',
           tabBarIndicatorStyle: {
-            backgroundColor: "#f59e0b",
+            backgroundColor: '#f59e0b',
             height: 3,
           },
           tabBarLabelStyle: {
-            fontFamily: "SourceSans3_600SemiBold",
+            fontFamily: 'SourceSans3_600SemiBold',
             fontSize: 11,
-            textTransform: "none",
+            textTransform: 'none',
           },
           tabBarScrollEnabled: false,
         }}
@@ -320,7 +365,7 @@ export default function PlanTopTabsNavigator() {
         <Tab.Screen name="Parks" component={ParksBrowseScreen} />
         <Tab.Screen name="Weather" component={WeatherScreen} />
       </Tab.Navigator>
-      
+
       {/* Plan Trip Intro Modal (3-slide) */}
       <PlanTripIntroModal
         forceShow={showPlanIntro}

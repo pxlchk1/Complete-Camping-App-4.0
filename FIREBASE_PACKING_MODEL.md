@@ -276,37 +276,37 @@ import {
   generatePackingListForTrip,
   getPackingListForTrip,
   updatePackingListItem,
-  determineWeatherTags
-} from "../services/packingService";
+  determineWeatherTags,
+} from '../services/packingService';
 
 // 1. Determine weather tags from forecast
 const weatherTags = determineWeatherTags([
   { high: 75, low: 45, precipitation: 10 },
   { high: 72, low: 48, precipitation: 80 },
-  { high: 68, low: 42, precipitation: 60 }
+  { high: 68, low: 42, precipitation: 60 },
 ]);
 // Result: ["cold", "wet"]
 
 // 2. Generate packing list for trip
 const packingList = await generatePackingListForTrip({
-  tripId: "trip123",
-  userId: "user456",
-  campingType: "BACKPACKING",
-  weatherTags: ["cold", "wet"]
+  tripId: 'trip123',
+  userId: 'user456',
+  campingType: 'BACKPACKING',
+  weatherTags: ['cold', 'wet'],
 });
 
 // 3. Retrieve existing packing list
-const existingList = await getPackingListForTrip("user456", "trip123");
+const existingList = await getPackingListForTrip('user456', 'trip123');
 
 // 4. Mark item as packed
-await updatePackingListItem("user456", "trip123", "flashlight", {
-  isPacked: true
+await updatePackingListItem('user456', 'trip123', 'flashlight', {
+  isPacked: true,
 });
 
 // 5. Update quantity
-await updatePackingListItem("user456", "trip123", "water_bottle", {
+await updatePackingListItem('user456', 'trip123', 'water_bottle', {
   quantity: 3,
-  notes: "One for each person"
+  notes: 'One for each person',
 });
 ```
 

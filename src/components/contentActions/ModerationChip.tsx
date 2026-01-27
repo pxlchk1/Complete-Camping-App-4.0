@@ -1,15 +1,15 @@
 /**
  * ModerationChip Component
- * 
+ *
  * A small red outline pill shown to admins/moderators on content they don't own.
  * Tapping opens moderation actions for quick content management.
  */
 
-import React from "react";
-import { Pressable, Text, StyleSheet } from "react-native";
-import * as Haptics from "expo-haptics";
+import React from 'react';
+import { Pressable, Text, StyleSheet } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
-export type ModerationRoleLabel = "ADMIN" | "MOD";
+export type ModerationRoleLabel = 'ADMIN' | 'MOD';
 
 export interface ModerationChipProps {
   /** Whether to show the chip */
@@ -21,7 +21,7 @@ export interface ModerationChipProps {
   /** Whether chip is disabled/loading */
   disabled?: boolean;
   /** Size variant */
-  size?: "small" | "medium";
+  size?: 'small' | 'medium';
 }
 
 export function ModerationChip({
@@ -29,7 +29,7 @@ export function ModerationChip({
   label,
   onPress,
   disabled = false,
-  size = "small",
+  size = 'small',
 }: ModerationChipProps) {
   if (!visible) return null;
 
@@ -38,22 +38,20 @@ export function ModerationChip({
     onPress();
   };
 
-  const sizeStyles = size === "small" ? styles.small : styles.medium;
+  const sizeStyles = size === 'small' ? styles.small : styles.medium;
 
   return (
     <Pressable
       onPress={handlePress}
       disabled={disabled}
       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      style={[
-        styles.chip,
-        sizeStyles,
-        disabled && styles.disabled,
-      ]}
+      style={[styles.chip, sizeStyles, disabled && styles.disabled]}
       accessibilityLabel={`${label} moderation actions`}
       accessibilityRole="button"
     >
-      <Text style={[styles.label, size === "small" ? styles.labelSmall : styles.labelMedium]}>
+      <Text
+        style={[styles.label, size === 'small' ? styles.labelSmall : styles.labelMedium]}
+      >
         {label}
       </Text>
     </Pressable>
@@ -63,11 +61,11 @@ export function ModerationChip({
 const styles = StyleSheet.create({
   chip: {
     borderWidth: 1,
-    borderColor: "#DC2626",
+    borderColor: '#DC2626',
     borderRadius: 12,
-    backgroundColor: "transparent",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   small: {
     paddingHorizontal: 6,
@@ -78,8 +76,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   label: {
-    fontFamily: "SourceSans3_700Bold",
-    color: "#DC2626",
+    fontFamily: 'SourceSans3_700Bold',
+    color: '#DC2626',
     letterSpacing: 0.5,
   },
   labelSmall: {

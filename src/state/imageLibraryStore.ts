@@ -1,15 +1,15 @@
-import { create } from "zustand";
-import { persist, createJSONStorage } from "zustand/middleware";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { LibraryImage, ImageCategory } from "../types/community";
-import { fetchPhotos, uploadPhoto, deletePhoto, votePhoto } from "../api/photo-service";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { LibraryImage, ImageCategory } from '../types/community';
+import { fetchPhotos, uploadPhoto, deletePhoto, votePhoto } from '../api/photo-service';
 
 interface ImageLibraryState {
   images: LibraryImage[];
   isLoading: boolean;
   searchQuery: string;
-  selectedCategory: ImageCategory | "all";
-  sortBy: "date" | "score" | "hot";
+  selectedCategory: ImageCategory | 'all';
+  sortBy: 'date' | 'score' | 'hot';
   favorites: string[];
 
   // Actions
@@ -23,14 +23,14 @@ interface ImageLibraryState {
     userId: string,
     userHandle: string,
     userName?: string,
-    isPrivate?: boolean
+    isPrivate?: boolean,
   ) => Promise<string>;
   removeImage: (imageId: string, userId: string, isAdmin?: boolean) => Promise<void>;
-  voteImage: (imageId: string, userId: string, voteType: "up" | "down") => Promise<void>;
+  voteImage: (imageId: string, userId: string, voteType: 'up' | 'down') => Promise<void>;
   toggleFavorite: (imageId: string) => void;
   setSearchQuery: (query: string) => void;
-  setSelectedCategory: (category: ImageCategory | "all") => void;
-  setSortBy: (sortBy: "date" | "score" | "hot") => void;
+  setSelectedCategory: (category: ImageCategory | 'all') => void;
+  setSortBy: (sortBy: 'date' | 'score' | 'hot') => void;
   getFilteredImages: () => LibraryImage[];
 }
 
@@ -39,9 +39,9 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
     (set, get) => ({
       images: [],
       isLoading: false,
-      searchQuery: "",
-      selectedCategory: "all",
-      sortBy: "date",
+      searchQuery: '',
+      selectedCategory: 'all',
+      sortBy: 'date',
       favorites: [],
 
       syncFromFirebase: async (userId) => {
@@ -50,12 +50,22 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
           const images = await fetchPhotos(userId);
           set({ images, isLoading: false });
         } catch (error) {
-          console.error("Error syncing images:", error);
+          console.error('Error syncing images:', error);
           set({ isLoading: false });
         }
       },
 
-      addImage: async (localUri, title, description, category, tags, userId, userHandle, userName, isPrivate) => {
+      addImage: async (
+        localUri,
+        title,
+        description,
+        category,
+        tags,
+        userId,
+        userHandle,
+        userName,
+        isPrivate,
+      ) => {
         try {
           const imageId = await uploadPhoto(
             localUri,
@@ -66,12 +76,12 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
             userId,
             userHandle,
             userName,
-            isPrivate
+            isPrivate,
           );
           await get().syncFromFirebase(userId);
           return imageId;
         } catch (error) {
-          console.error("Error adding image:", error);
+          console.error('Error adding image:', error);
           throw error;
         }
       },
@@ -84,7 +94,7 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
             favorites: state.favorites.filter((id) => id !== imageId),
           }));
         } catch (error) {
-          console.error("Error removing image:", error);
+          console.error('Error removing image:', error);
           throw error;
         }
       },
@@ -99,19 +109,19 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
               const currentVote = img.userVote;
               let upvotes = img.upvotes;
               let downvotes = img.downvotes;
-              let newUserVote: "up" | "down" | null = voteType;
+              let newUserVote: 'up' | 'down' | null = voteType;
 
               // Remove previous vote
-              if (currentVote === "up") upvotes--;
-              if (currentVote === "down") downvotes--;
+              if (currentVote === 'up') upvotes--;
+              if (currentVote === 'down') downvotes--;
 
               // If clicking same vote, remove it
               if (currentVote === voteType) {
                 newUserVote = null;
               } else {
                 // Add new vote
-                if (voteType === "up") upvotes++;
-                if (voteType === "down") downvotes++;
+                if (voteType === 'up') upvotes++;
+                if (voteType === 'down') downvotes++;
               }
 
               return {
@@ -126,7 +136,7 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
 
           await votePhoto(imageId, userId, voteType);
         } catch (error) {
-          console.error("Error voting on image:", error);
+          console.error('Error voting on image:', error);
           // Revert on error
           await get().syncFromFirebase(userId);
         }
@@ -150,7 +160,7 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
         let filtered = [...images];
 
         // Filter by category
-        if (selectedCategory !== "all") {
+        if (selectedCategory !== 'all') {
           filtered = filtered.filter((img) => img.category === selectedCategory);
         }
 
@@ -161,20 +171,22 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
             (img) =>
               img.title.toLowerCase().includes(searchLower) ||
               img.description?.toLowerCase().includes(searchLower) ||
-              img.tags.some((tag) => tag.toLowerCase().includes(searchLower))
+              img.tags.some((tag) => tag.toLowerCase().includes(searchLower)),
           );
         }
 
         // Sort
         filtered.sort((a, b) => {
-          if (sortBy === "date") {
+          if (sortBy === 'date') {
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-          } else if (sortBy === "score") {
+          } else if (sortBy === 'score') {
             return b.score - a.score;
-          } else if (sortBy === "hot") {
+          } else if (sortBy === 'hot') {
             // Hot algorithm: score / time_hours
-            const aHours = (Date.now() - new Date(a.createdAt).getTime()) / (1000 * 60 * 60);
-            const bHours = (Date.now() - new Date(b.createdAt).getTime()) / (1000 * 60 * 60);
+            const aHours =
+              (Date.now() - new Date(a.createdAt).getTime()) / (1000 * 60 * 60);
+            const bHours =
+              (Date.now() - new Date(b.createdAt).getTime()) / (1000 * 60 * 60);
             const aHot = a.score / Math.max(aHours, 1);
             const bHot = b.score / Math.max(bHours, 1);
             return bHot - aHot;
@@ -186,13 +198,13 @@ export const useImageLibraryStore = create<ImageLibraryState>()(
       },
     }),
     {
-      name: "image-library-storage",
+      name: 'image-library-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         images: state.images,
         favorites: state.favorites,
         sortBy: state.sortBy,
       }),
-    }
-  )
+    },
+  ),
 );

@@ -1,35 +1,35 @@
 // Gear review types
 
 export type GearCategory =
-  | "tents-shelters"
-  | "sleep-systems"
-  | "backpacks"
-  | "cooking"
-  | "clothing-footwear"
-  | "lighting-power"
-  | "safety"
-  | "water"
-  | "camp-comfort"
-  | "navigation"
-  | "other"
-  | "all";
+  | 'tents-shelters'
+  | 'sleep-systems'
+  | 'backpacks'
+  | 'cooking'
+  | 'clothing-footwear'
+  | 'lighting-power'
+  | 'safety'
+  | 'water'
+  | 'camp-comfort'
+  | 'navigation'
+  | 'other'
+  | 'all';
 
 export type ActivityTag =
-  | "backpacking"
-  | "car-camping"
-  | "winter-camping"
-  | "bikepacking"
-  | "kayaking"
-  | "climbing";
+  | 'backpacking'
+  | 'car-camping'
+  | 'winter-camping'
+  | 'bikepacking'
+  | 'kayaking'
+  | 'climbing';
 
-export type AudienceTag = "beginner" | "intermediate" | "expert";
+export type AudienceTag = 'beginner' | 'intermediate' | 'expert';
 
 export type SortOption =
-  | "newest"
-  | "highest-rated"
-  | "most-helpful"
-  | "price-low"
-  | "price-high";
+  | 'newest'
+  | 'highest-rated'
+  | 'most-helpful'
+  | 'price-low'
+  | 'price-high';
 
 export interface GearReview {
   id: string;

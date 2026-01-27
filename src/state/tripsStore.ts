@@ -1,6 +1,6 @@
 /**
  * Trips Store - Firebase-synced Zustand store
- * 
+ *
  * This store syncs trips with Firebase Firestore:
  * - Trips are stored in top-level /trips collection
  * - Users can see trips they own (userId) or are members of (memberIds)
@@ -8,7 +8,7 @@
  * - Shared trips (where user is member, not owner) are read-only
  */
 
-import { create } from "zustand";
+import { create } from 'zustand';
 import {
   collection,
   doc,
@@ -21,44 +21,50 @@ import {
   orderBy,
   onSnapshot,
   Unsubscribe,
-} from "firebase/firestore";
-import { db, auth } from "../config/firebase";
-import { Trip, TripStatus } from "../types/camping";
-import { trackCoreAction } from "../services/userActionTrackerService";
+} from 'firebase/firestore';
+import { db, auth } from '../config/firebase';
+import { Trip, TripStatus } from '../types/camping';
+import { trackCoreAction } from '../services/userActionTrackerService';
 
 // Re-export Trip type for backwards compatibility
 export type { Trip };
 
-const TRIPS_COLLECTION = "trips";
+const TRIPS_COLLECTION = 'trips';
 
 interface TripsState {
   trips: Trip[];
   loading: boolean;
   initialized: boolean;
-  
+
   // Core CRUD operations (Firebase-synced)
-  addTrip: (trip: Omit<Trip, "id" | "createdAt" | "updatedAt" | "userId">) => Promise<string>;
+  addTrip: (
+    trip: Omit<Trip, 'id' | 'createdAt' | 'updatedAt' | 'userId'>,
+  ) => Promise<string>;
   updateTrip: (id: string, updates: Partial<Trip>) => Promise<void>;
   deleteTrip: (id: string) => Promise<void>;
-  
+
   // Getters
   getTripById: (id: string) => Trip | undefined;
   getTripsByStatus: (status: TripStatus) => Trip[];
   isSharedTrip: (tripId: string) => boolean;
   canEditTrip: (tripId: string) => boolean;
-  
+
   // Convenience update methods (Firebase-synced)
-  updateTripPacking: (id: string, packing: Trip["packing"]) => Promise<void>;
-  updateTripMeals: (id: string, meals: Trip["meals"]) => Promise<void>;
+  updateTripPacking: (id: string, packing: Trip['packing']) => Promise<void>;
+  updateTripMeals: (id: string, meals: Trip['meals']) => Promise<void>;
   updateTripNotes: (id: string, notes: string) => Promise<void>;
-  updateTripWeather: (id: string, weather: Trip["weather"]) => Promise<void>;
-  setTripDestination: (id: string, destination: Trip["tripDestination"], parkId?: string) => Promise<void>;
-  
+  updateTripWeather: (id: string, weather: Trip['weather']) => Promise<void>;
+  setTripDestination: (
+    id: string,
+    destination: Trip['tripDestination'],
+    parkId?: string,
+  ) => Promise<void>;
+
   // Firebase sync methods
   loadTrips: () => Promise<void>;
   subscribeToTrips: () => Unsubscribe | null;
   clearTrips: () => void;
-  
+
   // Internal state setters
   _setTrips: (trips: Trip[]) => void;
   _setLoading: (loading: boolean) => void;
@@ -69,9 +75,9 @@ const getTripStatus = (startDate: string, endDate: string): TripStatus => {
   const start = new Date(startDate);
   const end = new Date(endDate);
 
-  if (now > end) return "completed";
-  if (now < start) return "upcoming";
-  return "active";
+  if (now > end) return 'completed';
+  if (now < start) return 'upcoming';
+  return 'active';
 };
 
 export const useTripsStore = create<TripsState>()((set, get) => ({
@@ -86,8 +92,8 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
   addTrip: async (tripData) => {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-      console.error("[TripsStore] Cannot add trip: user not authenticated");
-      throw new Error("User must be authenticated to create a trip");
+      console.error('[TripsStore] Cannot add trip: user not authenticated');
+      throw new Error('User must be authenticated to create a trip');
     }
 
     const now = new Date().toISOString();
@@ -95,7 +101,7 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
       ...tripData,
       userId,
       memberIds: [], // Initialize empty members array
-      status: tripData.status || "planning",
+      status: tripData.status || 'planning',
       createdAt: now,
       updatedAt: now,
     };
@@ -104,7 +110,7 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
       // Write to Firebase first
       const tripsRef = collection(db, TRIPS_COLLECTION);
       const docRef = await addDoc(tripsRef, newTripData);
-      
+
       // Create the full trip object with ID
       const newTrip: Trip = {
         ...newTripData,
@@ -117,12 +123,12 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
       }));
 
       // Track trip creation for paywall gating (increments tripsCreatedCount)
-      trackCoreAction(userId, "trip_created");
+      trackCoreAction(userId, 'trip_created');
 
-      console.log("[TripsStore] Trip created:", docRef.id);
+      console.log('[TripsStore] Trip created:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error("[TripsStore] Failed to create trip:", error);
+      console.error('[TripsStore] Failed to create trip:', error);
       throw error;
     }
   },
@@ -134,13 +140,13 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
   updateTrip: async (id, updates) => {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-      console.error("[TripsStore] Cannot update trip: user not authenticated");
+      console.error('[TripsStore] Cannot update trip: user not authenticated');
       return;
     }
 
     // Check if user can edit this trip
     if (!get().canEditTrip(id)) {
-      console.warn("[TripsStore] Cannot edit shared trip:", id);
+      console.warn('[TripsStore] Cannot edit shared trip:', id);
       return;
     }
 
@@ -156,13 +162,13 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
         trips: state.trips.map((trip) =>
           trip.id === id
             ? { ...trip, ...updates, updatedAt: new Date().toISOString() }
-            : trip
+            : trip,
         ),
       }));
 
-      console.log("[TripsStore] Trip updated:", id);
+      console.log('[TripsStore] Trip updated:', id);
     } catch (error) {
-      console.error("[TripsStore] Failed to update trip:", error);
+      console.error('[TripsStore] Failed to update trip:', error);
       throw error;
     }
   },
@@ -175,13 +181,13 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
   deleteTrip: async (id) => {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-      console.error("[TripsStore] Cannot delete trip: user not authenticated");
+      console.error('[TripsStore] Cannot delete trip: user not authenticated');
       return;
     }
 
     const trip = get().getTripById(id);
     if (!trip) {
-      console.warn("[TripsStore] Trip not found:", id);
+      console.warn('[TripsStore] Trip not found:', id);
       return;
     }
 
@@ -190,7 +196,7 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
         // Owner - delete the entire trip
         const tripRef = doc(db, TRIPS_COLLECTION, id);
         await deleteDoc(tripRef);
-        console.log("[TripsStore] Trip deleted:", id);
+        console.log('[TripsStore] Trip deleted:', id);
       } else {
         // Member - remove self from memberIds
         const tripRef = doc(db, TRIPS_COLLECTION, id);
@@ -199,7 +205,7 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
           memberIds: currentMembers.filter((memberId) => memberId !== userId),
           updatedAt: new Date().toISOString(),
         });
-        console.log("[TripsStore] Removed self from trip:", id);
+        console.log('[TripsStore] Removed self from trip:', id);
       }
 
       // Update local state
@@ -207,7 +213,7 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
         trips: state.trips.filter((t) => t.id !== id),
       }));
     } catch (error) {
-      console.error("[TripsStore] Failed to delete trip:", error);
+      console.error('[TripsStore] Failed to delete trip:', error);
       throw error;
     }
   },
@@ -273,7 +279,7 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
   loadTrips: async () => {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-      console.log("[TripsStore] No user, clearing trips");
+      console.log('[TripsStore] No user, clearing trips');
       set({ trips: [], loading: false, initialized: true });
       return;
     }
@@ -284,18 +290,18 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
       // Query for trips where user is owner OR member
       // Note: Firestore requires composite index for OR queries with array-contains
       // We'll do two queries and merge results
-      
+
       // Query 1: Trips owned by user
       const ownedQuery = query(
         collection(db, TRIPS_COLLECTION),
-        where("userId", "==", userId),
-        orderBy("startDate", "desc")
+        where('userId', '==', userId),
+        orderBy('startDate', 'desc'),
       );
-      
+
       // Query 2: Trips where user is a member
       const sharedQuery = query(
         collection(db, TRIPS_COLLECTION),
-        where("memberIds", "array-contains", userId)
+        where('memberIds', 'array-contains', userId),
       );
 
       const [ownedSnapshot, sharedSnapshot] = await Promise.all([
@@ -323,12 +329,14 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
       });
 
       // Sort by startDate descending
-      trips.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+      trips.sort(
+        (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+      );
 
       set({ trips, loading: false, initialized: true });
-      console.log("[TripsStore] Loaded", trips.length, "trips from Firebase");
+      console.log('[TripsStore] Loaded', trips.length, 'trips from Firebase');
     } catch (error) {
-      console.error("[TripsStore] Failed to load trips:", error);
+      console.error('[TripsStore] Failed to load trips:', error);
       set({ loading: false, initialized: true });
     }
   },
@@ -340,15 +348,15 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
   subscribeToTrips: () => {
     const userId = auth.currentUser?.uid;
     if (!userId) {
-      console.log("[TripsStore] No user, cannot subscribe");
+      console.log('[TripsStore] No user, cannot subscribe');
       return null;
     }
 
     // Subscribe to owned trips
     const ownedQuery = query(
       collection(db, TRIPS_COLLECTION),
-      where("userId", "==", userId),
-      orderBy("startDate", "desc")
+      where('userId', '==', userId),
+      orderBy('startDate', 'desc'),
     );
 
     const unsubscribe = onSnapshot(ownedQuery, async () => {
@@ -356,7 +364,7 @@ export const useTripsStore = create<TripsState>()((set, get) => ({
       await get().loadTrips();
     });
 
-    console.log("[TripsStore] Subscribed to trips");
+    console.log('[TripsStore] Subscribed to trips');
     return unsubscribe;
   },
 
