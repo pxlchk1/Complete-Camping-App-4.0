@@ -144,11 +144,16 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
       
       if (!userDoc.exists()) {
         // New user - create profile using protected onboarding layer
-        const rawHandle = firebaseUser.displayName || appleCredential.fullName?.givenName || "user";
-        const normalizedHandle = rawHandle.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const displayName = firebaseUser.displayName ||
-          `${appleCredential.fullName?.givenName || ""} ${appleCredential.fullName?.familyName || ""}`.trim() ||
-          "Anonymous User";
+        const rawHandle =
+          firebaseUser.displayName || appleCredential.fullName?.givenName || 'user';
+        // Add suffix from uid to ensure uniqueness for auto-generated handles
+        const baseName = rawHandle.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const uidSuffix = firebaseUser.uid.slice(-4).toLowerCase();
+        const normalizedHandle = `${baseName}${uidSuffix}`;
+        const displayName =
+          firebaseUser.displayName ||
+          `${appleCredential.fullName?.givenName || ''} ${appleCredential.fullName?.familyName || ''}`.trim() ||
+          'Anonymous User';
 
         const email = firebaseUser.email || appleCredential.email || "";
 
