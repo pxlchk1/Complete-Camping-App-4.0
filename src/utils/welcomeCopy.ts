@@ -36,30 +36,30 @@ const CAMPING_TYPE_MESSAGES: Record<string, string> = {
 const DEFAULT_SUBTEXT = 'Your camping adventure starts here';
 
 /**
- * Get the welcome title based on user's display name and login status.
- * @param displayName - User's display name from profile
+ * Get the welcome title based on user's handle and login status.
+ * @param handle - User's handle from profile (without @)
  * @param isLoggedIn - Whether the user is logged in
  * @param isNewUser - Whether this is the user's first login (just signed up)
  * @returns The welcome title string
  */
 export function getWelcomeTitle(
-  displayName?: string | null,
+  handle?: string | null,
   isLoggedIn?: boolean,
   isNewUser?: boolean,
 ): string {
-  if (!isLoggedIn) {
-    return 'Welcome, Camper!';
+  if (!isLoggedIn || !handle) {
+    return 'Welcome!';
   }
 
-  // Get first name from display name
-  const firstName = displayName?.split(' ')[0]?.trim() || 'Camper';
+  // Format handle with @ prefix
+  const formattedHandle = handle.startsWith('@') ? handle : `@${handle}`;
 
   // New users see "Welcome" instead of "Welcome back"
   if (isNewUser) {
-    return `Welcome, ${firstName}!`;
+    return `Welcome ${formattedHandle}!`;
   }
 
-  return `Welcome back, ${firstName}!`;
+  return `Welcome back ${formattedHandle}!`;
 }
 
 /**

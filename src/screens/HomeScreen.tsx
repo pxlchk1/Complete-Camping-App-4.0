@@ -186,11 +186,7 @@ export default function HomeScreen() {
 
   // Welcome greeting and message using centralized utility
   // Pass isNewUser so first-time users see "Welcome" instead of "Welcome back"
-  const welcomeGreeting = getWelcomeTitle(
-    currentUser?.displayName,
-    isLoggedIn,
-    isNewUser,
-  );
+  const welcomeGreeting = getWelcomeTitle(currentUser?.handle, isLoggedIn, isNewUser);
   const welcomeMessage = getWelcomeSubtext(currentUser?.favoriteCampingStyle, isLoggedIn);
 
   // Clear the isNewUser flag after showing the welcome message once
