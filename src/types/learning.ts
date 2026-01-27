@@ -2,7 +2,6 @@
  * Learning Types
  * Firestore-backed learning content and progress types
  */
-
 import { Timestamp } from 'firebase/firestore';
 
 // ============================================
@@ -75,6 +74,7 @@ export interface LearningTrack {
   badgeId: BadgeId; // Badge awarded on 100% completion
   moduleIds: string[]; // Ordered list of module IDs in this track
   isActive: boolean; // Whether track is available
+  isFree: boolean; // Whether track is free for all users (vs Pro-only)
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

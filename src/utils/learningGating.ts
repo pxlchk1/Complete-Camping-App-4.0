@@ -3,13 +3,16 @@
  *
  * Centralized access control for learning modules.
  *
- * Access Rules (2026-01-01):
- * - Leave No Trace module (moduleId="lnt-principles") is FREE for ALL users including GUESTS
- * - All other modules require Pro subscription (show PaywallModal for GUEST or FREE)
+ * Access Rules (2026-01-26):
+ * - Leave No Trace track is FREE for ALL users including GUESTS
+ * - All other tracks require Pro subscription (show PaywallModal for GUEST or FREE)
  * - AccountRequiredModal is NOT used for learning - Pro modules show PaywallModal
  */
 
-// Free module IDs - available to all users including guests
+// Free track IDs - all modules in these tracks are available to all users including guests
+export const FREE_TRACK_IDS = ['leave-no-trace'] as const;
+
+// Free module IDs - individual modules that are free (legacy support)
 // Note: "lnt-principles" is the actual module ID in the Leave No Trace track
 export const FREE_MODULE_IDS = [
   'lnt-principles',
@@ -31,9 +34,24 @@ export type ModuleAccessState =
   | 'pro_unlocked'; // Pro module, user is PRO - can access
 
 /**
+ * Check if a track is free (available to all users)
+ */
+export function isFreeTrack(trackId: string): boolean {
+  const normalizedId = trackId.toLowerCase().replace(/_/g, '-');
+  return FREE_TRACK_IDS.some(
+    (id) => id.toLowerCase().replace(/_/g, '-') === normalizedId,
+  );
+}
+
+/**
  * Check if a module is free (available to all authenticated users)
  */
-export function isFreeModule(moduleId: string): boolean {
+export function isFreeModule(moduleId: string, trackId?: string): boolean {
+  // If track is specified and is free, all its modules are free
+  if (trackId && isFreeTrack(trackId)) {
+    return true;
+  }
+
   // Normalize the module ID (handle both underscore and hyphen formats)
   const normalizedId = moduleId.toLowerCase().replace(/_/g, '-');
   return FREE_MODULE_IDS.some(
