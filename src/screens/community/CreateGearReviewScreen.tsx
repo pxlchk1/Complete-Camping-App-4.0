@@ -11,18 +11,18 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import type { RootStackNavigationProp } from '../../navigation/types';
+
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+
+import { useNavigation } from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { auth } from '../../config/firebase';
-import { createGearReview } from '../../services/gearReviewsService';
-import { useCurrentUser } from '../../state/userStore';
-import { requireEmailVerification } from '../../utils/authHelper';
 import {
   BORDER_SOFT,
   CARD_BACKGROUND_LIGHT,
@@ -32,7 +32,11 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
 } from '../../constants/colors';
+import type { RootStackNavigationProp } from '../../navigation/types';
+import { createGearReview } from '../../services/gearReviewsService';
+import { useCurrentUser } from '../../state/userStore';
 import type { GearCategory } from '../../types/community';
+import { requireEmailVerification } from '../../utils/authHelper';
 
 const CATEGORIES: readonly {
   key: GearCategory;
@@ -156,6 +160,12 @@ export default function CreateGearReviewScreen() {
   ): Promise<string[]> => {
     const storage = getStorage();
     const uploadedUrls: string[] = [];
+
+    // Force token refresh to ensure valid credentials for Storage
+    const user = auth.currentUser;
+    if (user) {
+      await user.getIdToken(true);
+    }
 
     for (const uri of localUris) {
       const photoId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

@@ -6,50 +6,53 @@
  * - Quiz at the bottom
  * - 100% quiz score = badge earned
  */
-
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
   ActivityIndicator,
   Alert,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import * as Haptics from 'expo-haptics';
-import Markdown from 'react-native-markdown-display';
 
-import { RootStackParamList } from '../navigation/types';
+import * as Haptics from 'expo-haptics';
+
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import Markdown from 'react-native-markdown-display';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import {
-  getModuleWithProgress,
-  markModuleAsRead,
-  submitQuizAnswers,
-  getBadgeDetails,
-} from '../services/learningService';
-import {
-  ModuleWithProgress,
-  QuizQuestion,
-  BadgeId,
-  LEARNING_BADGES,
-} from '../types/learning';
-import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   GRANITE_GOLD,
   PARCHMENT,
   PARCHMENT_BACKGROUND,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  TEXT_MUTED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_MUTED,
 } from '../constants/colors';
+import { RootStackParamList } from '../navigation/types';
+import {
+  getBadgeDetails,
+  getModuleWithProgress,
+  markModuleAsRead,
+  submitQuizAnswers,
+} from '../services/learningService';
+import {
+  BadgeId,
+  LEARNING_BADGES,
+  ModuleWithProgress,
+  QuizQuestion,
+} from '../types/learning';
 
 type ModuleDetailRouteProp = RouteProp<RootStackParamList, 'ModuleDetail'>;
 type ModuleDetailNavigationProp = NativeStackNavigationProp<
@@ -560,7 +563,7 @@ export default function ModuleDetailScreen() {
               return (
                 <View
                   key={questionKey}
-                  style={{{
+                  style={{
                     marginBottom: 24,
                     padding: 20,
                     backgroundColor: CARD_BACKGROUND_LIGHT,

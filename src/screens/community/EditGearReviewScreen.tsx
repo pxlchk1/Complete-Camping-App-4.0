@@ -2,7 +2,6 @@
  * Edit Gear Review Screen
  * Allows users to edit their existing gear reviews
  */
-
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -16,16 +15,18 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import type { RootStackNavigationProp } from '../../navigation/types';
+
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+
+import { useNavigation, useRoute } from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { auth } from '../../config/firebase';
-import { getGearReviewById, updateGearReview } from '../../services/gearReviewsService';
 import {
   BORDER_SOFT,
   CARD_BACKGROUND_LIGHT,
@@ -35,6 +36,8 @@ import {
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
 } from '../../constants/colors';
+import type { RootStackNavigationProp } from '../../navigation/types';
+import { getGearReviewById, updateGearReview } from '../../services/gearReviewsService';
 import type { GearCategory } from '../../types/community';
 
 const CATEGORIES: readonly {
@@ -227,6 +230,12 @@ export default function EditGearReviewScreen() {
   ): Promise<string[]> => {
     const storage = getStorage();
     const uploadedUrls: string[] = [];
+
+    // Force token refresh to ensure valid credentials for Storage
+    const user = auth.currentUser;
+    if (user) {
+      await user.getIdToken(true);
+    }
 
     for (const uri of localUris) {
       const photoId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
