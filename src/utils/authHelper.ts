@@ -2,14 +2,17 @@
  * Authentication & Authorization Helper
  * Manages the two-gate system: Login Gate → Subscription Gate
  */
+import { Alert } from 'react-native';
 
+import { NavigationProp } from '@react-navigation/native';
+
+import { sendEmailVerification } from 'firebase/auth';
+
+import { auth } from '../config/firebase';
+import { RootStackParamList } from '../navigation/types';
 import { useAuthStore } from '../state/authStore';
 import { useSubscriptionStore } from '../state/subscriptionStore';
-import { NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '../navigation/types';
-import { auth } from '../config/firebase';
-import { sendEmailVerification } from 'firebase/auth';
-import { Alert } from 'react-native';
+import { useUserStore } from '../state/userStore';
 
 /**
  * Get current authenticated user ID
@@ -32,11 +35,40 @@ export const useIsLoggedIn = (): boolean => {
 
 /**
  * Check if user is Pro (must be logged in first)
+ *
+ * Returns true if user has:
+ * - Active RevenueCat Pro entitlement
+ * - Admin role/membershipTier
+ * - Moderator role/membershipTier
+ * - Subscribed membershipTier (includes lifetime)
  */
 export const useIsPro = (): boolean => {
   const isLoggedIn = useIsLoggedIn();
   const isPro = useSubscriptionStore((state) => state.isPro);
-  return isLoggedIn && isPro;
+  const isAdmin = useUserStore((state) => state.isAdministrator());
+  const isModerator = useUserStore((state) => state.isModerator());
+  const membershipTier = useUserStore((state) => state.currentUser?.membershipTier);
+
+  // Not logged in = not pro
+  if (!isLoggedIn) return false;
+
+  // RevenueCat says Pro
+  if (isPro) return true;
+
+  // Admin or Moderator always have Pro access
+  if (isAdmin || isModerator) return true;
+
+  // Check membershipTier from Firestore (isAdmin, isModerator, subscribed)
+  // Note: 'subscribed' includes lifetime members (subscriptionType = 'lifetime')
+  if (
+    membershipTier === 'isAdmin' ||
+    membershipTier === 'isModerator' ||
+    membershipTier === 'subscribed'
+  ) {
+    return true;
+  }
+
+  return false;
 };
 
 /**
