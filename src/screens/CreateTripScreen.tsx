@@ -1,42 +1,64 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Modal, Pressable } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { useTripsStore } from "../state/tripsStore";
-import { Heading2, BodyText } from "../components/Typography";
-import Button from "../components/Button";
-import AccountButton from "../components/AccountButton";
-import { RootStackParamList, PrefillLocation } from "../navigation/types";
-import { CampingStyle, TripDestination } from "../types/camping";
-import { requirePro } from "../utils/gating";
-import AccountRequiredModal from "../components/AccountRequiredModal";
-import { DEEP_FOREST, EARTH_GREEN, GRANITE_GOLD, RIVER_ROCK, SIERRA_SKY, PARCHMENT, PARCHMENT_BORDER } from "../constants/colors";
-import { trackTripCreated } from "../services/analyticsService";
-import { trackCoreAction } from "../services/userActionTrackerService";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+
+import * as Haptics from 'expo-haptics';
+
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import AccountButton from '../components/AccountButton';
+import AccountRequiredModal from '../components/AccountRequiredModal';
+import Button from '../components/Button';
+import { BodyText, Heading2 } from '../components/Typography';
+import {
+  DEEP_FOREST,
+  EARTH_GREEN,
+  GRANITE_GOLD,
+  PARCHMENT,
+  PARCHMENT_BORDER,
+  RIVER_ROCK,
+  SIERRA_SKY,
+} from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
+import { PrefillLocation, RootStackParamList } from '../navigation/types';
+import { trackTripCreated } from '../services/analyticsService';
+import { trackCoreAction } from '../services/userActionTrackerService';
+import { useTripsStore } from '../state/tripsStore';
+import { CampingStyle, TripDestination } from '../types/camping';
+import { requirePro } from '../utils/gating';
 
 type CreateTripScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  "CreateTrip"
+  'CreateTrip'
 >;
 
-type CreateTripScreenRouteProp = RouteProp<RootStackParamList, "CreateTrip">;
+type CreateTripScreenRouteProp = RouteProp<RootStackParamList, 'CreateTrip'>;
 
 const CAMPING_STYLES: { value: CampingStyle; label: string }[] = [
-  { value: "CAR_CAMPING", label: "Car camping" },
-  { value: "BACKPACKING", label: "Backpacking" },
-  { value: "RV", label: "RV camping" },
-  { value: "HAMMOCK", label: "Hammock camping" },
-  { value: "ROOFTOP_TENT", label: "Roof-top tent camping" },
-  { value: "OVERLANDING", label: "Overlanding" },
-  { value: "BOAT_CANOE", label: "Boat or canoe camping" },
-  { value: "BIKEPACKING", label: "Bikepacking" },
-  { value: "WINTER", label: "Winter camping" },
-  { value: "DISPERSED", label: "Dispersed camping" },
+  { value: 'CAR_CAMPING', label: 'Car camping' },
+  { value: 'BACKPACKING', label: 'Backpacking' },
+  { value: 'RV', label: 'RV camping' },
+  { value: 'HAMMOCK', label: 'Hammock camping' },
+  { value: 'ROOFTOP_TENT', label: 'Roof-top tent camping' },
+  { value: 'OVERLANDING', label: 'Overlanding' },
+  { value: 'BOAT_CANOE', label: 'Boat or canoe camping' },
+  { value: 'BIKEPACKING', label: 'Bikepacking' },
+  { value: 'WINTER', label: 'Winter camping' },
+  { value: 'DISPERSED', label: 'Dispersed camping' },
 ];
 
 export default function CreateTripScreen() {
@@ -48,22 +70,30 @@ export default function CreateTripScreen() {
   // Get prefill location from navigation params
   const prefillLocation = route.params?.prefillLocation;
 
-  const [tripName, setTripName] = useState("");
+  const [tripName, setTripName] = useState('');
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date(Date.now() + 86400000 * 2)); // 2 days later
   const [showStartDateModal, setShowStartDateModal] = useState(false);
   const [showEndDateModal, setShowEndDateModal] = useState(false);
   const [campingStyle, setCampingStyle] = useState<CampingStyle | undefined>();
-  const [partySize, setPartySize] = useState("");
+  const [partySize, setPartySize] = useState('');
 
   // Destination state from prefill
-  const [destination, setDestination] = useState<PrefillLocation | null>(prefillLocation || null);
+  const [destination, setDestination] = useState<PrefillLocation | null>(
+    prefillLocation || null,
+  );
 
   // Gating modal state
   const [showAccountModal, setShowAccountModal] = useState(false);
 
   // Loading state for create button
   const [isCreating, setIsCreating] = useState(false);
+
+  // Validation error state
+  const [validationErrors, setValidationErrors] = useState<{
+    tripName?: boolean;
+    campingStyle?: boolean;
+  }>({});
 
   // Pre-populate trip name from destination if available
   useEffect(() => {
@@ -79,10 +109,22 @@ export default function CreateTripScreen() {
   };
 
   const handleCreate = async () => {
+    // Validate required fields
+    const errors: { tripName?: boolean; campingStyle?: boolean } = {};
     if (!tripName.trim()) {
-      alert("Please enter a trip name");
+      errors.tripName = true;
+    }
+    if (!campingStyle) {
+      errors.campingStyle = true;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
+
+    // Clear any previous errors
+    setValidationErrors({});
 
     // Prevent double-tap
     if (isCreating) {
@@ -90,10 +132,13 @@ export default function CreateTripScreen() {
     }
 
     // Gate: PRO required to create trips
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "create_trip", variant }),
-    })) {
+    if (
+      !requirePro({
+        openAccountModal: () => setShowAccountModal(true),
+        openPaywallModal: (variant) =>
+          navigation.navigate('Paywall', { triggerKey: 'create_trip', variant }),
+      })
+    ) {
       return;
     }
 
@@ -101,18 +146,20 @@ export default function CreateTripScreen() {
 
     try {
       // Build trip destination from prefill location if set
-      const tripDestination: TripDestination | undefined = destination ? {
-        sourceType: destination.placeType === "park" ? "parks" : "custom",
-        placeId: destination.placeId,
-        name: destination.name,
-        addressLine1: destination.address,
-        city: null, // Could be parsed from address if needed
-        state: destination.state,
-        lat: destination.lat,
-        lng: destination.lng,
-        formattedAddress: destination.address,
-        parkType: destination.placeType === "park" ? "State Park" : null,
-      } : undefined;
+      const tripDestination: TripDestination | undefined = destination
+        ? {
+            sourceType: destination.placeType === 'park' ? 'parks' : 'custom',
+            placeId: destination.placeId,
+            name: destination.name,
+            addressLine1: destination.address,
+            city: null, // Could be parsed from address if needed
+            state: destination.state,
+            lat: destination.lat,
+            lng: destination.lng,
+            formattedAddress: destination.address,
+            parkType: destination.placeType === 'park' ? 'State Park' : null,
+          }
+        : undefined;
 
       const tripId = await addTrip({
         name: tripName.trim(),
@@ -121,29 +168,32 @@ export default function CreateTripScreen() {
         campingStyle,
         partySize: partySize ? parseInt(partySize) : undefined,
         tripDestination,
-        parkId: destination?.placeType === "park" && destination?.placeId ? destination.placeId : undefined,
+        parkId:
+          destination?.placeType === 'park' && destination?.placeId
+            ? destination.placeId
+            : undefined,
       });
 
       // Track analytics and core action
       trackTripCreated(tripId);
       if (user?.uid) {
-        trackCoreAction(user.uid, "trip_created");
+        trackCoreAction(user.uid, 'trip_created');
       }
 
       // Navigate to trip detail
-      navigation.replace("TripDetail", { tripId });
+      navigation.replace('TripDetail', { tripId });
     } catch (error) {
-      console.error("[CreateTripScreen] Failed to create trip:", error);
-      alert("Failed to create trip. Please try again.");
+      console.error('[CreateTripScreen] Failed to create trip:', error);
+      alert('Failed to create trip. Please try again.');
       setIsCreating(false);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-parchment" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-parchment" edges={['top']}>
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Header */}
         <View className="px-5 pt-4 pb-3 border-b border-parchmentDark">
@@ -154,7 +204,12 @@ export default function CreateTripScreen() {
                 onPress={() => navigation.goBack()}
                 className="w-10 h-10 rounded-full bg-[#f0f9f4] items-center justify-center active:bg-[#dcf3e5]"
               >
-                <Text className="text-forest text-lg" style={{ fontFamily: "SourceSans3_400Regular" }}>✕</Text>
+                <Text
+                  className="text-forest text-lg"
+                  style={{ fontFamily: 'SourceSans3_400Regular' }}
+                >
+                  ✕
+                </Text>
               </Pressable>
               <AccountButton />
             </View>
@@ -165,29 +220,40 @@ export default function CreateTripScreen() {
           {/* Destination Chip - shown when prefilled from Favorites/Saved Places */}
           {destination && (
             <View className="mb-6">
-              <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Destination</Text>
-              <View 
+              <Text
+                className="text-[#16492f] text-base font-semibold mb-2"
+                style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+              >
+                Destination
+              </Text>
+              <View
                 className="flex-row items-center justify-between p-4 rounded-xl border"
-                style={{ backgroundColor: "#f0f9f4", borderColor: EARTH_GREEN }}
+                style={{ backgroundColor: '#f0f9f4', borderColor: EARTH_GREEN }}
               >
                 <View className="flex-row items-center flex-1">
-                  <Ionicons 
-                    name={destination.placeType === "park" ? "leaf" : "location"} 
-                    size={20} 
-                    color={EARTH_GREEN} 
+                  <Ionicons
+                    name={destination.placeType === 'park' ? 'leaf' : 'location'}
+                    size={20}
+                    color={EARTH_GREEN}
                   />
                   <View className="ml-3 flex-1">
-                    <Text 
+                    <Text
                       className="text-base"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+                      style={{
+                        fontFamily: 'SourceSans3_600SemiBold',
+                        color: DEEP_FOREST,
+                      }}
                       numberOfLines={1}
                     >
                       {destination.name}
                     </Text>
                     {destination.subtitle && (
-                      <Text 
+                      <Text
                         className="text-sm"
-                        style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                        style={{
+                          fontFamily: 'SourceSans3_400Regular',
+                          color: EARTH_GREEN,
+                        }}
                         numberOfLines={1}
                       >
                         {destination.subtitle}
@@ -198,7 +264,7 @@ export default function CreateTripScreen() {
                 <Pressable
                   onPress={handleClearDestination}
                   className="w-8 h-8 rounded-full items-center justify-center active:opacity-70"
-                  style={{ backgroundColor: "rgba(0,0,0,0.1)" }}
+                  style={{ backgroundColor: 'rgba(0,0,0,0.1)' }}
                   accessibilityLabel="Clear destination"
                 >
                   <Ionicons name="close" size={18} color={DEEP_FOREST} />
@@ -209,7 +275,22 @@ export default function CreateTripScreen() {
 
           {/* Trip Name */}
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Trip Name</Text>
+            <View className="flex-row items-center mb-2">
+              <Text
+                className="text-[#16492f] text-base font-semibold"
+                style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+              >
+                Trip Name
+              </Text>
+              {validationErrors.tripName && (
+                <Text
+                  className="text-red-600 text-sm ml-2"
+                  style={{ fontFamily: 'SourceSans3_400Regular' }}
+                >
+                  Required
+                </Text>
+              )}
+            </View>
             <TextInput
               value={tripName}
               onChangeText={setTripName}
@@ -221,7 +302,12 @@ export default function CreateTripScreen() {
 
           {/* Dates */}
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Start Date</Text>
+            <Text
+              className="text-[#16492f] text-base font-semibold mb-2"
+              style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+            >
+              Start Date
+            </Text>
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -229,14 +315,22 @@ export default function CreateTripScreen() {
               }}
               className="bg-parchment border border-parchmentDark rounded-xl px-4 py-3"
             >
-              <Text className="text-base text-[#16492f]" style={{ fontFamily: "SourceSans3_400Regular" }}>
+              <Text
+                className="text-base text-[#16492f]"
+                style={{ fontFamily: 'SourceSans3_400Regular' }}
+              >
                 {startDate.toLocaleDateString()}
               </Text>
             </Pressable>
           </View>
 
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>End Date</Text>
+            <Text
+              className="text-[#16492f] text-base font-semibold mb-2"
+              style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+            >
+              End Date
+            </Text>
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -244,7 +338,10 @@ export default function CreateTripScreen() {
               }}
               className="bg-parchment border border-parchmentDark rounded-xl px-4 py-3"
             >
-              <Text className="text-base text-[#16492f]" style={{ fontFamily: "SourceSans3_400Regular" }}>
+              <Text
+                className="text-base text-[#16492f]"
+                style={{ fontFamily: 'SourceSans3_400Regular' }}
+              >
                 {endDate.toLocaleDateString()}
               </Text>
             </Pressable>
@@ -252,7 +349,22 @@ export default function CreateTripScreen() {
 
           {/* Camping Style */}
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Camping Style</Text>
+            <View className="flex-row items-center mb-2">
+              <Text
+                className="text-[#16492f] text-base font-semibold"
+                style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+              >
+                Camping Style
+              </Text>
+              {validationErrors.campingStyle && (
+                <Text
+                  className="text-red-600 text-sm ml-2"
+                  style={{ fontFamily: 'SourceSans3_400Regular' }}
+                >
+                  Required
+                </Text>
+              )}
+            </View>
             <View className="flex-row flex-wrap gap-2">
               {CAMPING_STYLES.map((style) => (
                 <Pressable
@@ -260,13 +372,13 @@ export default function CreateTripScreen() {
                   onPress={() => setCampingStyle(style.value)}
                   className={`px-4 py-2 rounded-full ${
                     campingStyle === style.value
-                      ? "bg-forest"
-                      : "bg-[#f0f9f4] active:bg-[#dcf3e5]"
+                      ? 'bg-forest'
+                      : 'bg-[#f0f9f4] active:bg-[#dcf3e5]'
                   }`}
                 >
                   <Text
                     className={`text-sm font-medium ${
-                      campingStyle === style.value ? "text-parchment" : "text-forest"
+                      campingStyle === style.value ? 'text-parchment' : 'text-forest'
                     }`}
                   >
                     {style.label}
@@ -278,7 +390,12 @@ export default function CreateTripScreen() {
 
           {/* Party Size */}
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Party Size</Text>
+            <Text
+              className="text-[#16492f] text-base font-semibold mb-2"
+              style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+            >
+              Party Size
+            </Text>
             <TextInput
               value={partySize}
               onChangeText={setPartySize}
@@ -292,7 +409,13 @@ export default function CreateTripScreen() {
 
         {/* Footer */}
         <View className="px-5 pb-5 pt-3 border-t border-parchmentDark">
-          <Button onPress={handleCreate} fullWidth icon="checkmark-circle" loading={isCreating} disabled={isCreating}>
+          <Button
+            onPress={handleCreate}
+            fullWidth
+            icon="checkmark-circle"
+            loading={isCreating}
+            disabled={isCreating}
+          >
             Create Trip
           </Button>
         </View>
@@ -314,13 +437,16 @@ export default function CreateTripScreen() {
             onPress={(e) => e.stopPropagation()}
           >
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl" style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}>
+              <Text
+                className="text-xl"
+                style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
+              >
                 Select Start Date
               </Text>
               <Pressable
                 onPress={() => setShowStartDateModal(false)}
                 className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
-                style={{ backgroundColor: "#f0f9f4" }}
+                style={{ backgroundColor: '#f0f9f4' }}
               >
                 <Ionicons name="close" size={24} color={DEEP_FOREST} />
               </Pressable>
@@ -358,13 +484,16 @@ export default function CreateTripScreen() {
             onPress={(e) => e.stopPropagation()}
           >
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl" style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}>
+              <Text
+                className="text-xl"
+                style={{ fontFamily: 'Raleway_700Bold', color: DEEP_FOREST }}
+              >
                 Select End Date
               </Text>
               <Pressable
                 onPress={() => setShowEndDateModal(false)}
                 className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
-                style={{ backgroundColor: "#f0f9f4" }}
+                style={{ backgroundColor: '#f0f9f4' }}
               >
                 <Ionicons name="close" size={24} color={DEEP_FOREST} />
               </Pressable>
@@ -392,7 +521,7 @@ export default function CreateTripScreen() {
         visible={showAccountModal}
         onCreateAccount={() => {
           setShowAccountModal(false);
-          navigation.navigate("Auth" as any);
+          navigation.navigate('Auth' as any);
         }}
         onMaybeLater={() => setShowAccountModal(false)}
       />
