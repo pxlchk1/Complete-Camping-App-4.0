@@ -9,7 +9,13 @@
  * - Only creates missing docs
  * - Validates email index ownership before writing
  */
-import { DocumentData, doc, getDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  DocumentData,
+  doc,
+  getDoc,
+  runTransaction,
+  serverTimestamp,
+} from 'firebase/firestore';
 
 import { db } from '../config/firebase';
 import { ONBOARDING_DEBUG } from './onboardingConfig';
@@ -249,6 +255,8 @@ async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<voi
  *   a "handle-in-use" error to abort signup.
  * - If the handle index exists and belongs to the SAME user, skip (idempotent).
  * - Handles are NEVER deleted to prevent reuse for impersonation.
+ * - Uses a Firestore TRANSACTION to prevent race conditions where two users
+ *   try to claim the same handle simultaneously.
  */
 async function ensureHandleIndex(params: BootstrapAccountParams): Promise<void> {
   const { userId, handle } = params;
@@ -265,59 +273,68 @@ async function ensureHandleIndex(params: BootstrapAccountParams): Promise<void> 
   const handleNormalized = handle.toLowerCase().trim().replace(/^@+/, '');
   const handleIndexRef = doc(db, 'handleIndex', handleNormalized);
 
-  // Check if document already exists
-  const existingDoc = await getDoc(handleIndexRef);
-  if (existingDoc.exists()) {
-    const existingData = existingDoc.data();
-    const existingUserId = existingData?.userId;
+  // Use a transaction to atomically check-and-create the handle index
+  // This prevents race conditions where two users try to claim the same handle
+  await runTransaction(db, async (transaction) => {
+    const existingDoc = await transaction.get(handleIndexRef);
 
-    // CRITICAL: Check if this handle belongs to a different user
-    if (existingUserId && existingUserId !== userId) {
-      onboardingLog(
-        'error',
-        {
-          step: STEPS.ENSURE_HANDLE_INDEX,
-          op: 'getDoc',
-          path: handleIndexRef.path,
-        },
-        undefined,
-        {
-          code: ONBOARDING_ERROR_CODES.HANDLE_IN_USE,
-          message: `Handle index exists for different user`,
-        },
-      );
+    if (existingDoc.exists()) {
+      const existingData = existingDoc.data();
+      const existingUserId = existingData?.userId;
 
-      // Throw a specific error that can be caught and mapped to user-friendly message
-      const error = new Error(
-        'That handle is already taken. Please choose a different one.',
-      ) as Error & {
-        code: string;
-        onboardingStep: string;
-        handleInUse: boolean;
-      };
-      error.code = ONBOARDING_ERROR_CODES.HANDLE_IN_USE;
-      error.onboardingStep = STEPS.ENSURE_HANDLE_INDEX;
-      error.handleInUse = true;
-      throw error;
+      // CRITICAL: Check if this handle belongs to a different user
+      if (existingUserId && existingUserId !== userId) {
+        onboardingLog(
+          'error',
+          {
+            step: STEPS.ENSURE_HANDLE_INDEX,
+            op: 'transaction.get',
+            path: handleIndexRef.path,
+          },
+          undefined,
+          {
+            code: ONBOARDING_ERROR_CODES.HANDLE_IN_USE,
+            message: `Handle index exists for different user`,
+          },
+        );
+
+        // Throw a specific error that can be caught and mapped to user-friendly message
+        const error = new Error(
+          'That handle is already taken. Please choose a different one.',
+        ) as Error & {
+          code: string;
+          onboardingStep: string;
+          handleInUse: boolean;
+        };
+        error.code = ONBOARDING_ERROR_CODES.HANDLE_IN_USE;
+        error.onboardingStep = STEPS.ENSURE_HANDLE_INDEX;
+        error.handleInUse = true;
+        throw error;
+      }
+
+      // Handle index exists and belongs to this user - idempotent skip
+      onboardingLog('success', {
+        step: STEPS.ENSURE_HANDLE_INDEX,
+        op: 'transaction.get',
+        path: handleIndexRef.path,
+      });
+      return; // Already claimed by this user, skip write
     }
 
-    // Handle index exists and belongs to this user - idempotent skip
+    // Handle doesn't exist - claim it atomically within the transaction
+    const handleIndexData: DocumentData = {
+      userId: userId, // MUST be "userId" to match Firestore rules
+      handle: handleNormalized,
+      createdAt: serverTimestamp(),
+    };
+
+    transaction.set(handleIndexRef, handleIndexData);
+
     onboardingLog('success', {
       step: STEPS.ENSURE_HANDLE_INDEX,
-      op: 'getDoc',
+      op: 'transaction.set',
       path: handleIndexRef.path,
     });
-    return;
-  }
-
-  const handleIndexData: DocumentData = {
-    userId: userId, // MUST be "userId" to match Firestore rules
-    handle: handleNormalized,
-    createdAt: serverTimestamp(),
-  };
-
-  await onboardingSetDoc(handleIndexRef, handleIndexData, undefined, {
-    step: STEPS.ENSURE_HANDLE_INDEX,
   });
 }
 
