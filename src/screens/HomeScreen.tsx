@@ -178,7 +178,7 @@ export default function HomeScreen() {
     : LOGOS.APP_ICON;
 
   // Welcome greeting and message using centralized utility
-  const welcomeGreeting = getWelcomeTitle(currentUser?.displayName, isLoggedIn);
+  const welcomeGreeting = getWelcomeTitle(currentUser?.handle, isLoggedIn);
   const welcomeMessage = getWelcomeSubtext(currentUser?.favoriteCampingStyle, isLoggedIn);
 
   if (__DEV__) {

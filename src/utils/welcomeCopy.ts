@@ -35,19 +35,19 @@ const DEFAULT_SUBTEXT = "Your camping adventure starts here";
 
 /**
  * Get the welcome title based on user's display name and login status.
- * @param displayName - User's display name from profile
+ * @param handle - User's handle from profile (without @)
  * @param isLoggedIn - Whether the user is logged in
  * @returns The welcome title string
  */
-export function getWelcomeTitle(displayName?: string | null, isLoggedIn?: boolean): string {
-  if (!isLoggedIn) {
-    return "Welcome, Camper!";
+export function getWelcomeTitle(handle?: string | null, isLoggedIn?: boolean): string {
+  if (!isLoggedIn || !handle) {
+    return 'Welcome!';
   }
 
-  // Get first name from display name
-  const firstName = displayName?.split(" ")[0]?.trim() || "Camper";
-  
-  return `Welcome back, ${firstName}!`;
+  // Format handle with @ prefix
+  const formattedHandle = handle.startsWith('@') ? handle : `@${handle}`;
+
+  return `Welcome ${formattedHandle}!`;
 }
 
 /**
