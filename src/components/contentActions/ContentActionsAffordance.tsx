@@ -8,13 +8,14 @@
  * Drop-in wrapper that positions both ContentActionsMenu (kebab) and ModerationChip
  * correctly in any card/row header. Single component to use everywhere for UGC actions.
  */
-
 import React, { useCallback, useState } from 'react';
-import { View, StyleSheet, ActionSheetIOS, Platform, Alert } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, StyleSheet, View } from 'react-native';
+
 import * as Haptics from 'expo-haptics';
-import { ContentActionsMenu, ContentItemType, ConfirmCopy } from './ContentActionsMenu';
-import { ModerationChip, ModerationRoleLabel } from './ModerationChip';
+
 import { useToast } from '../ToastManager';
+import { ConfirmCopy, ContentActionsMenu, ContentItemType } from './ContentActionsMenu';
+import { ModerationChip, ModerationRoleLabel } from './ModerationChip';
 
 export type LayoutVariant = 'cardHeader' | 'commentRow' | 'compact';
 export type AlignmentVariant = 'topRight' | 'inlineRight';
@@ -82,36 +83,7 @@ export function ContentActionsAffordance({
   const hasModActions = canModerate && !isOwner && onRequestRemove;
   const hasAnyActions = hasOwnerActions || hasModActions;
 
-  // Don't render anything if deleted or no actions
-  if (isDeleted) return null;
-  if (!hasAnyActions && !showModChip) return null;
-
-  // Handle mod chip press - open moderation actions directly
-  const handleModChipPress = useCallback(() => {
-    if (!onRequestRemove) return;
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    const removeLabel = roleLabel === 'ADMIN' ? 'Remove (Admin)' : 'Remove (Moderator)';
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: [removeLabel, 'Cancel'],
-          cancelButtonIndex: 1,
-          destructiveButtonIndex: 0,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 0) {
-            confirmRemove();
-          }
-        },
-      );
-    } else {
-      confirmRemove();
-    }
-  }, [onRequestRemove, roleLabel]);
-
+  // Define confirmRemove first (used by handleModChipPress)
   const confirmRemove = useCallback(() => {
     const copy = {
       title: confirmCopy?.removeTitle || 'Remove This?',
@@ -145,6 +117,36 @@ export function ContentActionsAffordance({
       },
     ]);
   }, [onRequestRemove, confirmCopy, itemType, itemId, showSuccess, showError]);
+
+  // Handle mod chip press - open moderation actions directly
+  const handleModChipPress = useCallback(() => {
+    if (!onRequestRemove) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    const removeLabel = roleLabel === 'ADMIN' ? 'Remove (Admin)' : 'Remove (Moderator)';
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: [removeLabel, 'Cancel'],
+          cancelButtonIndex: 1,
+          destructiveButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            confirmRemove();
+          }
+        },
+      );
+    } else {
+      confirmRemove();
+    }
+  }, [onRequestRemove, roleLabel, confirmRemove]);
+
+  // Don't render anything if deleted or no actions
+  if (isDeleted) return null;
+  if (!hasAnyActions && !showModChip) return null;
 
   // Determine layout styles
   const containerStyle = [
