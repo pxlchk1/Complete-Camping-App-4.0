@@ -178,7 +178,10 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
         // New user - create profile using protected onboarding layer
         const rawHandle =
           firebaseUser.displayName || appleCredential.fullName?.givenName || 'user';
-        const normalizedHandle = rawHandle.toLowerCase().replace(/[^a-z0-9]/g, '');
+        // Add suffix from uid to ensure uniqueness for auto-generated handles
+        const baseName = rawHandle.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const uidSuffix = firebaseUser.uid.slice(-4).toLowerCase();
+        const normalizedHandle = `${baseName}${uidSuffix}`;
         const displayName =
           firebaseUser.displayName ||
           `${appleCredential.fullName?.givenName || ''} ${appleCredential.fullName?.familyName || ''}`.trim() ||
