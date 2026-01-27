@@ -2,51 +2,54 @@
  * Add Gear Screen
  * Form to add a new item to My Gear Closet
  */
-
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   ActivityIndicator,
   Alert,
   Image,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import * as ImagePicker from "expo-image-picker";
-import { auth } from "../config/firebase";
-import { createGearItem, uploadGearImage } from "../services/gearClosetService";
-import { GearCategory, GEAR_CATEGORIES } from "../types/gear";
-import { RootStackNavigationProp } from "../navigation/types";
-import ModalHeader from "../components/ModalHeader";
-import { trackGearItemAdded } from "../services/analyticsService";
-import { trackCoreAction } from "../services/userActionTrackerService";
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+
+import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
+
+import { useNavigation } from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import ModalHeader from '../components/ModalHeader';
+import { auth } from '../config/firebase';
 import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  TEXT_MUTED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_MUTED,
-} from "../constants/colors";
+} from '../constants/colors';
+import { RootStackNavigationProp } from '../navigation/types';
+import { trackGearItemAdded } from '../services/analyticsService';
+import { createGearItem, uploadGearImage } from '../services/gearClosetService';
+import { trackCoreAction } from '../services/userActionTrackerService';
+import { GEAR_CATEGORIES, GearCategory } from '../types/gear';
 
 export default function AddGearScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
 
-  const [name, setName] = useState("");
-  const [category, setCategory] = useState<GearCategory>("optional_extras");
-  const [brand, setBrand] = useState("");
-  const [model, setModel] = useState("");
-  const [weight, setWeight] = useState("");
-  const [notes, setNotes] = useState("");
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState<GearCategory>('optional_extras');
+  const [brand, setBrand] = useState('');
+  const [model, setModel] = useState('');
+  const [weight, setWeight] = useState('');
+  const [notes, setNotes] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
@@ -56,7 +59,10 @@ export default function AddGearScreen() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "Please allow access to your photos to add gear images.");
+        Alert.alert(
+          'Permission Required',
+          'Please allow access to your photos to add gear images.',
+        );
         return;
       }
 
@@ -72,8 +78,8 @@ export default function AddGearScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image");
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image');
     }
   };
 
@@ -82,7 +88,7 @@ export default function AddGearScreen() {
       const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert("Permission Required", "Please allow camera access to take photos.");
+        Alert.alert('Permission Required', 'Please allow camera access to take photos.');
         return;
       }
 
@@ -97,25 +103,29 @@ export default function AddGearScreen() {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
     } catch (error) {
-      console.error("Error taking photo:", error);
-      Alert.alert("Error", "Failed to take photo");
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo');
     }
   };
 
   const handleSubmit = async () => {
     const user = auth.currentUser;
     if (!user) {
-      Alert.alert("Error", "You must be signed in to add gear");
+      Alert.alert('Error', 'You must be signed in to add gear');
       return;
     }
 
     if (!name.trim()) {
-      Alert.alert("Name Required", "Please enter a name for this gear");
+      Alert.alert('Name Required', 'Please enter a name for this gear');
       return;
     }
 
     try {
       setSubmitting(true);
+
+      // Force token refresh to ensure Firestore rules see valid auth state
+      // This prevents "Missing or insufficient permissions" errors after app backgrounding
+      await user.getIdToken(true);
 
       // Create the gear item first
       const gearId = await createGearItem(user.uid, {
@@ -133,23 +143,23 @@ export default function AddGearScreen() {
         try {
           imageUrl = await uploadGearImage(user.uid, gearId, imageUri);
           // Update gear item with image URL
-          const { updateGearItem } = await import("../services/gearClosetService");
+          const { updateGearItem } = await import('../services/gearClosetService');
           await updateGearItem(gearId, { imageUrl });
         } catch (imageError) {
-          console.error("Error uploading image:", imageError);
+          console.error('Error uploading image:', imageError);
           // Don't fail the whole operation if image upload fails
         }
       }
 
       // Track analytics and core action
       trackGearItemAdded();
-      trackCoreAction(user.uid, "gear_item_added");
+      trackCoreAction(user.uid, 'gear_item_added');
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       navigation.goBack();
     } catch (error: any) {
-      console.error("Error adding gear:", error);
-      Alert.alert("Error", error.message || "Failed to add gear");
+      console.error('Error adding gear:', error);
+      Alert.alert('Error', error.message || 'Failed to add gear');
     } finally {
       setSubmitting(false);
     }
@@ -161,13 +171,13 @@ export default function AddGearScreen() {
         title="Add Gear"
         showTitle
         rightAction={{
-          icon: "checkmark",
+          icon: 'checkmark',
           onPress: handleSubmit,
         }}
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
         <ScrollView className="flex-1 px-5 pt-5">
@@ -175,27 +185,31 @@ export default function AddGearScreen() {
           <View className="mb-4 items-center">
             <Pressable
               onPress={() => {
-                Alert.alert(
-                  "Add Photo",
-                  "Choose a photo for your gear",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Take Photo", onPress: handleTakePhoto },
-                    { text: "Choose from Library", onPress: handlePickImage },
-                  ]
-                );
+                Alert.alert('Add Photo', 'Choose a photo for your gear', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Take Photo', onPress: handleTakePhoto },
+                  { text: 'Choose from Library', onPress: handlePickImage },
+                ]);
               }}
               className="w-32 h-32 rounded-xl items-center justify-center active:opacity-70"
-              style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT, borderWidth: 1 }}
+              style={{
+                backgroundColor: CARD_BACKGROUND_LIGHT,
+                borderColor: BORDER_SOFT,
+                borderWidth: 1,
+              }}
             >
               {imageUri ? (
-                <Image source={{ uri: imageUri }} className="w-full h-full rounded-xl" resizeMode="cover" />
+                <Image
+                  source={{ uri: imageUri }}
+                  className="w-full h-full rounded-xl"
+                  resizeMode="cover"
+                />
               ) : (
                 <View className="items-center">
                   <Ionicons name="camera-outline" size={32} color={TEXT_MUTED} />
                   <Text
                     className="mt-2 text-sm"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                    style={{ fontFamily: 'SourceSans3_400Regular', color: TEXT_MUTED }}
                   >
                     Add Photo
                   </Text>
@@ -208,7 +222,10 @@ export default function AddGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Gear Name *
             </Text>
@@ -221,7 +238,7 @@ export default function AddGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
               autoFocus
@@ -232,7 +249,10 @@ export default function AddGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Category *
             </Text>
@@ -244,8 +264,14 @@ export default function AddGearScreen() {
               className="px-4 py-3 rounded-xl border flex-row items-center justify-between"
               style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
             >
-              <Text style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_PRIMARY_STRONG }}>
-                {GEAR_CATEGORIES.find(c => c.value === category)?.label || "Select Category"}
+              <Text
+                style={{
+                  fontFamily: 'SourceSans3_400Regular',
+                  color: TEXT_PRIMARY_STRONG,
+                }}
+              >
+                {GEAR_CATEGORIES.find((c) => c.value === category)?.label ||
+                  'Select Category'}
               </Text>
               <Ionicons name="chevron-down" size={20} color={TEXT_SECONDARY} />
             </Pressable>
@@ -253,9 +279,12 @@ export default function AddGearScreen() {
             {showCategoryPicker && (
               <View
                 className="mt-2 rounded-xl border overflow-hidden"
-                style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
+                style={{
+                  backgroundColor: CARD_BACKGROUND_LIGHT,
+                  borderColor: BORDER_SOFT,
+                }}
               >
-                {GEAR_CATEGORIES.map(cat => (
+                {GEAR_CATEGORIES.map((cat) => (
                   <Pressable
                     key={cat.value}
                     onPress={() => {
@@ -268,7 +297,10 @@ export default function AddGearScreen() {
                   >
                     <Text
                       style={{
-                        fontFamily: category === cat.value ? "SourceSans3_600SemiBold" : "SourceSans3_400Regular",
+                        fontFamily:
+                          category === cat.value
+                            ? 'SourceSans3_600SemiBold'
+                            : 'SourceSans3_400Regular',
                         color: category === cat.value ? EARTH_GREEN : TEXT_PRIMARY_STRONG,
                       }}
                     >
@@ -284,7 +316,10 @@ export default function AddGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Brand
             </Text>
@@ -297,7 +332,7 @@ export default function AddGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -307,7 +342,10 @@ export default function AddGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Model
             </Text>
@@ -320,7 +358,7 @@ export default function AddGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -330,7 +368,10 @@ export default function AddGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Weight
             </Text>
@@ -343,7 +384,7 @@ export default function AddGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
               }}
             />
@@ -353,7 +394,10 @@ export default function AddGearScreen() {
           <View className="mb-4">
             <Text
               className="mb-2"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                color: TEXT_PRIMARY_STRONG,
+              }}
             >
               Notes
             </Text>
@@ -369,7 +413,7 @@ export default function AddGearScreen() {
               style={{
                 backgroundColor: CARD_BACKGROUND_LIGHT,
                 borderColor: BORDER_SOFT,
-                fontFamily: "SourceSans3_400Regular",
+                fontFamily: 'SourceSans3_400Regular',
                 color: TEXT_PRIMARY_STRONG,
                 minHeight: 100,
               }}
@@ -390,7 +434,7 @@ export default function AddGearScreen() {
             ) : (
               <Text
                 className="text-center"
-                style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                style={{ fontFamily: 'SourceSans3_600SemiBold', color: PARCHMENT }}
               >
                 Add Gear
               </Text>
