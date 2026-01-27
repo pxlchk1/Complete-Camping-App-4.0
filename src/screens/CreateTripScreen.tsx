@@ -1,40 +1,45 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  TextInput,
   KeyboardAvoidingView,
-  Platform,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+
 import * as Haptics from 'expo-haptics';
-import { useTripsStore } from '../state/tripsStore';
-import { Heading2, BodyText } from '../components/Typography';
-import Button from '../components/Button';
+
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import AccountButton from '../components/AccountButton';
-import { RootStackParamList, PrefillLocation } from '../navigation/types';
-import { CampingStyle, TripDestination } from '../types/camping';
-import { requirePro } from '../utils/gating';
 import AccountRequiredModal from '../components/AccountRequiredModal';
+import Button from '../components/Button';
+import { BodyText, Heading2 } from '../components/Typography';
 import {
   DEEP_FOREST,
   EARTH_GREEN,
   GRANITE_GOLD,
-  RIVER_ROCK,
-  SIERRA_SKY,
   PARCHMENT,
   PARCHMENT_BORDER,
+  RIVER_ROCK,
+  SIERRA_SKY,
 } from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
+import { PrefillLocation, RootStackParamList } from '../navigation/types';
 import { trackTripCreated } from '../services/analyticsService';
 import { trackCoreAction } from '../services/userActionTrackerService';
-import { useAuth } from '../context/AuthContext';
+import { useTripsStore } from '../state/tripsStore';
+import { CampingStyle, TripDestination } from '../types/camping';
+import { requirePro } from '../utils/gating';
 
 type CreateTripScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -84,6 +89,12 @@ export default function CreateTripScreen() {
   // Loading state for create button
   const [isCreating, setIsCreating] = useState(false);
 
+  // Validation error state
+  const [validationErrors, setValidationErrors] = useState<{
+    tripName?: boolean;
+    campingStyle?: boolean;
+  }>({});
+
   // Pre-populate trip name from destination if available
   useEffect(() => {
     if (prefillLocation && !tripName) {
@@ -98,10 +109,22 @@ export default function CreateTripScreen() {
   };
 
   const handleCreate = async () => {
+    // Validate required fields
+    const errors: { tripName?: boolean; campingStyle?: boolean } = {};
     if (!tripName.trim()) {
-      alert('Please enter a trip name');
+      errors.tripName = true;
+    }
+    if (!campingStyle) {
+      errors.campingStyle = true;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
+
+    // Clear any previous errors
+    setValidationErrors({});
 
     // Prevent double-tap
     if (isCreating) {
@@ -252,12 +275,22 @@ export default function CreateTripScreen() {
 
           {/* Trip Name */}
           <View className="mb-6">
-            <Text
-              className="text-[#16492f] text-base font-semibold mb-2"
-              style={{ fontFamily: 'SourceSans3_600SemiBold' }}
-            >
-              Trip Name
-            </Text>
+            <View className="flex-row items-center mb-2">
+              <Text
+                className="text-[#16492f] text-base font-semibold"
+                style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+              >
+                Trip Name
+              </Text>
+              {validationErrors.tripName && (
+                <Text
+                  className="text-red-600 text-sm ml-2"
+                  style={{ fontFamily: 'SourceSans3_400Regular' }}
+                >
+                  Required
+                </Text>
+              )}
+            </View>
             <TextInput
               value={tripName}
               onChangeText={setTripName}
@@ -316,12 +349,22 @@ export default function CreateTripScreen() {
 
           {/* Camping Style */}
           <View className="mb-6">
-            <Text
-              className="text-[#16492f] text-base font-semibold mb-2"
-              style={{ fontFamily: 'SourceSans3_600SemiBold' }}
-            >
-              Camping Style
-            </Text>
+            <View className="flex-row items-center mb-2">
+              <Text
+                className="text-[#16492f] text-base font-semibold"
+                style={{ fontFamily: 'SourceSans3_600SemiBold' }}
+              >
+                Camping Style
+              </Text>
+              {validationErrors.campingStyle && (
+                <Text
+                  className="text-red-600 text-sm ml-2"
+                  style={{ fontFamily: 'SourceSans3_400Regular' }}
+                >
+                  Required
+                </Text>
+              )}
+            </View>
             <View className="flex-row flex-wrap gap-2">
               {CAMPING_STYLES.map((style) => (
                 <Pressable
