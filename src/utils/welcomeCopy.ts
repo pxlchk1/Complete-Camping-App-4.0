@@ -39,14 +39,9 @@ const DEFAULT_SUBTEXT = 'Your camping adventure starts here';
  * Get the welcome title based on user's handle and login status.
  * @param handle - User's handle from profile (without @)
  * @param isLoggedIn - Whether the user is logged in
- * @param isNewUser - Whether this is the user's first login (just signed up)
  * @returns The welcome title string
  */
-export function getWelcomeTitle(
-  handle?: string | null,
-  isLoggedIn?: boolean,
-  isNewUser?: boolean,
-): string {
+export function getWelcomeTitle(handle?: string | null, isLoggedIn?: boolean): string {
   if (!isLoggedIn || !handle) {
     return 'Welcome!';
   }
@@ -54,12 +49,7 @@ export function getWelcomeTitle(
   // Format handle with @ prefix
   const formattedHandle = handle.startsWith('@') ? handle : `@${handle}`;
 
-  // New users see "Welcome" instead of "Welcome back"
-  if (isNewUser) {
-    return `Welcome ${formattedHandle}!`;
-  }
-
-  return `Welcome back ${formattedHandle}!`;
+  return `Welcome ${formattedHandle}!`;
 }
 
 /**

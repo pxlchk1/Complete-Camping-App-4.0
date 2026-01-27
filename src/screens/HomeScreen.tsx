@@ -88,8 +88,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const setCurrentUser = useUserStore((s) => s.setCurrentUser);
   const currentUser = useUserStore((s) => s.currentUser);
-  const isNewUser = useUserStore((s) => s.isNewUser);
-  const setIsNewUser = useUserStore((s) => s.setIsNewUser);
   const setActivePlanTab = usePlanTabStore((s) => s.setActiveTab);
   const isPro = useSubscriptionStore((s) => s.isPro);
   const { isLoggedIn: isAuthenticated, isGuest } = useUserStatus();
@@ -185,20 +183,8 @@ export default function HomeScreen() {
     isLoggedIn && currentUser?.photoURL ? { uri: currentUser.photoURL } : LOGOS.APP_ICON;
 
   // Welcome greeting and message using centralized utility
-  // Pass isNewUser so first-time users see "Welcome" instead of "Welcome back"
-  const welcomeGreeting = getWelcomeTitle(currentUser?.handle, isLoggedIn, isNewUser);
+  const welcomeGreeting = getWelcomeTitle(currentUser?.handle, isLoggedIn);
   const welcomeMessage = getWelcomeSubtext(currentUser?.favoriteCampingStyle, isLoggedIn);
-
-  // Clear the isNewUser flag after showing the welcome message once
-  useEffect(() => {
-    if (isNewUser && isLoggedIn) {
-      // Clear after a short delay so the "Welcome" message renders first
-      const timer = setTimeout(() => {
-        setIsNewUser(false);
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isNewUser, isLoggedIn, setIsNewUser]);
 
   if (__DEV__) {
     console.log('🎯 [HomeScreen] Welcome Greeting:', welcomeGreeting);
