@@ -3,41 +3,45 @@
  * Review content that has been flagged (3+ downvotes) or reported
  * Admins can approve (unhide) or remove content
  */
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
   ActivityIndicator,
-  RefreshControl,
   Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import * as Haptics from 'expo-haptics';
-import { db, auth } from '../config/firebase';
+
+import { Ionicons } from '@expo/vector-icons';
+
 import {
   collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  limit,
   query,
   where,
-  getDocs,
-  doc,
-  deleteDoc,
-  limit,
 } from 'firebase/firestore';
+
 import ModalHeader from '../components/ModalHeader';
 import { useToast } from '../components/ToastManager';
-import { moderatorApprove } from '../services/moderationService';
+import { auth, db } from '../config/firebase';
 import {
-  PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
   BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
+  DEEP_FOREST,
+  EARTH_GREEN,
+  PARCHMENT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  EARTH_GREEN,
-  DEEP_FOREST,
 } from '../constants/colors';
+import { moderatorApprove } from '../services/moderationService';
+import { seedLearningContent } from '../services/seedLearningContent';
 
 // Content types and their Firestore collections
 const CONTENT_COLLECTIONS = [
@@ -76,8 +80,24 @@ export default function AdminContentScreen() {
     item: null,
     action: 'approve',
   });
+  const [seedingContent, setSeedingContent] = useState(false);
   const { showSuccess, showError } = useToast();
   const currentUserId = auth.currentUser?.uid;
+
+  // Seed learning content function
+  const handleSeedLearningContent = async () => {
+    setSeedingContent(true);
+    try {
+      await seedLearningContent();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showSuccess('Learning content seeded successfully!');
+    } catch (error: any) {
+      console.error('[AdminContent] Error seeding learning content:', error);
+      showError(`Failed to seed content: ${error?.message || 'Unknown error'}`);
+    } finally {
+      setSeedingContent(false);
+    }
+  };
 
   const loadFlaggedContent = useCallback(async () => {
     try {
@@ -335,6 +355,59 @@ export default function AdminContentScreen() {
         }
       >
         <View className="px-5 pt-5 pb-8">
+          {/* Admin Actions Section */}
+          <View
+            className="mb-6 p-4 rounded-xl"
+            style={{
+              backgroundColor: CARD_BACKGROUND_LIGHT,
+              borderWidth: 1,
+              borderColor: BORDER_SOFT,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: 'SourceSans3_600SemiBold',
+                fontSize: 16,
+                color: TEXT_PRIMARY_STRONG,
+                marginBottom: 12,
+              }}
+            >
+              Admin Actions
+            </Text>
+            <Pressable
+              onPress={handleSeedLearningContent}
+              disabled={seedingContent}
+              className="flex-row items-center p-3 rounded-lg active:opacity-70"
+              style={{ backgroundColor: DEEP_FOREST, opacity: seedingContent ? 0.6 : 1 }}
+            >
+              {seedingContent ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="book-outline" size={20} color="#FFFFFF" />
+              )}
+              <Text
+                style={{
+                  fontFamily: 'SourceSans3_600SemiBold',
+                  fontSize: 14,
+                  color: '#FFFFFF',
+                  marginLeft: 8,
+                }}
+              >
+                {seedingContent ? 'Seeding Learning Content...' : 'Seed Learning Content'}
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: 'SourceSans3_400Regular',
+                fontSize: 12,
+                color: TEXT_SECONDARY,
+                marginTop: 8,
+              }}
+            >
+              Populates learningTracks and learningModules collections with content.
+            </Text>
+          </View>
+
           {flaggedContent.length === 0 ? (
             <View className="items-center justify-center py-12">
               <Ionicons name="checkmark-circle" size={64} color={EARTH_GREEN} />

@@ -7,69 +7,68 @@
  * - Module cards with progress
  * - Gating: Leave No Trace free for all; others require Pro
  */
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  ImageBackground,
-  RefreshControl,
   ActivityIndicator,
+  ImageBackground,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { Ionicons } from '@expo/vector-icons';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Components
 import AccountButtonHeader from '../components/AccountButtonHeader';
 import AccountRequiredModal from '../components/AccountRequiredModal';
 import OnboardingModal from '../components/OnboardingModal';
-import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
-
-// Services
-import {
-  getTracksWithProgress,
-  getUserLearningProgress,
-} from '../services/learningService';
-
-// Auth & Gating
-import { useUserStatus } from '../utils/authHelper';
-import {
-  canOpenLearningModule,
-  getLearningModuleLockReason,
-  getModuleBadgeType,
-  getLockedModuleHelperText,
-  LockReason,
-} from '../utils/learningGating';
-import { getPaywallVariantAndTrack } from '../services/proAttemptService';
-
-// Types
-import {
-  TrackWithModules,
-  UserLearningProgress,
-  LEARNING_BADGES,
-} from '../types/learning';
-
 // Constants
 import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   GRANITE_GOLD,
   PARCHMENT,
   PARCHMENT_BACKGROUND,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  TEXT_MUTED,
+  TEXT_ON_DARK,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_ON_DARK,
-  TEXT_MUTED,
 } from '../constants/colors';
 import { HERO_IMAGES } from '../constants/images';
+import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
 import { RootStackParamList } from '../navigation/types';
+// Services
+import {
+  getTracksWithProgress,
+  getUserLearningProgress,
+} from '../services/learningService';
+import { getPaywallVariantAndTrack } from '../services/proAttemptService';
+// Types
+import {
+  LEARNING_BADGES,
+  TrackWithModules,
+  UserLearningProgress,
+} from '../types/learning';
+// Auth & Gating
+import { useUserStatus } from '../utils/authHelper';
+import {
+  LockReason,
+  canOpenLearningModule,
+  getLearningModuleLockReason,
+  getLockedModuleHelperText,
+  getModuleBadgeType,
+} from '../utils/learningGating';
 
 type LearnScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Learn'>;
 
@@ -95,6 +94,7 @@ export default function LearnScreen() {
   const [tracks, setTracks] = useState<TrackWithModules[]>([]);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [userProgress, setUserProgress] = useState<UserLearningProgress | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Load data
   const loadData = useCallback(
@@ -102,6 +102,7 @@ export default function LearnScreen() {
       try {
         if (showRefresh) setRefreshing(true);
         else setLoading(true);
+        setError(null);
 
         const [tracksData, progress] = await Promise.all([
           getTracksWithProgress(),
@@ -115,8 +116,17 @@ export default function LearnScreen() {
         if (tracksData.length > 0 && !selectedTrackId) {
           setSelectedTrackId(tracksData[0].id);
         }
-      } catch (error) {
-        console.error('[LearnScreen] Error loading data:', error);
+
+        // If no tracks found, show helpful message
+        if (tracksData.length === 0) {
+          setError(
+            'No learning content found. The learningTracks collection may be empty.',
+          );
+        }
+      } catch (err: any) {
+        const errorMsg = err?.message || 'Unknown error';
+        console.error('[LearnScreen] Error loading data:', errorMsg, err?.code, err);
+        setError(`Failed to load learning content: ${errorMsg}`);
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -190,6 +200,64 @@ export default function LearnScreen() {
         >
           Loading learning content...
         </Text>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error && tracks.length === 0) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: PARCHMENT_BACKGROUND,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 24,
+        }}
+      >
+        <Ionicons name="alert-circle-outline" size={64} color="#D32F2F" />
+        <Text
+          style={{
+            marginTop: 16,
+            fontFamily: 'SourceSans3_600SemiBold',
+            fontSize: 18,
+            color: TEXT_PRIMARY,
+            textAlign: 'center',
+          }}
+        >
+          Unable to Load Learning Content
+        </Text>
+        <Text
+          style={{
+            marginTop: 8,
+            fontFamily: 'SourceSans3_400Regular',
+            fontSize: 14,
+            color: TEXT_SECONDARY,
+            textAlign: 'center',
+          }}
+        >
+          {error}
+        </Text>
+        <Pressable
+          onPress={() => loadData()}
+          style={{
+            marginTop: 24,
+            backgroundColor: DEEP_FOREST,
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+            borderRadius: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: 'SourceSans3_600SemiBold',
+              color: '#FFFFFF',
+            }}
+          >
+            Try Again
+          </Text>
+        </Pressable>
       </View>
     );
   }

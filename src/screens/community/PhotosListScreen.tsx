@@ -2,63 +2,67 @@
  * Photos List Screen (Redesigned)
  * Content-first photo gallery with compact filter bar
  */
-
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  Pressable,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
   FlatList,
   Image,
-  ActivityIndicator,
-  Dimensions,
-  ScrollView,
-  Alert,
   LayoutAnimation,
   Platform,
+  Pressable,
+  ScrollView,
+  Text,
   UIManager,
+  View,
 } from 'react-native';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+
 import * as Haptics from 'expo-haptics';
-import {
-  getPhotoPosts,
-  getHelpfulStatuses,
-  toggleHelpful,
-  getUserVotes,
-  vote,
-  VoteDirection,
-} from '../../services/photoPostsService';
-import { getStories } from '../../services/storiesService';
-import { Story } from '../../types/community';
-import {
-  PhotoPost,
-  PhotoPostType,
-  TripStyle,
-  POST_TYPE_LABELS,
-  POST_TYPE_COLORS,
-  mapLegacyPostType,
-} from '../../types/photoPost';
-import { useCurrentUser } from '../../state/userStore';
-import { RootStackNavigationProp } from '../../navigation/types';
-import CommunitySectionHeader from '../../components/CommunitySectionHeader';
+
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import { DocumentSnapshot } from 'firebase/firestore';
+
 import AccountRequiredModal from '../../components/AccountRequiredModal';
+import CommunitySectionHeader from '../../components/CommunitySectionHeader';
 import OnboardingModal from '../../components/OnboardingModal';
-import { useScreenOnboarding } from '../../hooks/useScreenOnboarding';
-import { requireAccount } from '../../utils/gating';
-import { shouldShowInFeed } from '../../services/moderationService';
-import { canUploadPhotoToday } from '../../services/photoLimitService';
 import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  TEXT_MUTED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_MUTED,
 } from '../../constants/colors';
-import { DocumentSnapshot } from 'firebase/firestore';
+import { useScreenOnboarding } from '../../hooks/useScreenOnboarding';
+import { RootStackNavigationProp } from '../../navigation/types';
+import { shouldShowInFeed } from '../../services/moderationService';
+import { canUploadPhotoToday } from '../../services/photoLimitService';
+import {
+  VoteDirection,
+  getHelpfulStatuses,
+  getPhotoPosts,
+  getUserVotes,
+  toggleHelpful,
+  vote,
+} from '../../services/photoPostsService';
+import { getStories } from '../../services/storiesService';
+import { useCurrentUser } from '../../state/userStore';
+import { Story } from '../../types/community';
+import {
+  POST_TYPE_COLORS,
+  POST_TYPE_LABELS,
+  PhotoPost,
+  PhotoPostType,
+  TripStyle,
+  mapLegacyPostType,
+} from '../../types/photoPost';
+import { requireAccount } from '../../utils/gating';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -203,7 +207,14 @@ export default function PhotosListScreen() {
           setUserVotes((prev) => ({ ...prev, ...votes }));
         }
       } catch (err: any) {
-        console.error('Error loading photo posts:', err);
+        const errorMsg = err?.message || 'Unknown error';
+        console.error(
+          '[PhotosListScreen] Error loading photo posts:',
+          errorMsg,
+          err?.code,
+          err,
+        );
+        setError(`Failed to load photos: ${errorMsg}. Trying legacy stories...`);
         await loadLegacyStories(refresh);
       } finally {
         setLoading(false);
