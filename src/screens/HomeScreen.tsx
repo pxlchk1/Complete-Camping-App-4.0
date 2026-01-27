@@ -1,75 +1,80 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, ImageBackground, Image, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ImageBackground,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
+
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Components
-import AccountButtonHeader from "../components/AccountButtonHeader";
-import { SectionTitle, BodyText, BodyTextMedium } from "../components/Typography";
-import PushPermissionPrompt from "../components/PushPermissionPrompt";
-import HandleLink from "../components/HandleLink";
-import AccountRequiredModal from "../components/AccountRequiredModal";
-import OnboardingModal from "../components/OnboardingModal";
-
-// Hooks
-import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
-
-// Services
-import { getPhotoPosts } from "../services/photoPostsService";
-import { getUser } from "../services/userService";
-import { PhotoPost } from "../types/photoPost";
-
-// State
-import { useTripsStore } from "../state/tripsStore";
-import { useGearStore } from "../state/gearStore";
-import { useUserStore, createTestUser } from "../state/userStore";
-import { usePlanTabStore } from "../state/planTabStore";
-import { useSubscriptionStore } from "../state/subscriptionStore";
-
-// Utils
-import { getWelcomeTitle, getWelcomeSubtext } from "../utils/welcomeCopy";
-import { useUserStatus } from "../utils/authHelper";
-
+import AccountButtonHeader from '../components/AccountButtonHeader';
+import AccountRequiredModal from '../components/AccountRequiredModal';
+import HandleLink from '../components/HandleLink';
+import OnboardingModal from '../components/OnboardingModal';
+import PushPermissionPrompt from '../components/PushPermissionPrompt';
+import { BodyText, BodyTextMedium, SectionTitle } from '../components/Typography';
+import { auth } from '../config/firebase';
 // Constants
 import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   GRANITE_GOLD,
-  RIVER_ROCK,
-  SIERRA_SKY,
   PARCHMENT,
   PARCHMENT_BACKGROUND,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  RIVER_ROCK,
+  SIERRA_SKY,
+  TEXT_ON_DARK,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_ON_DARK,
-} from "../constants/colors";
-import { HERO_IMAGES, LOGOS } from "../constants/images";
-import { RootStackParamList } from "../navigation/types";
-import { auth } from "../config/firebase";
+} from '../constants/colors';
+import { HERO_IMAGES, LOGOS } from '../constants/images';
+// Hooks
+import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
+import { RootStackParamList } from '../navigation/types';
+// Services
+import { getPhotoPosts } from '../services/photoPostsService';
+import { getUser } from '../services/userService';
+import { useGearStore } from '../state/gearStore';
+import { usePlanTabStore } from '../state/planTabStore';
+import { useSubscriptionStore } from '../state/subscriptionStore';
+// State
+import { useTripsStore } from '../state/tripsStore';
+import { createTestUser, useUserStore } from '../state/userStore';
+import { PhotoPost } from '../types/photoPost';
+import { useUserStatus } from '../utils/authHelper';
+// Utils
+import { getWelcomeTitle } from '../utils/welcomeCopy';
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Home">;
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 // Daily camping tips
 const CAMPING_TIPS = [
-  "Always check the weather forecast before your trip and adjust your gear list accordingly.",
-  "Pack light, pack right - you can always layer clothing!",
-  "Bring a headlamp or flashlight for each person in your group.",
-  "Store food properly to avoid attracting wildlife to your campsite.",
-  "Leave No Trace - pack out everything you pack in.",
-  "Bring extra batteries and a portable charger for electronics.",
-  "Test all your gear at home before heading out on your trip.",
-  "Bring a first aid kit and know how to use it.",
-  "Set up camp at least 200 feet from water sources.",
-  "Arrive at your campsite with enough daylight to set up comfortably.",
+  'Always check the weather forecast before your trip and adjust your gear list accordingly.',
+  'Pack light, pack right - you can always layer clothing!',
+  'Bring a headlamp or flashlight for each person in your group.',
+  'Store food properly to avoid attracting wildlife to your campsite.',
+  'Leave No Trace - pack out everything you pack in.',
+  'Bring extra batteries and a portable charger for electronics.',
+  'Test all your gear at home before heading out on your trip.',
+  'Bring a first aid kit and know how to use it.',
+  'Set up camp at least 200 feet from water sources.',
+  'Arrive at your campsite with enough daylight to set up comfortably.',
 ];
-
-
 
 const safeHaptic = () => {
   // Don’t let haptics failures block navigation.
@@ -94,10 +99,11 @@ export default function HomeScreen() {
 
   // Gating modals state
   const [showAccountModal, setShowAccountModal] = useState(false);
-  const [accountModalTriggerKey, setAccountModalTriggerKey] = useState<string>("default");
+  const [accountModalTriggerKey, setAccountModalTriggerKey] = useState<string>('default');
 
   // Onboarding modal
-  const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("Home");
+  const { showModal, currentTooltip, dismissModal, openModal } =
+    useScreenOnboarding('Home');
 
   // Fetch a random featured photo on screen focus
   useFocusEffect(
@@ -112,7 +118,7 @@ export default function HomeScreen() {
             const randomIndex = Math.floor(Math.random() * result.posts.length);
             const selectedPhoto = result.posts[randomIndex];
             setFeaturedPhoto(selectedPhoto);
-            
+
             // Fetch author's handle if not stored on the photo
             if (!selectedPhoto.userHandle && selectedPhoto.userId) {
               try {
@@ -121,21 +127,21 @@ export default function HomeScreen() {
                   setFeaturedPhotoHandle(author.handle);
                 }
               } catch (err) {
-                console.log("Could not fetch featured photo author handle:", err);
+                console.log('Could not fetch featured photo author handle:', err);
               }
             } else {
               setFeaturedPhotoHandle(null);
             }
           }
         } catch (error) {
-          console.error("[HomeScreen] Failed to fetch featured photo:", error);
+          console.error('[HomeScreen] Failed to fetch featured photo:', error);
         } finally {
           setPhotoLoading(false);
         }
       };
 
       fetchRandomPhoto();
-    }, [])
+    }, []),
   );
 
   /**
@@ -146,16 +152,14 @@ export default function HomeScreen() {
     if (!__DEV__) return;
 
     const existing = useUserStore.getState().currentUser;
-    // eslint-disable-next-line no-console
-    console.log("🔍 [HomeScreen] Current User:", JSON.stringify(existing, null, 2));
+
+    console.log('🔍 [HomeScreen] Current User:', JSON.stringify(existing, null, 2));
 
     if (!existing) {
-      // eslint-disable-next-line no-console
-      console.log("⚠️ [HomeScreen] No user found, creating test user");
-      setCurrentUser(createTestUser("administrator"));
+      console.log('⚠️ [HomeScreen] No user found, creating test user');
+      setCurrentUser(createTestUser('administrator'));
     } else {
-      // eslint-disable-next-line no-console
-      console.log("✅ [HomeScreen] User exists:", {
+      console.log('✅ [HomeScreen] User exists:', {
         id: existing.id,
         displayName: existing.displayName,
         handle: existing.handle,
@@ -166,30 +170,30 @@ export default function HomeScreen() {
 
   // Get daily tip (rotates based on day of year)
   const currentTip = useMemo(() => {
-    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    const dayOfYear = Math.floor(
+      (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000,
+    );
     return CAMPING_TIPS[dayOfYear % CAMPING_TIPS.length];
   }, []);
 
   // User display data - show "Camper" if not logged in, otherwise show first name or display name
   // Check Firebase auth state - if not logged in, show generic avatar and "Welcome, Camper!"
   const isLoggedIn = !!auth.currentUser;
-  const userAvatarSource = isLoggedIn && currentUser?.photoURL 
-    ? { uri: currentUser.photoURL } 
-    : LOGOS.APP_ICON;
+  const userAvatarSource =
+    isLoggedIn && currentUser?.photoURL ? { uri: currentUser.photoURL } : LOGOS.APP_ICON;
 
-  // Welcome greeting and message using centralized utility
+  // Welcome greeting using centralized utility
   const welcomeGreeting = getWelcomeTitle(currentUser?.handle, isLoggedIn);
-  const welcomeMessage = getWelcomeSubtext(currentUser?.favoriteCampingStyle, isLoggedIn);
 
   if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log("🎯 [HomeScreen] Welcome Greeting:", welcomeGreeting);
-    // eslint-disable-next-line no-console
-    console.log("🎯 [HomeScreen] Welcome Message:", welcomeMessage);
-    // eslint-disable-next-line no-console
-    console.log("🎯 [HomeScreen] Current User Display Name:", currentUser?.displayName);
-    // eslint-disable-next-line no-console
-    console.log("🎯 [HomeScreen] Favorite Camping Style:", currentUser?.favoriteCampingStyle);
+    console.log('🎯 [HomeScreen] Welcome Greeting:', welcomeGreeting);
+
+    console.log('🎯 [HomeScreen] Current User Display Name:', currentUser?.displayName);
+
+    console.log(
+      '🎯 [HomeScreen] Favorite Camping Style:',
+      currentUser?.favoriteCampingStyle,
+    );
     // Prevent “unused var” lint confusion if you re-enable sections that rely on these.
     void trips;
     void gearLists;
@@ -204,14 +208,14 @@ export default function HomeScreen() {
    */
   const navigateToAsk = () => {
     // Navigate to Connect tab with Ask sub-tab
-    (navigation as any).navigate("Connect", { screen: "Ask" });
+    (navigation as any).navigate('Connect', { screen: 'Ask' });
   };
 
   return (
     <View className="flex-1 bg-forest">
       {/* Push Permission Soft Prompt - shows after 1+ core action */}
       <PushPermissionPrompt />
-      
+
       <View className="flex-1" style={{ backgroundColor: PARCHMENT_BACKGROUND }}>
         {/* Welcome Hero Image - full bleed */}
         <View style={{ height: 200 + insets.top }}>
@@ -223,9 +227,9 @@ export default function HomeScreen() {
           >
             {/* Gradient Overlay - covers full image including safe area */}
             <LinearGradient
-              colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.6)"]}
+              colors={['rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)']}
               style={{
-                position: "absolute",
+                position: 'absolute',
                 top: 0,
                 bottom: 0,
                 left: 0,
@@ -246,45 +250,37 @@ export default function HomeScreen() {
                       height: 80,
                       borderRadius: 40,
                       backgroundColor: PARCHMENT,
-                      overflow: "hidden",
-                      justifyContent: "center",
-                      alignItems: "center",
+                      overflow: 'hidden',
+                      justifyContent: 'center',
+                      alignItems: 'center',
                       marginBottom: 12,
                       borderWidth: 3,
                       borderColor: PARCHMENT,
-                      shadowColor: "#000",
+                      shadowColor: '#000',
                       shadowOffset: { width: 0, height: 2 },
                       shadowOpacity: 0.25,
                       shadowRadius: 4,
                       elevation: 4,
                     }}
                   >
-                    <Image source={userAvatarSource} style={{ width: 80, height: 80 }} resizeMode="cover" />
+                    <Image
+                      source={userAvatarSource}
+                      style={{ width: 80, height: 80 }}
+                      resizeMode="cover"
+                    />
                   </View>
                   {/* Welcome Text - Centered */}
                   <Text
                     className="text-2xl text-center"
                     style={{
-                      fontFamily: "Raleway_700Bold",
+                      fontFamily: 'Raleway_700Bold',
                       color: TEXT_ON_DARK,
-                      textShadowColor: "rgba(0, 0, 0, 0.5)",
+                      textShadowColor: 'rgba(0, 0, 0, 0.5)',
                       textShadowOffset: { width: 0, height: 1 },
                       textShadowRadius: 4,
                     }}
                   >
                     {welcomeGreeting}
-                  </Text>
-                  <Text
-                    className="mt-1 text-center"
-                    style={{
-                      fontFamily: "SourceSans3_400Regular",
-                      color: TEXT_ON_DARK,
-                      textShadowColor: "rgba(0, 0, 0, 0.5)",
-                      textShadowOffset: { width: 0, height: 1 },
-                      textShadowRadius: 3,
-                    }}
-                  >
-                    {welcomeMessage}
                   </Text>
                 </View>
               </View>
@@ -308,17 +304,21 @@ export default function HomeScreen() {
               {/* Trip Plans */}
               <Pressable
                 className="rounded-xl active:scale-95"
-                style={{ backgroundColor: "#59625C", paddingVertical: 14, borderRadius: 10 }}
+                style={{
+                  backgroundColor: '#59625C',
+                  paddingVertical: 14,
+                  borderRadius: 10,
+                }}
                 onPress={() => {
                   safeHaptic();
                   // Gate: GUEST needs account to view trip data
                   if (isGuest) {
-                    setAccountModalTriggerKey("trip_plans_quick_action");
+                    setAccountModalTriggerKey('trip_plans_quick_action');
                     setShowAccountModal(true);
                     return;
                   }
-                  setActivePlanTab("trips");
-                  navigation.navigate("Plan");
+                  setActivePlanTab('trips');
+                  navigation.navigate('Plan');
                 }}
                 accessibilityLabel="Trip Plans"
                 accessibilityRole="button"
@@ -329,12 +329,12 @@ export default function HomeScreen() {
                     <Text
                       className="ml-3"
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 15,
-                        textTransform: "uppercase",
+                        textTransform: 'uppercase',
                         letterSpacing: 0.08,
-                        textAlign: "center",
-                        color: "#FFFFFF",
+                        textAlign: 'center',
+                        color: '#FFFFFF',
                       }}
                     >
                       Trip Plans
@@ -347,11 +347,15 @@ export default function HomeScreen() {
               {/* Weather Forecast */}
               <Pressable
                 className="rounded-xl active:scale-95"
-                style={{ backgroundColor: "#8A8165", paddingVertical: 14, borderRadius: 10 }}
+                style={{
+                  backgroundColor: '#8A8165',
+                  paddingVertical: 14,
+                  borderRadius: 10,
+                }}
                 onPress={() => {
                   safeHaptic();
-                  setActivePlanTab("weather");
-                  navigation.navigate("Plan");
+                  setActivePlanTab('weather');
+                  navigation.navigate('Plan');
                 }}
                 accessibilityLabel="Weather Forecast"
                 accessibilityRole="button"
@@ -362,12 +366,12 @@ export default function HomeScreen() {
                     <Text
                       className="ml-3"
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 15,
-                        textTransform: "uppercase",
+                        textTransform: 'uppercase',
                         letterSpacing: 0.08,
-                        textAlign: "center",
-                        color: "#FFFFFF",
+                        textAlign: 'center',
+                        color: '#FFFFFF',
                       }}
                     >
                       Weather Forecast
@@ -380,7 +384,11 @@ export default function HomeScreen() {
               {/* Ask a Camper */}
               <Pressable
                 className="rounded-xl active:scale-95"
-                style={{ backgroundColor: "#5A635C", paddingVertical: 14, borderRadius: 10 }}
+                style={{
+                  backgroundColor: '#5A635C',
+                  paddingVertical: 14,
+                  borderRadius: 10,
+                }}
                 onPress={() => {
                   safeHaptic();
                   navigateToAsk();
@@ -390,16 +398,20 @@ export default function HomeScreen() {
               >
                 <View className="flex-row items-center justify-between px-4">
                   <View className="flex-row items-center">
-                    <Ionicons name="chatbubble-ellipses-outline" size={24} color="#FFFFFF" />
+                    <Ionicons
+                      name="chatbubble-ellipses-outline"
+                      size={24}
+                      color="#FFFFFF"
+                    />
                     <Text
                       className="ml-3"
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 15,
-                        textTransform: "uppercase",
+                        textTransform: 'uppercase',
                         letterSpacing: 0.08,
-                        textAlign: "center",
-                        color: "#FFFFFF",
+                        textAlign: 'center',
+                        color: '#FFFFFF',
                       }}
                     >
                       Ask a Camper
@@ -412,16 +424,20 @@ export default function HomeScreen() {
               {/* My Gear Closet */}
               <Pressable
                 className="rounded-xl active:scale-95"
-                style={{ backgroundColor: "#6B5B4F", paddingVertical: 14, borderRadius: 10 }}
+                style={{
+                  backgroundColor: '#6B5B4F',
+                  paddingVertical: 14,
+                  borderRadius: 10,
+                }}
                 onPress={() => {
                   safeHaptic();
                   // Gate: GUEST needs account for personal data
                   if (isGuest) {
-                    setAccountModalTriggerKey("gear_closet_quick_action");
+                    setAccountModalTriggerKey('gear_closet_quick_action');
                     setShowAccountModal(true);
                     return;
                   }
-                  navigation.navigate("MyGearCloset");
+                  navigation.navigate('MyGearCloset');
                 }}
                 accessibilityLabel="My Gear Closet"
                 accessibilityRole="button"
@@ -432,12 +448,12 @@ export default function HomeScreen() {
                     <Text
                       className="ml-3"
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 15,
-                        textTransform: "uppercase",
+                        textTransform: 'uppercase',
                         letterSpacing: 0.08,
-                        textAlign: "center",
-                        color: "#FFFFFF",
+                        textAlign: 'center',
+                        color: '#FFFFFF',
                       }}
                     >
                       My Gear Closet
@@ -450,17 +466,21 @@ export default function HomeScreen() {
               {/* My Campground */}
               <Pressable
                 className="rounded-xl active:scale-95"
-                style={{ backgroundColor: "#4A6B5D", paddingVertical: 14, borderRadius: 10 }}
+                style={{
+                  backgroundColor: '#4A6B5D',
+                  paddingVertical: 14,
+                  borderRadius: 10,
+                }}
                 onPress={async () => {
                   safeHaptic();
                   // Gate: GUEST needs account for personal data
                   if (isGuest) {
-                    setAccountModalTriggerKey("my_campground_quick_action");
+                    setAccountModalTriggerKey('my_campground_quick_action');
                     setShowAccountModal(true);
                     return;
                   }
                   // Logged-in users go directly to MyCampground
-                  navigation.navigate("MyCampground");
+                  navigation.navigate('MyCampground');
                 }}
                 accessibilityLabel="My Campground"
                 accessibilityRole="button"
@@ -471,12 +491,12 @@ export default function HomeScreen() {
                     <Text
                       className="ml-3"
                       style={{
-                        fontFamily: "SourceSans3_600SemiBold",
+                        fontFamily: 'SourceSans3_600SemiBold',
                         fontSize: 15,
-                        textTransform: "uppercase",
+                        textTransform: 'uppercase',
                         letterSpacing: 0.08,
-                        textAlign: "center",
-                        color: "#FFFFFF",
+                        textAlign: 'center',
+                        color: '#FFFFFF',
                       }}
                     >
                       My Campground
@@ -498,11 +518,15 @@ export default function HomeScreen() {
               onPress={() => {
                 if (featuredPhoto) {
                   safeHaptic();
-                  navigation.navigate("PhotoDetail", { photoId: featuredPhoto.id });
+                  navigation.navigate('PhotoDetail', { photoId: featuredPhoto.id });
                 }
               }}
               className="rounded-xl overflow-hidden active:opacity-90"
-              style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderWidth: 1, borderColor: BORDER_SOFT }}
+              style={{
+                backgroundColor: CARD_BACKGROUND_LIGHT,
+                borderWidth: 1,
+                borderColor: BORDER_SOFT,
+              }}
               disabled={!featuredPhoto}
             >
               {photoLoading ? (
@@ -513,7 +537,7 @@ export default function HomeScreen() {
                 <View>
                   <Image
                     source={{ uri: featuredPhoto.photoUrls[0] }}
-                    style={{ width: "100%", height: 200 }}
+                    style={{ width: '100%', height: 200 }}
                     resizeMode="cover"
                   />
                   <View className="p-3">
@@ -523,7 +547,7 @@ export default function HomeScreen() {
                           <Text
                             numberOfLines={2}
                             style={{
-                              fontFamily: "SourceSans3_400Regular",
+                              fontFamily: 'SourceSans3_400Regular',
                               fontSize: 14,
                               color: TEXT_PRIMARY_STRONG,
                             }}
@@ -534,28 +558,38 @@ export default function HomeScreen() {
                         <View className="flex-row items-center mt-1">
                           <Text
                             style={{
-                              fontFamily: "SourceSans3_500Medium",
+                              fontFamily: 'SourceSans3_500Medium',
                               fontSize: 12,
                               color: TEXT_SECONDARY,
                             }}
                           >
-                            by{" "}
+                            by{' '}
                           </Text>
-                          {featuredPhoto.userId && (featuredPhoto.userHandle || featuredPhotoHandle) ? (
-                            <HandleLink 
-                              handle={featuredPhoto.userHandle || featuredPhotoHandle || ""}
+                          {featuredPhoto.userId &&
+                          (featuredPhoto.userHandle || featuredPhotoHandle) ? (
+                            <HandleLink
+                              handle={
+                                featuredPhoto.userHandle || featuredPhotoHandle || ''
+                              }
                               userId={featuredPhoto.userId}
-                              style={{ fontFamily: "SourceSans3_500Medium", fontSize: 12 }}
+                              style={{
+                                fontFamily: 'SourceSans3_500Medium',
+                                fontSize: 12,
+                              }}
                             />
                           ) : (
                             <Text
                               style={{
-                                fontFamily: "SourceSans3_500Medium",
+                                fontFamily: 'SourceSans3_500Medium',
                                 fontSize: 12,
                                 color: TEXT_SECONDARY,
                               }}
                             >
-                              @{featuredPhoto.userHandle || featuredPhotoHandle || featuredPhoto.displayName || "Anonymous"}
+                              @
+                              {featuredPhoto.userHandle ||
+                                featuredPhotoHandle ||
+                                featuredPhoto.displayName ||
+                                'Anonymous'}
                             </Text>
                           )}
                         </View>
@@ -565,7 +599,7 @@ export default function HomeScreen() {
                         <Text
                           className="ml-1"
                           style={{
-                            fontFamily: "SourceSans3_600SemiBold",
+                            fontFamily: 'SourceSans3_600SemiBold',
                             fontSize: 12,
                             color: EARTH_GREEN,
                           }}
@@ -582,7 +616,7 @@ export default function HomeScreen() {
                   <Text
                     className="mt-2 text-center"
                     style={{
-                      fontFamily: "SourceSans3_400Regular",
+                      fontFamily: 'SourceSans3_400Regular',
                       fontSize: 14,
                       color: TEXT_SECONDARY,
                     }}
@@ -595,7 +629,10 @@ export default function HomeScreen() {
           </View>
 
           {/* Daily Tip Banner */}
-          <View className="rounded-xl p-4 mb-6 border" style={{ backgroundColor: "#C2B9A5", borderColor: BORDER_SOFT }}>
+          <View
+            className="rounded-xl p-4 mb-6 border"
+            style={{ backgroundColor: '#C2B9A5', borderColor: BORDER_SOFT }}
+          >
             <View className="flex-row items-center justify-between mb-2">
               <View className="flex-row items-center">
                 <Ionicons name="bulb" size={20} color={GRANITE_GOLD} />
@@ -617,7 +654,7 @@ export default function HomeScreen() {
         onClose={() => setShowAccountModal(false)}
         onCreateAccount={() => {
           setShowAccountModal(false);
-          navigation.navigate("Auth");
+          navigation.navigate('Auth');
         }}
         onMaybeLater={() => setShowAccountModal(false)}
         triggerKey={accountModalTriggerKey}
