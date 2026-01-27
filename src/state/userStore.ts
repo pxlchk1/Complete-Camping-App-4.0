@@ -1,6 +1,8 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
 import { User } from '../types/user';
 
 interface UserState {
@@ -13,6 +15,9 @@ interface UserState {
   isAdministrator: () => boolean;
   hasUsedFreeTrip: boolean;
   setHasUsedFreeTrip: (used: boolean) => void;
+  /** True when user just completed onboarding (new signup) */
+  isNewUser: boolean;
+  setIsNewUser: (isNew: boolean) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -20,6 +25,7 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       currentUser: null,
       hasUsedFreeTrip: false,
+      isNewUser: false,
 
       setCurrentUser: (user) => set({ currentUser: user }),
 
@@ -47,6 +53,8 @@ export const useUserStore = create<UserState>()(
       },
 
       setHasUsedFreeTrip: (used) => set({ hasUsedFreeTrip: used }),
+
+      setIsNewUser: (isNew) => set({ isNewUser: isNew }),
     }),
     {
       name: 'user-storage',

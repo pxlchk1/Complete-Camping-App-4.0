@@ -1,65 +1,64 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  ImageBackground,
-  Image,
   ActivityIndicator,
+  Image,
+  ImageBackground,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+import { Ionicons } from '@expo/vector-icons';
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Components
 import AccountButtonHeader from '../components/AccountButtonHeader';
-import { SectionTitle, BodyText, BodyTextMedium } from '../components/Typography';
-import PushPermissionPrompt from '../components/PushPermissionPrompt';
-import HandleLink from '../components/HandleLink';
 import AccountRequiredModal from '../components/AccountRequiredModal';
+import HandleLink from '../components/HandleLink';
 import OnboardingModal from '../components/OnboardingModal';
-
-// Hooks
-import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
-
-// Services
-import { getPhotoPosts } from '../services/photoPostsService';
-import { getUser } from '../services/userService';
-import { PhotoPost } from '../types/photoPost';
-
-// State
-import { useTripsStore } from '../state/tripsStore';
-import { useGearStore } from '../state/gearStore';
-import { useUserStore, createTestUser } from '../state/userStore';
-import { usePlanTabStore } from '../state/planTabStore';
-import { useSubscriptionStore } from '../state/subscriptionStore';
-
-// Utils
-import { getWelcomeTitle, getWelcomeSubtext } from '../utils/welcomeCopy';
-import { useUserStatus } from '../utils/authHelper';
-
+import PushPermissionPrompt from '../components/PushPermissionPrompt';
+import { BodyText, BodyTextMedium, SectionTitle } from '../components/Typography';
+import { auth } from '../config/firebase';
 // Constants
 import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   GRANITE_GOLD,
-  RIVER_ROCK,
-  SIERRA_SKY,
   PARCHMENT,
   PARCHMENT_BACKGROUND,
-  CARD_BACKGROUND_LIGHT,
-  BORDER_SOFT,
+  RIVER_ROCK,
+  SIERRA_SKY,
+  TEXT_ON_DARK,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_ON_DARK,
 } from '../constants/colors';
 import { HERO_IMAGES, LOGOS } from '../constants/images';
+// Hooks
+import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
 import { RootStackParamList } from '../navigation/types';
-import { auth } from '../config/firebase';
+// Services
+import { getPhotoPosts } from '../services/photoPostsService';
+import { getUser } from '../services/userService';
+import { useGearStore } from '../state/gearStore';
+import { usePlanTabStore } from '../state/planTabStore';
+import { useSubscriptionStore } from '../state/subscriptionStore';
+// State
+import { useTripsStore } from '../state/tripsStore';
+import { createTestUser, useUserStore } from '../state/userStore';
+import { PhotoPost } from '../types/photoPost';
+import { useUserStatus } from '../utils/authHelper';
+// Utils
+import { getWelcomeSubtext, getWelcomeTitle } from '../utils/welcomeCopy';
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -89,6 +88,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const setCurrentUser = useUserStore((s) => s.setCurrentUser);
   const currentUser = useUserStore((s) => s.currentUser);
+  const isNewUser = useUserStore((s) => s.isNewUser);
+  const setIsNewUser = useUserStore((s) => s.setIsNewUser);
   const setActivePlanTab = usePlanTabStore((s) => s.setActiveTab);
   const isPro = useSubscriptionStore((s) => s.isPro);
   const { isLoggedIn: isAuthenticated, isGuest } = useUserStatus();
@@ -153,15 +154,13 @@ export default function HomeScreen() {
     if (!__DEV__) return;
 
     const existing = useUserStore.getState().currentUser;
-    // eslint-disable-next-line no-console
+
     console.log('🔍 [HomeScreen] Current User:', JSON.stringify(existing, null, 2));
 
     if (!existing) {
-      // eslint-disable-next-line no-console
       console.log('⚠️ [HomeScreen] No user found, creating test user');
       setCurrentUser(createTestUser('administrator'));
     } else {
-      // eslint-disable-next-line no-console
       console.log('✅ [HomeScreen] User exists:', {
         id: existing.id,
         displayName: existing.displayName,
@@ -186,17 +185,32 @@ export default function HomeScreen() {
     isLoggedIn && currentUser?.photoURL ? { uri: currentUser.photoURL } : LOGOS.APP_ICON;
 
   // Welcome greeting and message using centralized utility
-  const welcomeGreeting = getWelcomeTitle(currentUser?.displayName, isLoggedIn);
+  // Pass isNewUser so first-time users see "Welcome" instead of "Welcome back"
+  const welcomeGreeting = getWelcomeTitle(
+    currentUser?.displayName,
+    isLoggedIn,
+    isNewUser,
+  );
   const welcomeMessage = getWelcomeSubtext(currentUser?.favoriteCampingStyle, isLoggedIn);
 
+  // Clear the isNewUser flag after showing the welcome message once
+  useEffect(() => {
+    if (isNewUser && isLoggedIn) {
+      // Clear after a short delay so the "Welcome" message renders first
+      const timer = setTimeout(() => {
+        setIsNewUser(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isNewUser, isLoggedIn, setIsNewUser]);
+
   if (__DEV__) {
-    // eslint-disable-next-line no-console
     console.log('🎯 [HomeScreen] Welcome Greeting:', welcomeGreeting);
-    // eslint-disable-next-line no-console
+
     console.log('🎯 [HomeScreen] Welcome Message:', welcomeMessage);
-    // eslint-disable-next-line no-console
+
     console.log('🎯 [HomeScreen] Current User Display Name:', currentUser?.displayName);
-    // eslint-disable-next-line no-console
+
     console.log(
       '🎯 [HomeScreen] Favorite Camping Style:',
       currentUser?.favoriteCampingStyle,

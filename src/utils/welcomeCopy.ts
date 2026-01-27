@@ -39,11 +39,13 @@ const DEFAULT_SUBTEXT = 'Your camping adventure starts here';
  * Get the welcome title based on user's display name and login status.
  * @param displayName - User's display name from profile
  * @param isLoggedIn - Whether the user is logged in
+ * @param isNewUser - Whether this is the user's first login (just signed up)
  * @returns The welcome title string
  */
 export function getWelcomeTitle(
   displayName?: string | null,
   isLoggedIn?: boolean,
+  isNewUser?: boolean,
 ): string {
   if (!isLoggedIn) {
     return 'Welcome, Camper!';
@@ -51,6 +53,11 @@ export function getWelcomeTitle(
 
   // Get first name from display name
   const firstName = displayName?.split(' ')[0]?.trim() || 'Camper';
+
+  // New users see "Welcome" instead of "Welcome back"
+  if (isNewUser) {
+    return `Welcome, ${firstName}!`;
+  }
 
   return `Welcome back, ${firstName}!`;
 }

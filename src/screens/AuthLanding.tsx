@@ -1,43 +1,47 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ImageBackground,
-  TouchableOpacity,
-  Platform,
   ActivityIndicator,
-  TextInput,
+  Alert,
+  ImageBackground,
   KeyboardAvoidingView,
-  ScrollView,
   Linking,
   Modal,
-  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
+
+import { Ionicons } from '@expo/vector-icons';
+
 import {
   OAuthProvider,
-  signInWithCredential,
-  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   fetchSignInMethodsForEmail,
   linkWithCredential,
   sendEmailVerification,
+  signInWithCredential,
+  signInWithEmailAndPassword,
 } from 'firebase/auth';
-import { auth, db } from '../config/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { useAuthStore } from '../state/authStore';
-import { useUserStore } from '../state/userStore';
-import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { auth, db } from '../config/firebase';
 import {
   bootstrapNewAccount,
   getOnboardingErrorMessage,
-  isPermissionDeniedError,
   isEmailInUseError,
+  isPermissionDeniedError,
 } from '../onboarding';
 import { identifyUser } from '../services/subscriptionService';
+import { useAuthStore } from '../state/authStore';
+import { useUserStore } from '../state/userStore';
 
 export default function AuthLanding({ navigation }: { navigation: any }) {
   const [loading, setLoading] = useState(false);
@@ -55,6 +59,7 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
   const [linkingError, setLinkingError] = useState('');
   const setUser = useAuthStore((s) => s.setUser);
   const setCurrentUser = useUserStore((s) => s.setCurrentUser);
+  const setIsNewUser = useUserStore((s) => s.setIsNewUser);
 
   const handleAppleSignIn = async () => {
     try {
@@ -208,6 +213,9 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
         }
 
         console.log('[Apple Auth] Account bootstrapped successfully');
+
+        // Mark as new user so HomeScreen shows "Welcome" instead of "Welcome back"
+        setIsNewUser(true);
       }
 
       await loadUserProfile(firebaseUser.uid);
@@ -422,6 +430,9 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
         }
 
         console.log('[Email Auth] Account bootstrapped successfully');
+
+        // Mark as new user so HomeScreen shows "Welcome" instead of "Welcome back"
+        setIsNewUser(true);
 
         // Send email verification
         try {

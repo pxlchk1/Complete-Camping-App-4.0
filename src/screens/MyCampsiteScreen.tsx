@@ -2,71 +2,75 @@
  * My Campsite Screen - Social-style profile
  * Backed by Firestore profiles collection
  */
-
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  ImageBackground,
-  Image,
   ActivityIndicator,
   Alert,
+  Image,
+  ImageBackground,
   Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from 'react-native';
-import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import * as Haptics from 'expo-haptics';
-import { auth, db } from '../config/firebase';
-import {
-  doc,
-  getDoc,
-  setDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  serverTimestamp,
-  orderBy,
-  limit,
-} from 'firebase/firestore';
+
+import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native';
+
+import { Ionicons } from '@expo/vector-icons';
+
 import { signOut } from 'firebase/auth';
 import {
-  restorePurchases,
-  syncSubscriptionToFirestore,
-} from '../services/subscriptionService';
-import {
-  listenToFavoriteParks,
-  removeFavoritePark,
-  FavoritePark,
-} from '../services/favoriteParksService';
-import {
-  listenToSavedPlaces,
-  removeSavedPlace,
-  SavedPlace,
-} from '../services/savedPlacesService';
-import { useUserStatus } from '../utils/authHelper';
-import { useIsModerator, useIsAdministrator } from '../state/userStore';
-import { HERO_IMAGES } from '../constants/images';
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  serverTimestamp,
+  setDoc,
+  where,
+} from 'firebase/firestore';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import AccountRequiredModal from '../components/AccountRequiredModal';
 import OnboardingModal from '../components/OnboardingModal';
-import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
-import { bootstrapNewAccount } from '../onboarding';
+import { auth, db } from '../config/firebase';
 import {
+  BORDER_SOFT,
+  CARD_BACKGROUND_LIGHT,
   DEEP_FOREST,
   EARTH_GREEN,
   GRANITE_GOLD,
   PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
+  RUST,
+  TEXT_MUTED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
-  TEXT_MUTED,
-  BORDER_SOFT,
-  RUST,
 } from '../constants/colors';
+import { HERO_IMAGES } from '../constants/images';
+import { useScreenOnboarding } from '../hooks/useScreenOnboarding';
 import { PrefillLocation, RootStackParamList } from '../navigation/types';
+import { bootstrapNewAccount } from '../onboarding';
+import {
+  FavoritePark,
+  listenToFavoriteParks,
+  removeFavoritePark,
+} from '../services/favoriteParksService';
+import {
+  SavedPlace,
+  listenToSavedPlaces,
+  removeSavedPlace,
+} from '../services/savedPlacesService';
+import {
+  restorePurchases,
+  syncSubscriptionToFirestore,
+} from '../services/subscriptionService';
+import { useIsAdministrator, useIsModerator, useUserStore } from '../state/userStore';
+import { useUserStatus } from '../utils/authHelper';
 
 type MembershipTier =
   | 'free'
@@ -144,6 +148,7 @@ export default function MyCampsiteScreen({ navigation }: any) {
   const { isGuest } = useUserStatus();
   const isModerator = useIsModerator();
   const isAdministrator = useIsAdministrator();
+  const setIsNewUser = useUserStore((s) => s.setIsNewUser);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActivityTab>('photos');
@@ -501,6 +506,10 @@ export default function MyCampsiteScreen({ navigation }: any) {
       };
 
       setProfile(defaultProfile);
+
+      // Mark as new user so HomeScreen shows "Welcome" instead of "Welcome back"
+      setIsNewUser(true);
+
       console.log('[MyCampsite] Profile created successfully via onboarding layer');
     } catch (error) {
       console.error('[MyCampsite] Error creating profile:', error);
@@ -1896,7 +1905,7 @@ export default function MyCampsiteScreen({ navigation }: any) {
               className="text-lg mb-3"
               style={{ fontFamily: 'Raleway_700Bold', color: TEXT_PRIMARY_STRONG }}
             >
-              Parks I've added
+              Parks I&apos;ve added
             </Text>
 
             {savedPlacesLoading ? (
