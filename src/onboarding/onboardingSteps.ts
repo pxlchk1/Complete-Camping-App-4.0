@@ -1,25 +1,26 @@
 /**
  * Onboarding Steps Orchestrator
- * 
+ *
  * This is the ONLY place where onboarding Firestore writes should happen.
  * All writes are logged, validated, and handled with proper error management.
- * 
+ *
  * IMPORTANT: This module is designed to be IDEMPOTENT:
  * - Never overwrites existing user/profile docs
  * - Only creates missing docs
  * - Validates email index ownership before writing
  */
-
 import {
+  DocumentData,
   doc,
   getDoc,
+  runTransaction,
   serverTimestamp,
-  DocumentData,
 } from 'firebase/firestore';
+
 import { db } from '../config/firebase';
-import { onboardingSetDoc } from './onboardingWrites';
-import { getDebugErrorString, onboardingLog } from './onboardingDebug';
 import { ONBOARDING_DEBUG } from './onboardingConfig';
+import { getDebugErrorString, onboardingLog } from './onboardingDebug';
+import { onboardingSetDoc } from './onboardingWrites';
 
 /**
  * Parameters for bootstrapping a new account.
@@ -41,6 +42,8 @@ export interface BootstrapAccountResult {
   debugInfo?: string;
   /** Set when email is already in use by another account */
   emailInUse?: boolean;
+  /** Set when handle is already in use by another account */
+  handleInUse?: boolean;
 }
 
 /**
@@ -50,6 +53,7 @@ const STEPS = {
   ENSURE_USER_DOC: 'ensureUserDoc',
   ENSURE_PROFILE_DOC: 'ensureProfileDoc',
   ENSURE_USER_EMAIL_INDEX: 'ensureUserEmailIndex',
+  ENSURE_HANDLE_INDEX: 'ensureHandleIndex',
   ENSURE_EMAIL_SUBSCRIBER: 'ensureEmailSubscriber',
   ENSURE_PUSH_TOKEN: 'ensurePushToken',
 } as const;
@@ -59,6 +63,7 @@ const STEPS = {
  */
 export const ONBOARDING_ERROR_CODES = {
   EMAIL_IN_USE: 'email-in-use',
+  HANDLE_IN_USE: 'handle-in-use',
   PERMISSION_DENIED: 'permission-denied',
   UNKNOWN: 'unknown',
 } as const;
@@ -231,7 +236,102 @@ async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<voi
     createdAt: serverTimestamp(),
   };
 
-  await onboardingSetDoc(emailIndexRef, emailIndexData, undefined, { step: STEPS.ENSURE_USER_EMAIL_INDEX });
+  await onboardingSetDoc(emailIndexRef, emailIndexData, undefined, {
+    step: STEPS.ENSURE_USER_EMAIL_INDEX,
+  });
+}
+
+/**
+ * Creates the handleIndex/{normalizedHandle} document.
+ * This is a CRITICAL step - failure will abort onboarding.
+ *
+ * IMPORTANT:
+ * - Field name must be exactly "userId" (not "uid").
+ * - If the handle index exists and belongs to a DIFFERENT user, this throws
+ *   a "handle-in-use" error to abort signup.
+ * - If the handle index exists and belongs to the SAME user, skip (idempotent).
+ * - Handles are NEVER deleted to prevent reuse for impersonation.
+ * - Uses a Firestore TRANSACTION to prevent race conditions where two users
+ *   try to claim the same handle simultaneously.
+ */
+async function ensureHandleIndex(params: BootstrapAccountParams): Promise<void> {
+  const { userId, handle } = params;
+
+  if (!handle) {
+    onboardingLog('success', {
+      step: STEPS.ENSURE_HANDLE_INDEX,
+      op: 'setDoc',
+      path: 'handleIndex/[skipped-no-handle]',
+    });
+    return; // No handle, skip
+  }
+
+  const handleNormalized = handle.toLowerCase().trim().replace(/^@+/, '');
+  const handleIndexRef = doc(db, 'handleIndex', handleNormalized);
+
+  // Use a transaction to atomically check-and-create the handle index
+  // This prevents race conditions where two users try to claim the same handle
+  await runTransaction(db, async (transaction) => {
+    const existingDoc = await transaction.get(handleIndexRef);
+
+    if (existingDoc.exists()) {
+      const existingData = existingDoc.data();
+      const existingUserId = existingData?.userId;
+
+      // CRITICAL: Check if this handle belongs to a different user
+      if (existingUserId && existingUserId !== userId) {
+        onboardingLog(
+          'error',
+          {
+            step: STEPS.ENSURE_HANDLE_INDEX,
+            op: 'transaction.get',
+            path: handleIndexRef.path,
+          },
+          undefined,
+          {
+            code: ONBOARDING_ERROR_CODES.HANDLE_IN_USE,
+            message: `Handle index exists for different user`,
+          },
+        );
+
+        // Throw a specific error that can be caught and mapped to user-friendly message
+        const error = new Error(
+          'That handle is already taken. Please choose a different one.',
+        ) as Error & {
+          code: string;
+          onboardingStep: string;
+          handleInUse: boolean;
+        };
+        error.code = ONBOARDING_ERROR_CODES.HANDLE_IN_USE;
+        error.onboardingStep = STEPS.ENSURE_HANDLE_INDEX;
+        error.handleInUse = true;
+        throw error;
+      }
+
+      // Handle index exists and belongs to this user - idempotent skip
+      onboardingLog('success', {
+        step: STEPS.ENSURE_HANDLE_INDEX,
+        op: 'transaction.get',
+        path: handleIndexRef.path,
+      });
+      return; // Already claimed by this user, skip write
+    }
+
+    // Handle doesn't exist - claim it atomically within the transaction
+    const handleIndexData: DocumentData = {
+      userId: userId, // MUST be "userId" to match Firestore rules
+      handle: handleNormalized,
+      createdAt: serverTimestamp(),
+    };
+
+    transaction.set(handleIndexRef, handleIndexData);
+
+    onboardingLog('success', {
+      step: STEPS.ENSURE_HANDLE_INDEX,
+      op: 'transaction.set',
+      path: handleIndexRef.path,
+    });
+  });
 }
 
 /**
@@ -303,7 +403,10 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
     // Step 3: Create userEmailIndex/{email} document (CRITICAL)
     await ensureUserEmailIndex(params);
 
-    // Step 4: Create emailSubscribers/{uid} document (OPTIONAL)
+    // Step 4: Create handleIndex/{handle} document (CRITICAL)
+    await ensureHandleIndex(params);
+
+    // Step 5: Create emailSubscribers/{uid} document (OPTIONAL)
     try {
       await ensureEmailSubscriber(params);
     } catch (error) {
@@ -327,6 +430,7 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
       message?: string; 
       onboardingStep?: string;
       emailInUse?: boolean;
+      handleInUse?: boolean;
     };
     const step = firebaseError.onboardingStep || 'unknown';
     const errorCode = firebaseError.code || 'unknown';
@@ -346,6 +450,16 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
         success: false,
         error: 'That email is already in use. Try signing in instead.',
         emailInUse: true,
+        debugInfo: getDebugErrorString(step, errorCode) || undefined,
+      };
+    }
+
+    // Handle handle-in-use error specifically
+    if (firebaseError.handleInUse || errorCode === ONBOARDING_ERROR_CODES.HANDLE_IN_USE) {
+      return {
+        success: false,
+        error: 'That handle is already taken. Please choose a different one.',
+        handleInUse: true,
         debugInfo: getDebugErrorString(step, errorCode) || undefined,
       };
     }
