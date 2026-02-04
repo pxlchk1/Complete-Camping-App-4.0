@@ -135,6 +135,14 @@ export default function AdminDashboardScreen() {
       screen: "AdminGatingReport" as const,
       color: "#0288D1",
     },
+    {
+      id: "communications",
+      title: "Communications",
+      subtitle: "Push, Modal & Email drafts",
+      icon: "megaphone" as const,
+      screen: "AdminCommunications" as const,
+      color: "#00897B",
+    },
   ];
 
   const handleSeedLearningContent = async () => {
