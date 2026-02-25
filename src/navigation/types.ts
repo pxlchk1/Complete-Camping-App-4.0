@@ -124,6 +124,13 @@ export type RootStackParamList = {
   AcceptInvitation: { invitationToken: string };
   AcceptInvite: { token: string };
 
+  // Merit Badges
+  MeritBadges: undefined;
+  BadgeDetail: { badgeId: string };
+  SelectWitness: { badgeId: string };
+  WitnessRequests: undefined;
+  MyBadges: { userId?: string } | undefined;
+
   // Main tabs
   MainTabs: { screen: string; params?: any };
 };

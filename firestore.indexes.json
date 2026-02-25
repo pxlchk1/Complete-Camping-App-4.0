@@ -453,6 +453,52 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "badgeClaims",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "witnessUserId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "badgeClaims",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "claimantUserId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "badgeId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "userBadges",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "earnedAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

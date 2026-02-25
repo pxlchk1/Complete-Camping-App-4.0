@@ -943,6 +943,23 @@ export default function MyCampsiteScreen({ navigation }: any) {
               Merit Badges
             </Text>
             <Ionicons name="information-circle-outline" size={16} color={TEXT_SECONDARY} />
+            {profile.meritBadges && profile.meritBadges.length > 0 && (
+              <Pressable
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  navigation.navigate("MyBadges", isViewingOtherUser ? { userId: viewingUserId } : undefined);
+                }}
+                className="ml-2 px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: EARTH_GREEN + "15" }}
+              >
+                <Text
+                  className="text-xs"
+                  style={{ fontFamily: "SourceSans3_600SemiBold", color: EARTH_GREEN }}
+                >
+                  View All
+                </Text>
+              </Pressable>
+            )}
           </Pressable>
 
           {/* Merit Badges Row */}
@@ -1002,6 +1019,23 @@ export default function MyCampsiteScreen({ navigation }: any) {
                     >
                       No badges earned yet
                     </Text>
+                    {!shouldHidePrivateContent && (
+                      <Pressable
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          navigation.navigate("MeritBadges");
+                        }}
+                        className="mt-2 px-3 py-1 rounded-full"
+                        style={{ backgroundColor: EARTH_GREEN }}
+                      >
+                        <Text
+                          className="text-xs"
+                          style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                        >
+                          Start Earning
+                        </Text>
+                      </Pressable>
+                    )}
                   </View>
                 )}
               </View>

@@ -3,11 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { seedCommunityData } from "../scripts/seedCommunityData";
+import { seedBadgeDefinitions } from "../services/meritBadgesService";
 
 export default function SeedDataScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
+  const [badgeLoading, setBadgeLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [badgeResult, setBadgeResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [badgeError, setBadgeError] = useState<string | null>(null);
 
   const handleSeedData = async () => {
     try {
@@ -29,6 +33,29 @@ export default function SeedDataScreen({ navigation }: any) {
       Alert.alert("Error", err.message || "Failed to seed data");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSeedBadges = async () => {
+    try {
+      setBadgeLoading(true);
+      setBadgeError(null);
+      setBadgeResult(null);
+
+      const seedResult = await seedBadgeDefinitions();
+      setBadgeResult(seedResult);
+
+      Alert.alert(
+        "Success!",
+        `Merit Badges:\n• ${seedResult.created} badges created\n• ${seedResult.skipped} badges skipped (already exist)`,
+        [{ text: "OK" }]
+      );
+    } catch (err: any) {
+      console.error("Badge seed error:", err);
+      setBadgeError(err.message || "Failed to seed badge data");
+      Alert.alert("Error", err.message || "Failed to seed badge data");
+    } finally {
+      setBadgeLoading(false);
     }
   };
 
@@ -85,6 +112,57 @@ export default function SeedDataScreen({ navigation }: any) {
             <View style={styles.errorBox}>
               <Ionicons name="alert-circle" size={24} color="#dc2626" />
               <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Merit Badges Seeder */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Merit Badges Seeder</Text>
+          <Text style={styles.cardDescription}>
+            Seed the badge definitions catalog with sample badges:
+          </Text>
+
+          <View style={styles.list}>
+            <Text style={styles.listItem}>• Camp Setup badges (2)</Text>
+            <Text style={styles.listItem}>• Fire & Warmth badges (2)</Text>
+            <Text style={styles.listItem}>• Cooking badges (2)</Text>
+            <Text style={styles.listItem}>• Navigation badges (2)</Text>
+            <Text style={styles.listItem}>• Safety badges (2)</Text>
+            <Text style={styles.listItem}>• Nature badges (3)</Text>
+            <Text style={styles.listItem}>• Seasonal badges (1)</Text>
+          </View>
+
+          <Text style={styles.warning}>
+            ⚠️ Will skip badges that already exist.
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.button, badgeLoading && styles.buttonDisabled]}
+            onPress={handleSeedBadges}
+            disabled={badgeLoading}
+          >
+            {badgeLoading ? (
+              <ActivityIndicator color="#F4EBD0" />
+            ) : (
+              <Text style={styles.buttonText}>Seed Badges Now</Text>
+            )}
+          </TouchableOpacity>
+
+          {badgeResult && (
+            <View style={styles.successBox}>
+              <Ionicons name="checkmark-circle" size={24} color="#16a34a" />
+              <Text style={styles.successText}>Badges seeded successfully!</Text>
+              <Text style={styles.successDetail}>
+                {badgeResult.created} created, {badgeResult.skipped} skipped
+              </Text>
+            </View>
+          )}
+
+          {badgeError && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle" size={24} color="#dc2626" />
+              <Text style={styles.errorText}>{badgeError}</Text>
             </View>
           )}
         </View>

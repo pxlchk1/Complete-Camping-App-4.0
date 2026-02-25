@@ -130,24 +130,9 @@ service cloud.firestore {
     // Trips collection
     // Members (recipients) have READ-ONLY access - only owner can edit
     match /trips/{tripId} {
-      // Helper function to check if user is the trip owner
-      function isTripOwner() {
-        return isSignedIn() && request.auth.uid == resource.data.userId;
-      }
-      
       // Helper function to check if user is the trip owner (for subcollections)
       function isTripOwnerForSubcollection() {
         return isSignedIn() && get(/databases/$(database)/documents/trips/$(tripId)).data.userId == request.auth.uid;
-      }
-      
-      // Helper function to check if user is a trip member (read-only recipient)
-      function isTripMember() {
-        return isSignedIn() && request.auth.uid in resource.data.memberIds;
-      }
-      
-      // Helper function to check if user can read trip (owner OR member)
-      function canReadTrip() {
-        return isTripOwner() || isTripMember();
       }
       
       // Owner or trip member can read
@@ -488,10 +473,11 @@ service cloud.firestore {
       allow write: if isSignedIn() && request.auth.uid == request.resource.data.userId;
     }
 
-    // Notification Queue (read by owner, write by functions only)
+    // Notification Queue (read by owner, write by functions or admins for testing)
     match /notificationQueue/{notificationId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create, update, delete: if false; // Functions only
+      allow create: if isAdmin() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false; // Functions only
     }
 
     // ============================================
@@ -517,11 +503,124 @@ service cloud.firestore {
       allow delete: if isSignedIn() && request.auth.uid == userId;
     }
 
+    // ============================================
+    // MERIT BADGES COLLECTIONS
+    // ============================================
+
+    // Badge Definitions - read-only catalog, writable by admins
+    match /badgeDefinitions/{badgeId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Badge Claims - witness flow for stamp requests
+    // Only claimant and witness can read their own claims
+    // Only claimant can create claims for themselves
+    // Only witness can update decision (approve/decline)
+    match /badgeClaims/{claimId} {
+      // Helper to check if user is in claimant's campground
+      function isWitnessInClaimantCampground() {
+        return isSignedIn() && 
+          exists(/databases/$(database)/documents/campgroundContacts/$(request.resource.data.witnessContactId));
+      }
+      
+      // Read: claimant or witness only
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.claimantUserId ||
+        request.auth.uid == resource.data.witnessUserId
+      );
+      
+      // Create: must be the claimant, cannot witness own badge
+      allow create: if isSignedIn() 
+        && request.auth.uid == request.resource.data.claimantUserId
+        && request.auth.uid != request.resource.data.witnessUserId;
+      
+      // Update: claimant can update photo/caption, witness can update status
+      allow update: if isSignedIn() && (
+        // Claimant can update photo/caption but not status
+        (request.auth.uid == resource.data.claimantUserId 
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'approvedAt', 'decisionAt', 'witnessUserId']))
+        ||
+        // Witness can update status fields only
+        (request.auth.uid == resource.data.witnessUserId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'approvedAt', 'decisionAt', 'updatedAt']))
+      );
+      
+      // Delete: claimant only (cancel pending request)
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.claimantUserId;
+    }
+
+    // User Badges - earned badge records
+    // Read: public for visibility=PUBLIC, owner for PRIVATE
+    // Create: owner for SELF/PHOTO earned, or system via batch for STAMP earned
+    match /userBadges/{badgeRecordId} {
+      // Anyone can read PUBLIC badges, owner can read all their own
+      allow read: if resource.data.visibility == "PUBLIC" 
+        || (isSignedIn() && request.auth.uid == resource.data.userId);
+      
+      // Create: must be the user, cannot create duplicates (enforced in app)
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      
+      // Update: owner can update visibility and photo
+      allow update: if isSignedIn() 
+        && request.auth.uid == resource.data.userId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visibility', 'photoUrl', 'caption', 'updatedAt']);
+      
+      // Delete: owner only
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+
     // Reports collection - users can create, admins/mods can read and manage
     match /reports/{reportId} {
       allow read: if canModerateContent();
       allow create: if isSignedIn();
       allow update, delete: if canModerateContent();
+    }
+
+    // ============================================
+    // ADMIN COMMUNICATIONS TEST COLLECTIONS
+    // ============================================
+
+    // Admin Test Modals - admins can write their own, anyone can read their own
+    match /adminTestModals/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isAdmin() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Admin Test Emails - admins only
+    match /adminTestEmails/{emailId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false; // Log only
+    }
+
+    // Admin Push Campaigns - admins only (log of sent push campaigns)
+    match /adminPushCampaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false; // Log only
+    }
+
+    // Admin Email Campaigns - admins only (log of sent email campaigns)
+    match /adminEmailCampaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false; // Log only
+    }
+
+    // Announcements - admins can write, all signed-in users can read (for home screen modal)
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Admin Drafts - each admin can read/write only their own drafts
+    match /adminDrafts/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create, update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && request.auth.uid == userId;
     }
 
     // Default deny
