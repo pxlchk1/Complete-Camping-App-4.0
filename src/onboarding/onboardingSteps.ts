@@ -65,24 +65,14 @@ export const ONBOARDING_ERROR_CODES = {
 
 /**
  * Creates the users/{uid} document with safe, minimal fields.
- * This is a CRITICAL step - failure will abort onboarding.
+ * Uses setDoc with merge:true for idempotency - safe to call multiple times.
  */
 async function ensureUserDoc(params: BootstrapAccountParams): Promise<void> {
   const { userId, email, displayName, handle, photoURL } = params;
   const userRef = doc(db, 'users', userId);
 
-  // Check if document already exists
-  const existingDoc = await getDoc(userRef);
-  if (existingDoc.exists()) {
-    onboardingLog('success', {
-      step: STEPS.ENSURE_USER_DOC,
-      op: 'getDoc',
-      path: userRef.path,
-    });
-    return; // Already exists, skip creation
-  }
-
   // Safe minimal payload - NO subscription fields
+  // Using merge:true so this is idempotent and won't overwrite existing fields
   const userData: DocumentData = {
     email: email,
     displayName: displayName,
@@ -95,12 +85,12 @@ async function ensureUserDoc(params: BootstrapAccountParams): Promise<void> {
     emailSubscribed: true,
   };
 
-  await onboardingSetDoc(userRef, userData, undefined, { step: STEPS.ENSURE_USER_DOC });
+  await onboardingSetDoc(userRef, userData, { merge: true }, { step: STEPS.ENSURE_USER_DOC });
 }
 
 /**
  * Creates the profiles/{uid} document with safe, minimal fields.
- * This is a CRITICAL step - failure will abort onboarding.
+ * Uses setDoc with merge:true for idempotency - safe to call multiple times.
  * 
  * IMPORTANT: Do NOT include any subscription-related fields:
  * - membershipTier
@@ -115,19 +105,8 @@ async function ensureProfileDoc(params: BootstrapAccountParams): Promise<void> {
   const { userId, email, displayName, handle, photoURL } = params;
   const profileRef = doc(db, 'profiles', userId);
 
-  // Check if document already exists
-  const existingDoc = await getDoc(profileRef);
-  if (existingDoc.exists()) {
-    onboardingLog('success', {
-      step: STEPS.ENSURE_PROFILE_DOC,
-      op: 'getDoc',
-      path: profileRef.path,
-    });
-    return; // Already exists, skip creation
-  }
-
   // Safe minimal payload - NO subscription fields
-  // The app derives "free" tier from absence of subscription fields
+  // Using merge:true so this is idempotent and won't overwrite existing fields
   const profileData: DocumentData = {
     email: email,
     displayName: displayName,
@@ -154,35 +133,31 @@ async function ensureProfileDoc(params: BootstrapAccountParams): Promise<void> {
     },
   };
 
-  await onboardingSetDoc(profileRef, profileData, undefined, { step: STEPS.ENSURE_PROFILE_DOC });
+  await onboardingSetDoc(profileRef, profileData, { merge: true }, { step: STEPS.ENSURE_PROFILE_DOC });
 }
 
 /**
  * Creates the userEmailIndex/{normalizedEmail} document.
- * This is a CRITICAL step - failure will abort onboarding.
+ * Uses setDoc with merge:true for idempotency, but checks ownership first.
  * 
  * IMPORTANT: 
  * - Field name must be exactly "userId" (not "uid").
  * - If the email index exists and belongs to a DIFFERENT user, this throws
  *   an "email-in-use" error to abort signup.
- * - If the email index exists and belongs to the SAME user, skip (idempotent).
+ * - If same user or no existing doc, merge write is safe.
  */
 async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<void> {
   const { userId, email } = params;
   
   if (!email) {
-    onboardingLog('success', {
-      step: STEPS.ENSURE_USER_EMAIL_INDEX,
-      op: 'setDoc',
-      path: 'userEmailIndex/[skipped-no-email]',
-    });
+    console.log("EMAILINDEX_WRITE_SKIPPED", { reason: "no-email" });
     return; // No email, skip
   }
 
   const emailNormalized = email.toLowerCase().trim();
   const emailIndexRef = doc(db, 'userEmailIndex', emailNormalized);
 
-  // Check if document already exists
+  // Check ownership before writing - we must NOT overwrite another user's email
   const existingDoc = await getDoc(emailIndexRef);
   if (existingDoc.exists()) {
     const existingData = existingDoc.data();
@@ -190,17 +165,9 @@ async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<voi
 
     // CRITICAL: Check if this email belongs to a different user
     if (existingUserId && existingUserId !== userId) {
-      onboardingLog('error', {
-        step: STEPS.ENSURE_USER_EMAIL_INDEX,
-        op: 'getDoc',
-        path: emailIndexRef.path,
-      }, undefined, {
-        code: ONBOARDING_ERROR_CODES.EMAIL_IN_USE,
-        message: `Email index exists for different user`,
-      });
-
-      // Throw a specific error that can be caught and mapped to user-friendly message
-      const error = new Error('That email is already in use. Try signing in instead.') as Error & { 
+      console.log("EMAILINDEX_WRITE_BLOCKED", { reason: "owned-by-different-user" });
+      
+      const error = new Error("This email is already in use by another account.") as Error & { 
         code: string; 
         onboardingStep: string;
         emailInUse: boolean;
@@ -210,14 +177,7 @@ async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<voi
       error.emailInUse = true;
       throw error;
     }
-
-    // Email index exists and belongs to this user - idempotent skip
-    onboardingLog('success', {
-      step: STEPS.ENSURE_USER_EMAIL_INDEX,
-      op: 'getDoc',
-      path: emailIndexRef.path,
-    });
-    return;
+    // Same user - safe to merge/update
   }
 
   const emailIndexData: DocumentData = {
@@ -226,7 +186,8 @@ async function ensureUserEmailIndex(params: BootstrapAccountParams): Promise<voi
     createdAt: serverTimestamp(),
   };
 
-  await onboardingSetDoc(emailIndexRef, emailIndexData, undefined, { step: STEPS.ENSURE_USER_EMAIL_INDEX });
+  // Use merge:true so this is idempotent for same user
+  await onboardingSetDoc(emailIndexRef, emailIndexData, { merge: true }, { step: STEPS.ENSURE_USER_EMAIL_INDEX });
 }
 
 /**
@@ -283,6 +244,7 @@ async function ensureEmailSubscriber(params: BootstrapAccountParams): Promise<vo
  */
 export async function bootstrapNewAccount(params: BootstrapAccountParams): Promise<BootstrapAccountResult> {
   const startTime = Date.now();
+  const normalizedEmail = params.email?.toLowerCase().trim() || '';
   
   if (ONBOARDING_DEBUG) {
     console.log('[Onboarding] Starting bootstrapNewAccount for:', params.userId);
@@ -290,13 +252,31 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
 
   try {
     // Step 1: Create users/{uid} document (CRITICAL)
-    await ensureUserDoc(params);
+    try {
+      await ensureUserDoc(params);
+      console.log("USERS_WRITE_SUCCESS", { uid: params.userId });
+    } catch (userDocError: any) {
+      console.log("USERS_WRITE_FAILED", { code: userDocError?.code, message: userDocError?.message });
+      throw userDocError;
+    }
 
     // Step 2: Create profiles/{uid} document (CRITICAL)
-    await ensureProfileDoc(params);
+    try {
+      await ensureProfileDoc(params);
+      console.log("PROFILES_WRITE_SUCCESS", { uid: params.userId });
+    } catch (profileDocError: any) {
+      console.log("PROFILES_WRITE_FAILED", { code: profileDocError?.code, message: profileDocError?.message });
+      throw profileDocError;
+    }
 
     // Step 3: Create userEmailIndex/{email} document (CRITICAL)
-    await ensureUserEmailIndex(params);
+    try {
+      await ensureUserEmailIndex(params);
+      console.log("EMAILINDEX_WRITE_SUCCESS", { email: normalizedEmail });
+    } catch (emailIndexError: any) {
+      console.log("EMAILINDEX_WRITE_FAILED", { code: emailIndexError?.code, message: emailIndexError?.message, emailInUse: emailIndexError?.emailInUse });
+      throw emailIndexError;
+    }
 
     // Step 4: Create emailSubscribers/{uid} document (OPTIONAL)
     try {
