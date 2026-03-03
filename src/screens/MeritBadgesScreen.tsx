@@ -24,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
+import ModalHeader from "../components/ModalHeader";
 import { resolveBadgeImage, deriveImageKey } from "../assets/images/merit_badges/resolveBadgeImage";
 
 import { auth } from "../config/firebase";
@@ -58,6 +59,9 @@ const BADGE_IMAGE_SIZE = 72;
 export default function MeritBadgesScreen() {
   const navigation = useNavigation<MeritBadgesNavigationProp>();
   const insets = useSafeAreaInsets();
+
+  // Show ModalHeader when accessed standalone (not via LearnTopTabsNavigator)
+  const isStandalone = navigation.canGoBack();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -126,17 +130,25 @@ export default function MeritBadgesScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: PARCHMENT, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={DEEP_FOREST} />
-        <Text style={{ marginTop: 16, fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
-          Loading badges...
-        </Text>
+      <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
+        {isStandalone && (
+          <ModalHeader title="Merit Badges" onBack={() => navigation.goBack()} />
+        )}
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={DEEP_FOREST} />
+          <Text style={{ marginTop: 16, fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+            Loading badges...
+          </Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
+      {isStandalone && (
+        <ModalHeader title="Merit Badges" onBack={() => navigation.goBack()} />
+      )}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
