@@ -23,7 +23,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useTripsStore } from "../state/tripsStore";
+import { useTripsStore, useTrips } from "../state/tripsStore";
 import { useMealLibrary, useMealStore } from "../state/mealStore";
 import AccountButton from "../components/AccountButton";
 import { RootStackParamList } from "../navigation/types";
@@ -39,8 +39,9 @@ import {
   TEXT_SECONDARY,
   CARD_BACKGROUND_LIGHT,
 } from "../constants/colors";
-import { requirePro } from "../utils/gating";
+import { isPremiumUser, canAccessPackingAndMeals } from "../utils/entitlements";
 import AccountRequiredModal from "../components/AccountRequiredModal";
+import PremiumFeatureModal from "../components/PremiumFeatureModal";
 import InfoButton from "../components/InfoButton";
 import OnboardingModal from "../components/OnboardingModal";
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
@@ -93,6 +94,7 @@ export default function MealPlanningScreen() {
   const { tripId } = route.params;
 
   const trip = useTripsStore((s) => s.getTripById(tripId));
+  const allTrips = useTrips();
   const mealLibrary = useMealLibrary();
   const userId = "demo_user_1"; // TODO: Get from auth
 
@@ -142,6 +144,28 @@ export default function MealPlanningScreen() {
 
   // Gating modal state
   const [showAccountModal, setShowAccountModal] = useState(false);
+
+  // Meal access permission - Free users can access their one free trip's meals
+  const canCustomize = isPremiumUser();
+  const [canAccessMeals, setCanAccessMeals] = useState(true);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [accessChecked, setAccessChecked] = useState(false);
+
+  // Check meal access on mount
+  useEffect(() => {
+    const checkAccess = async () => {
+      const hasAccess = await canAccessPackingAndMeals(tripId, allTrips);
+      setCanAccessMeals(hasAccess);
+      setAccessChecked(true);
+      
+      // If user cannot access meals for this trip, send to paywall
+      if (!hasAccess) {
+        console.log("[MealPlanningScreen] User cannot access meals for this trip, showing paywall");
+        navigation.replace("Paywall", { triggerKey: "meals_trip_limit" });
+      }
+    };
+    checkAccess();
+  }, [tripId, allTrips, navigation]);
 
   // Onboarding modal
   const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("MealPlanning");
@@ -199,11 +223,9 @@ export default function MealPlanningScreen() {
   }, [loadMeals]);
 
   const handleAddMealFromLibrary = async (libraryMeal: MealLibraryItem) => {
-    // Gate: PRO required to add meals
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_planning_add", variant }),
-    })) {
+    // Gate: Access required to add meals (free users can add to their free trip)
+    if (!canAccessMeals) {
+      setShowPremiumModal(true);
       return;
     }
 
@@ -254,11 +276,9 @@ export default function MealPlanningScreen() {
   const handleAddCustomMeal = async () => {
     if (!customMealName.trim()) return;
 
-    // Gate: PRO required to add custom meals
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_planning_custom", variant }),
-    })) {
+    // Gate: Premium required to add custom meals
+    if (!canCustomize) {
+      setShowPremiumModal(true);
       return;
     }
 
@@ -316,11 +336,9 @@ export default function MealPlanningScreen() {
   };
 
   const handleDeleteMeal = async (meal: Meal) => {
-    // Gate: PRO required to delete meals
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_planning_delete", variant }),
-    })) {
+    // Gate: Access required to delete meals (free users can delete from their free trip)
+    if (!canAccessMeals) {
+      setShowPremiumModal(true);
       return;
     }
 
@@ -363,12 +381,10 @@ export default function MealPlanningScreen() {
 
   // Handler: Open MealSlotSheet for a category with specific tab
   const handleOpenMealSheet = (category: SuggestibleMealCategory, tab: "suggest" | "recipes" | "custom" = "suggest") => {
-    // Gate: PRO required for suggestions
-    if (tab === "suggest") {
-      if (!requirePro({
-        openAccountModal: () => setShowAccountModal(true),
-        openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_suggestions", variant }),
-      })) {
+    // Gate: Premium required for suggestions and custom meals
+    if (tab === "suggest" || tab === "custom") {
+      if (!canCustomize) {
+        setShowPremiumModal(true);
         return;
       }
     }
@@ -518,11 +534,9 @@ export default function MealPlanningScreen() {
 
   // Handler: MealSlotSheet recipe selection
   const handleSelectRecipe = async (recipe: MealLibraryItem) => {
-    // Gate: PRO required
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_planning_recipe", variant }),
-    })) {
+    // Gate: Access required (free users can add recipes to their free trip)
+    if (!canAccessMeals) {
+      setShowPremiumModal(true);
       return;
     }
 
@@ -531,11 +545,9 @@ export default function MealPlanningScreen() {
 
   // Handler: MealSlotSheet suggestion selection
   const handleSelectSuggestion = async (suggestion: MealSuggestion) => {
-    // Gate: PRO required
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_suggestion", variant }),
-    })) {
+    // Gate: Premium required
+    if (!canCustomize) {
+      setShowPremiumModal(true);
       return;
     }
 
@@ -544,11 +556,9 @@ export default function MealPlanningScreen() {
 
   // Handler: MealSlotSheet custom meal
   const handleSheetCustomMeal = async (name: string, ingredients?: string[], notes?: string, saveToLibrary?: boolean) => {
-    // Gate: PRO required
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_planning_custom", variant }),
-    })) {
+    // Gate: Premium required
+    if (!canCustomize) {
+      setShowPremiumModal(true);
       return;
     }
 
@@ -606,11 +616,9 @@ export default function MealPlanningScreen() {
 
   // NEW: Handler: Open AutoFillPreviewSheet (replaces direct auto-fill)
   const handleOpenAutoFillPreview = () => {
-    // Gate: PRO required
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_autofill", variant }),
-    })) {
+    // Gate: Premium required
+    if (!canCustomize) {
+      setShowPremiumModal(true);
       return;
     }
 
@@ -723,11 +731,9 @@ export default function MealPlanningScreen() {
 
   // NEW: Handler: Add recipe from Recipes view
   const handleAddRecipeToMeal = async (recipe: MealLibraryItem) => {
-    // Gate: PRO required
-    if (!requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_planning_recipe", variant }),
-    })) {
+    // Gate: Access required (free users can add recipes to their free trip)
+    if (!canAccessMeals) {
+      setShowPremiumModal(true);
       return;
     }
 
@@ -815,6 +821,16 @@ export default function MealPlanningScreen() {
       return true;
     });
   }, [allRecipes, recipeFilter, recipeSearch]);
+
+  // Show loading state while checking access permissions
+  // This prevents screen flash before redirect to paywall
+  if (!accessChecked) {
+    return (
+      <SafeAreaView className="flex-1 bg-parchment items-center justify-center" edges={["top"]}>
+        <ActivityIndicator size="large" color={DEEP_FOREST} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-parchment" edges={["top"]}>
@@ -915,6 +931,32 @@ export default function MealPlanningScreen() {
           ))}
         </ScrollView>
       </View>
+
+      {/* Premium Banner for Free Users */}
+      {!canCustomize && (
+        <View className="mx-5 mt-3 p-3 rounded-xl border border-amber-300" style={{ backgroundColor: "#FEF9E7" }}>
+          <View className="flex-row items-start">
+            <Ionicons name="lock-closed" size={16} color="#B8860B" style={{ marginTop: 2 }} />
+            <View className="flex-1 ml-2">
+              <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 13, color: "#5D4E37" }}>
+                Customizing meal plans is Premium
+              </Text>
+              <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: "#7D6E57", marginTop: 2 }}>
+                You can still use the grocery checklist for this trip.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => navigation.navigate("Paywall", { triggerKey: "meal_premium_banner" })}
+              className="ml-2 px-3 py-1.5 rounded-lg active:opacity-80"
+              style={{ backgroundColor: DEEP_FOREST }}
+            >
+              <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: PARCHMENT }}>
+                Go Premium
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       {/* PLAN VIEW */}
       {viewMode === "plan" && (
@@ -1631,6 +1673,17 @@ export default function MealPlanningScreen() {
           )}
         </View>
       )}
+
+      {/* Premium Feature Modal */}
+      <PremiumFeatureModal
+        visible={showPremiumModal}
+        onDismiss={() => setShowPremiumModal(false)}
+        onUpgrade={() => {
+          setShowPremiumModal(false);
+          navigation.navigate("Paywall", { triggerKey: "meal_customization" });
+        }}
+        featureType="meals"
+      />
 
       {/* Onboarding Modal */}
       <OnboardingModal

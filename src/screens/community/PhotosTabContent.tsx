@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../navigation/types";
 import HandleLink from "../../components/HandleLink";
+import { getConnectDisplayHandle } from "../../services/handleService";
 
 // Component to handle individual photo rendering with error state
 function PhotoCard({ item, onVote }: { item: any; onVote: (id: string, type: "up" | "down") => void }) {
@@ -51,12 +52,12 @@ function PhotoCard({ item, onVote }: { item: any; onVote: (id: string, type: "up
             ) : item.authorId ? (
               <Pressable onPress={() => navigation.navigate("MyCampsite", { userId: item.authorId })}>
                 <Text className="text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
-                  {item.authorHandle ? `@${item.authorHandle}` : (item.authorName || "Anonymous")}
+                  @{getConnectDisplayHandle(item.authorHandle, item.authorId)}
                 </Text>
               </Pressable>
             ) : (
               <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
-                {item.authorHandle ? `@${item.authorHandle}` : "Anonymous"}
+                @{getConnectDisplayHandle(item.authorHandle, item.authorId)}
               </Text>
             )}
           </View>

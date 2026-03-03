@@ -88,6 +88,74 @@ export default function SeedDataScreen({ navigation }: any) {
             </View>
           )}
         </View>
+
+        {/* Merit Badges Seeder */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Merit Badges Seeder</Text>
+          <Text style={styles.cardDescription}>
+            Seed the badge definitions catalog with sample badges:
+          </Text>
+
+          <View style={styles.list}>
+            <Text style={styles.listItem}>• Camp Setup badges (2)</Text>
+            <Text style={styles.listItem}>• Fire & Warmth badges (2)</Text>
+            <Text style={styles.listItem}>• Cooking badges (2)</Text>
+            <Text style={styles.listItem}>• Navigation badges (2)</Text>
+            <Text style={styles.listItem}>• Safety badges (2)</Text>
+            <Text style={styles.listItem}>• Nature badges (3)</Text>
+            <Text style={styles.listItem}>• Seasonal badges (1)</Text>
+          </View>
+
+          <Text style={styles.warning}>
+            ⚠️ Will skip badges that already exist.
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.button, badgeLoading && styles.buttonDisabled]}
+            onPress={handleSeedBadges}
+            disabled={badgeLoading}
+          >
+            {badgeLoading ? (
+              <ActivityIndicator color="#F4EBD0" />
+            ) : (
+              <Text style={styles.buttonText}>Seed Badges Now</Text>
+            )}
+          </TouchableOpacity>
+
+          {badgeResult && (
+            <View style={styles.successBox}>
+              <Ionicons name="checkmark-circle" size={24} color="#16a34a" />
+              <Text style={styles.successText}>Badges seeded successfully!</Text>
+              <Text style={styles.successDetail}>
+                {badgeResult.created} created, {badgeResult.skipped} skipped
+              </Text>
+            </View>
+          )}
+
+          {badgeError && (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle" size={24} color="#dc2626" />
+              <Text style={styles.errorText}>{badgeError}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Merit Badge Asset Check - Dev Only */}
+        {__DEV__ && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Badge Asset Check</Text>
+            <Text style={styles.cardDescription}>
+              Verify all merit badge PNG images load correctly. Shows a grid of all registered badge images.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => navigation.navigate("MeritBadgeAssetCheck")}
+            >
+              <Text style={styles.buttonText}>Open Asset Check</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

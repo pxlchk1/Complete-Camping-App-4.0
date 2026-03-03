@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import ModalHeader from "../../components/ModalHeader";
 import * as Haptics from "expo-haptics";
 import { createQuestion } from "../../services/questionsService";
+import { getConnectDisplayHandle } from "../../services/handleService";
 import { useCurrentUser } from "../../state/userStore";
 import AccountRequiredModal from "../../components/AccountRequiredModal";
 import { requireAccount } from "../../utils/gating";
@@ -94,7 +95,7 @@ export default function CreateQuestionScreen() {
         body: body.trim(),
         tags,
         authorId: currentUser.id,
-        authorHandle: currentUser.handle || currentUser.displayName || "Anonymous",
+        authorHandle: getConnectDisplayHandle(currentUser.handle || currentUser.displayName, currentUser.id),
       });
 
       // Navigate to the question detail

@@ -12,7 +12,8 @@ import Button from "../components/Button";
 import AccountButton from "../components/AccountButton";
 import { RootStackParamList, PrefillLocation } from "../navigation/types";
 import { CampingStyle, TripDestination } from "../types/camping";
-import { requirePro } from "../utils/gating";
+import { requireAccount } from "../utils/gating";
+import { isPremiumUser, setFreePremiumTripId, getFreePremiumTripId } from "../utils/entitlements";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import { DEEP_FOREST, EARTH_GREEN, GRANITE_GOLD, RIVER_ROCK, SIERRA_SKY, PARCHMENT, PARCHMENT_BORDER } from "../constants/colors";
 import { trackTripCreated } from "../services/analyticsService";
@@ -73,6 +74,20 @@ export default function CreateTripScreen() {
     }
   }, [prefillLocation]);
 
+  // Gate: Redirect free users who already have a trip
+  useEffect(() => {
+    const checkEntitlement = async () => {
+      if (!isPremiumUser() && user?.uid) {
+        const existingTripId = await getFreePremiumTripId(user.uid);
+        if (existingTripId) {
+          // Free user already has a trip - redirect to paywall
+          navigation.replace("Paywall", { triggerKey: "second_trip" });
+        }
+      }
+    };
+    checkEntitlement();
+  }, [user?.uid, navigation]);
+
   const handleClearDestination = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setDestination(null);
@@ -89,12 +104,21 @@ export default function CreateTripScreen() {
       return;
     }
 
-    // Gate: PRO required to create trips
-    if (!requirePro({
+    // Gate: Account required
+    if (!requireAccount({
       openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "create_trip", variant }),
     })) {
       return;
+    }
+
+    // Gate: Free users can only create one trip
+    if (!isPremiumUser() && user?.uid) {
+      const freeTripId = await getFreePremiumTripId(user.uid);
+      if (freeTripId) {
+        // Free user already has a trip - show paywall
+        navigation.navigate("Paywall", { triggerKey: "second_trip" });
+        return;
+      }
     }
 
     setIsCreating(true);
@@ -123,6 +147,14 @@ export default function CreateTripScreen() {
         tripDestination,
         parkId: destination?.placeType === "park" && destination?.placeId ? destination.placeId : undefined,
       });
+
+      // Set free premium trip ID for free users creating their first trip (guard against double-set)
+      if (!isPremiumUser() && user?.uid) {
+        const existingId = await getFreePremiumTripId(user.uid);
+        if (!existingId) {
+          await setFreePremiumTripId(user.uid, tripId);
+        }
+      }
 
       // Track analytics and core action
       trackTripCreated(tripId);

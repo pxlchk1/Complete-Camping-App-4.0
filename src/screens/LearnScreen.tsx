@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, ImageBackground, RefreshControl, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -62,6 +62,8 @@ import {
 } from "../constants/colors";
 import { HERO_IMAGES } from "../constants/images";
 import { RootStackParamList } from "../navigation/types";
+import { getLearningTrackBadgeImage } from "../assets/images/merit_badges/learningTrackBadgeImages";
+import type { BadgeId } from "../types/learning";
 
 type LearnScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Learn">;
 
@@ -260,6 +262,8 @@ export default function LearnScreen() {
                 // Find the badge for this track
                 const badgeEntry = Object.values(LEARNING_BADGES).find(b => b.trackId === track.id);
                 const badgeColor = badgeEntry?.color || GRANITE_GOLD;
+                // Get the learning track badge image
+                const badgeImage = badgeEntry ? getLearningTrackBadgeImage(badgeEntry.id as BadgeId) : undefined;
 
                 return (
                   <Pressable
@@ -274,23 +278,35 @@ export default function LearnScreen() {
                   >
                     <View
                       style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 24,
-                        backgroundColor: isCompleted ? badgeColor : CARD_BACKGROUND_LIGHT,
+                        width: 96,
+                        height: 96,
+                        borderRadius: 48,
+                        backgroundColor: isCompleted ? "transparent" : CARD_BACKGROUND_LIGHT,
                         borderWidth: isCompleted ? 0 : isSelected ? 2 : 2,
                         borderColor: isSelected ? DEEP_FOREST : BORDER_SOFT,
                         borderStyle: isCompleted ? "solid" : "dashed",
                         justifyContent: "center",
                         alignItems: "center",
                         opacity: isCompleted ? 1 : 0.5,
+                        overflow: "hidden",
                       }}
                     >
-                      <Ionicons
-                        name={track.icon as any}
-                        size={22}
-                        color={isCompleted ? PARCHMENT : TEXT_MUTED}
-                      />
+                      {badgeImage ? (
+                        <Image
+                          source={badgeImage}
+                          style={{
+                            width: isCompleted ? 96 : 72,
+                            height: isCompleted ? 96 : 72,
+                          }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <Ionicons
+                          name={track.icon as any}
+                          size={44}
+                          color={isCompleted ? PARCHMENT : TEXT_MUTED}
+                        />
+                      )}
                     </View>
                     <Text
                       style={{

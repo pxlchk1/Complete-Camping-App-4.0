@@ -4,7 +4,7 @@
  * Follows the UX pattern from the reference app
  */
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -45,6 +45,8 @@ import {
 } from "../state/packingStore";
 import { RootStackParamList } from "../navigation/types";
 import { isGearClosetItem } from "../utils/mergeGearIntoPacking";
+import { isPremiumUser } from "../utils/entitlements";
+import PremiumFeatureModal from "../components/PremiumFeatureModal";
 
 type PackingListEditorRouteProp = RouteProp<{ PackingListEditor: { listId: string } }, "PackingListEditor">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -227,6 +229,10 @@ export default function PackingListEditorScreen() {
     copyTemplateToTrip,
   } = usePackingStore();
 
+  // Customization permission (Premium only)
+  const canCustomize = isPremiumUser();
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+
   // Modal state
   const [showAddItem, setShowAddItem] = useState(false);
   const [showAddSection, setShowAddSection] = useState(false);
@@ -245,25 +251,33 @@ export default function PackingListEditorScreen() {
     [list, listId, getProgress]
   );
 
-  // Handle toggle item
+  // Handle toggle item (always allowed - this is the checklist)
   const handleToggleItem = useCallback((sectionId: string, itemId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     toggleItemChecked(listId, sectionId, itemId);
   }, [listId, toggleItemChecked]);
 
-  // Handle delete item
+  // Handle delete item (Premium only)
   const handleDeleteItem = useCallback((sectionId: string, itemId: string) => {
+    if (!canCustomize) {
+      setShowPremiumModal(true);
+      return;
+    }
     deleteItem(listId, sectionId, itemId);
-  }, [listId, deleteItem]);
+  }, [listId, deleteItem, canCustomize]);
 
-  // Handle edit item
+  // Handle edit item (Premium only)
   const handleEditItem = useCallback((sectionId: string, item: PackingItem) => {
+    if (!canCustomize) {
+      setShowPremiumModal(true);
+      return;
+    }
     setEditingItem({ sectionId, item });
     setNewItemName(item.name);
     setNewItemNote(item.note || "");
     setNewItemEssential(item.essential || false);
     setShowEditItem(true);
-  }, []);
+  }, [canCustomize]);
 
   // Save edited item
   const handleSaveEditItem = useCallback(() => {
@@ -307,8 +321,12 @@ export default function PackingListEditorScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, [listId, newSectionName, addSection]);
 
-  // Handle delete section
+  // Handle delete section (Premium only)
   const handleDeleteSection = useCallback((sectionId: string, sectionTitle: string) => {
+    if (!canCustomize) {
+      setShowPremiumModal(true);
+      return;
+    }
     Alert.alert(
       "Delete Section",
       `Delete "${sectionTitle}" and all its items?`,
@@ -324,7 +342,7 @@ export default function PackingListEditorScreen() {
         },
       ]
     );
-  }, [listId, deleteSection]);
+  }, [listId, deleteSection, canCustomize]);
 
   // Handle reset list
   const handleResetList = useCallback(() => {
@@ -397,7 +415,13 @@ export default function PackingListEditorScreen() {
     const isTemplate = list?.isTemplate;
     
     const options: any[] = [
-      { text: "Add Section", onPress: () => setShowAddSection(true) },
+      { text: "Add Section", onPress: () => {
+        if (!canCustomize) {
+          setShowPremiumModal(true);
+          return;
+        }
+        setShowAddSection(true);
+      }},
       { text: "Reset All Items", onPress: handleResetList },
       { text: "Share List", onPress: handleShare },
     ];
@@ -414,7 +438,7 @@ export default function PackingListEditorScreen() {
       undefined,
       options
     );
-  }, [list, handleResetList, handleShare, handleUseAsNewList]);
+  }, [list, handleResetList, handleShare, handleUseAsNewList, canCustomize]);
 
   if (!list) {
     return (
@@ -542,6 +566,31 @@ export default function PackingListEditorScreen() {
           className="flex-1"
           contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
         >
+          {/* Premium Banner for Free Users */}
+          {!canCustomize && (
+            <View
+              className="mx-4 mt-4 px-4 py-3 rounded-xl flex-row items-center"
+              style={{ backgroundColor: "#FEF3C7" }}
+            >
+              <Ionicons name="diamond-outline" size={18} color="#92400E" />
+              <Text
+                className="flex-1 ml-3"
+                style={{ fontFamily: "SourceSans3_400Regular", fontSize: 14, color: "#92400E" }}
+              >
+                Customizing packing lists is Premium. You can still use the checklist for this trip.
+              </Text>
+              <Pressable
+                onPress={() => navigation.navigate("Paywall", { triggerKey: "packing_customization" })}
+              >
+                <Text
+                  style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: "#92400E" }}
+                >
+                  Go Premium
+                </Text>
+              </Pressable>
+            </View>
+          )}
+
           {list.sections.map((section) => (
             <View key={section.id} className="mt-4">
               {/* Section Header */}
@@ -572,6 +621,10 @@ export default function PackingListEditorScreen() {
 
                 <Pressable
                   onPress={() => {
+                    if (!canCustomize) {
+                      setShowPremiumModal(true);
+                      return;
+                    }
                     setActiveSectionId(section.id);
                     setShowAddItem(true);
                   }}
@@ -614,7 +667,13 @@ export default function PackingListEditorScreen() {
           {/* Add Section Button */}
           <View className="px-4 mt-6">
             <Pressable
-              onPress={() => setShowAddSection(true)}
+              onPress={() => {
+                if (!canCustomize) {
+                  setShowPremiumModal(true);
+                  return;
+                }
+                setShowAddSection(true);
+              }}
               className="flex-row items-center justify-center py-3 rounded-xl border-2 border-dashed"
               style={{ borderColor: BORDER_SOFT }}
             >
@@ -852,6 +911,17 @@ export default function PackingListEditorScreen() {
             </View>
           </KeyboardAvoidingView>
         </Modal>
+
+        {/* Premium Feature Modal */}
+        <PremiumFeatureModal
+          visible={showPremiumModal}
+          featureType="packing"
+          onUpgrade={() => {
+            setShowPremiumModal(false);
+            navigation.navigate("Paywall", { triggerKey: "packing_customization" });
+          }}
+          onDismiss={() => setShowPremiumModal(false)}
+        />
       </View>
     </GestureHandlerRootView>
   );

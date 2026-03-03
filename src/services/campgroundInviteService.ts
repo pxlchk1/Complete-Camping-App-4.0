@@ -51,11 +51,27 @@ const checkPendingInvitesOnLoginFunc = httpsCallable<Record<string, never>, Chec
 export async function createCampgroundInvite(
   data: CreateInviteData
 ): Promise<CreateInviteResult> {
+  console.log("[campgroundInviteService] createCampgroundInvite called:", {
+    inviteeEmail: data.inviteeEmail,
+    inviteeName: data.inviteeName,
+    endpoint: "createCampgroundInvite",
+  });
+
   try {
     const result = await createCampgroundInviteFunc(data);
+    console.log("[campgroundInviteService] createCampgroundInvite success:", {
+      inviteId: result.data.inviteId,
+      campgroundId: result.data.campgroundId,
+    });
     return result.data;
   } catch (error: any) {
-    console.error("Error creating campground invite:", error);
+    console.error("[campgroundInviteService] createCampgroundInvite failed:", {
+      inviteeEmail: data.inviteeEmail,
+      inviteeName: data.inviteeName,
+      endpoint: "createCampgroundInvite",
+      errorMessage: error.message,
+      errorCode: error?.code,
+    });
     throw new Error(error.message || "Failed to create invite");
   }
 }
@@ -66,13 +82,32 @@ export async function createCampgroundInvite(
 export async function sendCampgroundInviteEmail(
   inviteId: string
 ): Promise<SendInviteEmailResult> {
+  console.log("[campgroundInviteService] sendCampgroundInviteEmail called:", {
+    inviteId,
+    endpoint: "sendCampgroundInviteEmail",
+  });
+
   try {
     const result = await sendCampgroundInviteEmailFunc({ inviteId });
+    console.log("[campgroundInviteService] sendCampgroundInviteEmail success:", {
+      inviteId,
+      responseStatus: "success",
+      messageId: result.data.messageId,
+    });
     return result.data;
   } catch (error: any) {
-    console.error("Error sending invite email:", error);
     // Firebase Functions errors have specific structure
+    const errorCode = error?.code || "unknown";
     const errorMessage = error?.details || error?.message || "Failed to send invite email";
+    
+    console.error("[campgroundInviteService] sendCampgroundInviteEmail failed:", {
+      inviteId,
+      endpoint: "sendCampgroundInviteEmail",
+      errorCode,
+      errorMessage,
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+    });
+    
     throw new Error(errorMessage);
   }
 }
