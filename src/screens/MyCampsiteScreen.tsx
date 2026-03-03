@@ -952,84 +952,88 @@ export default function MyCampsiteScreen({ navigation }: any) {
             <Ionicons name="information-circle-outline" size={16} color={TEXT_SECONDARY} />
           </Pressable>
 
-          {/* Merit Badges Row */}
-          <View className="flex-row items-start justify-center mb-4">
+          {/* Merit Badges Grid - 3 across with wrap */}
+          <View className="mb-4">
             {/* Merit Badges from Firebase */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 4 }}>
-              <View className="flex-row gap-2">
-                {/* Show badges from Firestore or a "No badges yet" message */}
-                {profile.meritBadges && profile.meritBadges.length > 0 ? (
-                  profile.meritBadges.map((badge) => {
-                    // Check if this is a learning track badge
-                    const isLearningBadge = isLearningTrackBadge(badge.id);
-                    const learningBadgeImage = isLearningBadge
-                      ? getLearningTrackBadgeImage(badge.id as BadgeId)
-                      : undefined;
+            {profile.meritBadges && profile.meritBadges.length > 0 ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginHorizontal: -8 }}>
+                {profile.meritBadges.map((badge) => {
+                  // Check if this is a learning track badge
+                  const isLearningBadge = isLearningTrackBadge(badge.id);
+                  const learningBadgeImage = isLearningBadge
+                    ? getLearningTrackBadgeImage(badge.id as BadgeId)
+                    : undefined;
 
-                    return (
-                      <View
-                        key={badge.id}
-                        className="items-center"
-                        style={{ width: 70 }}
-                      >
-                        <View
-                          style={{
-                            width: 56,
-                            height: 56,
-                            borderRadius: 28,
-                            backgroundColor: isLearningBadge ? "transparent" : badge.color,
-                            borderWidth: isLearningBadge ? 0 : 3,
-                            borderColor: PARCHMENT,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            overflow: "hidden",
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.15,
-                            shadowRadius: 3,
-                            elevation: 3,
-                          }}
-                        >
-                          {learningBadgeImage ? (
-                            <Image
-                              source={learningBadgeImage}
-                              style={{ width: 56, height: 56 }}
-                              resizeMode="contain"
-                            />
-                          ) : (
-                            <Ionicons name={badge.icon as any} size={28} color={PARCHMENT} />
-                          )}
-                        </View>
-                        <Text
-                          className="text-center mt-1"
-                          style={{
-                            fontFamily: "SourceSans3_600SemiBold",
-                            fontSize: 9,
-                            color: TEXT_SECONDARY,
-                            lineHeight: 11,
-                          }}
-                        >
-                          {badge.name.split(" ").join("\n")}
-                        </Text>
-                      </View>
-                    );
-                  })
-                ) : (
-                  <View className="items-center px-4 py-2">
-                    <Text
+                  return (
+                    <View
+                      key={badge.id}
                       style={{
-                        fontFamily: "SourceSans3_400Regular",
-                        fontSize: 13,
-                        color: TEXT_SECONDARY,
-                        fontStyle: "italic",
+                        width: "33.33%",
+                        paddingHorizontal: 8,
+                        alignItems: "center",
+                        marginBottom: 12,
                       }}
                     >
-                      No badges earned yet
-                    </Text>
-                  </View>
-                )}
+                      <View
+                        style={{
+                          width: 56,
+                          height: 56,
+                          borderRadius: 28,
+                          backgroundColor: isLearningBadge ? "transparent" : badge.color,
+                          borderWidth: isLearningBadge ? 0 : 3,
+                          borderColor: PARCHMENT,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          overflow: "hidden",
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.15,
+                          shadowRadius: 3,
+                          elevation: 3,
+                        }}
+                      >
+                        {learningBadgeImage ? (
+                          <Image
+                            source={learningBadgeImage}
+                            style={{ width: 56, height: 56 }}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Ionicons name={badge.icon as any} size={28} color={PARCHMENT} />
+                        )}
+                      </View>
+                      <Text
+                        style={{
+                          fontFamily: "SourceSans3_600SemiBold",
+                          fontSize: 9,
+                          color: TEXT_SECONDARY,
+                          lineHeight: 11,
+                          textAlign: "center",
+                          marginTop: 4,
+                          height: 22,
+                        }}
+                        numberOfLines={2}
+                      >
+                        {badge.name}
+                      </Text>
+                    </View>
+                  );
+                })}
               </View>
-            </ScrollView>
+            ) : (
+              <View className="items-center px-4 py-2">
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_400Regular",
+                    fontSize: 13,
+                    color: TEXT_SECONDARY,
+                    fontStyle: "italic",
+                  }}
+                >
+                  No badges earned yet
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Social Stats Row */}
