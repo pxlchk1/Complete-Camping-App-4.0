@@ -315,6 +315,7 @@ export default function LearnScreen() {
                         color: isCompleted ? TEXT_PRIMARY_STRONG : TEXT_MUTED,
                         marginTop: 6,
                         textAlign: "center",
+                        height: 28,
                       }}
                       numberOfLines={2}
                     >
