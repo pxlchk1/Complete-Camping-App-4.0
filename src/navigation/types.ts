@@ -57,6 +57,13 @@ export type RootStackParamList = {
   // Learning
   ModuleDetail: { moduleId: string };
 
+  // Merit Badges
+  MeritBadges: undefined;
+  BadgeDetail: { badgeId: string };
+  MyBadges: { userId?: string } | undefined;
+  SelectWitness: { badgeId: string; photoUrl: string };
+  WitnessRequests: undefined;
+
   // Plan section with trip context
   MealPlan: { tripId: string };
 

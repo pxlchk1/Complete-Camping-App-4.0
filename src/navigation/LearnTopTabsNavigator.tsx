@@ -248,9 +248,6 @@ export default function LearnTopTabsNavigator() {
             textTransform: "none",
           },
           tabBarScrollEnabled: false,
-          sceneContainerStyle: {
-            backgroundColor: PARCHMENT,
-          },
           lazy: false,
         }}
         screenListeners={({ navigation }) => {

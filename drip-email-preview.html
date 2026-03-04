@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏕️ Tent & Lantern - Campaign Email Preview</title>
+  <!--
+    DRIP/CAMPAIGN EMAIL TEMPLATE PREVIEW
+    =====================================
+    This previews the SendGrid dynamic template: d-33e554033ea641fdb7288ce884923c33
+    
+    Dynamic fields used:
+    - {{firstName}} - User's first name
+    - {{headline}} - Main heading
+    - {{body}} - Body message
+    - {{ctaText}} - Button text
+    - {{ctaLink}} - Button link
+    - {{preheader}} - Inbox preview text (hidden)
+    - {{tip1}}, {{tip2}}, {{tip3}} - Optional tips
+    - {{year}} - Current year for footer
+  -->
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #2C3A2F;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #F4EBD0;
+    }
+    .preheader {
+      display: none;
+      font-size: 1px;
+      color: #F4EBD0;
+      line-height: 1px;
+      max-height: 0;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+    }
+    .container {
+      background-color: white;
+      border-radius: 12px;
+      padding: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #2C3A2F 0%, #5A7356 100%);
+      color: #F4EBD0;
+      padding: 30px 40px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .logo {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .content {
+      padding: 40px;
+    }
+    .greeting {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+    .headline {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2C3A2F;
+      margin-bottom: 20px;
+    }
+    .body-text {
+      font-size: 16px;
+      color: #4A5548;
+      margin-bottom: 30px;
+      line-height: 1.7;
+    }
+    .cta-button {
+      display: inline-block;
+      background-color: #7B9971;
+      color: white !important;
+      text-decoration: none;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+    .cta-button:hover {
+      background-color: #5A7356;
+    }
+    .cta-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .tips-section {
+      background-color: #F9F6EE;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 30px 0;
+    }
+    .tips-section h3 {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: #2C3A2F;
+    }
+    .tip-item {
+      margin: 10px 0;
+      font-size: 15px;
+      color: #4A5548;
+    }
+    .divider {
+      height: 1px;
+      background-color: #E8E4D9;
+      margin: 30px 0;
+    }
+    .footer {
+      text-align: center;
+      padding: 30px 40px;
+      background-color: #F9F6EE;
+      color: #6B7A6E;
+      font-size: 14px;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+    .footer .brand {
+      font-weight: 600;
+      color: #2C3A2F;
+    }
+    .social-links {
+      margin: 15px 0;
+    }
+    .social-links a {
+      color: #7B9971;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+    .unsubscribe {
+      font-size: 12px;
+      color: #999;
+      margin-top: 15px;
+    }
+    .unsubscribe a {
+      color: #999;
+    }
+    
+    /* Preview mode indicator */
+    .preview-badge {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #FF6B6B;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      z-index: 1000;
+    }
+    
+    /* Variable highlights for design reference */
+    .var-highlight {
+      background: #FFF3CD;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-badge">📧 PREVIEW MODE</div>
+  
+  <!-- Preheader text (shows in inbox preview) -->
+  <div class="preheader">
+    {{preheader}} → Get ready for your next adventure with these camping tips!
+  </div>
+  
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">🏕️</div>
+      <h1>Tent & Lantern</h1>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="content">
+      <!-- Greeting -->
+      <p class="greeting">
+        Hi <strong>{{firstName}}</strong> → Alana! 👋
+      </p>
+      
+      <!-- Headline -->
+      <h2 class="headline">
+        {{headline}} → Welcome to The Complete Camping App! 🏕️
+      </h2>
+      
+      <!-- Body -->
+      <p class="body-text">
+        {{body}} → Whether you're a seasoned camper or just getting started, we're here to help you plan unforgettable outdoor adventures. From packing lists to meal planning, we've got everything you need to make your next trip amazing.
+      </p>
+      
+      <!-- CTA Button -->
+      <div class="cta-container">
+        <a href="{{ctaLink}}" class="cta-button">
+          {{ctaText}} → Start Planning
+        </a>
+      </div>
+      
+      <!-- Tips Section (optional) -->
+      <div class="tips-section">
+        <h3>💡 Quick Tips</h3>
+        <div class="tip-item">{{tip1}} → 📋 Create a packing list to never forget essentials</div>
+        <div class="tip-item">{{tip2}} → 🍳 Plan meals ahead for stress-free cooking</div>
+        <div class="tip-item">{{tip3}} → 📸 Share trip photos with your campground crew</div>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <p class="brand">🏕️ Tent & Lantern</p>
+      <p>Your complete camping companion</p>
+      
+      <div class="social-links">
+        <a href="https://apps.apple.com/app/tent-and-lantern">App Store</a>
+      </div>
+      
+      <p>© {{year}} → 2026 Tent and Lantern. All rights reserved.</p>
+      
+      <div class="unsubscribe">
+        <a href="{{unsubscribeLink}}">Unsubscribe</a> from these emails
+      </div>
+    </div>
+  </div>
+  
+  <!-- Design Reference -->
+  <div style="margin-top: 40px; padding: 20px; background: #2C3A2F; border-radius: 12px; color: #F4EBD0;">
+    <h3 style="margin-top: 0;">📐 Template Variables Reference</h3>
+    <table style="width: 100%; font-size: 14px; border-collapse: collapse;">
+      <tr style="border-bottom: 1px solid #4A5548;">
+        <td style="padding: 8px 0;"><code style="color: #7B9971;">{{firstName}}</code></td>
+        <td style="padding: 8px 0;">User's first name</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #4A5548;">
+        <td style="padding: 8px 0;"><code style="color: #7B9971;">{{headline}}</code></td>
+        <td style="padding: 8px 0;">Main heading/title</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #4A5548;">
+        <td style="padding: 8px 0;"><code style="color: #7B9971;">{{body}}</code></td>
+        <td style="padding: 8px 0;">Body message content</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #4A5548;">
+        <td style="padding: 8px 0;"><code style="color: #7B9971;">{{ctaText}}</code></td>
+        <td style="padding: 8px 0;">Button text</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #4A5548;">
+        <td style="padding: 8px 0;"><code style="color: #7B9971;">{{ctaLink}}</code></td>
+        <td style="padding: 8px 0;">Button link URL</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #4A5548;">
+        <td style="padding: 8px 0;"><code style="color: #7B9971;">{{preheader}}</code></td>
+        <td style="padding: 8px 0;">Inbox preview text</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #4A5548;">
+        <td style="padding: 8px 0;"><code style="color: #7B9971;">{{tip1}}, {{tip2}}, {{tip3}}</code></td>
+        <td style="padding: 8px 0;">Optional tips (omit section if empty)</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px 0;"><code style="color: #7B9971;">{{year}}</code></td>
+        <td style="padding: 8px 0;">Current year for copyright</td>
+      </tr>
+    </table>
+    <p style="margin-bottom: 0; font-size: 12px; color: #92AFB1; margin-top: 15px;">
+      SendGrid Template ID: <code>d-33e554033ea641fdb7288ce884923c33</code>
+    </p>
+  </div>
+</body>
+</html>
