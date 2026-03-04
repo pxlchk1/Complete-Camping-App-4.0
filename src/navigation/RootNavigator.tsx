@@ -8,7 +8,7 @@ import { PAYWALL_ENABLED } from "../config/subscriptions";
 
 // Screens
 import HomeScreen from "../screens/HomeScreen";
-import LearnScreen from "../screens/LearnScreen";
+import LearnTopTabsNavigator from "./LearnTopTabsNavigator";
 import MyTripsScreen from "../screens/MyTripsScreen";
 import CommunityTopTabsNavigator from "./CommunityTopTabsNavigator";
 import PlanTopTabsNavigator from "./PlanTopTabsNavigator";
@@ -131,7 +131,7 @@ function HomeTabs() {
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Learn" component={LearnScreen} />
+      <Tab.Screen name="Learn" component={LearnTopTabsNavigator} />
       <Tab.Screen name="Plan" component={PlanStackNavigator} />
       <Tab.Screen name="Connect" component={CommunityStackNavigator} />
       <Tab.Screen name="FirstAid" component={FirstAidScreen} />
