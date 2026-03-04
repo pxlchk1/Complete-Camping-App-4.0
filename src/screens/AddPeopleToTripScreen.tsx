@@ -3,7 +3,7 @@
  * Multi-select contacts from My Campground
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -24,6 +24,10 @@ import { useTripsStore } from "../state/tripsStore";
 import ModalHeader from "../components/ModalHeader";
 import { requirePro } from "../utils/gating";
 import AccountRequiredModal from "../components/AccountRequiredModal";
+import UpsellModal from "../components/UpsellModal";
+import { useUpsellStore, UPSELL_COPY } from "../state/upsellStore";
+import { useUserStore } from "../state/userStore";
+import { trackUpsellModalViewed, trackUpsellCtaClicked } from "../services/analyticsService";
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -49,6 +53,11 @@ export default function AddPeopleToTripScreen() {
 
   // Gating modal state
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+
+  // Upsell state
+  const { hasUsedFreeTrip } = useUserStore();
+  const { canShowSoftModal, markInviteModalShown, recordModalDismissal } = useUpsellStore();
 
   useEffect(() => {
     loadContacts();
@@ -118,7 +127,15 @@ export default function AddPeopleToTripScreen() {
       const tripStartDate = trip?.startDate ? new Date(trip.startDate) : new Date();
       await addTripParticipantsWithRoles(tripId, participantsWithRoles, tripStartDate);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      navigation.goBack();
+      
+      // Check if we should show invite upsell modal
+      if (!hasUsedFreeTrip && canShowSoftModal("invite", false)) {
+        setShowInviteModal(true);
+        markInviteModalShown();
+        trackUpsellModalViewed("invite");
+      } else {
+        navigation.goBack();
+      }
     } catch (error: any) {
       console.error("Error adding participants:", error);
       Alert.alert("Error", error.message || "Failed to add people to trip");
@@ -276,6 +293,32 @@ export default function AddPeopleToTripScreen() {
           navigation.navigate("Auth" as any);
         }}
         onMaybeLater={() => setShowAccountModal(false)}
+      />
+
+      {/* Invite Intent Upsell Modal */}
+      <UpsellModal
+        visible={showInviteModal}
+        title={UPSELL_COPY.invite.title}
+        body={UPSELL_COPY.invite.body}
+        primaryCtaText={UPSELL_COPY.invite.primaryCta}
+        secondaryCtaText={UPSELL_COPY.invite.secondaryCta}
+        finePrint={UPSELL_COPY.invite.finePrint}
+        onPrimaryPress={() => {
+          setShowInviteModal(false);
+          trackUpsellCtaClicked("invite");
+          navigation.goBack();
+          navigation.navigate("Paywall", { triggerKey: "invite_upsell" });
+        }}
+        onSecondaryPress={() => {
+          setShowInviteModal(false);
+          recordModalDismissal();
+          navigation.goBack();
+        }}
+        onDismiss={() => {
+          setShowInviteModal(false);
+          recordModalDismissal();
+          navigation.goBack();
+        }}
       />
     </View>
   );

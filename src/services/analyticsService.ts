@@ -57,6 +57,16 @@ export const AnalyticsEvents = {
   MY_CAMPSITE_WELCOME_SHOWN: "my_campsite_welcome_shown",
   MY_CAMPSITE_WELCOME_PRIMARY_CTA_TAPPED: "my_campsite_welcome_primary_cta_tapped",
   MY_CAMPSITE_WELCOME_DISMISSED: "my_campsite_welcome_dismissed",
+  
+  // Upsell Modals (Trial prompts)
+  UPSELL_MODAL_VIEWED: "upsell_modal_viewed",
+  UPSELL_MODAL_DISMISSED: "upsell_modal_dismissed",
+  UPSELL_CTA_CLICKED: "upsell_cta_clicked",
+  TRIP2_GATE_VIEWED: "trip2_gate_viewed",
+  TRIP2_GATE_DISMISSED: "trip2_gate_dismissed",
+  
+  // Purchases
+  PURCHASE_COMPLETED: "purchase_completed",
 } as const;
 
 // ============================================
@@ -427,3 +437,21 @@ export const trackMyCampsiteWelcomeCtaTapped = () =>
   analyticsService.trackEvent(AnalyticsEvents.MY_CAMPSITE_WELCOME_PRIMARY_CTA_TAPPED);
 export const trackMyCampsiteWelcomeDismissed = () => 
   analyticsService.trackEvent(AnalyticsEvents.MY_CAMPSITE_WELCOME_DISMISSED);
+
+// Upsell modal tracking functions
+export type UpsellModalAnalyticsType = "completion" | "packing" | "invite" | "trip2_gate";
+
+export const trackUpsellModalViewed = (type: UpsellModalAnalyticsType) => 
+  analyticsService.trackEvent(AnalyticsEvents.UPSELL_MODAL_VIEWED, { type });
+export const trackUpsellModalDismissed = (type: UpsellModalAnalyticsType) => 
+  analyticsService.trackEvent(AnalyticsEvents.UPSELL_MODAL_DISMISSED, { type });
+export const trackUpsellCtaClicked = (type: UpsellModalAnalyticsType) => 
+  analyticsService.trackEvent(AnalyticsEvents.UPSELL_CTA_CLICKED, { type });
+export const trackTrip2GateViewed = () => 
+  analyticsService.trackEvent(AnalyticsEvents.TRIP2_GATE_VIEWED);
+export const trackTrip2GateDismissed = () => 
+  analyticsService.trackEvent(AnalyticsEvents.TRIP2_GATE_DISMISSED);
+
+// Purchase tracking functions
+export const trackPurchaseCompleted = (plan: string) => 
+  analyticsService.trackEvent(AnalyticsEvents.PURCHASE_COMPLETED, { plan });

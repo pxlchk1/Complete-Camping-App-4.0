@@ -4,7 +4,7 @@
  * Follows the UX pattern from the reference app
  */
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -45,6 +45,10 @@ import {
 } from "../state/packingStore";
 import { RootStackParamList } from "../navigation/types";
 import { isGearClosetItem } from "../utils/mergeGearIntoPacking";
+import UpsellModal from "../components/UpsellModal";
+import { useUpsellStore, UPSELL_COPY } from "../state/upsellStore";
+import { useUserStore } from "../state/userStore";
+import { trackUpsellModalViewed, trackUpsellCtaClicked } from "../services/analyticsService";
 
 type PackingListEditorRouteProp = RouteProp<{ PackingListEditor: { listId: string } }, "PackingListEditor">;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -233,6 +237,12 @@ export default function PackingListEditorScreen() {
   const [showEditItem, setShowEditItem] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ sectionId: string; item: PackingItem } | null>(null);
+  const [showPackingModal, setShowPackingModal] = useState(false);
+
+  // Upsell state
+  const { hasUsedFreeTrip, setHasUsedFreeTrip } = useUserStore();
+  const { canShowSoftModal, markPackingModalShown, recordModalDismissal } = useUpsellStore();
+  const hasShownPackingModalRef = useRef(false);
 
   // Form state
   const [newItemName, setNewItemName] = useState("");
@@ -244,6 +254,21 @@ export default function PackingListEditorScreen() {
     list ? getProgress(listId) : { packed: 0, total: 0, percentage: 0 },
     [list, listId, getProgress]
   );
+
+  // Check if we should show packing upsell modal when item count crosses 5
+  useEffect(() => {
+    if (
+      progress.total >= 5 &&
+      !hasShownPackingModalRef.current &&
+      !hasUsedFreeTrip &&
+      canShowSoftModal("packing", false)
+    ) {
+      hasShownPackingModalRef.current = true;
+      setShowPackingModal(true);
+      markPackingModalShown();
+      trackUpsellModalViewed("packing");
+    }
+  }, [progress.total, hasUsedFreeTrip, canShowSoftModal, markPackingModalShown]);
 
   // Handle toggle item
   const handleToggleItem = useCallback((sectionId: string, itemId: string) => {
@@ -852,6 +877,29 @@ export default function PackingListEditorScreen() {
             </View>
           </KeyboardAvoidingView>
         </Modal>
+
+        {/* Packing Intent Upsell Modal */}
+        <UpsellModal
+          visible={showPackingModal}
+          title={UPSELL_COPY.packing.title}
+          body={UPSELL_COPY.packing.body}
+          primaryCtaText={UPSELL_COPY.packing.primaryCta}
+          secondaryCtaText={UPSELL_COPY.packing.secondaryCta}
+          finePrint={UPSELL_COPY.packing.finePrint}
+          onPrimaryPress={() => {
+            setShowPackingModal(false);
+            trackUpsellCtaClicked("packing");
+            navigation.navigate("Paywall", { triggerKey: "packing_upsell" });
+          }}
+          onSecondaryPress={() => {
+            setShowPackingModal(false);
+            recordModalDismissal();
+          }}
+          onDismiss={() => {
+            setShowPackingModal(false);
+            recordModalDismissal();
+          }}
+        />
       </View>
     </GestureHandlerRootView>
   );
