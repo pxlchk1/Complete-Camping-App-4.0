@@ -28,8 +28,6 @@ import { listenToSavedPlaces, removeSavedPlace, SavedPlace } from "../services/s
 import { useUserStatus } from "../utils/authHelper";
 import { useIsModerator, useIsAdministrator } from "../state/userStore";
 import { HERO_IMAGES } from "../constants/images";
-import { getTracksWithProgress } from "../services/learningService";
-import { TrackWithModules, LEARNING_BADGES, BadgeId } from "../types/learning";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
@@ -48,6 +46,7 @@ import {
 } from "../constants/colors";
 import { PrefillLocation, RootStackParamList } from "../navigation/types";
 import { isLearningTrackBadge, getLearningTrackBadgeImage } from "../assets/images/merit_badges/learningTrackBadgeImages";
+import type { BadgeId } from "../types/learning";
 
 type MembershipTier = "free" | "freeMember" | "subscribed" | "weekendCamper" | "trailLeader" | "backcountryGuide" | "isAdmin" | "isModerator";
 
@@ -131,8 +130,6 @@ export default function MyCampsiteScreen({ navigation }: any) {
   const [connectContributions, setConnectContributions] = useState<ConnectContribution[]>([]);
   const [connectLoading, setConnectLoading] = useState(true);
   const [showAccountModal, setShowAccountModal] = useState(false);
-  const [learningTracks, setLearningTracks] = useState<TrackWithModules[]>([]);
-  const [learningTracksLoading, setLearningTracksLoading] = useState(true);
   const insets = useSafeAreaInsets();
 
   // Onboarding modal
@@ -368,20 +365,6 @@ export default function MyCampsiteScreen({ navigation }: any) {
     }
   }, []);
 
-  // Load learning tracks with progress
-  const loadLearningTracks = useCallback(async () => {
-    try {
-      setLearningTracksLoading(true);
-      const tracks = await getTracksWithProgress();
-      setLearningTracks(tracks);
-    } catch (error) {
-      console.error("[MyCampsite] Error loading learning tracks:", error);
-      setLearningTracks([]);
-    } finally {
-      setLearningTracksLoading(false);
-    }
-  }, []);
-
   useFocusEffect(
     useCallback(() => {
       // If viewing another user's profile, use their ID
@@ -399,14 +382,6 @@ export default function MyCampsiteScreen({ navigation }: any) {
       // Load user photos and Connect contributions
       loadUserPhotos(targetUserId);
       loadConnectContributions(targetUserId);
-      
-      // Load learning tracks (only for own profile when logged in)
-      if (!isViewingOtherUser && auth.currentUser) {
-        loadLearningTracks();
-      } else {
-        setLearningTracksLoading(false);
-        setLearningTracks([]);
-      }
       
       // Only load favorites and saved places for the current user's own profile
       if (!isViewingOtherUser) {
@@ -435,15 +410,8 @@ export default function MyCampsiteScreen({ navigation }: any) {
         setFavoriteParks([]);
         setSavedPlaces([]);
       }
-    }, [navigation, loadProfile, loadUserPhotos, loadConnectContributions, loadLearningTracks, viewingUserId, isViewingOtherUser, isGuest])
+    }, [navigation, loadProfile, loadUserPhotos, loadConnectContributions, viewingUserId, isViewingOtherUser, isGuest])
   );
-
-  // DEV ASSERTION: Ensure Merit Badges section is present
-  // This is a guard against accidental removal of required UI sections
-  if (__DEV__ && profile && !loading) {
-    // The merit badges section should always render - log error if something goes wrong
-    console.log("[MyCampsite] Merit Badges section check - profile loaded, section should be visible");
-  }
 
   const createDefaultProfile = async (userId: string) => {
     const user = auth.currentUser;
@@ -967,96 +935,6 @@ export default function MyCampsiteScreen({ navigation }: any) {
 
         {/* Profile Section */}
         <View className="px-5" style={{ marginTop: 16 }}>
-          {/* Learning Tracks Section */}
-          {!shouldHidePrivateContent && (
-            <View style={{ marginBottom: 20 }}>
-              <Pressable
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  navigation.navigate("MainTabs", { screen: "Learn" });
-                }}
-                className="flex-row items-center justify-center mb-3"
-              >
-                <Text
-                  className="text-sm mr-1"
-                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}
-                >
-                  Learning Tracks
-                </Text>
-                <Ionicons name="chevron-forward" size={14} color={TEXT_SECONDARY} />
-              </Pressable>
-
-              {/* Learning Tracks Row - 4 badges */}
-              <View style={{ flexDirection: "row", justifyContent: "center", gap: 12 }}>
-                {learningTracksLoading ? (
-                  <ActivityIndicator size="small" color={TEXT_SECONDARY} />
-                ) : learningTracks.length > 0 ? (
-                  learningTracks.map((track) => {
-                    const badgeEntry = Object.values(LEARNING_BADGES).find(b => b.trackId === track.id);
-                    const isCompleted = track.hasBadge;
-                    const badgeColor = badgeEntry?.color || GRANITE_GOLD;
-
-                    return (
-                      <Pressable
-                        key={track.id}
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          navigation.navigate("MainTabs", { screen: "Learn" });
-                        }}
-                        style={{ alignItems: "center", width: 70 }}
-                      >
-                        <View
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 24,
-                            backgroundColor: isCompleted ? badgeColor : CARD_BACKGROUND_LIGHT,
-                            borderWidth: isCompleted ? 0 : 2,
-                            borderColor: BORDER_SOFT,
-                            borderStyle: isCompleted ? "solid" : "dashed",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            opacity: isCompleted ? 1 : 0.5,
-                          }}
-                        >
-                          <Ionicons
-                            name={track.icon as any}
-                            size={22}
-                            color={isCompleted ? PARCHMENT : TEXT_MUTED}
-                          />
-                        </View>
-                        <Text
-                          style={{
-                            fontFamily: "SourceSans3_400Regular",
-                            fontSize: 10,
-                            color: isCompleted ? TEXT_PRIMARY_STRONG : TEXT_MUTED,
-                            marginTop: 4,
-                            textAlign: "center",
-                          }}
-                          numberOfLines={2}
-                        >
-                          {track.title}
-                        </Text>
-                      </Pressable>
-                    );
-                  })
-                ) : (
-                  <Text
-                    style={{
-                      fontFamily: "SourceSans3_400Regular",
-                      fontSize: 13,
-                      color: TEXT_SECONDARY,
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Start learning to earn badges
-                  </Text>
-                )}
-              </View>
-            </View>
-          )}
-
-          {/* DO NOT REMOVE: Merit Badges is a required My Campsite section. */}
           {/* Merit Badges Label */}
           <Pressable
             onPress={() => {
