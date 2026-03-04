@@ -39,6 +39,7 @@ import {
   EARTH_GREEN,
 } from "../../constants/colors";
 import HandleLink from "../../components/HandleLink";
+import { getConnectDisplayHandle } from "../../services/handleService";
 
 type RouteParams = RootStackScreenProps<"QuestionDetail">;
 
@@ -235,7 +236,7 @@ export default function QuestionDetailScreen() {
         questionId,
         body: answerText.trim(),
         authorId: currentUser.id,
-        authorHandle: currentUser.handle || currentUser.displayName || "Anonymous",
+        authorHandle: getConnectDisplayHandle(currentUser.handle || currentUser.displayName, currentUser.id),
       });
 
       // Reload answers
@@ -377,12 +378,12 @@ export default function QuestionDetailScreen() {
                   ) : question.authorId ? (
                     <Pressable onPress={() => navigation.navigate("MyCampsite", { userId: question.authorId })}>
                       <Text className="text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
-                        {question.authorHandle ? `@${question.authorHandle}` : (authorName || "Anonymous")}
+                        @{getConnectDisplayHandle(question.authorHandle, question.authorId)}
                       </Text>
                     </Pressable>
                   ) : (
                     <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
-                      {question.authorHandle ? `@${question.authorHandle}` : "Anonymous"}
+                      @{getConnectDisplayHandle(question.authorHandle, question.authorId)}
                     </Text>
                   )}
                 </View>
@@ -465,12 +466,12 @@ export default function QuestionDetailScreen() {
                         ) : answer.authorId ? (
                           <Pressable onPress={() => navigation.navigate("MyCampsite", { userId: answer.authorId })}>
                             <Text className="text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
-                              {answer.authorHandle ? `@${answer.authorHandle}` : "Anonymous"}
+                              @{getConnectDisplayHandle(answer.authorHandle, answer.authorId)}
                             </Text>
                           </Pressable>
                         ) : (
                           <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
-                            {answer.authorHandle ? `@${answer.authorHandle}` : "Anonymous"}
+                            @{getConnectDisplayHandle(answer.authorHandle, answer.authorId)}
                           </Text>
                         )}
                         <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>

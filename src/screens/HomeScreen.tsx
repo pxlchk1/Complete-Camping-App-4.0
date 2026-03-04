@@ -14,13 +14,17 @@ import PushPermissionPrompt from "../components/PushPermissionPrompt";
 import HandleLink from "../components/HandleLink";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
+import EmailOptInModal from "../components/EmailOptInModal";
+import StayInLoopModal from "../components/StayInLoopModal";
 
 // Hooks
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
+import { useUserFlags } from "../hooks/useUserFlags";
 
 // Services
 import { getPhotoPosts } from "../services/photoPostsService";
 import { getUser } from "../services/userService";
+import { getConnectDisplayHandle } from "../services/handleService";
 import { PhotoPost } from "../types/photoPost";
 
 // State
@@ -51,7 +55,9 @@ import {
 } from "../constants/colors";
 import { HERO_IMAGES, LOGOS } from "../constants/images";
 import { RootStackParamList } from "../navigation/types";
-import { auth } from "../config/firebase";
+import { auth, db } from "../config/firebase";
+import { doc, getDoc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Home">;
 
@@ -87,6 +93,12 @@ export default function HomeScreen() {
   const isPro = useSubscriptionStore((s) => s.isPro);
   const { isLoggedIn: isAuthenticated, isGuest } = useUserStatus();
 
+  // User flags for welcome greeting (real-time subscription to Firestore)
+  const { hasSeenWelcomeHome, hasSeenStayInLoop, firstName: userFirstName } = useUserFlags();
+
+  // Stay in the loop modal state - show after first login for logged-in users who haven't seen it
+  const [showStayInLoopModal, setShowStayInLoopModal] = useState(false);
+
   // Featured Community Photo state
   const [featuredPhoto, setFeaturedPhoto] = useState<PhotoPost | null>(null);
   const [featuredPhotoHandle, setFeaturedPhotoHandle] = useState<string | null>(null);
@@ -98,6 +110,291 @@ export default function HomeScreen() {
 
   // Onboarding modal
   const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("Home");
+
+  // Admin test modal state (for Communications screen testing)
+  const [adminTestModal, setAdminTestModal] = useState<{
+    heading: string;
+    body: string;
+    ctaLabel: string;
+    ctaLink: string;
+    ctaMode: "url" | "subscription";
+  } | null>(null);
+
+  // Published announcement modal state (for all users)
+  const [announcementModal, setAnnouncementModal] = useState<{
+    versionId: string;
+    headline: string;
+    body: string;
+    microCopy: string;
+    ctaText: string;
+    ctaMode: "url" | "subscription" | "none";
+    ctaLink: string;
+  } | null>(null);
+
+  // Email opt-in modal state
+  const [showEmailOptIn, setShowEmailOptIn] = useState(false);
+
+  // Show stay-in-the-loop modal for logged-in users who haven't seen it yet
+  useEffect(() => {
+    // Only show for authenticated non-guest users who haven't seen it
+    if (isAuthenticated && !isGuest && !hasSeenStayInLoop) {
+      // Small delay to let the home screen render first
+      const timer = setTimeout(() => {
+        setShowStayInLoopModal(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isGuest, hasSeenStayInLoop]);
+
+  // Check for admin test modal on mount (admin-only, user-scoped)
+  useEffect(() => {
+    const checkAdminTestModal = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        console.log("[HomeScreen] No auth user, skipping admin modal check");
+        return;
+      }
+      
+      try {
+        // Check admin status directly from Firestore for reliability
+        const profileDoc = await getDoc(doc(db, "profiles", user.uid));
+        const profileData = profileDoc.data();
+        const isAdmin = profileData?.role === "administrator" || 
+                        profileData?.membershipTier === "isAdmin" ||
+                        currentUser?.role === "administrator" || 
+                        currentUser?.membershipTier === "isAdmin";
+        
+        console.log("[HomeScreen] Admin check:", { 
+          uid: user.uid, 
+          isAdmin,
+          profileRole: profileData?.role,
+          profileTier: profileData?.membershipTier,
+          storeRole: currentUser?.role,
+          storeTier: currentUser?.membershipTier
+        });
+        
+        if (!isAdmin) {
+          console.log("[HomeScreen] Not admin, skipping modal check");
+          return;
+        }
+
+        const modalDoc = await getDoc(doc(db, "adminTestModals", user.uid));
+        console.log("[HomeScreen] Modal doc exists:", modalDoc.exists(), modalDoc.data());
+        
+        if (modalDoc.exists()) {
+          const data = modalDoc.data();
+          if (data?.isActive) {
+            console.log("[HomeScreen] Showing admin test modal:", data.heading);
+            setAdminTestModal({
+              heading: data.heading || "Test Modal",
+              body: data.body || "",
+              ctaLabel: data.ctaLabel || "OK",
+              ctaLink: data.ctaLink || "",
+              ctaMode: data.ctaMode || "url",
+            });
+          }
+        }
+      } catch (error) {
+        console.log("[HomeScreen] Error checking admin test modal:", error);
+      }
+    };
+
+    checkAdminTestModal();
+  }, [currentUser]);
+
+  // Dismiss admin test modal and delete from Firestore
+  const dismissAdminTestModal = async () => {
+    setAdminTestModal(null);
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await deleteDoc(doc(db, "adminTestModals", user.uid));
+        console.log("[HomeScreen] Admin test modal dismissed and deleted");
+      } catch (error) {
+        console.log("[HomeScreen] Error deleting admin test modal:", error);
+      }
+    }
+  };
+
+  // Check for published announcement modal (for all users)
+  // Uses consolidated dismissal storage: announcement_dismissals_v1 = { [versionId]: timestamp }
+  useEffect(() => {
+    const DISMISSALS_KEY = "announcement_dismissals_v1";
+    const MAX_ENTRIES = 75;
+    const KEEP_RECENT = 25;
+    const KEEP_DAYS = 180;
+
+    const checkAnnouncementModal = async () => {
+      try {
+        const announcementDoc = await getDoc(doc(db, "announcements", "active"));
+        if (!announcementDoc.exists()) {
+          console.log("[HomeScreen] No active announcement");
+          return;
+        }
+
+        const data = announcementDoc.data();
+        if (!data?.isActive || !data?.versionId) {
+          console.log("[HomeScreen] Announcement not active or no versionId");
+          return;
+        }
+
+        // Load consolidated dismissals object
+        let dismissals: Record<string, number> = {};
+        const storedDismissals = await AsyncStorage.getItem(DISMISSALS_KEY);
+        if (storedDismissals) {
+          try {
+            dismissals = JSON.parse(storedDismissals);
+          } catch {
+            console.log("[HomeScreen] Failed to parse dismissals, resetting");
+            dismissals = {};
+          }
+        }
+
+        // Migrate old-style key for this versionId if it exists
+        const oldKey = `announcement_dismissed_${data.versionId}`;
+        const oldValue = await AsyncStorage.getItem(oldKey);
+        if (oldValue === "true" && !dismissals[data.versionId]) {
+          console.log("[HomeScreen] Migrating old dismissal key:", data.versionId);
+          dismissals[data.versionId] = Date.now();
+          await AsyncStorage.setItem(DISMISSALS_KEY, JSON.stringify(dismissals));
+          await AsyncStorage.removeItem(oldKey);
+        }
+
+        // Check if this version was dismissed
+        if (dismissals[data.versionId]) {
+          console.log("[HomeScreen] Announcement already dismissed:", data.versionId);
+          return;
+        }
+
+        // Prune old entries to prevent unbounded growth
+        const entries = Object.entries(dismissals);
+        if (entries.length > KEEP_RECENT) {
+          const now = Date.now();
+          const cutoffTime = now - KEEP_DAYS * 24 * 60 * 60 * 1000;
+          // Sort by timestamp descending
+          entries.sort((a, b) => b[1] - a[1]);
+          // Keep entries within KEEP_DAYS or top KEEP_RECENT, but cap at MAX_ENTRIES
+          const pruned: Record<string, number> = {};
+          let count = 0;
+          for (const [vid, ts] of entries) {
+            if (count >= MAX_ENTRIES) break;
+            if (count < KEEP_RECENT || ts >= cutoffTime) {
+              pruned[vid] = ts;
+              count++;
+            }
+          }
+          if (Object.keys(pruned).length < entries.length) {
+            console.log("[HomeScreen] Pruned dismissals:", entries.length, "->", Object.keys(pruned).length);
+            await AsyncStorage.setItem(DISMISSALS_KEY, JSON.stringify(pruned));
+          }
+        }
+
+        console.log("[HomeScreen] Showing announcement modal:", data.headline);
+        setAnnouncementModal({
+          versionId: data.versionId,
+          headline: data.headline || "Announcement",
+          body: data.body || "",
+          microCopy: data.microCopy || "",
+          ctaText: data.ctaText || "OK",
+          ctaMode: data.ctaMode || "none",
+          ctaLink: data.ctaLink || "",
+        });
+      } catch (error) {
+        console.log("[HomeScreen] Error checking announcement modal:", error);
+      }
+    };
+
+    checkAnnouncementModal();
+  }, []);
+
+  // Dismiss announcement modal and mark as dismissed
+  const dismissAnnouncementModal = async () => {
+    const DISMISSALS_KEY = "announcement_dismissals_v1";
+    if (announcementModal?.versionId) {
+      // Load, update, save dismissals object
+      let dismissals: Record<string, number> = {};
+      const stored = await AsyncStorage.getItem(DISMISSALS_KEY);
+      if (stored) {
+        try {
+          dismissals = JSON.parse(stored);
+        } catch {
+          dismissals = {};
+        }
+      }
+      dismissals[announcementModal.versionId] = Date.now();
+      await AsyncStorage.setItem(DISMISSALS_KEY, JSON.stringify(dismissals));
+      console.log("[HomeScreen] Announcement dismissed:", announcementModal.versionId);
+    }
+    setAnnouncementModal(null);
+  };
+
+  // Check if user should see email opt-in modal
+  // Show after 3rd app open if user is logged in and hasn't opted in
+  useEffect(() => {
+    const checkEmailOptIn = async () => {
+      const user = auth.currentUser;
+      if (!user || isGuest) {
+        console.log("[HomeScreen] No auth user or guest, skipping email opt-in check");
+        return;
+      }
+
+      try {
+        // Check if already shown too recently (don't show more than once per week)
+        const lastShownKey = "email_optin_last_shown";
+        const lastShown = await AsyncStorage.getItem(lastShownKey);
+        if (lastShown) {
+          const lastShownDate = new Date(lastShown);
+          const daysSinceLastShown = (Date.now() - lastShownDate.getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSinceLastShown < 7) {
+            console.log("[HomeScreen] Email opt-in shown recently, skipping");
+            return;
+          }
+        }
+
+        // Check if user already subscribed to emails
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData?.emailSubscribed === true) {
+            console.log("[HomeScreen] User already subscribed to emails");
+            return;
+          }
+        }
+
+        // Check how many times app has been opened
+        const openCountKey = "app_open_count";
+        const currentCountStr = await AsyncStorage.getItem(openCountKey);
+        const currentCount = currentCountStr ? parseInt(currentCountStr, 10) : 0;
+        const newCount = currentCount + 1;
+        await AsyncStorage.setItem(openCountKey, String(newCount));
+
+        // Show opt-in modal on 3rd app open (or later, if not dismissed permanently)
+        if (newCount >= 3) {
+          // Check if permanently dismissed
+          const dismissedKey = "email_optin_dismissed_permanently";
+          const dismissed = await AsyncStorage.getItem(dismissedKey);
+          if (dismissed === "true") {
+            console.log("[HomeScreen] Email opt-in permanently dismissed");
+            return;
+          }
+
+          console.log("[HomeScreen] Showing email opt-in modal");
+          // Small delay to let other modals settle
+          setTimeout(() => {
+            // Only show if no other modals are active
+            if (!adminTestModal && !announcementModal && !showAccountModal) {
+              setShowEmailOptIn(true);
+              AsyncStorage.setItem(lastShownKey, new Date().toISOString());
+            }
+          }, 1500);
+        }
+      } catch (error) {
+        console.log("[HomeScreen] Error checking email opt-in:", error);
+      }
+    };
+
+    checkEmailOptIn();
+  }, [isGuest, adminTestModal, announcementModal, showAccountModal]);
 
   // Fetch a random featured photo on screen focus
   useFocusEffect(
@@ -178,8 +475,9 @@ export default function HomeScreen() {
     : LOGOS.APP_ICON;
 
   // Welcome greeting and message using centralized utility
-  const welcomeGreeting = getWelcomeTitle(currentUser?.displayName, isLoggedIn);
-  const welcomeMessage = getWelcomeSubtext(currentUser?.favoriteCampingStyle, isLoggedIn);
+  // Uses hasSeenWelcomeHome and firstName from Firestore users collection
+  const welcomeGreeting = getWelcomeTitle(hasSeenWelcomeHome, userFirstName, isLoggedIn);
+  const welcomeMessage = getWelcomeSubtext(hasSeenWelcomeHome, isLoggedIn);
 
   if (__DEV__) {
     // eslint-disable-next-line no-console
@@ -187,9 +485,9 @@ export default function HomeScreen() {
     // eslint-disable-next-line no-console
     console.log("🎯 [HomeScreen] Welcome Message:", welcomeMessage);
     // eslint-disable-next-line no-console
-    console.log("🎯 [HomeScreen] Current User Display Name:", currentUser?.displayName);
+    console.log("🎯 [HomeScreen] hasSeenWelcomeHome:", hasSeenWelcomeHome);
     // eslint-disable-next-line no-console
-    console.log("🎯 [HomeScreen] Favorite Camping Style:", currentUser?.favoriteCampingStyle);
+    console.log("🎯 [HomeScreen] firstName from users doc:", userFirstName);
     // Prevent “unused var” lint confusion if you re-enable sections that rely on these.
     void trips;
     void gearLists;
@@ -298,60 +596,6 @@ export default function HomeScreen() {
           contentContainerStyle={{ paddingBottom: bottomSpacer }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Subscription Card - Always visible */}
-          <Pressable
-            className="mb-4 rounded-xl active:opacity-90"
-            style={{
-              backgroundColor: CARD_BACKGROUND_LIGHT,
-              borderWidth: 1,
-              borderColor: BORDER_SOFT,
-              padding: 16,
-            }}
-            onPress={() => {
-              safeHaptic();
-              navigation.navigate("Paywall");
-            }}
-            accessibilityLabel="Manage subscription"
-            accessibilityRole="button"
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text
-                  style={{
-                    fontFamily: "Raleway_600SemiBold",
-                    fontSize: 16,
-                    color: DEEP_FOREST,
-                  }}
-                >
-                  Subscription
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: "SourceSans3_400Regular",
-                    fontSize: 14,
-                    color: TEXT_SECONDARY,
-                    marginTop: 2,
-                  }}
-                >
-                  Manage plan and billing
-                </Text>
-              </View>
-              <View className="flex-row items-center">
-                <Text
-                  style={{
-                    fontFamily: "SourceSans3_600SemiBold",
-                    fontSize: 14,
-                    color: EARTH_GREEN,
-                    marginRight: 4,
-                  }}
-                >
-                  View subscription
-                </Text>
-                <Ionicons name="chevron-forward" size={16} color={EARTH_GREEN} />
-              </View>
-            </View>
-          </Pressable>
-
           {/* Quick Actions */}
           <View className="mb-6">
             <SectionTitle className="mb-4" color={DEEP_FOREST} style={{ fontSize: 18 }}>
@@ -609,7 +853,7 @@ export default function HomeScreen() {
                                 color: TEXT_SECONDARY,
                               }}
                             >
-                              @{featuredPhoto.userHandle || featuredPhotoHandle || featuredPhoto.displayName || "Camper"}
+                              @{getConnectDisplayHandle(featuredPhoto.userHandle || featuredPhotoHandle || featuredPhoto.displayName, featuredPhoto.userId)}
                             </Text>
                           )}
                         </View>
@@ -665,6 +909,327 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
+      {/* Admin Test Modal (for Communications screen testing) */}
+      {adminTestModal && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            paddingTop: insets.top + 24,
+            paddingBottom: 8,
+            paddingHorizontal: "2.5%",
+            zIndex: 9999,
+            elevation: 9999,
+          }}
+        >
+          <ScrollView
+            style={{
+              width: "100%",
+              maxHeight: "100%",
+            }}
+            contentContainerStyle={{
+              flexGrow: 0,
+            }}
+            showsVerticalScrollIndicator={true}
+            bounces={false}
+          >
+            <View
+              style={{
+                backgroundColor: CARD_BACKGROUND_LIGHT,
+                borderRadius: 16,
+                padding: 24,
+                width: "100%",
+                borderWidth: 1,
+                borderColor: BORDER_SOFT,
+                position: "relative",
+              }}
+            >
+              {/* X Close Button */}
+              <Pressable
+                onPress={dismissAdminTestModal}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: BORDER_SOFT,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1,
+                }}
+              >
+                <Ionicons name="close" size={20} color={TEXT_SECONDARY} />
+              </Pressable>
+
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: EARTH_GREEN + "20",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  alignSelf: "center",
+                  marginBottom: 16,
+                  marginTop: 8,
+                }}
+              >
+                <Ionicons name="megaphone" size={24} color={EARTH_GREEN} />
+              </View>
+              <Text
+                style={{
+                  fontFamily: "Raleway_700Bold",
+                  fontSize: 20,
+                  color: TEXT_PRIMARY_STRONG,
+                  textAlign: "center",
+                  marginBottom: 12,
+                }}
+              >
+                {adminTestModal.heading}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "SourceSans3_400Regular",
+                  fontSize: 15,
+                  color: TEXT_SECONDARY,
+                  textAlign: "center",
+                  marginBottom: 20,
+                  lineHeight: 22,
+                }}
+              >
+                {adminTestModal.body}
+              </Text>
+              <View
+                style={{
+                  backgroundColor: "#FFF3CD",
+                  padding: 8,
+                  borderRadius: 6,
+                  marginBottom: 16,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_600SemiBold",
+                    fontSize: 11,
+                    color: "#856404",
+                    textAlign: "center",
+                  }}
+                >
+                  ⚠️ ADMIN TEST MODAL
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  const shouldOpenPaywall = adminTestModal.ctaMode === "subscription";
+                  dismissAdminTestModal();
+                  if (shouldOpenPaywall) {
+                    // Navigate to the Paywall screen
+                    navigation.navigate("Paywall" as any, { triggerKey: "admin_test_modal" });
+                  }
+                }}
+                style={{
+                  backgroundColor: DEEP_FOREST,
+                  paddingVertical: 14,
+                  borderRadius: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_600SemiBold",
+                    fontSize: 15,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {adminTestModal.ctaLabel || "Dismiss"}
+                </Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Published Announcement Modal (for all users) */}
+      {announcementModal && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "flex-start",
+            alignItems: "center",
+            paddingTop: insets.top + 24,
+            paddingBottom: 8,
+            paddingHorizontal: "2.5%",
+            zIndex: 9999,
+            elevation: 9999,
+          }}
+        >
+          <ScrollView
+            style={{ width: "100%", maxHeight: "100%" }}
+            contentContainerStyle={{ flexGrow: 0 }}
+            showsVerticalScrollIndicator={true}
+            bounces={false}
+          >
+            <View
+              style={{
+                backgroundColor: CARD_BACKGROUND_LIGHT,
+                borderRadius: 16,
+                padding: 24,
+                width: "100%",
+                borderWidth: 1,
+                borderColor: BORDER_SOFT,
+                position: "relative",
+              }}
+            >
+              {/* X Close Button */}
+              <Pressable
+                onPress={dismissAnnouncementModal}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: BORDER_SOFT,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1,
+                }}
+              >
+                <Ionicons name="close" size={20} color={TEXT_SECONDARY} />
+              </Pressable>
+
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: EARTH_GREEN + "20",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  alignSelf: "center",
+                  marginBottom: 16,
+                  marginTop: 8,
+                }}
+              >
+                <Ionicons name="megaphone" size={24} color={EARTH_GREEN} />
+              </View>
+              <Text
+                style={{
+                  fontFamily: "Raleway_700Bold",
+                  fontSize: 20,
+                  color: TEXT_PRIMARY_STRONG,
+                  textAlign: "center",
+                  marginBottom: 12,
+                }}
+              >
+                {announcementModal.headline}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "SourceSans3_400Regular",
+                  fontSize: 15,
+                  color: TEXT_SECONDARY,
+                  textAlign: "center",
+                  marginBottom: announcementModal.microCopy ? 12 : 20,
+                  lineHeight: 22,
+                }}
+              >
+                {announcementModal.body}
+              </Text>
+              {announcementModal.microCopy ? (
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_400Regular",
+                    fontSize: 12,
+                    color: TEXT_SECONDARY,
+                    textAlign: "center",
+                    marginBottom: 20,
+                    opacity: 0.7,
+                  }}
+                >
+                  {announcementModal.microCopy}
+                </Text>
+              ) : null}
+              {announcementModal.ctaMode !== "none" && (
+                <Pressable
+                  onPress={() => {
+                    const shouldOpenPaywall = announcementModal.ctaMode === "subscription";
+                    dismissAnnouncementModal();
+                    if (shouldOpenPaywall) {
+                      navigation.navigate("Paywall" as any, { triggerKey: "announcement_modal" });
+                    } else if (announcementModal.ctaMode === "url" && announcementModal.ctaLink) {
+                      // Open URL using Linking
+                      import("react-native").then(({ Linking }) => {
+                        Linking.openURL(announcementModal.ctaLink);
+                      });
+                    }
+                  }}
+                  style={{
+                    backgroundColor: DEEP_FOREST,
+                    paddingVertical: 14,
+                    borderRadius: 10,
+                    alignItems: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "SourceSans3_600SemiBold",
+                      fontSize: 15,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    {announcementModal.ctaText}
+                  </Text>
+                </Pressable>
+              )}
+              <Pressable
+                onPress={dismissAnnouncementModal}
+                style={{
+                  paddingVertical: 10,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_400Regular",
+                    fontSize: 14,
+                    color: TEXT_SECONDARY,
+                  }}
+                >
+                  Dismiss
+                </Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Email Opt-In Modal */}
+      <EmailOptInModal
+        visible={showEmailOptIn}
+        onClose={() => setShowEmailOptIn(false)}
+        onOptInComplete={() => {
+          console.log("[HomeScreen] Email opt-in completed");
+        }}
+      />
+
       {/* Account Required Modal for Quick Actions */}
       <AccountRequiredModal
         visible={showAccountModal}
@@ -682,6 +1247,12 @@ export default function HomeScreen() {
         visible={showModal}
         tooltip={currentTooltip}
         onDismiss={dismissModal}
+      />
+
+      {/* Stay in the Loop Modal - shown once after first login */}
+      <StayInLoopModal
+        visible={showStayInLoopModal}
+        onDismiss={() => setShowStayInLoopModal(false)}
       />
     </View>
   );

@@ -57,13 +57,6 @@ export type RootStackParamList = {
   // Learning
   ModuleDetail: { moduleId: string };
 
-  // Merit Badges
-  MeritBadges: undefined;
-  BadgeDetail: { badgeId: string };
-  MyBadges: { userId?: string } | undefined;
-  SelectWitness: { badgeId: string; photoUrl: string };
-  WitnessRequests: undefined;
-
   // Plan section with trip context
   MealPlan: { tripId: string };
 
@@ -132,6 +125,17 @@ export type RootStackParamList = {
   // Invitation
   AcceptInvitation: { invitationToken: string };
   AcceptInvite: { token: string };
+
+  // Merit Badges
+  MeritBadges: undefined;
+  BadgeDetail: { badgeId: string };
+  SelectWitness: { badgeId: string; photoUrl?: string };
+  WitnessRequests: undefined;
+  MyBadges: { userId?: string } | undefined;
+
+  // Dev-only screens
+  MeritBadgeAssetCheck: undefined;
+
 
   // Main tabs
   MainTabs: { screen: string; params?: any };

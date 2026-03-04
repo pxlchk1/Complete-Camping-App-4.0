@@ -649,14 +649,12 @@ async function syncBadgeToProfile(userId: string, badgeId: string): Promise<void
     if (currentBadges.some((b: any) => b.id === badgeId)) return;
     
     // Create merit badge object for profile display
-    // Note: Using Date instead of serverTimestamp() because Firestore doesn't support serverTimestamp inside arrays
     const meritBadge = {
       id: badge.id,
       name: badge.name,
       icon: badge.iconAssetKey,
       color: badge.borderColorKey,
-      imageKey: badge.imageKey,
-      earnedAt: new Date().toISOString(),
+      earnedAt: serverTimestamp(),
     };
     
     await updateDoc(profileRef, {

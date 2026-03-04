@@ -543,7 +543,7 @@ export const GATING_REGISTRY: GateDefinition[] = [
     triggerModal: "AccountRequiredModal",
     paywallTriggerKey: null,
     accountModalTriggerKey: "feedback_create",
-    notes: "UNGATED 2026-03-03: Feedback is accessible to all logged-in users",
+    notes: "Submitting feedback available to all logged-in users",
   },
   {
     gateKey: "feedback_vote",
@@ -556,7 +556,7 @@ export const GATING_REGISTRY: GateDefinition[] = [
     triggerModal: "AccountRequiredModal",
     paywallTriggerKey: null,
     accountModalTriggerKey: "feedback_vote",
-    notes: "UNGATED 2026-03-03: Feedback voting is accessible to all logged-in users",
+    notes: "Voting on feedback available to all logged-in users",
   },
   {
     gateKey: "feedback_comment",
@@ -569,7 +569,7 @@ export const GATING_REGISTRY: GateDefinition[] = [
     triggerModal: "AccountRequiredModal",
     paywallTriggerKey: null,
     accountModalTriggerKey: "feedback_comment",
-    notes: "UNGATED 2026-03-03: Feedback commenting is accessible to all logged-in users",
+    notes: "Commenting on feedback available to all logged-in users",
   },
 ];
 

@@ -24,6 +24,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 
+import ModalHeader from "../components/ModalHeader";
 import { resolveBadgeImage, deriveImageKey } from "../assets/images/merit_badges/resolveBadgeImage";
 
 import { auth } from "../config/firebase";
@@ -53,11 +54,14 @@ import {
 type MeritBadgesNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const BADGE_TILE_WIDTH = 88;
-const BADGE_IMAGE_SIZE = 74;
+const BADGE_IMAGE_SIZE = 72;
 
 export default function MeritBadgesScreen() {
   const navigation = useNavigation<MeritBadgesNavigationProp>();
   const insets = useSafeAreaInsets();
+
+  // Show ModalHeader when accessed standalone (not via LearnTopTabsNavigator)
+  const isStandalone = navigation.canGoBack();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -126,17 +130,25 @@ export default function MeritBadgesScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: PARCHMENT, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color={DEEP_FOREST} />
-        <Text style={{ marginTop: 16, fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
-          Loading badges...
-        </Text>
+      <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
+        {isStandalone && (
+          <ModalHeader title="Merit Badges" onBack={() => navigation.goBack()} />
+        )}
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator size="large" color={DEEP_FOREST} />
+          <Text style={{ marginTop: 16, fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
+            Loading badges...
+          </Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
+      {isStandalone && (
+        <ModalHeader title="Merit Badges" onBack={() => navigation.goBack()} />
+      )}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
@@ -417,10 +429,10 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
         <Image
           source={badgeImage}
           style={{
-            width: "121%",
-            height: "121%",
-            marginLeft: "-10.5%",
-            marginTop: "-10.5%",
+            width: "130%",
+            height: "130%",
+            marginLeft: "-15%",
+            marginTop: "-15%",
           }}
           resizeMode="cover"
         />
@@ -440,6 +452,27 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
             }}
           >
             {isLocked && <Ionicons name="lock-closed" size={16} color={TEXT_MUTED} />}
+          </View>
+        )}
+
+        {/* Checkmark for earned badges */}
+        {isEarned && (
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              backgroundColor: EARTH_GREEN,
+              justifyContent: "center",
+              alignItems: "center",
+              borderWidth: 2,
+              borderColor: PARCHMENT,
+            }}
+          >
+            <Ionicons name="checkmark" size={10} color="#FFF" />
           </View>
         )}
       </View>

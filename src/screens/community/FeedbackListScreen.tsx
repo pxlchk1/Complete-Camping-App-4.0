@@ -14,7 +14,7 @@ import { auth } from "../../config/firebase";
 import AccountRequiredModal from "../../components/AccountRequiredModal";
 import OnboardingModal from "../../components/OnboardingModal";
 import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
-import { requireAccount, assertFeedbackNotGated } from "../../utils/gating";
+import { requireAccount } from "../../utils/gating";
 import { shouldShowInFeed } from "../../services/moderationService";
 import { RootStackNavigationProp } from "../../navigation/types";
 import CommunitySectionHeader from "../../components/CommunitySectionHeader";
@@ -101,17 +101,23 @@ export default function FeedbackListScreen() {
   };
   
   const handleCreatePost = () => {
-    // Feedback is ungated - anyone with an account can submit
-    assertFeedbackNotGated("feedback_create");
-    if (!requireAccount({ openAccountModal: () => setShowLoginModal(true) })) return;
+    // Feedback submission requires account (free for all logged-in users)
+    if (!requireAccount({
+      openAccountModal: () => setShowLoginModal(true),
+    })) {
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     navigation.navigate("CreateFeedback");
   };
 
   const handleUpvote = async (postId: string) => {
-    // Feedback voting is ungated - anyone with an account can vote
-    assertFeedbackNotGated("feedback_vote");
-    if (!requireAccount({ openAccountModal: () => setShowLoginModal(true) })) return;
+    // Voting requires account (free for all logged-in users)
+    if (!requireAccount({
+      openAccountModal: () => setShowLoginModal(true),
+    })) {
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await feedbackService.upvoteFeedback(postId);
@@ -124,9 +130,12 @@ export default function FeedbackListScreen() {
   };
 
   const handleDownvote = async (postId: string) => {
-    // Feedback voting is ungated - anyone with an account can vote
-    assertFeedbackNotGated("feedback_vote");
-    if (!requireAccount({ openAccountModal: () => setShowLoginModal(true) })) return;
+    // Voting requires account (free for all logged-in users)
+    if (!requireAccount({
+      openAccountModal: () => setShowLoginModal(true),
+    })) {
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await feedbackService.adjustKarma(postId, -1);
@@ -208,7 +217,7 @@ export default function FeedbackListScreen() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTopWidth: 1, borderColor: BORDER_SOFT }}>
           <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
             <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-              {item.authorName || "Camper"}
+              {item.authorName || "Anonymous"}
             </Text>
             <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>
             <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: TEXT_MUTED }}>

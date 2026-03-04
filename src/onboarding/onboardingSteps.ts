@@ -82,12 +82,17 @@ async function ensureUserDoc(params: BootstrapAccountParams): Promise<void> {
     return; // Already exists, skip creation
   }
 
+  // Extract firstName from displayName for Home welcome greeting
+  const firstName = displayName.split(' ')[0] || displayName;
+
   // Safe minimal payload - NO subscription fields
   const userData: DocumentData = {
     email: email,
     displayName: displayName,
     handle: handle,
     photoURL: photoURL || null,
+    firstName: firstName, // Store firstName separately for personalized welcome
+    hasSeenWelcomeHome: false, // Track first-time Home visit
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
     // Default notification settings - these are safe non-subscription fields

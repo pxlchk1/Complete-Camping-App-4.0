@@ -309,10 +309,74 @@ export default function ParkDetailModal({
     }
   };
 
-  const handleReserveSite = () => {
+  const handleReserveSite = async () => {
     // Use reservationUrl state which is set from park.url or fetched from Firebase
-    if (reservationUrl) {
-      Linking.openURL(reservationUrl);
+    if (!reservationUrl) {
+      console.warn("[ParkDetailModal] handleReserveSite called without URL");
+      return;
+    }
+
+    // Validate URL format
+    let url = reservationUrl.trim();
+    
+    // Ensure URL has protocol
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = `https://${url}`;
+    }
+
+    // Basic URL validation
+    try {
+      new URL(url);
+    } catch {
+      console.error("[ParkDetailModal] Invalid reservation URL:", {
+        parkId: park?.id,
+        parkName: park?.name,
+        url: reservationUrl,
+      });
+      Alert.alert(
+        "Invalid Link",
+        "This park's reservation link appears to be invalid. Please try searching for the park directly on recreation.gov or the park's official website.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    // Check if the URL can be opened
+    const canOpen = await Linking.canOpenURL(url);
+    if (!canOpen) {
+      console.error("[ParkDetailModal] Cannot open reservation URL:", {
+        parkId: park?.id,
+        parkName: park?.name,
+        url,
+      });
+      Alert.alert(
+        "Cannot Open Link",
+        "Unable to open this reservation link. Please try searching for the park directly on recreation.gov or the park's official website.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
+    // Open the URL with error handling
+    try {
+      console.log("[ParkDetailModal] Opening reservation URL:", {
+        parkId: park?.id,
+        parkName: park?.name,
+        url,
+      });
+      await Linking.openURL(url);
+    } catch (error: any) {
+      console.error("[ParkDetailModal] Failed to open reservation URL:", {
+        parkId: park?.id,
+        parkName: park?.name,
+        url,
+        error: error.message,
+      });
+      Alert.alert(
+        "Error Opening Link",
+        "There was a problem opening this reservation link. Please try again or search for the park directly on recreation.gov.",
+        [{ text: "OK" }]
+      );
     }
   };
 

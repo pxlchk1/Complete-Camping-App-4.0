@@ -10,8 +10,9 @@ import {
   Modal,
   Pressable,
   ActivityIndicator,
-  Share,
   Alert,
+  Linking,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,7 +25,6 @@ import {
   createCampgroundInvite,
   sendCampgroundInviteEmail,
   getInviteLink,
-  generateInviteMessage,
   findPendingInviteByEmail,
 } from "../services/campgroundInviteService";
 import { getCopyableInviteText } from "../constants/appLinks";
@@ -125,21 +125,43 @@ export default function InviteOptionsSheet({
       return;
     }
 
+    const user = auth.currentUser;
+
+    console.log("[InviteOptionsSheet] handleEmailInvite started:", {
+      inviterUserId: user?.uid,
+      inviteeEmail: contact.contactEmail,
+      contactName: contact.contactName,
+    });
+
     try {
       setLoading("email");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
       const invite = await ensureInvite();
       if (!invite) {
+        console.error("[InviteOptionsSheet] handleEmailInvite failed - no invite created:", {
+          inviterUserId: user?.uid,
+          inviteeEmail: contact.contactEmail,
+        });
         setLoading(null);
         return;
       }
 
+      console.log("[InviteOptionsSheet] Invite obtained, sending email:", {
+        inviteId: invite.inviteId,
+        inviteeEmail: contact.contactEmail,
+        campgroundId: invite.campgroundId,
+      });
+
       // Send email via Cloud Function
       await sendCampgroundInviteEmail(invite.inviteId);
 
+      console.log("[InviteOptionsSheet] Email sent successfully:", {
+        inviteId: invite.inviteId,
+        inviteeEmail: contact.contactEmail,
+      });
+
       // Track analytics and core action
-      const user = auth.currentUser;
       trackBuddyInviteSent("email");
       if (user?.uid) {
         trackCoreAction(user.uid, "buddy_invited");
@@ -151,7 +173,12 @@ export default function InviteOptionsSheet({
       onSuccess?.();
       onClose();
     } catch (error: any) {
-      console.error("Error sending email invite:", error);
+      console.error("[InviteOptionsSheet] handleEmailInvite failed:", {
+        inviterUserId: user?.uid,
+        inviteeEmail: contact.contactEmail,
+        errorMessage: error.message,
+        errorStack: error.stack,
+      });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert("Error", error.message || "Failed to send invite email");
     } finally {
@@ -160,9 +187,19 @@ export default function InviteOptionsSheet({
   };
 
   /**
-   * Handle send text invite (opens share sheet)
+   * Handle send text invite (opens native SMS with pre-filled recipient and message)
    */
   const handleTextInvite = async () => {
+    // Validate phone number exists
+    if (!contact.contactPhone) {
+      Alert.alert(
+        "Phone Number Required",
+        "This contact does not have a phone number. Please add a phone number first, or use Copy Invite Link.",
+        [{ text: "OK" }]
+      );
+      return;
+    }
+
     try {
       setLoading("text");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -173,40 +210,60 @@ export default function InviteOptionsSheet({
         return;
       }
 
-      // Get inviter name from profile
-      const user = auth.currentUser;
-      let inviterName = "A camper";
-      if (user) {
-        const profileDoc = await getDoc(doc(db, "profiles", user.uid));
-        if (profileDoc.exists()) {
-          inviterName = profileDoc.data().displayName || user.displayName || "A camper";
-        } else if (user.displayName) {
-          inviterName = user.displayName;
-        }
-      }
+      // Construct the invite message
+      const inviteMessage = `Join My Campground on The Complete Camping App. Here's your invite link: ${invite.inviteLink}`;
 
-      // Open share sheet - pass token instead of link
-      const message = generateInviteMessage(inviterName, invite.token);
+      // Format phone number (remove non-digits for SMS)
+      const phoneDigits = contact.contactPhone.replace(/\D/g, "");
       
-      const result = await Share.share({
-        message,
+      // Construct SMS URL with recipient and body
+      // iOS format: sms:+1234567890&body=message
+      // Android format: sms:+1234567890?body=message
+      const separator = Platform.OS === "ios" ? "&" : "?";
+      const encodedMessage = encodeURIComponent(inviteMessage);
+      const smsUrl = `sms:${phoneDigits}${separator}body=${encodedMessage}`;
+
+      console.log("[InviteOptionsSheet] Opening SMS:", {
+        phone: phoneDigits,
+        hasInviteLink: !!invite.inviteLink,
       });
 
-      if (result.action === Share.sharedAction) {
-        // Track analytics and core action
-        trackBuddyInviteSent("text");
-        if (user?.uid) {
-          trackCoreAction(user.uid, "buddy_invited");
-        }
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        onSuccess?.();
-        onClose();
+      // Check if SMS is available
+      const canOpen = await Linking.canOpenURL(smsUrl);
+      if (!canOpen) {
+        console.error("[InviteOptionsSheet] Cannot open SMS URL:", smsUrl);
+        Alert.alert(
+          "SMS Unavailable",
+          "Unable to open the Messages app. Try using Copy Invite Link instead.",
+          [{ text: "OK" }]
+        );
+        setLoading(null);
+        return;
       }
+
+      // Open native SMS composer
+      await Linking.openURL(smsUrl);
+
+      // Track analytics and core action
+      const user = auth.currentUser;
+      trackBuddyInviteSent("text");
+      if (user?.uid) {
+        trackCoreAction(user.uid, "buddy_invited");
+      }
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onSuccess?.();
+      onClose();
     } catch (error: any) {
-      console.error("Error sharing invite:", error);
-      if (error.message !== "User did not share") {
-        Alert.alert("Error", "Failed to share invite");
-      }
+      console.error("[InviteOptionsSheet] Error opening SMS:", {
+        error: error.message,
+        phone: contact.contactPhone,
+      });
+      Alert.alert(
+        "SMS Failed",
+        "Could not open Messages. Please try Copy Invite Link instead.",
+        [{ text: "OK" }]
+      );
     } finally {
       setLoading(null);
     }

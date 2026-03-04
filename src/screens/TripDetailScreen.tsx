@@ -48,6 +48,7 @@ import * as PackingV2 from "../services/packingListServiceV2";
 import { RootStackParamList } from "../navigation/types";
 import { format } from "date-fns";
 import { requirePro } from "../utils/gating";
+import { isPremiumUser, ensureFreePremiumTripId } from "../utils/entitlements";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import UpsellModal from "../components/UpsellModal";
 import { useUpsellStore, UPSELL_COPY } from "../state/upsellStore";
@@ -255,12 +256,17 @@ export default function TripDetailScreen() {
   );
 
   const handleOpenPacking = useCallback(async () => {
-    // Gate: Pro-only feature
-    const canProceed = requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "packing_list", variant }),
-    });
-    if (!canProceed) return;
+    // Check if user can access packing for this trip
+    const userId = auth.currentUser?.uid;
+    if (!isPremiumUser() && userId) {
+      const trips = useTripsStore.getState().trips;
+      const freeTripId = await ensureFreePremiumTripId(userId, trips);
+      if (tripId !== freeTripId) {
+        // Not the free trip - show paywall
+        navigation.navigate("Paywall", { triggerKey: "packing_list" });
+        return;
+      }
+    }
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -287,15 +293,20 @@ export default function TripDetailScreen() {
       tripWinterCamping: trip.winterCamping,
       tripPackingSeasonOverride: trip.packingSeasonOverride,
     });
-  }, [navigation, trip, localPackingLists]);
+  }, [navigation, trip, localPackingLists, tripId]);
 
   const handleOpenMeals = useCallback(async () => {
-    // Gate: Pro-only feature
-    const canProceed = requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_planner", variant }),
-    });
-    if (!canProceed) return;
+    // Check if user can access meals for this trip
+    const userId = auth.currentUser?.uid;
+    if (!isPremiumUser() && userId) {
+      const trips = useTripsStore.getState().trips;
+      const freeTripId = await ensureFreePremiumTripId(userId, trips);
+      if (tripId !== freeTripId) {
+        // Not the free trip - show paywall
+        navigation.navigate("Paywall", { triggerKey: "meal_planner" });
+        return;
+      }
+    }
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -303,7 +314,7 @@ export default function TripDetailScreen() {
       // ignore
     }
     if (trip) navigation.navigate("MealPlanning", { tripId: trip.id });
-  }, [navigation, trip]);
+  }, [navigation, trip, tripId]);
 
   const handleOpenWeather = useCallback(async () => {
     try {

@@ -27,6 +27,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useCurrentUser } from "../../state/userStore";
 import { RootStackNavigationProp } from "../../navigation/types";
 import { createPhotoPost } from "../../services/photoPostsService";
+import { getConnectDisplayHandle } from "../../services/handleService";
 import { requireEmailVerification } from "../../utils/authHelper";
 import { recordPhotoUpload, canUploadPhotoToday } from "../../services/photoLimitService";
 import {
@@ -217,7 +218,7 @@ export default function PhotoComposerScreen() {
       // Create photo post
       const postId = await createPhotoPost({
         userId: currentUser.id,
-        displayName: currentUser.displayName || "Anonymous",
+        displayName: getConnectDisplayHandle(currentUser.displayName, currentUser.id),
         userHandle: currentUser.handle,
         photoUrls: [downloadURL],
         storagePaths: [storagePath],

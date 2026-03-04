@@ -89,6 +89,7 @@ import BadgeDetailScreen from "../screens/BadgeDetailScreen";
 import SelectWitnessScreen from "../screens/SelectWitnessScreen";
 import WitnessRequestsScreen from "../screens/WitnessRequestsScreen";
 import MyBadgesScreen from "../screens/MyBadgesScreen";
+import MeritBadgeAssetCheck from "../screens/MeritBadgeAssetCheck";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
@@ -190,6 +191,9 @@ export default function RootNavigator() {
       <Stack.Screen name="SelectWitness" component={SelectWitnessScreen} />
       <Stack.Screen name="WitnessRequests" component={WitnessRequestsScreen} />
       <Stack.Screen name="MyBadges" component={MyBadgesScreen} />
+      {/* Dev-only badge asset verification */}
+      {__DEV__ && <Stack.Screen name="MeritBadgeAssetCheck" component={MeritBadgeAssetCheck} />}
+
 
       {/* Subscription */}
       {PAYWALL_ENABLED && (

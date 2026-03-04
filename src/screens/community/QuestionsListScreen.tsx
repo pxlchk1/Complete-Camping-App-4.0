@@ -37,6 +37,7 @@ import {
 } from "../../constants/colors";
 import HandleLink from "../../components/HandleLink";
 import { DocumentSnapshot } from "firebase/firestore";
+import { getConnectDisplayHandle } from "../../services/handleService";
 
 type FilterOption = "all" | "unanswered" | "answered" | "popular";
 
@@ -250,12 +251,12 @@ export default function QuestionsListScreen() {
           ) : item.authorId ? (
             <Pressable onPress={() => navigation.navigate("MyCampsite", { userId: item.authorId })}>
               <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: DEEP_FOREST, textDecorationLine: "underline" }}>
-                {item.authorHandle ? `@${item.authorHandle}` : "Anonymous"}
+                @{getConnectDisplayHandle(item.authorHandle, item.authorId)}
               </Text>
             </Pressable>
           ) : (
             <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-              {item.authorHandle ? `@${item.authorHandle}` : "Anonymous"}
+              @{getConnectDisplayHandle(item.authorHandle, item.authorId)}
             </Text>
           )}
           <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>

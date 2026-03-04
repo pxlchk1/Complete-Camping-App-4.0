@@ -248,7 +248,6 @@ export default function LearnTopTabsNavigator() {
             textTransform: "none",
           },
           tabBarScrollEnabled: false,
-          lazy: false,
         }}
         screenListeners={({ navigation }) => {
           if (!tabNavigationRef.current) {

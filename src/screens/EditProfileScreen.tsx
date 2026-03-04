@@ -29,7 +29,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import { auth, db, storage } from "../config/firebase";
-import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useCurrentUser, useUserStore } from "../state/userStore";
@@ -278,14 +278,14 @@ export default function EditProfileScreen() {
     const user = auth.currentUser;
     if (!user) return;
 
-    // Validate display name
+    // Validate first name
     if (!displayName.trim()) {
-      Alert.alert("Required Field", "Please enter a display name");
+      Alert.alert("Required Field", "Please enter your first name");
       return;
     }
 
     if (displayName.length < 1 || displayName.length > 50) {
-      Alert.alert("Invalid Name", "Display name must be between 1 and 50 characters");
+      Alert.alert("Invalid Name", "First name must be between 1 and 50 characters");
       return;
     }
 
@@ -317,13 +317,17 @@ export default function EditProfileScreen() {
     try {
       setSaving(true);
 
+      // Use the entered first name directly for Home welcome greeting
+      const enteredFirstName = displayName.trim();
+
       // Update users collection with account fields
       const userRef = doc(db, "users", user.uid);
-      await updateDoc(userRef, {
-        displayName: displayName.trim(),
+      await setDoc(userRef, {
+        displayName: enteredFirstName,
         handle: cleanHandle,
+        firstName: enteredFirstName, // Store firstName for welcome greeting
         updatedAt: serverTimestamp(),
-      });
+      }, { merge: true });
 
       // Update profiles collection with correct field names
       const profileRef = doc(db, "profiles", user.uid);
@@ -336,14 +340,16 @@ export default function EditProfileScreen() {
         return acc;
       }, {} as Record<string, string>);
       
-      await updateDoc(profileRef, {
+      await setDoc(profileRef, {
+        displayName: enteredFirstName,
+        handle: cleanHandle,
         about: about.trim() || null,
         favoriteCampingStyle: favoriteCampingStyle || null,
         favoriteGear: Object.keys(gearToSave).length > 0 ? gearToSave : null,
         avatarUrl: photoURL || null,
         backgroundUrl: coverPhotoURL || null,
         updatedAt: serverTimestamp(),
-      });
+      }, { merge: true });
 
       // Update local store (keeping photoURL/coverPhotoURL for backward compatibility)
       updateCurrentUser({
@@ -691,18 +697,18 @@ export default function EditProfileScreen() {
               className="mb-6 p-4 rounded-xl border"
               style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
             >
-              {/* Display Name */}
+              {/* First Name */}
               <View className="mb-4">
                 <Text
                   className="mb-2"
                   style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
                 >
-                  Display Name *
+                  First Name *
                 </Text>
                 <TextInput
                   value={displayName}
                   onChangeText={setDisplayName}
-                  placeholder="Your name"
+                  placeholder="Your first name"
                   placeholderTextColor={TEXT_MUTED}
                   className="px-4 py-3 rounded-xl border"
                   style={{

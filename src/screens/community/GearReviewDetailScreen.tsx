@@ -33,6 +33,7 @@ import { isAdmin, isModerator, canModerateContent } from "../../services/userSer
 import { User } from "../../types/user";
 import { useCurrentUser } from "../../state/userStore";
 import { auth, db } from "../../config/firebase";
+import { getConnectDisplayHandle } from "../../services/handleService";
 
 /** Fallback theme values (safe if your constants are not available here). */
 const DEEP_FOREST = "#1F3B2C";
@@ -577,12 +578,12 @@ export default function GearReviewDetailScreen() {
           ) : review.authorId ? (
             <Pressable onPress={() => navigation.navigate("MyCampsite", { userId: review.authorId })}>
               <Text className="text-sm" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
-                {review.displayName || "View Profile"}
+                @{getConnectDisplayHandle(review.authorHandle, review.authorId)}
               </Text>
             </Pressable>
           ) : (
             <Text className="text-sm" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
-              Anonymous
+              @{getConnectDisplayHandle(review.authorHandle, review.authorId)}
             </Text>
           )}
           <VotePill

@@ -55,6 +55,11 @@ type TripLike = {
     latitude: number;
     longitude: number;
   };
+  weatherDestination?: {
+    label?: string;
+    lat?: number;
+    lon?: number;
+  } | null;
 };
 
 const hasState = (loc: LocationLike): loc is LocationLike & { state: string } =>
@@ -1190,7 +1195,10 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   </Text>
                 </View>
               ) : (
-                trips.map((trip) => (
+                trips.map((trip) => {
+                  const hasWeather = !!trip.weatherDestination;
+                  
+                  return (
                   <Pressable
                     key={trip.id}
                     onPress={async () => {
@@ -1244,36 +1252,72 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                         setTimeout(() => setToastMessage(null), 3000);
                       }
                     }}
-                    style={{
-                      backgroundColor: CARD_BACKGROUND_LIGHT,
+                    style={({ pressed }) => ({
+                      backgroundColor: hasWeather 
+                        ? (pressed ? "rgba(69, 117, 86, 0.9)" : EARTH_GREEN)
+                        : (pressed ? "rgba(69, 117, 86, 0.15)" : "rgba(69, 117, 86, 0.08)"),
                       borderRadius: radius.md,
                       padding: spacing.md,
                       marginBottom: spacing.sm,
-                      borderWidth: 1,
-                      borderColor: BORDER_SOFT,
-                    }}
+                      borderWidth: hasWeather ? 0 : 2,
+                      borderColor: EARTH_GREEN,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    })}
                   >
-                    <Text
-                      style={{
-                        fontFamily: fonts.displaySemibold,
-                        fontSize: fontSizes.sm,
-                        color: DEEP_FOREST,
-                        marginBottom: spacing.xxs,
-                      }}
-                    >
-                      {trip.name}
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: fonts.bodyRegular,
-                        fontSize: fontSizes.xs,
-                        color: TEXT_SECONDARY,
-                      }}
-                    >
-                      {formatTripRange(trip.startDate, trip.endDate)}
-                    </Text>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        {hasWeather && (
+                          <Ionicons 
+                            name="checkmark-circle" 
+                            size={16} 
+                            color={PARCHMENT} 
+                            style={{ marginRight: 6 }} 
+                          />
+                        )}
+                        <Text
+                          style={{
+                            fontFamily: fonts.displaySemibold,
+                            fontSize: fontSizes.sm,
+                            color: hasWeather ? PARCHMENT : DEEP_FOREST,
+                            marginBottom: spacing.xxs,
+                          }}
+                        >
+                          {trip.name}
+                        </Text>
+                      </View>
+                      <Text
+                        style={{
+                          fontFamily: fonts.bodyRegular,
+                          fontSize: fontSizes.xs,
+                          color: hasWeather ? "rgba(255, 255, 255, 0.8)" : TEXT_SECONDARY,
+                        }}
+                      >
+                        {formatTripRange(trip.startDate, trip.endDate)}
+                        {hasWeather && trip.weatherDestination?.label && ` • ${trip.weatherDestination.label}`}
+                      </Text>
+                    </View>
+                    <View style={{ 
+                      flexDirection: "row", 
+                      alignItems: "center",
+                      backgroundColor: hasWeather ? "rgba(255, 255, 255, 0.2)" : EARTH_GREEN,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 6,
+                    }}>
+                      <Text style={{ 
+                        fontFamily: fonts.displaySemibold, 
+                        fontSize: fontSizes.xs, 
+                        color: PARCHMENT,
+                        marginRight: 4,
+                      }}>
+                        {hasWeather ? "Update" : "Add"}
+                      </Text>
+                      <Ionicons name="chevron-forward" size={14} color={PARCHMENT} />
+                    </View>
                   </Pressable>
-                ))
+                );})
               )}
             </ScrollView>
           </Pressable>

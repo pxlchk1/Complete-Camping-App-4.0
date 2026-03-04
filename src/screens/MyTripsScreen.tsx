@@ -9,6 +9,7 @@ import { usePlanTabStore, PlanTab } from "../state/planTabStore";
 import { usePackingStore } from "../state/packingStore";
 import { useUserStatus } from "../utils/authHelper";
 import { requirePro, requireAccount } from "../utils/gating";
+import { isPremiumUser, getFreePremiumTripId, setFreePremiumTripId, ensureFreePremiumTripId } from "../utils/entitlements";
 import { useAuthStore } from "../state/authStore";
 import { getTripsCreatedCount } from "../services/userActionTrackerService";
 import TripCard from "../components/TripCard";
@@ -130,16 +131,14 @@ export default function MyTripsScreen() {
     });
     if (!hasAccount) return;
 
-    // Get total trips ever created from Firestore
-    const tripsCreatedCount = currentUser ? await getTripsCreatedCount(currentUser.id) : 0;
-    
-    if (tripsCreatedCount >= 1) {
-      // User has already used their free trip - requires Pro
-      const canProceed = requirePro({
-        openAccountModal: () => setShowAccountModal(true),
-        openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "second_trip", variant }),
-      });
-      if (!canProceed) return;
+    // Check if free user already has a trip (using entitlements)
+    if (!isPremiumUser() && currentUser?.id) {
+      const freeTripId = await getFreePremiumTripId(currentUser.id);
+      if (freeTripId) {
+        // Free user already has a trip - show paywall
+        nav.navigate("Paywall", { triggerKey: "second_trip" });
+        return;
+      }
     }
     
     setShowCreate(true);
@@ -162,13 +161,16 @@ export default function MyTripsScreen() {
   };
 
   // Navigate to packing list for a specific trip
-  const handlePackingPress = (tripId: string) => {
-    // Gate: Pro-only feature
-    const canProceed = requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "packing_list", variant }),
-    });
-    if (!canProceed) return;
+  const handlePackingPress = async (tripId: string) => {
+    // Check if user can access packing for this trip
+    if (!isPremiumUser() && currentUser?.id) {
+      const freeTripId = await ensureFreePremiumTripId(currentUser.id, trips);
+      if (tripId !== freeTripId) {
+        // Not the free trip - show paywall
+        nav.navigate("Paywall", { triggerKey: "packing_list" });
+        return;
+      }
+    }
 
     safeHaptic();
     
@@ -196,13 +198,16 @@ export default function MyTripsScreen() {
   };
 
   // Navigate to meals for a specific trip
-  const handleMealsPress = (tripId: string) => {
-    // Gate: Pro-only feature
-    const canProceed = requirePro({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "meal_planner", variant }),
-    });
-    if (!canProceed) return;
+  const handleMealsPress = async (tripId: string) => {
+    // Check if user can access meals for this trip
+    if (!isPremiumUser() && currentUser?.id) {
+      const freeTripId = await ensureFreePremiumTripId(currentUser.id, trips);
+      if (tripId !== freeTripId) {
+        // Not the free trip - show paywall
+        nav.navigate("Paywall", { triggerKey: "meal_planner" });
+        return;
+      }
+    }
 
     safeHaptic();
     nav.navigate("MealPlanning", { tripId });
@@ -296,7 +301,14 @@ export default function MyTripsScreen() {
         <CreateTripModal
           visible={showCreate}
           onClose={() => setShowCreate(false)}
-          onTripCreated={(tripId) => {
+          onTripCreated={async (tripId) => {
+            // Set free premium trip ID for free users creating their first trip (guard against double-set)
+            if (!isPremiumUser() && currentUser?.id) {
+              const existingId = await getFreePremiumTripId(currentUser.id);
+              if (!existingId) {
+                await setFreePremiumTripId(currentUser.id, tripId);
+              }
+            }
             if (isFree) setHasUsedFreeTrip(true);
             setShowCreate(false);
           }}
@@ -507,7 +519,14 @@ export default function MyTripsScreen() {
       <CreateTripModal
         visible={showCreate}
         onClose={() => setShowCreate(false)}
-        onTripCreated={(tripId) => {
+        onTripCreated={async (tripId) => {
+          // Set free premium trip ID for free users creating their first trip (guard against double-set)
+          if (!isPremiumUser() && currentUser?.id) {
+            const existingId = await getFreePremiumTripId(currentUser.id);
+            if (!existingId) {
+              await setFreePremiumTripId(currentUser.id, tripId);
+            }
+          }
           if (isFree) setHasUsedFreeTrip(true);
           setShowCreate(false);
         }}

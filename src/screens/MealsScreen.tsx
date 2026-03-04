@@ -33,7 +33,8 @@ import * as Haptics from "expo-haptics";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../config/firebase";
 import * as LocalMealService from "../services/localMealService";
-import { requirePro, requireProOrFreeTrip } from "../utils/gating";
+import { requirePro } from "../utils/gating";
+import { canAccessPackingAndMeals, isPremiumUser } from "../utils/entitlements";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 
 type PlanTab = "trips" | "parks" | "weather" | "packing" | "meals";
@@ -225,13 +226,8 @@ export default function MealsScreen({ onTabChange }: MealsScreenProps) {
   };
 
   const handleAddToTripPress = async (recipe: MealLibraryItem) => {
-    // Gate: PRO or Free Trip access required to add meals to trips
-    if (!requireProOrFreeTrip({
-      openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meals_add_to_trip", variant }),
-    })) {
-      return;
-    }
+    // No longer gate here - gate will happen when user confirms the trip selection
+    // This allows free users to browse the add-to-trip modal
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -247,6 +243,26 @@ export default function MealsScreen({ onTabChange }: MealsScreenProps) {
 
   const handleConfirmAddToTrip = async () => {
     if (!selectedRecipe || !selectedTripForAdd) return;
+
+    // Gate: Check if user can access meals for this trip
+    // Premium users can access all trips; free users only their free trip
+    let hasAccess = false;
+    try {
+      hasAccess = await canAccessPackingAndMeals(selectedTripForAdd, trips);
+    } catch (error) {
+      console.error("[MealsScreen] Error checking meal access:", error);
+      // On error, default to showing paywall rather than allowing access
+      setShowAddToTrip(false);
+      navigation.navigate("Paywall", { triggerKey: "meals_add_to_trip" });
+      return;
+    }
+
+    if (!hasAccess) {
+      // User cannot access meals for this trip - show paywall
+      setShowAddToTrip(false);
+      navigation.navigate("Paywall", { triggerKey: "meals_add_to_trip" });
+      return;
+    }
 
     try {
       const mealData = {

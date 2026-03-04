@@ -40,6 +40,10 @@ const linking: LinkingOptions<RootStackParamList> = {
   ],
   config: {
     screens: {
+      // Paywall / subscription screen
+      Paywall: {
+        path: 'paywall',
+      },
       // New campground invite format: /join?token=<token>
       AcceptInvite: {
         path: 'join',

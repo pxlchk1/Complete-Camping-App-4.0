@@ -3,6 +3,9 @@
  * 
  * A clickable @handle that navigates to the user's My Campsite profile.
  * Use this anywhere a user's handle is displayed in the Connect section.
+ * 
+ * Automatically validates handles and falls back to "camper" placeholders
+ * for invalid handles like "Anonymous" or "user".
  */
 
 import React from "react";
@@ -11,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/types";
 import { DEEP_FOREST } from "../constants/colors";
+import { getConnectDisplayHandle } from "../services/handleService";
 
 interface HandleLinkProps {
   /** The user's handle (without @ prefix) */
@@ -46,8 +50,8 @@ export default function HandleLink({
 }: HandleLinkProps) {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  // Normalize handle - remove any existing @ prefix
-  const normalizedHandle = handle?.replace(/^@+/, "") || "";
+  // Validate and normalize handle - falls back to "camper" placeholder for invalid handles
+  const normalizedHandle = getConnectDisplayHandle(handle?.replace(/^@+/, ""), userId);
 
   const handlePress = () => {
     if (userId) {
@@ -78,14 +82,17 @@ export default function HandleLink({
  */
 export function HandleText({
   handle,
+  userId,
   showAtSymbol = true,
   style,
 }: {
   handle: string;
+  userId?: string;
   showAtSymbol?: boolean;
   style?: StyleProp<TextStyle>;
 }) {
-  const normalizedHandle = handle?.replace(/^@+/, "") || "";
+  // Validate and normalize handle - falls back to "camper" placeholder for invalid handles
+  const normalizedHandle = getConnectDisplayHandle(handle?.replace(/^@+/, ""), userId);
   
   return (
     <Text style={[{ textDecorationLine: "underline" }, style]}>

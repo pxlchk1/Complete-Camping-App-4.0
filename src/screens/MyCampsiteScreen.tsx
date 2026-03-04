@@ -47,6 +47,7 @@ import {
   RUST,
 } from "../constants/colors";
 import { PrefillLocation, RootStackParamList } from "../navigation/types";
+import { isLearningTrackBadge, getLearningTrackBadgeImage } from "../assets/images/merit_badges/learningTrackBadgeImages";
 
 type MembershipTier = "free" | "freeMember" | "subscribed" | "weekendCamper" | "trailLeader" | "backcountryGuide" | "isAdmin" | "isModerator";
 
@@ -930,21 +931,26 @@ export default function MyCampsiteScreen({ navigation }: any) {
               {/* User Identity */}
               <View className="items-center mt-3">
                 <Text
-                  className="text-3xl mb-1"
-                  style={{ fontFamily: "Raleway_700Bold", color: PARCHMENT, textAlign: "center" }}
+                  style={{ 
+                    fontFamily: "Raleway_700Bold", 
+                    fontSize: 32,
+                    color: PARCHMENT, 
+                    textAlign: "center",
+                    marginBottom: 2,
+                  }}
                 >
-                  {profile.displayName}
+                  {profile.displayName?.split(" ")?.[0] || profile.displayName || "Camper"}
                 </Text>
                 <Text
-                  className="text-base mb-2"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: PARCHMENT, textAlign: "center" }}
+                  className="text-base"
+                  style={{ fontFamily: "SourceSans3_400Regular", color: PARCHMENT, opacity: 0.9, textAlign: "center" }}
                 >
-                  @{profile.handle}
+                  @{profile.handle || "user"}
                 </Text>
                 
                 {/* Membership Badge */}
                 <View
-                  className="rounded-full px-3 py-1"
+                  className="rounded-full px-3 py-1 mt-2"
                   style={{ backgroundColor: getMembershipBadgeColor(profile.membershipTier) }}
                 >
                   <Text
@@ -1068,29 +1074,39 @@ export default function MyCampsiteScreen({ navigation }: any) {
             <Ionicons name="information-circle-outline" size={16} color={TEXT_SECONDARY} />
           </Pressable>
 
-          {/* Merit Badges Row */}
-          <View className="flex-row items-start justify-center mb-4">
+          {/* Merit Badges Grid - 3 across with wrap */}
+          <View className="mb-4">
             {/* Merit Badges from Firebase */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 4 }}>
-              <View className="flex-row gap-2">
-                {/* Show badges from Firestore or a "No badges yet" message */}
-                {profile.meritBadges && profile.meritBadges.length > 0 ? (
-                  profile.meritBadges.map((badge) => (
+            {profile.meritBadges && profile.meritBadges.length > 0 ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", marginHorizontal: -8 }}>
+                {profile.meritBadges.map((badge) => {
+                  // Check if this is a learning track badge
+                  const isLearningBadge = isLearningTrackBadge(badge.id);
+                  const learningBadgeImage = isLearningBadge
+                    ? getLearningTrackBadgeImage(badge.id as BadgeId)
+                    : undefined;
+
+                  return (
                     <View
                       key={badge.id}
-                      className="items-center"
-                      style={{ width: 70 }}
+                      style={{
+                        width: "33.33%",
+                        paddingHorizontal: 8,
+                        alignItems: "center",
+                        marginBottom: 12,
+                      }}
                     >
                       <View
                         style={{
                           width: 56,
                           height: 56,
                           borderRadius: 28,
-                          backgroundColor: badge.color,
-                          borderWidth: 3,
+                          backgroundColor: isLearningBadge ? "transparent" : badge.color,
+                          borderWidth: isLearningBadge ? 0 : 3,
                           borderColor: PARCHMENT,
                           alignItems: "center",
                           justifyContent: "center",
+                          overflow: "hidden",
                           shadowColor: "#000",
                           shadowOffset: { width: 0, height: 2 },
                           shadowOpacity: 0.15,
@@ -1098,37 +1114,48 @@ export default function MyCampsiteScreen({ navigation }: any) {
                           elevation: 3,
                         }}
                       >
-                        <Ionicons name={badge.icon as any} size={28} color={PARCHMENT} />
+                        {learningBadgeImage ? (
+                          <Image
+                            source={learningBadgeImage}
+                            style={{ width: 56, height: 56 }}
+                            resizeMode="contain"
+                          />
+                        ) : (
+                          <Ionicons name={badge.icon as any} size={28} color={PARCHMENT} />
+                        )}
                       </View>
                       <Text
-                        className="text-center mt-1"
                         style={{
                           fontFamily: "SourceSans3_600SemiBold",
                           fontSize: 9,
                           color: TEXT_SECONDARY,
                           lineHeight: 11,
+                          textAlign: "center",
+                          marginTop: 4,
+                          height: 22,
                         }}
+                        numberOfLines={2}
                       >
-                        {badge.name.split(' ').join('\n')}
+                        {badge.name}
                       </Text>
                     </View>
-                  ))
-                ) : (
-                  <View className="items-center px-4 py-2">
-                    <Text
-                      style={{
-                        fontFamily: "SourceSans3_400Regular",
-                        fontSize: 13,
-                        color: TEXT_SECONDARY,
-                        fontStyle: "italic",
-                      }}
-                    >
-                      No badges earned yet
-                    </Text>
-                  </View>
-                )}
+                  );
+                })}
               </View>
-            </ScrollView>
+            ) : (
+              <View className="items-center px-4 py-2">
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_400Regular",
+                    fontSize: 13,
+                    color: TEXT_SECONDARY,
+                    fontStyle: "italic",
+                  }}
+                >
+                  No badges earned yet
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Social Stats Row */}

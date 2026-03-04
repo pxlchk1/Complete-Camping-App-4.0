@@ -83,6 +83,28 @@ service firebase.storage {
       allow write, delete: if isSignedIn();
     }
     
+    // Merit Badge photos - owner-scoped: meritBadges/{userId}/{badgeId}/{fileName}
+    // User can read/write their own badge photos
+    match /meritBadges/{userId}/{badgeId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Alternative: meritBadges without nested badgeId folder
+    match /meritBadges/{userId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+    
+    // Badge Photos - alternative path: badgePhotos/{userId}/{badgeId}/{timestamp}.jpg
+    match /badgePhotos/{userId}/{badgeId}/{fileName} {
+      allow read: if isSignedIn();
+      allow create, write: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
     // Gear Review photos - owner-scoped: gearReviews/{userId}/{fileName}
     // Owner can write, all signed-in users can read (for community display)
     match /gearReviews/{userId}/{fileName} {

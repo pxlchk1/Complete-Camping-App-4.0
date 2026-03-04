@@ -15,7 +15,7 @@ import { useContentActions } from "../../hooks/useContentActions";
 import { isAdmin, isModerator, canModerateContent } from "../../services/userService";
 import { deleteFeedback } from "../../services/connectDeletionService";
 import { User } from "../../types/user";
-import { requireAccount, assertFeedbackNotGated } from "../../utils/gating";
+import { requireAccount } from "../../utils/gating";
 import { requireEmailVerification } from "../../utils/authHelper";
 import * as Haptics from "expo-haptics";
 import {
@@ -167,9 +167,12 @@ export default function FeedbackDetailScreen() {
     const isVerified = await requireEmailVerification("comment on feedback");
     if (!isVerified) return;
 
-    // Feedback commenting is ungated - anyone with an account can comment
-    assertFeedbackNotGated("feedback_comment");
-    if (!requireAccount({ openAccountModal: () => setShowAccountRequired(true) })) return;
+    // Gate commenting behind account (free for all logged-in users)
+    if (!requireAccount({
+      openAccountModal: () => setShowAccountRequired(true),
+    })) {
+      return;
+    }
     
     if (!currentUser || !commentText.trim() || submitting) return;
 
@@ -343,12 +346,12 @@ export default function FeedbackDetailScreen() {
                 {post.authorId ? (
                   <Pressable onPress={() => navigation.navigate("MyCampsite", { userId: post.authorId })}>
                     <Text className="text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
-                      Posted by {authorName || "Camper"}
+                      Posted by {authorName || "Anonymous"}
                     </Text>
                   </Pressable>
                 ) : (
                   <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
-                    Posted by {authorName || "Camper"}
+                    Posted by {authorName || "Anonymous"}
                   </Text>
                 )}
                 <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
