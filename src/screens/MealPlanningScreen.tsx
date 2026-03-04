@@ -39,7 +39,7 @@ import {
   TEXT_SECONDARY,
   CARD_BACKGROUND_LIGHT,
 } from "../constants/colors";
-import { requirePro } from "../utils/gating";
+import { requirePro, requireProOrFreeTrip } from "../utils/gating";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import InfoButton from "../components/InfoButton";
 import OnboardingModal from "../components/OnboardingModal";
@@ -199,8 +199,8 @@ export default function MealPlanningScreen() {
   }, [loadMeals]);
 
   const handleAddMealFromLibrary = async (libraryMeal: MealLibraryItem) => {
-    // Gate: PRO required to add meals
-    if (!requirePro({
+    // Gate: PRO or Free Trip access required to add meals from library
+    if (!requireProOrFreeTrip({
       openAccountModal: () => setShowAccountModal(true),
       openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meal_planning_add", variant }),
     })) {

@@ -43,6 +43,78 @@ export type { PaywallVariant };
 
 export type AccessState = 'NO_ACCOUNT' | 'FREE' | 'PRO';
 
+// ============================================
+// ONE FREE TRIP PLANNING ACCESS
+// ============================================
+
+/**
+ * Check if user has free trip planning access
+ * 
+ * Returns true if user is logged in AND has NOT used their one free trip yet.
+ * This allows free users to access packing/meal VIEWING on their first trip,
+ * while custom items/meals are still Pro-gated.
+ */
+export function hasFreeTripPlanningAccess(): boolean {
+  const isLoggedIn = !!auth.currentUser;
+  if (!isLoggedIn) return false;
+  
+  const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
+  return !hasUsedFreeTrip;
+}
+
+/**
+ * Require Pro OR one free trip planning access
+ * 
+ * Use for: Packing list viewing, meal plan viewing (non-custom actions)
+ * Does NOT apply to: Custom packing items, custom meals (always Pro)
+ * 
+ * @param callbacks - modal callbacks (only openPaywallModal used)
+ * @returns true if user can proceed (Pro OR on free trip), false if blocked
+ */
+export function requireProOrFreeTrip(callbacks: AccessGateCallbacks): boolean {
+  // If subscriptions disabled, allow
+  if (!SUBSCRIPTIONS_ENABLED || !PAYWALL_ENABLED) {
+    return true;
+  }
+  
+  // Check if user is an administrator (admins bypass paywall)
+  const isAdmin = useUserStore.getState().isAdministrator();
+  if (isAdmin) {
+    return true;
+  }
+  
+  // Check if user is Pro
+  const isPro = useSubscriptionStore.getState().isPro;
+  if (isPro) {
+    return true;
+  }
+  
+  // Check if user has free trip planning access (logged in + hasn't used free trip)
+  if (hasFreeTripPlanningAccess()) {
+    return true;
+  }
+  
+  // Neither Pro nor free trip access - show paywall
+  const isLoggedIn = !!auth.currentUser;
+  if (!isLoggedIn) {
+    // Guest - track and show paywall
+    getPaywallVariantAndTrack().then((variant) => {
+      callbacks.openPaywallModal(variant);
+    }).catch(() => {
+      callbacks.openPaywallModal('standard');
+    });
+    return false;
+  }
+  
+  // Logged in but no access - show paywall
+  getPaywallVariantAndTrack().then((variant) => {
+    callbacks.openPaywallModal(variant);
+  }).catch(() => {
+    callbacks.openPaywallModal('standard');
+  });
+  return false;
+}
+
 export interface AccessGateCallbacks {
   showAccountPrompt?: () => void;
   openAccountModal: () => void;

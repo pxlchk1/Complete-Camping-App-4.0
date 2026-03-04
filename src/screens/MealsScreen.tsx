@@ -33,7 +33,7 @@ import * as Haptics from "expo-haptics";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "../config/firebase";
 import * as LocalMealService from "../services/localMealService";
-import { requirePro } from "../utils/gating";
+import { requirePro, requireProOrFreeTrip } from "../utils/gating";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 
 type PlanTab = "trips" | "parks" | "weather" | "packing" | "meals";
@@ -225,8 +225,8 @@ export default function MealsScreen({ onTabChange }: MealsScreenProps) {
   };
 
   const handleAddToTripPress = async (recipe: MealLibraryItem) => {
-    // Gate: PRO required to add meals to trips
-    if (!requirePro({
+    // Gate: PRO or Free Trip access required to add meals to trips
+    if (!requireProOrFreeTrip({
       openAccountModal: () => setShowAccountModal(true),
       openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "meals_add_to_trip", variant }),
     })) {
