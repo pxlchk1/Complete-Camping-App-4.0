@@ -13,11 +13,13 @@ import {
   TextInput,
   Switch,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Linking,
 } from "react-native";
+import { useToast } from "../components/ToastManager";
+import { notifySuccess, notifyError, notifyValidationError } from "../ui/notify";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -207,6 +209,20 @@ export default function SettingsScreen() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [updatingPassword, setUpdatingPassword] = useState(false);
 
+  // Toast
+  const toast = useToast();
+
+  // Validation errors
+  const [errors, setErrors] = useState<{
+    displayName?: string;
+    handle?: string;
+    newEmail?: string;
+    emailPassword?: string;
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+
   useEffect(() => {
     loadSettings();
   }, []);
@@ -239,7 +255,7 @@ export default function SettingsScreen() {
       }
     } catch (error) {
       console.error("[Settings] Error loading:", error);
-      Alert.alert("Error", "Failed to load settings");
+      notifyError(toast, "Failed to load settings");
     } finally {
       setLoading(false);
     }
@@ -248,43 +264,40 @@ export default function SettingsScreen() {
   const handleSave = async () => {
     const user = auth.currentUser;
     if (!user) {
-      Alert.alert("Error", "You must be signed in");
+      notifyError(toast, "You must be signed in");
       return;
     }
+
+    // Clear previous errors
+    setErrors({});
+
+    // Validate all fields and collect errors
+    const newErrors: typeof errors = {};
+    const cleanHandle = handle.trim().toLowerCase();
+    const isAdminEmail = user.email?.toLowerCase() === "alana@tentandlantern.com";
 
     // Validate display name
     if (!displayName.trim()) {
-      Alert.alert("Required Field", "Please enter a display name");
-      return;
+      newErrors.displayName = "Display name is required";
+    } else if (displayName.length < 1 || displayName.length > 50) {
+      newErrors.displayName = "Must be 1-50 characters";
     }
 
-    if (displayName.length < 1 || displayName.length > 50) {
-      Alert.alert("Invalid Name", "Display name must be between 1 and 50 characters");
-      return;
-    }
-
-    // Validate handle (now required)
+    // Validate handle
     if (!handle.trim()) {
-      Alert.alert("Required Field", "Please enter a handle");
-      return;
+      newErrors.handle = "Handle is required";
+    } else if (cleanHandle.length < 3 || cleanHandle.length > 30) {
+      newErrors.handle = "Must be 3-30 characters";
+    } else if (!/^[a-z0-9_-]+$/.test(cleanHandle)) {
+      newErrors.handle = "Only lowercase letters, numbers, hyphens, and underscores";
+    } else if (RESERVED_HANDLES.includes(cleanHandle) && !isAdminEmail) {
+      newErrors.handle = "This handle is reserved";
     }
 
-    const cleanHandle = handle.trim().toLowerCase();
-
-    if (cleanHandle.length < 3 || cleanHandle.length > 30) {
-      Alert.alert("Invalid Handle", "Handle must be between 3 and 30 characters");
-      return;
-    }
-
-    if (!/^[a-z0-9_-]+$/.test(cleanHandle)) {
-      Alert.alert("Invalid Handle", "Handle can only contain lowercase letters, numbers, hyphens, and underscores");
-      return;
-    }
-
-    // Allow admin email to use reserved handles
-    const isAdminEmail = user.email?.toLowerCase() === "alana@tentandlantern.com";
-    if (RESERVED_HANDLES.includes(cleanHandle) && !isAdminEmail) {
-      Alert.alert("Reserved Handle", "This handle is reserved. Please choose a different one.");
+    // If any validation errors, show inline errors + toast
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      notifyValidationError(toast);
       return;
     }
 
@@ -330,14 +343,14 @@ export default function SettingsScreen() {
       await updateEmailSubscription(user.uid, user.email || "", emailMarketingEnabled);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Success", "Settings saved successfully");
+      notifySuccess(toast, "Settings saved");
     } catch (error: any) {
       console.error("[Settings] Error saving:", error);
 
       if (error.code === "permission-denied") {
-        Alert.alert("Error", "You do not have permission to update these settings. Please try signing out and back in.");
+        notifyError(toast, "Permission denied. Try signing out and back in.");
       } else {
-        Alert.alert("Error", error.message || "Failed to save settings");
+        notifyError(toast, error.message || "Failed to save settings");
       }
     } finally {
       setSaving(false);
@@ -392,7 +405,7 @@ export default function SettingsScreen() {
       console.error("[Settings] Error toggling email marketing:", error);
       // Revert state on error
       setEmailMarketingEnabled(!value);
-      Alert.alert("Error", "Failed to update email preferences");
+      notifyError(toast, "Failed to update email preferences");
     }
   };
 
@@ -417,7 +430,7 @@ export default function SettingsScreen() {
     } catch (error: any) {
       console.error("[Settings] Error toggling transactional email:", error);
       setEmailTransactionalEnabled(!value);
-      Alert.alert("Error", "Failed to update email preferences");
+      notifyError(toast, "Failed to update email preferences");
     }
   };
 
@@ -504,11 +517,7 @@ export default function SettingsScreen() {
 
           setNotificationsEnabled(false);
 
-          Alert.alert(
-            "Notifications Disabled",
-            "To enable notifications, please go to your device Settings and allow notifications for this app.",
-            [{ text: "OK" }]
-          );
+          notifyError(toast, "Notifications blocked. Enable in device Settings.");
         }
       } else {
         // User wants to disable notifications
@@ -533,7 +542,7 @@ export default function SettingsScreen() {
       }
     } catch (error: any) {
       console.error("[Settings] Error toggling notifications:", error);
-      Alert.alert("Error", "Failed to update notification settings");
+      notifyError(toast, "Failed to update notification settings");
     }
   };
 
@@ -591,7 +600,7 @@ export default function SettingsScreen() {
       }
     } catch (error: any) {
       console.error("[Settings] Error toggling email:", error);
-      Alert.alert("Error", "Failed to update email preferences");
+      notifyError(toast, "Failed to update email preferences");
     }
   };
 
@@ -599,20 +608,24 @@ export default function SettingsScreen() {
     const user = auth.currentUser;
     if (!user || !user.email) return;
 
-    // Validate new email
-    if (!newEmail.trim()) {
-      Alert.alert("Required Field", "Please enter your new email address");
-      return;
-    }
-
+    // Clear and validate
+    setErrors({});
+    const newErrors: typeof errors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newEmail.trim())) {
-      Alert.alert("Invalid Email", "Please enter a valid email address");
-      return;
+
+    if (!newEmail.trim()) {
+      newErrors.newEmail = "Email is required";
+    } else if (!emailRegex.test(newEmail.trim())) {
+      newErrors.newEmail = "Enter a valid email address";
     }
 
     if (!emailPassword.trim()) {
-      Alert.alert("Required Field", "Please enter your current password to confirm");
+      newErrors.emailPassword = "Password is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      notifyValidationError(toast);
       return;
     }
 
@@ -646,7 +659,7 @@ export default function SettingsScreen() {
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Success", "Your email has been updated successfully");
+      notifySuccess(toast, "Email updated successfully");
 
       // Close modal and reset fields
       setShowEmailModal(false);
@@ -656,15 +669,15 @@ export default function SettingsScreen() {
       console.error("[Settings] Error updating email:", error);
 
       if (error.code === "auth/wrong-password") {
-        Alert.alert("Incorrect Password", "The password you entered is incorrect");
+        setErrors({ emailPassword: "Incorrect password" });
       } else if (error.code === "auth/email-already-in-use") {
-        Alert.alert("Email In Use", "This email is already being used by another account");
+        setErrors({ newEmail: "Email already in use" });
       } else if (error.code === "auth/invalid-email") {
-        Alert.alert("Invalid Email", "Please enter a valid email address");
+        setErrors({ newEmail: "Invalid email address" });
       } else if (error.code === "auth/requires-recent-login") {
-        Alert.alert("Session Expired", "Please sign out and sign back in before changing your email");
+        notifyError(toast, "Session expired. Sign out and back in.");
       } else {
-        Alert.alert("Error", error.message || "Failed to update email. Please try again.");
+        notifyError(toast, error.message || "Failed to update email");
       }
     } finally {
       setUpdatingEmail(false);
@@ -675,29 +688,31 @@ export default function SettingsScreen() {
     const user = auth.currentUser;
     if (!user || !user.email) return;
 
-    // Validate passwords
+    // Clear and validate
+    setErrors({});
+    const newErrors: typeof errors = {};
+
     if (!currentPassword.trim()) {
-      Alert.alert("Required Field", "Please enter your current password");
-      return;
+      newErrors.currentPassword = "Current password is required";
     }
 
     if (!newPassword.trim()) {
-      Alert.alert("Required Field", "Please enter your new password");
-      return;
+      newErrors.newPassword = "New password is required";
+    } else if (newPassword.length < 8) {
+      newErrors.newPassword = "Must be at least 8 characters";
+    } else if (currentPassword === newPassword) {
+      newErrors.newPassword = "Must differ from current password";
     }
 
-    if (newPassword.length < 8) {
-      Alert.alert("Weak Password", "Password must be at least 8 characters long");
-      return;
+    if (!confirmPassword.trim()) {
+      newErrors.confirmPassword = "Confirmation is required";
+    } else if (newPassword !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
-    if (newPassword !== confirmPassword) {
-      Alert.alert("Passwords Don't Match", "New password and confirmation do not match");
-      return;
-    }
-
-    if (currentPassword === newPassword) {
-      Alert.alert("Same Password", "New password must be different from current password");
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      notifyValidationError(toast);
       return;
     }
 
@@ -712,7 +727,7 @@ export default function SettingsScreen() {
       await updatePassword(user, newPassword);
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Success", "Your password has been updated successfully");
+      notifySuccess(toast, "Password updated successfully");
 
       // Close modal and reset fields
       setShowPasswordModal(false);
@@ -723,13 +738,13 @@ export default function SettingsScreen() {
       console.error("[Settings] Error updating password:", error);
 
       if (error.code === "auth/wrong-password") {
-        Alert.alert("Incorrect Password", "The current password you entered is incorrect");
+        setErrors({ currentPassword: "Incorrect password" });
       } else if (error.code === "auth/weak-password") {
-        Alert.alert("Weak Password", "Please choose a stronger password");
+        setErrors({ newPassword: "Choose a stronger password" });
       } else if (error.code === "auth/requires-recent-login") {
-        Alert.alert("Session Expired", "Please sign out and sign back in before changing your password");
+        notifyError(toast, "Session expired. Sign out and back in.");
       } else {
-        Alert.alert("Error", error.message || "Failed to update password. Please try again.");
+        notifyError(toast, error.message || "Failed to update password");
       }
     } finally {
       setUpdatingPassword(false);
@@ -789,17 +804,25 @@ export default function SettingsScreen() {
                 </Text>
                 <TextInput
                   value={displayName}
-                  onChangeText={setDisplayName}
+                  onChangeText={(text) => {
+                    setDisplayName(text);
+                    if (errors.displayName) setErrors((e) => ({ ...e, displayName: undefined }));
+                  }}
                   placeholder="Your name"
                   placeholderTextColor={TEXT_MUTED}
                   className="px-4 py-3 rounded-xl border"
                   style={{
                     backgroundColor: PARCHMENT,
-                    borderColor: BORDER_SOFT,
+                    borderColor: errors.displayName ? "#dc2626" : BORDER_SOFT,
                     fontFamily: "SourceSans3_400Regular",
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
+                {errors.displayName && (
+                  <Text className="mt-1 text-sm" style={{ color: "#dc2626", fontFamily: "SourceSans3_400Regular" }}>
+                    {errors.displayName}
+                  </Text>
+                )}
               </View>
 
               {/* Handle */}
@@ -812,7 +835,10 @@ export default function SettingsScreen() {
                 </Text>
                 <TextInput
                   value={handle}
-                  onChangeText={setHandle}
+                  onChangeText={(text) => {
+                    setHandle(text);
+                    if (errors.handle) setErrors((e) => ({ ...e, handle: undefined }));
+                  }}
                   placeholder="username"
                   placeholderTextColor={TEXT_MUTED}
                   autoCapitalize="none"
@@ -820,17 +846,23 @@ export default function SettingsScreen() {
                   className="px-4 py-3 rounded-xl border"
                   style={{
                     backgroundColor: PARCHMENT,
-                    borderColor: BORDER_SOFT,
+                    borderColor: errors.handle ? "#dc2626" : BORDER_SOFT,
                     fontFamily: "SourceSans3_400Regular",
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
-                <Text
-                  className="mt-1 text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
-                >
-                  Lowercase letters, numbers, hyphens, and underscores only
-                </Text>
+                {errors.handle ? (
+                  <Text className="mt-1 text-sm" style={{ color: "#dc2626", fontFamily: "SourceSans3_400Regular" }}>
+                    {errors.handle}
+                  </Text>
+                ) : (
+                  <Text
+                    className="mt-1 text-sm"
+                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                  >
+                    Lowercase letters, numbers, hyphens, and underscores only
+                  </Text>
+                )}
               </View>
             </View>
 
@@ -921,20 +953,12 @@ export default function SettingsScreen() {
                     try {
                       const restored = await restorePurchases();
                       if (restored) {
-                        Alert.alert(
-                          "Purchases Restored",
-                          "Your subscription has been restored.",
-                          [{ text: "OK" }]
-                        );
+                        notifySuccess(toast, "Your subscription has been restored");
                       } else {
-                        Alert.alert(
-                          "No Purchases Found",
-                          "No active subscriptions were found for your account.",
-                          [{ text: "OK" }]
-                        );
+                        notifyError(toast, "No active subscriptions found");
                       }
                     } catch (error) {
-                      Alert.alert("Restore Failed", "Please try again or contact support.");
+                      notifyError(toast, "Restore failed. Try again or contact support.");
                     } finally {
                       setRestoringPurchases(false);
                     }
@@ -1260,7 +1284,10 @@ export default function SettingsScreen() {
                 </Text>
                 <TextInput
                   value={newEmail}
-                  onChangeText={setNewEmail}
+                  onChangeText={(text) => {
+                    setNewEmail(text);
+                    if (errors.newEmail) setErrors((e) => ({ ...e, newEmail: undefined }));
+                  }}
                   placeholder="your.new.email@example.com"
                   placeholderTextColor={TEXT_MUTED}
                   keyboardType="email-address"
@@ -1270,11 +1297,16 @@ export default function SettingsScreen() {
                   className="px-4 py-3 rounded-xl border"
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
-                    borderColor: BORDER_SOFT,
+                    borderColor: errors.newEmail ? "#dc2626" : BORDER_SOFT,
                     fontFamily: "SourceSans3_400Regular",
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
+                {errors.newEmail && (
+                  <Text className="mt-1 text-sm" style={{ color: "#dc2626", fontFamily: "SourceSans3_400Regular" }}>
+                    {errors.newEmail}
+                  </Text>
+                )}
               </View>
 
               {/* Password Confirmation */}
@@ -1287,7 +1319,10 @@ export default function SettingsScreen() {
                 </Text>
                 <TextInput
                   value={emailPassword}
-                  onChangeText={setEmailPassword}
+                  onChangeText={(text) => {
+                    setEmailPassword(text);
+                    if (errors.emailPassword) setErrors((e) => ({ ...e, emailPassword: undefined }));
+                  }}
                   placeholder="Confirm with your password"
                   placeholderTextColor={TEXT_MUTED}
                   secureTextEntry
@@ -1297,17 +1332,23 @@ export default function SettingsScreen() {
                   className="px-4 py-3 rounded-xl border"
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
-                    borderColor: BORDER_SOFT,
+                    borderColor: errors.emailPassword ? "#dc2626" : BORDER_SOFT,
                     fontFamily: "SourceSans3_400Regular",
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
-                <Text
-                  className="mt-2 text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
-                >
-                  For security, please enter your current password
-                </Text>
+                {errors.emailPassword ? (
+                  <Text className="mt-1 text-sm" style={{ color: "#dc2626", fontFamily: "SourceSans3_400Regular" }}>
+                    {errors.emailPassword}
+                  </Text>
+                ) : (
+                  <Text
+                    className="mt-2 text-sm"
+                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                  >
+                    For security, please enter your current password
+                  </Text>
+                )}
               </View>
 
               {/* Update Button */}
@@ -1384,7 +1425,10 @@ export default function SettingsScreen() {
                 </Text>
                 <TextInput
                   value={currentPassword}
-                  onChangeText={setCurrentPassword}
+                  onChangeText={(text) => {
+                    setCurrentPassword(text);
+                    if (errors.currentPassword) setErrors((e) => ({ ...e, currentPassword: undefined }));
+                  }}
                   placeholder="Enter your current password"
                   placeholderTextColor={TEXT_MUTED}
                   secureTextEntry
@@ -1394,11 +1438,16 @@ export default function SettingsScreen() {
                   className="px-4 py-3 rounded-xl border"
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
-                    borderColor: BORDER_SOFT,
+                    borderColor: errors.currentPassword ? "#dc2626" : BORDER_SOFT,
                     fontFamily: "SourceSans3_400Regular",
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
+                {errors.currentPassword && (
+                  <Text className="mt-1 text-sm" style={{ color: "#dc2626", fontFamily: "SourceSans3_400Regular" }}>
+                    {errors.currentPassword}
+                  </Text>
+                )}
               </View>
 
               {/* New Password */}
@@ -1411,7 +1460,10 @@ export default function SettingsScreen() {
                 </Text>
                 <TextInput
                   value={newPassword}
-                  onChangeText={setNewPassword}
+                  onChangeText={(text) => {
+                    setNewPassword(text);
+                    if (errors.newPassword) setErrors((e) => ({ ...e, newPassword: undefined }));
+                  }}
                   placeholder="Enter your new password"
                   placeholderTextColor={TEXT_MUTED}
                   secureTextEntry
@@ -1421,17 +1473,23 @@ export default function SettingsScreen() {
                   className="px-4 py-3 rounded-xl border"
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
-                    borderColor: BORDER_SOFT,
+                    borderColor: errors.newPassword ? "#dc2626" : BORDER_SOFT,
                     fontFamily: "SourceSans3_400Regular",
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
-                <Text
-                  className="mt-2 text-sm"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
-                >
-                  Must be at least 8 characters long
-                </Text>
+                {errors.newPassword ? (
+                  <Text className="mt-1 text-sm" style={{ color: "#dc2626", fontFamily: "SourceSans3_400Regular" }}>
+                    {errors.newPassword}
+                  </Text>
+                ) : (
+                  <Text
+                    className="mt-2 text-sm"
+                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+                  >
+                    Must be at least 8 characters long
+                  </Text>
+                )}
               </View>
 
               {/* Confirm New Password */}
@@ -1444,7 +1502,10 @@ export default function SettingsScreen() {
                 </Text>
                 <TextInput
                   value={confirmPassword}
-                  onChangeText={setConfirmPassword}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    if (errors.confirmPassword) setErrors((e) => ({ ...e, confirmPassword: undefined }));
+                  }}
                   placeholder="Re-enter your new password"
                   placeholderTextColor={TEXT_MUTED}
                   secureTextEntry
@@ -1454,11 +1515,16 @@ export default function SettingsScreen() {
                   className="px-4 py-3 rounded-xl border"
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
-                    borderColor: BORDER_SOFT,
+                    borderColor: errors.confirmPassword ? "#dc2626" : BORDER_SOFT,
                     fontFamily: "SourceSans3_400Regular",
                     color: TEXT_PRIMARY_STRONG,
                   }}
                 />
+                {errors.confirmPassword && (
+                  <Text className="mt-1 text-sm" style={{ color: "#dc2626", fontFamily: "SourceSans3_400Regular" }}>
+                    {errors.confirmPassword}
+                  </Text>
+                )}
               </View>
 
               {/* Update Button */}
