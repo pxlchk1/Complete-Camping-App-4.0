@@ -174,12 +174,12 @@ export default function App() {
     return () => unsubscribe();
   }, [subscriptionsInitialized]);
 
-  // Show splash screen for minimum 2 seconds
+  // Show splash screen for minimum 3 seconds on cold start
   useEffect(() => {
     if (fontsLoaded) {
       const timer = setTimeout(() => {
         setAppReady(true);
-      }, 2000);
+      }, 3000);
 
       return () => clearTimeout(timer);
     }

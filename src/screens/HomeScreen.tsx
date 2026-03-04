@@ -298,6 +298,60 @@ export default function HomeScreen() {
           contentContainerStyle={{ paddingBottom: bottomSpacer }}
           showsVerticalScrollIndicator={false}
         >
+          {/* Subscription Card - Always visible */}
+          <Pressable
+            className="mb-4 rounded-xl active:opacity-90"
+            style={{
+              backgroundColor: CARD_BACKGROUND_LIGHT,
+              borderWidth: 1,
+              borderColor: BORDER_SOFT,
+              padding: 16,
+            }}
+            onPress={() => {
+              safeHaptic();
+              navigation.navigate("Paywall");
+            }}
+            accessibilityLabel="Manage subscription"
+            accessibilityRole="button"
+          >
+            <View className="flex-row items-center justify-between">
+              <View className="flex-1">
+                <Text
+                  style={{
+                    fontFamily: "Raleway_600SemiBold",
+                    fontSize: 16,
+                    color: DEEP_FOREST,
+                  }}
+                >
+                  Subscription
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_400Regular",
+                    fontSize: 14,
+                    color: TEXT_SECONDARY,
+                    marginTop: 2,
+                  }}
+                >
+                  Manage plan and billing
+                </Text>
+              </View>
+              <View className="flex-row items-center">
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_600SemiBold",
+                    fontSize: 14,
+                    color: EARTH_GREEN,
+                    marginRight: 4,
+                  }}
+                >
+                  View subscription
+                </Text>
+                <Ionicons name="chevron-forward" size={16} color={EARTH_GREEN} />
+              </View>
+            </View>
+          </Pressable>
+
           {/* Quick Actions */}
           <View className="mb-6">
             <SectionTitle className="mb-4" color={DEEP_FOREST} style={{ fontSize: 18 }}>
@@ -555,7 +609,7 @@ export default function HomeScreen() {
                                 color: TEXT_SECONDARY,
                               }}
                             >
-                              @{featuredPhoto.userHandle || featuredPhotoHandle || featuredPhoto.displayName || "Anonymous"}
+                              @{featuredPhoto.userHandle || featuredPhotoHandle || featuredPhoto.displayName || "Camper"}
                             </Text>
                           )}
                         </View>
