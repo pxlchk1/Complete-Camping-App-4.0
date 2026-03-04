@@ -49,6 +49,10 @@ import { RootStackParamList } from "../navigation/types";
 import { format } from "date-fns";
 import { requirePro } from "../utils/gating";
 import AccountRequiredModal from "../components/AccountRequiredModal";
+import UpsellModal from "../components/UpsellModal";
+import { useUpsellStore, UPSELL_COPY } from "../state/upsellStore";
+import { useUserStore } from "../state/userStore";
+import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -116,6 +120,14 @@ export default function TripDetailScreen() {
 
   // Gating modal state
   const [showAccountModal, setShowAccountModal] = useState(false);
+
+  // Upsell completion modal state
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const hasUsedFreeTrip = useUserStore((s) => s.hasUsedFreeTrip);
+  const setHasUsedFreeTrip = useUserStore((s) => s.setHasUsedFreeTrip);
+  const canShowSoftModal = useUpsellStore((s) => s.canShowSoftModal);
+  const markCompletionModalShown = useUpsellStore((s) => s.markCompletionModalShown);
+  const recordModalDismissal = useUpsellStore((s) => s.recordModalDismissal);
 
   // Park detail modal state (for viewing destination)
   const [showParkDetail, setShowParkDetail] = useState(false);
@@ -221,6 +233,26 @@ export default function TripDetailScreen() {
     setDetailsNotes(trip.detailsNotes || "");
     setDetailsLinks((trip.detailsLinks || []) as DetailsLink[]);
   }, [trip]);
+
+  // Check if we should show completion celebration modal
+  useFocusEffect(
+    useCallback(() => {
+      if (!trip) return;
+      
+      // Trip is "complete" if it has destination, dates, and at least one planning item
+      const hasDestination = !!trip.tripDestination?.name || !!trip.name;
+      const hasDates = !!trip.startDate && !!trip.endDate;
+      const hasPlanningItem = hasPackingList || (trip.meals?.length ?? 0) > 0;
+      
+      const isTripComplete = hasDestination && hasDates && hasPlanningItem;
+      
+      if (isTripComplete && !hasUsedFreeTrip && canShowSoftModal("completion", false)) {
+        setShowCompletionModal(true);
+        markCompletionModalShown();
+        trackUpsellModalViewed("completion");
+      }
+    }, [trip, hasPackingList, hasUsedFreeTrip, canShowSoftModal, markCompletionModalShown])
+  );
 
   const handleOpenPacking = useCallback(async () => {
     // Gate: Pro-only feature
@@ -971,6 +1003,29 @@ export default function TripDetailScreen() {
           navigation.navigate("Auth" as any);
         }}
         onMaybeLater={() => setShowAccountModal(false)}
+      />
+
+      {/* Completion Celebration Upsell Modal */}
+      <UpsellModal
+        visible={showCompletionModal}
+        title={UPSELL_COPY.completion.title}
+        body={UPSELL_COPY.completion.body}
+        primaryCtaText={UPSELL_COPY.completion.primaryCta}
+        secondaryCtaText={UPSELL_COPY.completion.secondaryCta}
+        finePrint={UPSELL_COPY.completion.finePrint}
+        onPrimaryPress={() => {
+          setShowCompletionModal(false);
+          trackUpsellCtaClicked("completion");
+          navigation.navigate("Paywall", { triggerKey: "completion_upsell" });
+        }}
+        onSecondaryPress={() => {
+          setShowCompletionModal(false);
+          recordModalDismissal();
+        }}
+        onDismiss={() => {
+          setShowCompletionModal(false);
+          recordModalDismissal();
+        }}
       />
 
       {/* Itinerary Prompt Panel (shown after trip creation for PRO users) */}

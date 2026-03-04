@@ -28,6 +28,7 @@ import { fetchOfferingsSafe, subscribeToPlan, restorePurchases, syncSubscription
 import { useSubscriptionStore } from "../state/subscriptionStore";
 import { useUserStatus } from "../utils/authHelper";
 import { getProAttemptState } from "../services/proAttemptService";
+import { trackTrip2GateViewed, trackTrip2GateDismissed, trackUpsellCtaClicked, trackPurchaseCompleted } from "../services/analyticsService";
 import { RootStackParamList } from "../navigation/types";
 
 // Constants
@@ -57,10 +58,10 @@ const PAYWALL_CONTENT: Record<string, { title: string; body: string }> = {
     title: "Unlock Learning with Pro",
     body: "Get access to all learning modules beyond Leave No Trace.",
   },
-  // Trips
+  // Trips - Trip #2 Hard Gate (exact copy per requirements)
   second_trip: {
     title: "Ready for trip #2?",
-    body: "Pro lets you plan unlimited trips and keep everything organized.",
+    body: "You've used your free complete trip plan. Start a 3-day free trial to create unlimited trips—plus packing lists, meals, weather, and sharing.",
   },
   // Favorites
   favorites_limit: {
@@ -171,6 +172,11 @@ export default function PaywallScreen() {
       proAttemptCount,
     });
     
+    // Track Trip #2 gate specifically
+    if (triggerKey === "second_trip") {
+      trackTrip2GateViewed();
+    }
+    
     if (isNudgeVariant) {
       // Analytics: pro_nudge_trial_shown
       console.log("[Paywall Analytics] pro_nudge_trial_shown", {
@@ -272,6 +278,10 @@ export default function PaywallScreen() {
       if (success) {
         // Sync subscription status to Firestore
         await syncSubscriptionToFirestore();
+        
+        // Track purchase completion
+        const planType = pkg.identifier.includes("annual") || pkg.identifier.includes("yearly") ? "annual" : "monthly";
+        trackPurchaseCompleted(planType);
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert(
@@ -325,6 +335,12 @@ export default function PaywallScreen() {
       variant,
       proAttemptCount,
     });
+    
+    // Track Trip #2 gate dismissal specifically
+    if (triggerKey === "second_trip") {
+      trackTrip2GateDismissed();
+    }
+    
     navigation.goBack();
   };
 
@@ -617,6 +633,12 @@ export default function PaywallScreen() {
                   proAttemptCount,
                   selectedPlan,
                 });
+                
+                // Track Trip #2 gate CTA click specifically
+                if (triggerKey === "second_trip") {
+                  trackUpsellCtaClicked("trip2_gate");
+                }
+                
                 const pkg = selectedPlan === "annual" ? annualPackage : monthlyPackage;
                 if (pkg) handlePurchase(pkg);
               }}

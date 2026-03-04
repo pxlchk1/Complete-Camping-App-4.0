@@ -43,6 +43,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   Settings: undefined;
   Auth: undefined;
+  ForgotPassword: undefined;
   Paywall: { triggerKey?: string; variant?: "standard" | "nudge_trial" } | undefined;
   SeedData: undefined;
 
@@ -60,6 +61,7 @@ export type RootStackParamList = {
   MealPlan: { tripId: string };
 
   // Packing List screens (local-first store-based)
+  PackingList: { tripId: string };
   PackingListCreate: { 
     tripId?: string; 
     tripName?: string;
