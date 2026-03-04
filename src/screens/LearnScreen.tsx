@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Image, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";

@@ -3,11 +3,39 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { seedCommunityData } from "../scripts/seedCommunityData";
+import { seedBadgeDefinitions } from "../services/meritBadgesService";
 
 export default function SeedDataScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [badgeLoading, setBadgeLoading] = useState(false);
+  const [badgeResult, setBadgeResult] = useState<{ created: number; skipped: number } | null>(null);
+  const [badgeError, setBadgeError] = useState<string | null>(null);
+
+  const handleSeedBadges = async () => {
+    try {
+      setBadgeLoading(true);
+      setBadgeError(null);
+      setBadgeResult(null);
+
+      const result = await seedBadgeDefinitions();
+      setBadgeResult(result);
+
+      Alert.alert(
+        "Success!",
+        `Seeded badges:\n• ${result.created} created\n• ${result.skipped} skipped`,
+        [{ text: "OK" }]
+      );
+    } catch (err: any) {
+      console.error("Badge seed error:", err);
+      setBadgeError(err.message || "Failed to seed badges");
+      Alert.alert("Error", err.message || "Failed to seed badges");
+    } finally {
+      setBadgeLoading(false);
+    }
+  };
 
   const handleSeedData = async () => {
     try {
