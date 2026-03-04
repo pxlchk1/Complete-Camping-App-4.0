@@ -83,6 +83,13 @@ import AdminCommunicationsScreen from "../screens/AdminCommunicationsScreen";
 import AcceptInviteScreen from "../screens/AcceptInviteScreen";
 import AcceptInvitationScreen from "../screens/AcceptInvitationScreen";
 
+// Merit Badges screens
+import MeritBadgesScreen from "../screens/MeritBadgesScreen";
+import BadgeDetailScreen from "../screens/BadgeDetailScreen";
+import SelectWitnessScreen from "../screens/SelectWitnessScreen";
+import WitnessRequestsScreen from "../screens/WitnessRequestsScreen";
+import MyBadgesScreen from "../screens/MyBadgesScreen";
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 const PlanStack = createNativeStackNavigator();
@@ -176,6 +183,13 @@ export default function RootNavigator() {
 
       {/* Learning */}
       <Stack.Screen name="ModuleDetail" component={ModuleDetailScreen} />
+
+      {/* Merit Badges */}
+      <Stack.Screen name="MeritBadges" component={MeritBadgesScreen} />
+      <Stack.Screen name="BadgeDetail" component={BadgeDetailScreen} />
+      <Stack.Screen name="SelectWitness" component={SelectWitnessScreen} />
+      <Stack.Screen name="WitnessRequests" component={WitnessRequestsScreen} />
+      <Stack.Screen name="MyBadges" component={MyBadgesScreen} />
 
       {/* Subscription */}
       {PAYWALL_ENABLED && (
