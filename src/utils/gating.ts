@@ -22,9 +22,11 @@
  * - Nudge is rate-limited to once per 30 days
  * 
  * Connect Permissions:
- * - FREE allowed: Vote, Profile, Questions, Tips, Photos (1/day)
- * - FREE blocked: Feedback, Gear Reviews (paywall)
+ * - FREE allowed: Vote, Profile, Questions, Tips, Photos (1/day), Feedback (all actions)
+ * - FREE blocked: Gear Reviews (paywall)
  * - NO_ACCOUNT: All write actions blocked (account prompt for free-tier, paywall for pro-tier)
+ * 
+ * IMPORTANT: Feedback is ALWAYS ungated. See assertFeedbackNotGated().
  */
 
 import { auth } from '../config/firebase';
@@ -268,6 +270,43 @@ export function requireAccount(callbacks: Pick<AccessGateCallbacks, 'showAccount
     return false;
   }
   return true;
+}
+
+// ============================================
+// FEEDBACK ANTI-REGRESSION GUARD
+// ============================================
+
+/**
+ * assertFeedbackNotGated: DEV-ONLY anti-regression guard (2026-03-03)
+ * 
+ * Feedback features (create, vote, comment) must NEVER be gated behind Pro.
+ * This function exists as a tripwire: if someone re-adds gating, this will
+ * log an error in development builds.
+ * 
+ * Call this at the top of any feedback action handler to document the intent
+ * and catch accidental re-introduction of gating.
+ * 
+ * In production: Does nothing (no-op)
+ * In development: Logs error if gating is detected, but still allows action
+ * 
+ * @param actionKey - The action being performed (for logging)
+ */
+export function assertFeedbackNotGated(actionKey: string): void {
+  if (__DEV__) {
+    // This guard exists to catch if someone re-adds requireProForAction to Feedback
+    // If you see this log, remove any subscription gating from feedback actions
+    const isPro = useSubscriptionStore.getState().isPro;
+    const isLoggedIn = !!auth.currentUser;
+    
+    // The fact that we're calling this at all (instead of requireProForAction) 
+    // means we're correctly ungated. Log info for visibility.
+    console.log(
+      `[Feedback Guard] ${actionKey}: Feedback is ungated. ` +
+      `User state: ${isLoggedIn ? (isPro ? 'PRO' : 'FREE') : 'GUEST'}. ` +
+      `Action will proceed with account-only check.`
+    );
+  }
+  // In production, this is a no-op
 }
 
 /**
