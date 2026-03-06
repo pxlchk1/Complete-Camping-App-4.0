@@ -649,12 +649,13 @@ async function syncBadgeToProfile(userId: string, badgeId: string): Promise<void
     if (currentBadges.some((b: any) => b.id === badgeId)) return;
     
     // Create merit badge object for profile display
+    // Note: serverTimestamp() cannot be used inside arrays, use Date instead
     const meritBadge = {
       id: badge.id,
       name: badge.name,
       icon: badge.iconAssetKey,
       color: badge.borderColorKey,
-      earnedAt: serverTimestamp(),
+      earnedAt: new Date(),
     };
     
     await updateDoc(profileRef, {
