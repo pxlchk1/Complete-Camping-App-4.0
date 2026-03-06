@@ -1,35 +1,71 @@
 /**
  * Analytics Service
  * Centralized analytics tracking for activation + retention metrics
- * Uses Firebase Analytics (JS SDK)
  * 
- * Note: Firebase Analytics web SDK doesn't fully support React Native.
- * This service will silently fail if analytics can't be initialized.
+ * Note: Firebase Analytics web SDK doesn't work in React Native (uses DOM APIs).
+ * This service is a no-op in React Native environments.
+ * For production React Native analytics, use @react-native-firebase/analytics instead.
  */
 
-import { getAnalytics, logEvent, setUserId, setUserProperties, Analytics, isSupported } from "firebase/analytics";
-import firebaseApp from "../config/firebase";
+import { Platform } from "react-native";
 
-// Initialize analytics lazily to avoid DOM errors in React Native
+// Only import Firebase Analytics types - actual implementation is no-op in RN
+type Analytics = any;
+
+// Check if we're in a web environment (not React Native)
+const isWebEnvironment = Platform.OS === "web";
+
+// Analytics instance - only used in web
 let analytics: Analytics | null = null;
 let analyticsInitialized = false;
 
 async function getAnalyticsInstance(): Promise<Analytics | null> {
+  // Never use Firebase Analytics web SDK in React Native
+  if (!isWebEnvironment) {
+    return null;
+  }
+  
   if (analyticsInitialized) return analytics;
   analyticsInitialized = true;
   
   try {
+    // Dynamic import to prevent loading in RN
+    const { getAnalytics, isSupported } = await import("firebase/analytics");
+    const { default: firebaseApp } = await import("../config/firebase");
+    
     const supported = await isSupported();
     if (supported) {
       analytics = getAnalytics(firebaseApp);
-    } else {
-      console.log("[Analytics] Firebase Analytics not supported in this environment");
     }
   } catch (error) {
-    // Firebase Analytics web SDK uses DOM APIs that don't exist in React Native
-    console.log("[Analytics] Firebase Analytics not available in this environment");
+    console.log("[Analytics] Firebase Analytics not available");
   }
   return analytics;
+}
+
+// Helper to get Firebase Analytics functions (only in web)
+async function getAnalyticsFunctions() {
+  if (!isWebEnvironment) return null;
+  try {
+    const { logEvent, setUserId, setUserProperties } = await import("firebase/analytics");
+    return { logEvent, setUserId, setUserProperties };
+  } catch {
+    return null;
+  }
+}
+
+// Core logging helper - all methods should use this
+async function logAnalyticsEvent(eventName: string, params?: Record<string, any>): Promise<void> {
+  if (!isWebEnvironment) return;
+  const instance = await getAnalyticsInstance();
+  if (!instance) return;
+  const fns = await getAnalyticsFunctions();
+  if (!fns) return;
+  try {
+    fns.logEvent(instance, eventName, { ...params, timestamp: new Date().toISOString() });
+  } catch (error) {
+    console.error(`[Analytics] Failed to track ${eventName}:`, error);
+  }
 }
 
 // ============================================
@@ -132,9 +168,11 @@ class AnalyticsService {
   async setAnalyticsUserId(userId: string | null): Promise<void> {
     const instance = await getAnalyticsInstance();
     if (!instance) return;
+    const fns = await getAnalyticsFunctions();
+    if (!fns) return;
     try {
       if (userId) {
-        setUserId(instance, userId);
+        fns.setUserId(instance, userId);
       }
     } catch (error) {
       console.error("[Analytics] Failed to set user ID:", error);
@@ -147,8 +185,10 @@ class AnalyticsService {
   async setUserProperty(name: string, value: string | null): Promise<void> {
     const instance = await getAnalyticsInstance();
     if (!instance) return;
+    const fns = await getAnalyticsFunctions();
+    if (!fns) return;
     try {
-      setUserProperties(instance, { [name]: value });
+      fns.setUserProperties(instance, { [name]: value });
     } catch (error) {
       console.error("[Analytics] Failed to set user property:", error);
     }
@@ -162,15 +202,7 @@ class AnalyticsService {
    * Track app open
    */
   async trackAppOpen(): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.APP_OPEN, {
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track app_open:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.APP_OPEN);
   }
 
   // ============================================
@@ -181,31 +213,14 @@ class AnalyticsService {
    * Track onboarding started
    */
   async trackOnboardingStarted(): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.ONBOARDING_STARTED, {
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track onboarding_started:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.ONBOARDING_STARTED);
   }
 
   /**
    * Track onboarding completed
    */
   async trackOnboardingCompleted(reason: OnboardingCompletionReason): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.ONBOARDING_COMPLETED, {
-        reason,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track onboarding_completed:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.ONBOARDING_COMPLETED, { reason });
   }
 
   // ============================================
@@ -216,33 +231,14 @@ class AnalyticsService {
    * Track permission prompt shown
    */
   async trackPermissionPromptShown(type: PermissionType): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.PERMISSION_PROMPT_SHOWN, {
-        type,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track permission_prompt_shown:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.PERMISSION_PROMPT_SHOWN, { type });
   }
 
   /**
    * Track permission result
    */
   async trackPermissionResult(type: PermissionType, status: PermissionStatus): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.PERMISSION_RESULT, {
-        type,
-        status,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track permission_result:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.PERMISSION_RESULT, { type, status });
   }
 
   // ============================================
@@ -253,64 +249,28 @@ class AnalyticsService {
    * Track push sent
    */
   async trackPushSent(key: string): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.PUSH_SENT, {
-        key,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track push_sent:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.PUSH_SENT, { key });
   }
 
   /**
    * Track push opened
    */
   async trackPushOpened(key: string): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.PUSH_OPENED, {
-        key,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track push_opened:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.PUSH_OPENED, { key });
   }
 
   /**
    * Track email sent
    */
   async trackEmailSent(key: string): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.EMAIL_SENT, {
-        key,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track email_sent:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.EMAIL_SENT, { key });
   }
 
   /**
    * Track email clicked
    */
   async trackEmailClicked(key: string): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.EMAIL_CLICKED, {
-        key,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track email_clicked:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.EMAIL_CLICKED, { key });
   }
 
   // ============================================
@@ -321,96 +281,42 @@ class AnalyticsService {
    * Track trip created
    */
   async trackTripCreated(tripId?: string): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.TRIP_CREATED, {
-        trip_id: tripId,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track trip_created:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.TRIP_CREATED, { trip_id: tripId });
   }
 
   /**
    * Track packing list generated
    */
   async trackPackingListGenerated(tripId?: string): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.PACKINGLIST_GENERATED, {
-        trip_id: tripId,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track packinglist_generated:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.PACKINGLIST_GENERATED, { trip_id: tripId });
   }
 
   /**
    * Track gear item added
    */
   async trackGearItemAdded(itemCount?: number): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.GEAR_ITEM_ADDED, {
-        item_count: itemCount,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track gear_item_added:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.GEAR_ITEM_ADDED, { item_count: itemCount });
   }
 
   /**
    * Track saved place added
    */
   async trackSavedPlaceAdded(placeType?: string): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.SAVED_PLACE_ADDED, {
-        place_type: placeType,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track saved_place_added:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.SAVED_PLACE_ADDED, { place_type: placeType });
   }
 
   /**
    * Track weather added to trip
    */
   async trackWeatherAddedToTrip(tripId?: string): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.WEATHER_ADDED_TO_TRIP, {
-        trip_id: tripId,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track weather_added_to_trip:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.WEATHER_ADDED_TO_TRIP, { trip_id: tripId });
   }
 
   /**
    * Track buddy invite sent
    */
   async trackBuddyInviteSent(method?: "email" | "text" | "copy"): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.BUDDY_INVITE_SENT, {
-        method,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track buddy_invite_sent:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.BUDDY_INVITE_SENT, { method });
   }
 
   // ============================================
@@ -421,15 +327,7 @@ class AnalyticsService {
    * Track 7-day return
    */
   async trackReturnDay7(): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, AnalyticsEvents.RETURN_DAY_7, {
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("[Analytics] Failed to track return_day_7:", error);
-    }
+    await logAnalyticsEvent(AnalyticsEvents.RETURN_DAY_7);
   }
 
   // ============================================
@@ -440,16 +338,7 @@ class AnalyticsService {
    * Track a custom event
    */
   async trackEvent(eventName: string, params?: Record<string, any>): Promise<void> {
-    const instance = await getAnalyticsInstance();
-    if (!instance) return;
-    try {
-      logEvent(instance, eventName, {
-        ...params,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error(`[Analytics] Failed to track ${eventName}:`, error);
-    }
+    await logAnalyticsEvent(eventName, params);
   }
 }
 
