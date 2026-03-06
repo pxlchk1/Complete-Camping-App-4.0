@@ -7,17 +7,29 @@
  * This service will silently fail if analytics can't be initialized.
  */
 
-import { getAnalytics, logEvent, setUserId, setUserProperties, Analytics } from "firebase/analytics";
+import { getAnalytics, logEvent, setUserId, setUserProperties, Analytics, isSupported } from "firebase/analytics";
 import firebaseApp from "../config/firebase";
 
-// Initialize analytics with error handling for React Native
+// Initialize analytics lazily to avoid DOM errors in React Native
 let analytics: Analytics | null = null;
-try {
-  analytics = getAnalytics(firebaseApp);
-} catch (error) {
-  // Firebase Analytics web SDK uses DOM APIs that don't exist in React Native
-  // Silently fail - analytics events will be no-ops
-  console.log("[Analytics] Firebase Analytics not available in this environment");
+let analyticsInitialized = false;
+
+async function getAnalyticsInstance(): Promise<Analytics | null> {
+  if (analyticsInitialized) return analytics;
+  analyticsInitialized = true;
+  
+  try {
+    const supported = await isSupported();
+    if (supported) {
+      analytics = getAnalytics(firebaseApp);
+    } else {
+      console.log("[Analytics] Firebase Analytics not supported in this environment");
+    }
+  } catch (error) {
+    // Firebase Analytics web SDK uses DOM APIs that don't exist in React Native
+    console.log("[Analytics] Firebase Analytics not available in this environment");
+  }
+  return analytics;
 }
 
 // ============================================
@@ -118,10 +130,11 @@ class AnalyticsService {
    * Set user ID for analytics
    */
   async setAnalyticsUserId(userId: string | null): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
       if (userId) {
-        setUserId(analytics, userId);
+        setUserId(instance, userId);
       }
     } catch (error) {
       console.error("[Analytics] Failed to set user ID:", error);
@@ -132,9 +145,10 @@ class AnalyticsService {
    * Set user properties
    */
   async setUserProperty(name: string, value: string | null): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      setUserProperties(analytics, { [name]: value });
+      setUserProperties(instance, { [name]: value });
     } catch (error) {
       console.error("[Analytics] Failed to set user property:", error);
     }
@@ -148,9 +162,10 @@ class AnalyticsService {
    * Track app open
    */
   async trackAppOpen(): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.APP_OPEN, {
+      logEvent(instance, AnalyticsEvents.APP_OPEN, {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -166,9 +181,10 @@ class AnalyticsService {
    * Track onboarding started
    */
   async trackOnboardingStarted(): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.ONBOARDING_STARTED, {
+      logEvent(instance, AnalyticsEvents.ONBOARDING_STARTED, {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -180,9 +196,10 @@ class AnalyticsService {
    * Track onboarding completed
    */
   async trackOnboardingCompleted(reason: OnboardingCompletionReason): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.ONBOARDING_COMPLETED, {
+      logEvent(instance, AnalyticsEvents.ONBOARDING_COMPLETED, {
         reason,
         timestamp: new Date().toISOString(),
       });
@@ -199,9 +216,10 @@ class AnalyticsService {
    * Track permission prompt shown
    */
   async trackPermissionPromptShown(type: PermissionType): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.PERMISSION_PROMPT_SHOWN, {
+      logEvent(instance, AnalyticsEvents.PERMISSION_PROMPT_SHOWN, {
         type,
         timestamp: new Date().toISOString(),
       });
@@ -214,9 +232,10 @@ class AnalyticsService {
    * Track permission result
    */
   async trackPermissionResult(type: PermissionType, status: PermissionStatus): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.PERMISSION_RESULT, {
+      logEvent(instance, AnalyticsEvents.PERMISSION_RESULT, {
         type,
         status,
         timestamp: new Date().toISOString(),
@@ -234,9 +253,10 @@ class AnalyticsService {
    * Track push sent
    */
   async trackPushSent(key: string): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.PUSH_SENT, {
+      logEvent(instance, AnalyticsEvents.PUSH_SENT, {
         key,
         timestamp: new Date().toISOString(),
       });
@@ -249,9 +269,10 @@ class AnalyticsService {
    * Track push opened
    */
   async trackPushOpened(key: string): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.PUSH_OPENED, {
+      logEvent(instance, AnalyticsEvents.PUSH_OPENED, {
         key,
         timestamp: new Date().toISOString(),
       });
@@ -264,9 +285,10 @@ class AnalyticsService {
    * Track email sent
    */
   async trackEmailSent(key: string): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.EMAIL_SENT, {
+      logEvent(instance, AnalyticsEvents.EMAIL_SENT, {
         key,
         timestamp: new Date().toISOString(),
       });
@@ -279,9 +301,10 @@ class AnalyticsService {
    * Track email clicked
    */
   async trackEmailClicked(key: string): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.EMAIL_CLICKED, {
+      logEvent(instance, AnalyticsEvents.EMAIL_CLICKED, {
         key,
         timestamp: new Date().toISOString(),
       });
@@ -298,9 +321,10 @@ class AnalyticsService {
    * Track trip created
    */
   async trackTripCreated(tripId?: string): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.TRIP_CREATED, {
+      logEvent(instance, AnalyticsEvents.TRIP_CREATED, {
         trip_id: tripId,
         timestamp: new Date().toISOString(),
       });
@@ -313,9 +337,10 @@ class AnalyticsService {
    * Track packing list generated
    */
   async trackPackingListGenerated(tripId?: string): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.PACKINGLIST_GENERATED, {
+      logEvent(instance, AnalyticsEvents.PACKINGLIST_GENERATED, {
         trip_id: tripId,
         timestamp: new Date().toISOString(),
       });
@@ -328,9 +353,10 @@ class AnalyticsService {
    * Track gear item added
    */
   async trackGearItemAdded(itemCount?: number): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.GEAR_ITEM_ADDED, {
+      logEvent(instance, AnalyticsEvents.GEAR_ITEM_ADDED, {
         item_count: itemCount,
         timestamp: new Date().toISOString(),
       });
@@ -343,9 +369,10 @@ class AnalyticsService {
    * Track saved place added
    */
   async trackSavedPlaceAdded(placeType?: string): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.SAVED_PLACE_ADDED, {
+      logEvent(instance, AnalyticsEvents.SAVED_PLACE_ADDED, {
         place_type: placeType,
         timestamp: new Date().toISOString(),
       });
@@ -358,9 +385,10 @@ class AnalyticsService {
    * Track weather added to trip
    */
   async trackWeatherAddedToTrip(tripId?: string): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.WEATHER_ADDED_TO_TRIP, {
+      logEvent(instance, AnalyticsEvents.WEATHER_ADDED_TO_TRIP, {
         trip_id: tripId,
         timestamp: new Date().toISOString(),
       });
@@ -373,9 +401,10 @@ class AnalyticsService {
    * Track buddy invite sent
    */
   async trackBuddyInviteSent(method?: "email" | "text" | "copy"): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.BUDDY_INVITE_SENT, {
+      logEvent(instance, AnalyticsEvents.BUDDY_INVITE_SENT, {
         method,
         timestamp: new Date().toISOString(),
       });
@@ -392,9 +421,10 @@ class AnalyticsService {
    * Track 7-day return
    */
   async trackReturnDay7(): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, AnalyticsEvents.RETURN_DAY_7, {
+      logEvent(instance, AnalyticsEvents.RETURN_DAY_7, {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -410,9 +440,10 @@ class AnalyticsService {
    * Track a custom event
    */
   async trackEvent(eventName: string, params?: Record<string, any>): Promise<void> {
-    if (!analytics) return;
+    const instance = await getAnalyticsInstance();
+    if (!instance) return;
     try {
-      logEvent(analytics, eventName, {
+      logEvent(instance, eventName, {
         ...params,
         timestamp: new Date().toISOString(),
       });
