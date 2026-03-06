@@ -99,9 +99,17 @@ export default function PremiumFeatureModal({
                 className="text-parchment font-semibold text-base"
                 style={{ fontFamily: "SourceSans3_600SemiBold" }}
               >
-                Go Premium
+                Start 3-Day Free Trial
               </Text>
             </Pressable>
+
+            {/* Trial fine print */}
+            <Text
+              className="text-earthGreen/70 text-center text-xs"
+              style={{ fontFamily: "SourceSans3_400Regular" }}
+            >
+              Free for 3 days. Cancel anytime before day 3.
+            </Text>
 
             {/* Secondary: Not now */}
             <Pressable

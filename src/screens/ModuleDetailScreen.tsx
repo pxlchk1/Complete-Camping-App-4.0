@@ -736,10 +736,10 @@ export default function ModuleDetailScreen() {
       <UpsellModal
         visible={showUpsellModal}
         title="Learning pays off!"
-        body="You just completed a learning track. Unlock all content, unlimited trips, and more with Pro."
-        primaryCtaText="Go Pro"
+        body="You just completed a learning track. Start a 3-day free trial to unlock all content, unlimited trips, and more."
+        primaryCtaText="Start 3-Day Free Trial"
         secondaryCtaText="Maybe Later"
-        finePrint="Cancel anytime"
+        finePrint="Free for 3 days. Cancel anytime before day 3."
         onPrimaryPress={() => {
           trackUpsellCtaClicked("learning_complete");
           setShowUpsellModal(false);
