@@ -165,10 +165,16 @@ class UserActionTrackerService {
    * Handles both new downloads and app updates
    */
   async shouldShowPushPrompt(userId: string): Promise<boolean> {
-    if (!userId) return false;
+    console.log("[PushPrompt] Checking for userId:", userId);
+    
+    if (!userId) {
+      console.log("[PushPrompt] No userId, skipping");
+      return false;
+    }
 
     // Skip if not a physical device (push doesn't work on simulators)
     if (!Device.isDevice) {
+      console.log("[PushPrompt] Not a physical device, skipping");
       return false;
     }
 
@@ -176,14 +182,18 @@ class UserActionTrackerService {
       // First check: OS-level permission status
       // If already granted or denied, no need to show our soft prompt
       const { status: osPermissionStatus } = await Notifications.getPermissionsAsync();
+      console.log("[PushPrompt] OS permission status:", osPermissionStatus);
       if (osPermissionStatus === "granted" || osPermissionStatus === "denied") {
+        console.log("[PushPrompt] OS permission already set, skipping prompt");
         return false;
       }
 
       // Second check: Local AsyncStorage (fast, works across devices for same user)
       // This handles app updates - if we've prompted in this version, don't prompt again
       const localPromptShown = await AsyncStorage.getItem(PUSH_PROMPT_STORAGE_KEY);
+      console.log("[PushPrompt] AsyncStorage value:", localPromptShown, "current userId:", userId);
       if (localPromptShown === userId) {
+        console.log("[PushPrompt] Already prompted this user locally, skipping");
         return false;
       }
 
@@ -194,15 +204,20 @@ class UserActionTrackerService {
       // If user doc exists, check if already prompted
       if (userDocSnap.exists()) {
         const userData = userDocSnap.data();
+        console.log("[PushPrompt] Firestore softPushPromptShown:", userData?.softPushPromptShown);
         if (userData?.softPushPromptShown) {
           // Sync to local storage for faster future checks
           await AsyncStorage.setItem(PUSH_PROMPT_STORAGE_KEY, userId);
+          console.log("[PushPrompt] Already prompted in Firestore, skipping");
           return false;
         }
+      } else {
+        console.log("[PushPrompt] User doc does not exist in Firestore");
       }
 
       // No existing prompt record - show the prompt!
       // This covers: new users, existing users who update, cross-device scenarios
+      console.log("[PushPrompt] ✅ Will show prompt!");
       return true;
     } catch (error) {
       console.error("[UserActionTracker] Failed to check push prompt status:", error);

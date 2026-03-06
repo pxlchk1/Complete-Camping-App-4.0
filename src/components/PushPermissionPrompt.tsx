@@ -14,7 +14,8 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../context/AuthContext";
+import { auth } from "../config/firebase";
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { userActionTracker } from "../services/userActionTrackerService";
 import { requestPushPermission } from "../services/notificationPreferencesService";
 import { trackPermissionPromptShown, trackPermissionResult } from "../services/analyticsService";
@@ -28,29 +29,58 @@ interface PushPermissionPromptProps {
 export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
   onComplete,
 }) => {
-  const { user } = useAuth();
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [visible, setVisible] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [hasChecked, setHasChecked] = useState(false);
 
-  const checkIfShouldShow = useCallback(async () => {
-    if (!user?.uid) return;
-
-    try {
-      const shouldShow = await userActionTracker.shouldShowPushPrompt(user.uid);
-      if (shouldShow) {
-        setVisible(true);
-        // Track that we showed the soft prompt
-        await trackPermissionPromptShown("push");
-      }
-    } catch (error) {
-      console.error("[PushPermissionPrompt] Error checking show status:", error);
-    }
-  }, [user?.uid]);
-
-  // Check if we should show the prompt
+  // Listen to Firebase auth state changes
   useEffect(() => {
-    checkIfShouldShow();
-  }, [checkIfShouldShow]);
+    console.log("[PushPermissionPrompt] Setting up auth listener, current user:", auth.currentUser?.uid);
+    
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      console.log("[PushPermissionPrompt] Auth state changed, user:", firebaseUser?.uid);
+      setUser(firebaseUser);
+      setHasChecked(false); // Reset so we check again on user change
+    });
+    return () => unsubscribe();
+  }, []);
+
+  console.log("[PushPermissionPrompt] Component render, user:", user?.uid, "hasChecked:", hasChecked);
+
+  // Check if we should show the prompt when user changes
+  useEffect(() => {
+    const checkPrompt = async () => {
+      console.log("[PushPermissionPrompt] checkPrompt effect, user?.uid:", user?.uid, "hasChecked:", hasChecked);
+      
+      if (!user?.uid) {
+        console.log("[PushPermissionPrompt] No user.uid, skipping check");
+        return;
+      }
+      
+      if (hasChecked) {
+        console.log("[PushPermissionPrompt] Already checked for this user, skipping");
+        return;
+      }
+
+      setHasChecked(true);
+
+      try {
+        console.log("[PushPermissionPrompt] Calling shouldShowPushPrompt for:", user.uid);
+        const shouldShow = await userActionTracker.shouldShowPushPrompt(user.uid);
+        console.log("[PushPermissionPrompt] shouldShowPushPrompt returned:", shouldShow);
+        if (shouldShow) {
+          setVisible(true);
+          // Track that we showed the soft prompt
+          await trackPermissionPromptShown("push");
+        }
+      } catch (error) {
+        console.error("[PushPermissionPrompt] Error checking show status:", error);
+      }
+    };
+
+    checkPrompt();
+  }, [user?.uid, hasChecked]);
 
   const handleEnableNotifications = async () => {
     if (!user?.uid || isRequesting) return;
