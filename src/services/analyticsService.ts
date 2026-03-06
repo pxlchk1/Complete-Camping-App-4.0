@@ -2,13 +2,23 @@
  * Analytics Service
  * Centralized analytics tracking for activation + retention metrics
  * Uses Firebase Analytics (JS SDK)
+ * 
+ * Note: Firebase Analytics web SDK doesn't fully support React Native.
+ * This service will silently fail if analytics can't be initialized.
  */
 
-import { getAnalytics, logEvent, setUserId, setUserProperties } from "firebase/analytics";
+import { getAnalytics, logEvent, setUserId, setUserProperties, Analytics } from "firebase/analytics";
 import firebaseApp from "../config/firebase";
 
-// Initialize analytics
-const analytics = getAnalytics(firebaseApp);
+// Initialize analytics with error handling for React Native
+let analytics: Analytics | null = null;
+try {
+  analytics = getAnalytics(firebaseApp);
+} catch (error) {
+  // Firebase Analytics web SDK uses DOM APIs that don't exist in React Native
+  // Silently fail - analytics events will be no-ops
+  console.log("[Analytics] Firebase Analytics not available in this environment");
+}
 
 // ============================================
 // CORE EVENT NAMES
@@ -108,6 +118,7 @@ class AnalyticsService {
    * Set user ID for analytics
    */
   async setAnalyticsUserId(userId: string | null): Promise<void> {
+    if (!analytics) return;
     try {
       if (userId) {
         setUserId(analytics, userId);
@@ -121,6 +132,7 @@ class AnalyticsService {
    * Set user properties
    */
   async setUserProperty(name: string, value: string | null): Promise<void> {
+    if (!analytics) return;
     try {
       setUserProperties(analytics, { [name]: value });
     } catch (error) {
@@ -136,6 +148,7 @@ class AnalyticsService {
    * Track app open
    */
   async trackAppOpen(): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.APP_OPEN, {
         timestamp: new Date().toISOString(),
@@ -153,6 +166,7 @@ class AnalyticsService {
    * Track onboarding started
    */
   async trackOnboardingStarted(): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.ONBOARDING_STARTED, {
         timestamp: new Date().toISOString(),
@@ -166,6 +180,7 @@ class AnalyticsService {
    * Track onboarding completed
    */
   async trackOnboardingCompleted(reason: OnboardingCompletionReason): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.ONBOARDING_COMPLETED, {
         reason,
@@ -184,6 +199,7 @@ class AnalyticsService {
    * Track permission prompt shown
    */
   async trackPermissionPromptShown(type: PermissionType): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.PERMISSION_PROMPT_SHOWN, {
         type,
@@ -198,6 +214,7 @@ class AnalyticsService {
    * Track permission result
    */
   async trackPermissionResult(type: PermissionType, status: PermissionStatus): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.PERMISSION_RESULT, {
         type,
@@ -217,6 +234,7 @@ class AnalyticsService {
    * Track push sent
    */
   async trackPushSent(key: string): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.PUSH_SENT, {
         key,
@@ -231,6 +249,7 @@ class AnalyticsService {
    * Track push opened
    */
   async trackPushOpened(key: string): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.PUSH_OPENED, {
         key,
@@ -245,6 +264,7 @@ class AnalyticsService {
    * Track email sent
    */
   async trackEmailSent(key: string): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.EMAIL_SENT, {
         key,
@@ -259,6 +279,7 @@ class AnalyticsService {
    * Track email clicked
    */
   async trackEmailClicked(key: string): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.EMAIL_CLICKED, {
         key,
@@ -277,6 +298,7 @@ class AnalyticsService {
    * Track trip created
    */
   async trackTripCreated(tripId?: string): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.TRIP_CREATED, {
         trip_id: tripId,
@@ -291,6 +313,7 @@ class AnalyticsService {
    * Track packing list generated
    */
   async trackPackingListGenerated(tripId?: string): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.PACKINGLIST_GENERATED, {
         trip_id: tripId,
@@ -305,6 +328,7 @@ class AnalyticsService {
    * Track gear item added
    */
   async trackGearItemAdded(itemCount?: number): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.GEAR_ITEM_ADDED, {
         item_count: itemCount,
@@ -319,6 +343,7 @@ class AnalyticsService {
    * Track saved place added
    */
   async trackSavedPlaceAdded(placeType?: string): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.SAVED_PLACE_ADDED, {
         place_type: placeType,
@@ -333,6 +358,7 @@ class AnalyticsService {
    * Track weather added to trip
    */
   async trackWeatherAddedToTrip(tripId?: string): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.WEATHER_ADDED_TO_TRIP, {
         trip_id: tripId,
@@ -347,6 +373,7 @@ class AnalyticsService {
    * Track buddy invite sent
    */
   async trackBuddyInviteSent(method?: "email" | "text" | "copy"): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.BUDDY_INVITE_SENT, {
         method,
@@ -365,6 +392,7 @@ class AnalyticsService {
    * Track 7-day return
    */
   async trackReturnDay7(): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, AnalyticsEvents.RETURN_DAY_7, {
         timestamp: new Date().toISOString(),
@@ -382,6 +410,7 @@ class AnalyticsService {
    * Track a custom event
    */
   async trackEvent(eventName: string, params?: Record<string, any>): Promise<void> {
+    if (!analytics) return;
     try {
       logEvent(analytics, eventName, {
         ...params,
