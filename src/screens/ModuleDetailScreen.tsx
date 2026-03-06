@@ -735,11 +735,11 @@ export default function ModuleDetailScreen() {
       {/* Upsell Modal after learning badge earned */}
       <UpsellModal
         visible={showUpsellModal}
-        title="Learning pays off!"
-        body="You just completed a learning track. Start a 3-day free trial to unlock all content, unlimited trips, and more."
+        title="Go Pro"
+        body="Unlock the full camping toolkit with a 3-day free trial!"
         primaryCtaText="Start 3-Day Free Trial"
         secondaryCtaText="Maybe Later"
-        finePrint="Free for 3 days. Cancel anytime before day 3."
+        finePrint="After your free trial, your annual subscription begins. Cancel anytime."
         onPrimaryPress={() => {
           trackUpsellCtaClicked("learning_complete");
           setShowUpsellModal(false);

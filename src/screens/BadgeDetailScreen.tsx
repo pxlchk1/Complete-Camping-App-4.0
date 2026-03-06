@@ -563,11 +563,11 @@ export default function BadgeDetailScreen() {
       {/* Upsell Modal after badge earned */}
       <UpsellModal
         visible={showUpsellModal}
-        title="Nice work, camper!"
-        body="You just earned a badge. Start a 3-day free trial to unlock unlimited trips, custom packing lists, and more."
+        title="Go Pro"
+        body="Unlock the full camping toolkit with a 3-day free trial!"
         primaryCtaText="Start 3-Day Free Trial"
         secondaryCtaText="Maybe Later"
-        finePrint="Free for 3 days. Cancel anytime before day 3."
+        finePrint="After your free trial, your annual subscription begins. Cancel anytime."
         onPrimaryPress={() => {
           trackUpsellCtaClicked("badge_earned");
           setShowUpsellModal(false);

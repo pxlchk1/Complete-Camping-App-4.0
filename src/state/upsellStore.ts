@@ -201,31 +201,31 @@ export const useIsTrialOrSubscribed = () => useUpsellStore((s) => s.isTrialOrSub
 
 export const UPSELL_COPY = {
   completion: {
-    title: "Your trip plan is ready ✅",
-    body: "Want this for every trip? Start a 3-day free trial to create unlimited trip plans, packing lists, meals, and sharing.",
+    title: "Go Pro",
+    body: "Unlock the full camping toolkit with a 3-day free trial!",
     primaryCta: "Start 3-Day Free Trial",
     secondaryCta: "Not now",
-    finePrint: "Free for 3 days. Cancel anytime before day 3.",
+    finePrint: "After your free trial, your annual subscription begins. Cancel anytime.",
   },
   trip2Gate: {
-    title: "Ready for trip #2?",
-    body: "You've used your free complete trip plan. Start a 3-day free trial to create unlimited trips—plus packing lists, meals, weather, and sharing.",
+    title: "Go Pro",
+    body: "Unlock unlimited trips with a 3-day free trial!",
     primaryCta: "Start 3-Day Free Trial",
     secondaryCta: "Maybe later",
-    finePrint: "Free for 3 days. Cancel anytime before day 3.",
+    finePrint: "After your free trial, your annual subscription begins. Cancel anytime.",
   },
   packing: {
-    title: "Want your packing list done for you?",
-    body: "Start a 3-day free trial to generate packing lists from your Gear Closet—so nothing gets left behind.",
+    title: "Go Pro",
+    body: "Unlock the full camping toolkit with a 3-day free trial!",
     primaryCta: "Start 3-Day Free Trial",
     secondaryCta: "Not now",
-    finePrint: "Free for 3 days. Cancel anytime before day 3.",
+    finePrint: "After your free trial, your annual subscription begins. Cancel anytime.",
   },
   invite: {
-    title: "Keep everyone on the same plan",
-    body: "Start a 3-day free trial to share trip details, packing lists, and meals—without endless texts.",
+    title: "Go Pro",
+    body: "Unlock the full camping toolkit with a 3-day free trial!",
     primaryCta: "Start 3-Day Free Trial",
     secondaryCta: "Not now",
-    finePrint: "Free for 3 days. Cancel anytime before day 3.",
+    finePrint: "After your free trial, your annual subscription begins. Cancel anytime.",
   },
 } as const;

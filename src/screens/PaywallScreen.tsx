@@ -51,42 +51,57 @@ const PAYWALL_CONTENT: Record<string, { title: string; body: string }> = {
   // Default
   default: {
     title: "Go Pro",
-    body: "Unlock the full camping toolkit.",
+    body: "Unlock the full camping toolkit with a 3-day free trial!",
   },
   // Learning
   learning_locked: {
-    title: "Unlock Learning with Pro",
-    body: "Get access to all learning modules beyond Leave No Trace.",
+    title: "Go Pro",
+    body: "Unlock all learning modules with a 3-day free trial!",
   },
   // Trips - Trip #2 Hard Gate (exact copy per requirements)
   second_trip: {
-    title: "Ready for trip #2?",
-    body: "You've used your free complete trip plan. Start a 3-day free trial to create unlimited trips—plus packing lists, meals, weather, and sharing.",
+    title: "Go Pro",
+    body: "Unlock unlimited trips with a 3-day free trial! Create trip plans, packing lists, meals, weather, and sharing.",
   },
   // Favorites
   favorites_limit: {
-    title: "Save more favorites with Pro",
-    body: "Keep unlimited campgrounds and parks saved for later.",
+    title: "Go Pro",
+    body: "Unlock unlimited favorites with a 3-day free trial!",
   },
   // Packing
   packing_customization: {
-    title: "Customize your packing list",
-    body: "Edit items, add your own gear, and save lists with Pro.",
+    title: "Go Pro",
+    body: "Unlock custom packing lists with a 3-day free trial!",
   },
   // Custom Campsites
   custom_campsite: {
-    title: "Create custom campsites with Pro",
-    body: "Add your own campsites and keep them saved in My Campsite.",
+    title: "Go Pro",
+    body: "Unlock custom campsites with a 3-day free trial!",
   },
   // Gear Closet limit (15 items)
   gear_closet_limit: {
-    title: "Save more gear with Pro",
-    body: "Pro keeps an unlimited Gear Closet, so you can reuse it for every trip.",
+    title: "Go Pro",
+    body: "Unlock unlimited gear storage with a 3-day free trial!",
   },
   // Campground sharing (Pro-only for sender)
   campground_sharing: {
-    title: "Share your trip plan with your Campground",
-    body: "Pro lets you share dates, location, route, weather outlook, and meals, all in one place.",
+    title: "Go Pro",
+    body: "Unlock trip sharing with a 3-day free trial!",
+  },
+  // Badge earned nudge
+  badge_earned: {
+    title: "Go Pro",
+    body: "Nice work earning a badge! Unlock the full camping toolkit with a 3-day free trial.",
+  },
+  // Learning complete nudge
+  learning_complete: {
+    title: "Go Pro",
+    body: "Great job completing that learning track! Unlock everything with a 3-day free trial.",
+  },
+  // Photo limit
+  photo_limit: {
+    title: "Go Pro",
+    body: "Unlock unlimited photo posts with a 3-day free trial!",
   },
 };
 
@@ -94,10 +109,10 @@ const PAYWALL_CONTENT: Record<string, { title: string; body: string }> = {
  * Nudge trial variant content (shown on 3rd Pro attempt)
  */
 const NUDGE_TRIAL_CONTENT = {
-  title: "Looks like Pro would help",
-  bodyWithTrial: "You've bumped into a few Pro features. Want to try them? Start a free 3-day trial and unlock everything.",
-  bodyWithoutTrial: "You've bumped into a few Pro features. Want to try them? Upgrade to Pro and unlock everything.",
-  ctaWithTrial: "Start free trial",
+  title: "Go Pro",
+  bodyWithTrial: "Unlock the full camping toolkit with a 3-day free trial!",
+  bodyWithoutTrial: "Unlock the full camping toolkit with Pro!",
+  ctaWithTrial: "Start 3-Day Free Trial",
   ctaWithoutTrial: "Upgrade to Pro",
 };
 
@@ -705,7 +720,7 @@ export default function PaywallScreen() {
               lineHeight: 18,
             }}
           >
-            Cancel anytime. Manage in Apple subscriptions.
+            After your 3-day free trial ends, your subscription will automatically begin at the selected plan rate. Cancel anytime in Settings.
           </Text>
           
           {/* Guest-only footer message */}

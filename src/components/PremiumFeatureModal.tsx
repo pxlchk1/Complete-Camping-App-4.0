@@ -28,16 +28,16 @@ interface PremiumFeatureModalProps {
 
 const COPY: Record<FeatureType, { title: string; body: string }> = {
   packing: {
-    title: "Premium feature",
-    body: "Customizing packing lists is part of Premium. You can still use the checklist for this trip.",
+    title: "Go Pro",
+    body: "Unlock the full camping toolkit with a 3-day free trial!",
   },
   meals: {
-    title: "Premium feature",
-    body: "Customizing meal plans is part of Premium. You can still use the grocery checklist for this trip.",
+    title: "Go Pro",
+    body: "Unlock the full camping toolkit with a 3-day free trial!",
   },
   photos: {
-    title: "Daily limit reached",
-    body: "Free users can share one photo per day. Upgrade to Pro for unlimited photo posts.",
+    title: "Go Pro",
+    body: "Unlock unlimited photo posts with a 3-day free trial!",
   },
 };
 
@@ -108,7 +108,7 @@ export default function PremiumFeatureModal({
               className="text-earthGreen/70 text-center text-xs"
               style={{ fontFamily: "SourceSans3_400Regular" }}
             >
-              Free for 3 days. Cancel anytime before day 3.
+              After your free trial, your annual subscription begins. Cancel anytime.
             </Text>
 
             {/* Secondary: Not now */}
