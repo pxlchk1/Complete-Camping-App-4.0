@@ -15,7 +15,7 @@ import { useLearnTabStore, LearnTab } from "../state/learnTabStore";
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
 
 import AccountButtonHeader from "../components/AccountButtonHeader";
-import OnboardingModal from "../components/OnboardingModal";
+import { OnboardingModal } from "../components/OnboardingModal";
 import MeritBadgesInfoModal from "../components/MeritBadgesInfoModal";
 
 import LearnScreen from "../screens/LearnScreen";
