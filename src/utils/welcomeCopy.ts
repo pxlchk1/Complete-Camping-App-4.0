@@ -1,9 +1,26 @@
 /**
  * Welcome Copy Utility
- * Provides personalized welcome messages based on user login state and camping preferences.
+ * Provides personalized welcome messages based on user login state and welcome history.
+ * 
+ * Requirements:
+ * A) First ever visit (hasSeenWelcomeHome == false):
+ *    Title: "Welcome Camper!"
+ *    Subtitle: "Your camping adventure starts here."
+ * 
+ * B) Subsequent visits, no firstName:
+ *    Title: "Welcome back, Camper!"
+ *    Subtitle: "Hope you've got snacks and a headlamp. Let's get you trip-ready."
+ * 
+ * C) Subsequent visits, with firstName:
+ *    Title: "Welcome back, {FirstName}!"
+ *    Subtitle: "Hope you've got snacks and a headlamp. Let's get you trip-ready."
  */
 
-// Camping type to subtext mapping
+// The single consistent cute subtitle for returning users
+const RETURNING_USER_SUBTITLE = "Hope you've got snacks and a headlamp. Let's get you trip-ready.";
+const FIRST_VISIT_SUBTITLE = "Your camping adventure starts here.";
+
+// Camping type to subtext mapping (unused for main welcome, kept for other features)
 const CAMPING_TYPE_MESSAGES: Record<string, string> = {
   "car camping": "Your trunk is ready for your next campsite haul.",
   "tent camping": "Your tent is ready for your next pitch.",
@@ -31,38 +48,62 @@ const CAMPING_TYPE_MESSAGES: Record<string, string> = {
   "overlanding": "Your next backroad adventure is calling.",
 };
 
-const DEFAULT_SUBTEXT = "Your camping adventure starts here";
-
 /**
- * Get the welcome title based on user's display name and login status.
- * @param displayName - User's display name from profile
+ * Get the welcome title based on welcome state.
+ * @param hasSeenWelcomeHome - Whether user has seen the first-time welcome
+ * @param firstName - User's firstName from users collection (optional)
  * @param isLoggedIn - Whether the user is logged in
  * @returns The welcome title string
  */
-export function getWelcomeTitle(displayName?: string | null, isLoggedIn?: boolean): string {
+export function getWelcomeTitle(
+  hasSeenWelcomeHome: boolean,
+  firstName?: string | null,
+  isLoggedIn?: boolean
+): string {
+  // Not logged in - always show first-time copy
   if (!isLoggedIn) {
-    return "Welcome, Camper!";
+    return "Welcome Camper!";
   }
 
-  // Get first name from display name
-  const firstName = displayName?.split(" ")[0]?.trim() || "Camper";
-  
-  return `Welcome back, ${firstName}!`;
+  // First-time user (hasSeenWelcomeHome == false)
+  if (!hasSeenWelcomeHome) {
+    return "Welcome Camper!";
+  }
+
+  // Returning user - determine display name
+  const trimmedFirstName = firstName?.trim();
+  const displayNameForWelcome = trimmedFirstName && trimmedFirstName.length > 0
+    ? trimmedFirstName
+    : "Camper";
+
+  return `Welcome back, ${displayNameForWelcome}!`;
 }
 
 /**
- * Get the welcome subtext based on user's favorite camping type and login status.
- * @param favoriteCampingType - User's favorite camping type from profile
+ * Get the welcome subtitle based on welcome state.
+ * @param hasSeenWelcomeHome - Whether user has seen the first-time welcome
  * @param isLoggedIn - Whether the user is logged in
  * @returns The welcome subtext string
  */
-export function getWelcomeSubtext(favoriteCampingType?: string | null, isLoggedIn?: boolean): string {
-  if (!isLoggedIn) {
-    return DEFAULT_SUBTEXT;
+export function getWelcomeSubtext(
+  hasSeenWelcomeHome: boolean,
+  isLoggedIn?: boolean
+): string {
+  // Not logged in OR first-time user - show first visit subtitle
+  if (!isLoggedIn || !hasSeenWelcomeHome) {
+    return FIRST_VISIT_SUBTITLE;
   }
 
+  // Returning user - show consistent cute subtitle
+  return RETURNING_USER_SUBTITLE;
+}
+
+/**
+ * Legacy: Get subtext based on camping type (kept for other features)
+ */
+export function getWelcomeSubtextByCampingStyle(favoriteCampingType?: string | null): string {
   if (!favoriteCampingType) {
-    return DEFAULT_SUBTEXT;
+    return RETURNING_USER_SUBTITLE;
   }
 
   // Normalize the camping type for lookup (lowercase, trimmed)
@@ -86,5 +127,5 @@ export function getWelcomeSubtext(favoriteCampingType?: string | null, isLoggedI
     }
   }
 
-  return DEFAULT_SUBTEXT;
+  return RETURNING_USER_SUBTITLE;
 }

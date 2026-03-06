@@ -40,6 +40,10 @@ const linking: LinkingOptions<RootStackParamList> = {
   ],
   config: {
     screens: {
+      // Paywall / subscription screen
+      Paywall: {
+        path: 'paywall',
+      },
       // New campground invite format: /join?token=<token>
       AcceptInvite: {
         path: 'join',
@@ -174,12 +178,12 @@ export default function App() {
     return () => unsubscribe();
   }, [subscriptionsInitialized]);
 
-  // Show splash screen for minimum 2 seconds
+  // Show splash screen for minimum 3 seconds on cold start
   useEffect(() => {
     if (fontsLoaded) {
       const timer = setTimeout(() => {
         setAppReady(true);
-      }, 2000);
+      }, 3000);
 
       return () => clearTimeout(timer);
     }

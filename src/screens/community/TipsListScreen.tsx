@@ -14,6 +14,7 @@ import { tipsService, TipPost } from "../../services/firestore/tipsService";
 import { deleteTip } from "../../services/connectDeletionService";
 import { tipVotesService } from "../../services/firestore/tipVotesService";
 import { auth } from "../../config/firebase";
+import { getConnectDisplayHandle } from "../../services/handleService";
 import AccountRequiredModal from "../../components/AccountRequiredModal";
 import OnboardingModal from "../../components/OnboardingModal";
 import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
@@ -125,10 +126,11 @@ export default function TipsListScreen() {
             try {
               const author = await getUser(authorId);
               if (author) {
-                handleMap[authorId] = author.handle || author.displayName || 'Anonymous';
+                // Use getConnectDisplayHandle to ensure we never map to "Anonymous"
+                handleMap[authorId] = getConnectDisplayHandle(author.handle || author.displayName, authorId);
               }
             } catch {
-              // Silently ignore - will fallback to Anonymous
+              // Silently ignore - will use getConnectDisplayHandle fallback at render
             }
           })
         );
@@ -271,7 +273,7 @@ export default function TipsListScreen() {
 
       <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
         <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-          @{authorHandles[item.userId || item.authorId || ''] || item.userName || 'Anonymous'}
+          @{authorHandles[item.userId || item.authorId || ''] || getConnectDisplayHandle(item.userName, item.userId || item.authorId)}
         </Text>
         <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>
         <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: TEXT_MUTED }}>

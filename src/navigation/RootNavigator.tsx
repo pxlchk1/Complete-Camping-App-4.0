@@ -8,7 +8,7 @@ import { PAYWALL_ENABLED } from "../config/subscriptions";
 
 // Screens
 import HomeScreen from "../screens/HomeScreen";
-import LearnScreen from "../screens/LearnScreen";
+import LearnTopTabsNavigator from "./LearnTopTabsNavigator";
 import MyTripsScreen from "../screens/MyTripsScreen";
 import CommunityTopTabsNavigator from "./CommunityTopTabsNavigator";
 import PlanTopTabsNavigator from "./PlanTopTabsNavigator";
@@ -83,6 +83,14 @@ import AdminCommunicationsScreen from "../screens/AdminCommunicationsScreen";
 import AcceptInviteScreen from "../screens/AcceptInviteScreen";
 import AcceptInvitationScreen from "../screens/AcceptInvitationScreen";
 
+// Merit Badges screens
+import MeritBadgesScreen from "../screens/MeritBadgesScreen";
+import BadgeDetailScreen from "../screens/BadgeDetailScreen";
+import SelectWitnessScreen from "../screens/SelectWitnessScreen";
+import WitnessRequestsScreen from "../screens/WitnessRequestsScreen";
+import MyBadgesScreen from "../screens/MyBadgesScreen";
+import MeritBadgeAssetCheck from "../screens/MeritBadgeAssetCheck";
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 const PlanStack = createNativeStackNavigator();
@@ -123,7 +131,7 @@ function HomeTabs() {
       }}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Learn" component={LearnScreen} />
+      <Tab.Screen name="Learn" component={LearnTopTabsNavigator} />
       <Tab.Screen name="Plan" component={PlanStackNavigator} />
       <Tab.Screen name="Connect" component={CommunityStackNavigator} />
       <Tab.Screen name="FirstAid" component={FirstAidScreen} />
@@ -176,6 +184,16 @@ export default function RootNavigator() {
 
       {/* Learning */}
       <Stack.Screen name="ModuleDetail" component={ModuleDetailScreen} />
+
+      {/* Merit Badges */}
+      <Stack.Screen name="MeritBadges" component={MeritBadgesScreen} />
+      <Stack.Screen name="BadgeDetail" component={BadgeDetailScreen} />
+      <Stack.Screen name="SelectWitness" component={SelectWitnessScreen} />
+      <Stack.Screen name="WitnessRequests" component={WitnessRequestsScreen} />
+      <Stack.Screen name="MyBadges" component={MyBadgesScreen} />
+      {/* Dev-only badge asset verification */}
+      {__DEV__ && <Stack.Screen name="MeritBadgeAssetCheck" component={MeritBadgeAssetCheck} />}
+
 
       {/* Subscription */}
       {PAYWALL_ENABLED && (

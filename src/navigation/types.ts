@@ -43,6 +43,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   Settings: undefined;
   Auth: undefined;
+  ForgotPassword: undefined;
   Paywall: { triggerKey?: string; variant?: "standard" | "nudge_trial" } | undefined;
   SeedData: undefined;
 
@@ -60,6 +61,7 @@ export type RootStackParamList = {
   MealPlan: { tripId: string };
 
   // Packing List screens (local-first store-based)
+  PackingList: { tripId: string };
   PackingListCreate: { 
     tripId?: string; 
     tripName?: string;
@@ -123,6 +125,17 @@ export type RootStackParamList = {
   // Invitation
   AcceptInvitation: { invitationToken: string };
   AcceptInvite: { token: string };
+
+  // Merit Badges
+  MeritBadges: undefined;
+  BadgeDetail: { badgeId: string };
+  SelectWitness: { badgeId: string; photoUrl?: string };
+  WitnessRequests: undefined;
+  MyBadges: { userId?: string } | undefined;
+
+  // Dev-only screens
+  MeritBadgeAssetCheck: undefined;
+
 
   // Main tabs
   MainTabs: { screen: string; params?: any };

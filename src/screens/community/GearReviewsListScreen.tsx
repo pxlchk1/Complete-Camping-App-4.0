@@ -28,6 +28,7 @@ import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
 import { requirePro } from "../../utils/gating";
 import { shouldShowInFeed } from "../../services/moderationService";
 import CommunitySectionHeader from "../../components/CommunitySectionHeader";
+import { getConnectDisplayHandle } from "../../services/handleService";
 import {
   DEEP_FOREST,
   PARCHMENT,
@@ -302,7 +303,7 @@ export default function GearReviewsListScreen() {
 
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-          {item.authorName || "Anonymous"}
+          @{getConnectDisplayHandle(item.authorHandle, item.authorId)}
         </Text>
         <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>
         <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: TEXT_MUTED }}>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, ScrollView, TextInput, KeyboardAvoidingView, Platform, Modal, Pressable } from "react-native";
+import { useToast } from "../components/ToastManager";
+import { notifyError, notifyValidationError } from "../ui/notify";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
@@ -12,7 +14,8 @@ import Button from "../components/Button";
 import AccountButton from "../components/AccountButton";
 import { RootStackParamList, PrefillLocation } from "../navigation/types";
 import { CampingStyle, TripDestination } from "../types/camping";
-import { requirePro } from "../utils/gating";
+import { requireAccount } from "../utils/gating";
+import { isPremiumUser, setFreePremiumTripId, getFreePremiumTripId } from "../utils/entitlements";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import { DEEP_FOREST, EARTH_GREEN, GRANITE_GOLD, RIVER_ROCK, SIERRA_SKY, PARCHMENT, PARCHMENT_BORDER } from "../constants/colors";
 import { trackTripCreated } from "../services/analyticsService";
@@ -65,6 +68,12 @@ export default function CreateTripScreen() {
   // Loading state for create button
   const [isCreating, setIsCreating] = useState(false);
 
+  // Validation error state
+  const [errors, setErrors] = useState<{ tripName?: string }>({});
+
+  // Toast
+  const toast = useToast();
+
   // Pre-populate trip name from destination if available
   useEffect(() => {
     if (prefillLocation && !tripName) {
@@ -73,14 +82,33 @@ export default function CreateTripScreen() {
     }
   }, [prefillLocation]);
 
+  // Gate: Redirect free users who already have a trip
+  useEffect(() => {
+    const checkEntitlement = async () => {
+      if (!isPremiumUser() && user?.uid) {
+        const existingTripId = await getFreePremiumTripId(user.uid);
+        if (existingTripId) {
+          // Free user already has a trip - redirect to paywall
+          navigation.replace("Paywall", { triggerKey: "second_trip" });
+        }
+      }
+    };
+    checkEntitlement();
+  }, [user?.uid, navigation]);
+
   const handleClearDestination = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setDestination(null);
   };
 
   const handleCreate = async () => {
+    // Clear previous errors
+    setErrors({});
+
+    // Validate required fields
     if (!tripName.trim()) {
-      alert("Please enter a trip name");
+      setErrors({ tripName: "Trip name is required" });
+      notifyValidationError(toast);
       return;
     }
 
@@ -89,12 +117,21 @@ export default function CreateTripScreen() {
       return;
     }
 
-    // Gate: PRO required to create trips
-    if (!requirePro({
+    // Gate: Account required
+    if (!requireAccount({
       openAccountModal: () => setShowAccountModal(true),
-      openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "create_trip", variant }),
     })) {
       return;
+    }
+
+    // Gate: Free users can only create one trip
+    if (!isPremiumUser() && user?.uid) {
+      const freeTripId = await getFreePremiumTripId(user.uid);
+      if (freeTripId) {
+        // Free user already has a trip - show paywall
+        navigation.navigate("Paywall", { triggerKey: "second_trip" });
+        return;
+      }
     }
 
     setIsCreating(true);
@@ -124,6 +161,14 @@ export default function CreateTripScreen() {
         parkId: destination?.placeType === "park" && destination?.placeId ? destination.placeId : undefined,
       });
 
+      // Set free premium trip ID for free users creating their first trip (guard against double-set)
+      if (!isPremiumUser() && user?.uid) {
+        const existingId = await getFreePremiumTripId(user.uid);
+        if (!existingId) {
+          await setFreePremiumTripId(user.uid, tripId);
+        }
+      }
+
       // Track analytics and core action
       trackTripCreated(tripId);
       if (user?.uid) {
@@ -134,7 +179,7 @@ export default function CreateTripScreen() {
       navigation.replace("TripDetail", { tripId });
     } catch (error) {
       console.error("[CreateTripScreen] Failed to create trip:", error);
-      alert("Failed to create trip. Please try again.");
+      notifyError(toast, "Failed to create trip. Please try again.");
       setIsCreating(false);
     }
   };
@@ -212,11 +257,20 @@ export default function CreateTripScreen() {
             <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Trip Name</Text>
             <TextInput
               value={tripName}
-              onChangeText={setTripName}
+              onChangeText={(text) => {
+                setTripName(text);
+                if (errors.tripName) setErrors({});
+              }}
               placeholder="e.g., Yosemite Weekend"
               placeholderTextColor="#999"
-              className="bg-parchment border border-parchmentDark rounded-xl px-4 py-3 text-base text-[#16492f]"
+              className="bg-parchment border rounded-xl px-4 py-3 text-base text-[#16492f]"
+              style={{ borderColor: errors.tripName ? "#dc2626" : "#E6E1D6" }}
             />
+            {errors.tripName && (
+              <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 13, color: "#dc2626", marginTop: 4 }}>
+                {errors.tripName}
+              </Text>
+            )}
           </View>
 
           {/* Dates */}

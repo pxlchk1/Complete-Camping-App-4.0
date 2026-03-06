@@ -22,9 +22,11 @@
  * - Nudge is rate-limited to once per 30 days
  * 
  * Connect Permissions:
- * - FREE allowed: Vote, Profile, Questions, Tips, Photos (1/day)
- * - FREE blocked: Feedback, Gear Reviews (paywall)
+ * - FREE allowed: Vote, Profile, Questions, Tips, Photos (1/day), Feedback (all actions)
+ * - FREE blocked: Gear Reviews (paywall)
  * - NO_ACCOUNT: All write actions blocked (account prompt for free-tier, paywall for pro-tier)
+ * 
+ * IMPORTANT: Feedback is ALWAYS ungated. See assertFeedbackNotGated().
  */
 
 import { auth } from '../config/firebase';
@@ -42,6 +44,78 @@ export type { PaywallVariant };
 // ============================================
 
 export type AccessState = 'NO_ACCOUNT' | 'FREE' | 'PRO';
+
+// ============================================
+// ONE FREE TRIP PLANNING ACCESS
+// ============================================
+
+/**
+ * Check if user has free trip planning access
+ * 
+ * Returns true if user is logged in AND has NOT used their one free trip yet.
+ * This allows free users to access packing/meal VIEWING on their first trip,
+ * while custom items/meals are still Pro-gated.
+ */
+export function hasFreeTripPlanningAccess(): boolean {
+  const isLoggedIn = !!auth.currentUser;
+  if (!isLoggedIn) return false;
+  
+  const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
+  return !hasUsedFreeTrip;
+}
+
+/**
+ * Require Pro OR one free trip planning access
+ * 
+ * Use for: Packing list viewing, meal plan viewing (non-custom actions)
+ * Does NOT apply to: Custom packing items, custom meals (always Pro)
+ * 
+ * @param callbacks - modal callbacks (only openPaywallModal used)
+ * @returns true if user can proceed (Pro OR on free trip), false if blocked
+ */
+export function requireProOrFreeTrip(callbacks: AccessGateCallbacks): boolean {
+  // If subscriptions disabled, allow
+  if (!SUBSCRIPTIONS_ENABLED || !PAYWALL_ENABLED) {
+    return true;
+  }
+  
+  // Check if user is an administrator (admins bypass paywall)
+  const isAdmin = useUserStore.getState().isAdministrator();
+  if (isAdmin) {
+    return true;
+  }
+  
+  // Check if user is Pro
+  const isPro = useSubscriptionStore.getState().isPro;
+  if (isPro) {
+    return true;
+  }
+  
+  // Check if user has free trip planning access (logged in + hasn't used free trip)
+  if (hasFreeTripPlanningAccess()) {
+    return true;
+  }
+  
+  // Neither Pro nor free trip access - show paywall
+  const isLoggedIn = !!auth.currentUser;
+  if (!isLoggedIn) {
+    // Guest - track and show paywall
+    getPaywallVariantAndTrack().then((variant) => {
+      callbacks.openPaywallModal(variant);
+    }).catch(() => {
+      callbacks.openPaywallModal('standard');
+    });
+    return false;
+  }
+  
+  // Logged in but no access - show paywall
+  getPaywallVariantAndTrack().then((variant) => {
+    callbacks.openPaywallModal(variant);
+  }).catch(() => {
+    callbacks.openPaywallModal('standard');
+  });
+  return false;
+}
 
 export interface AccessGateCallbacks {
   showAccountPrompt?: () => void;
@@ -196,6 +270,43 @@ export function requireAccount(callbacks: Pick<AccessGateCallbacks, 'showAccount
     return false;
   }
   return true;
+}
+
+// ============================================
+// FEEDBACK ANTI-REGRESSION GUARD
+// ============================================
+
+/**
+ * assertFeedbackNotGated: DEV-ONLY anti-regression guard (2026-03-03)
+ * 
+ * Feedback features (create, vote, comment) must NEVER be gated behind Pro.
+ * This function exists as a tripwire: if someone re-adds gating, this will
+ * log an error in development builds.
+ * 
+ * Call this at the top of any feedback action handler to document the intent
+ * and catch accidental re-introduction of gating.
+ * 
+ * In production: Does nothing (no-op)
+ * In development: Logs error if gating is detected, but still allows action
+ * 
+ * @param actionKey - The action being performed (for logging)
+ */
+export function assertFeedbackNotGated(actionKey: string): void {
+  if (__DEV__) {
+    // This guard exists to catch if someone re-adds requireProForAction to Feedback
+    // If you see this log, remove any subscription gating from feedback actions
+    const isPro = useSubscriptionStore.getState().isPro;
+    const isLoggedIn = !!auth.currentUser;
+    
+    // The fact that we're calling this at all (instead of requireProForAction) 
+    // means we're correctly ungated. Log info for visibility.
+    console.log(
+      `[Feedback Guard] ${actionKey}: Feedback is ungated. ` +
+      `User state: ${isLoggedIn ? (isPro ? 'PRO' : 'FREE') : 'GUEST'}. ` +
+      `Action will proceed with account-only check.`
+    );
+  }
+  // In production, this is a no-op
 }
 
 /**

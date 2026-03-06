@@ -21,12 +21,14 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import ModalHeader from "../../components/ModalHeader";
+import PremiumFeatureModal from "../../components/PremiumFeatureModal";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useCurrentUser } from "../../state/userStore";
 import { RootStackNavigationProp } from "../../navigation/types";
 import { createPhotoPost } from "../../services/photoPostsService";
+import { getConnectDisplayHandle } from "../../services/handleService";
 import { requireEmailVerification } from "../../utils/authHelper";
 import { recordPhotoUpload, canUploadPhotoToday } from "../../services/photoLimitService";
 import {
@@ -111,6 +113,7 @@ export default function PhotoComposerScreen() {
   // UI state
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPhotoLimitModal, setShowPhotoLimitModal] = useState(false);
 
   // Set caption template when post type changes
   useEffect(() => {
@@ -199,7 +202,7 @@ export default function PhotoComposerScreen() {
     // Check photo limit
     const limitCheck = await canUploadPhotoToday();
     if (!limitCheck.canUpload) {
-      setError(limitCheck.message || "You've reached your daily photo limit.");
+      setShowPhotoLimitModal(true);
       return;
     }
 
@@ -217,7 +220,7 @@ export default function PhotoComposerScreen() {
       // Create photo post
       const postId = await createPhotoPost({
         userId: currentUser.id,
-        displayName: currentUser.displayName || "Anonymous",
+        displayName: getConnectDisplayHandle(currentUser.displayName, currentUser.id),
         userHandle: currentUser.handle,
         photoUrls: [downloadURL],
         storagePaths: [storagePath],
@@ -547,6 +550,17 @@ export default function PhotoComposerScreen() {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      {/* Photo Limit Modal */}
+      <PremiumFeatureModal
+        visible={showPhotoLimitModal}
+        featureType="photos"
+        onUpgrade={() => {
+          setShowPhotoLimitModal(false);
+          navigation.navigate("Paywall", { triggerKey: "photo_limit" });
+        }}
+        onDismiss={() => setShowPhotoLimitModal(false)}
+      />
     </View>
   );
 }

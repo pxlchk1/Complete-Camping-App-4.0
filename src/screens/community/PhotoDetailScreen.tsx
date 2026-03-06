@@ -55,6 +55,7 @@ import {
   CARD_BACKGROUND_LIGHT,
 } from "../../constants/colors";
 import HandleLink from "../../components/HandleLink";
+import { getConnectDisplayHandle } from "../../services/handleService";
 
 const { width } = Dimensions.get("window");
 
@@ -359,7 +360,7 @@ export default function PhotoDetailScreen() {
         postId,
         text: commentText.trim(),
         userId: currentUser.id,
-        username: currentUser.handle || currentUser.displayName || "Anonymous",
+        username: getConnectDisplayHandle(currentUser.handle || currentUser.displayName, currentUser.id),
         userHandle: currentUser.handle,
       });
       
@@ -598,14 +599,12 @@ export default function PhotoDetailScreen() {
   };
   const rawHandle = getRawHandle();
   
-  // Get the author's display - prioritize stored handle, then fetched handle, then displayName
+  // Get the author's display - prioritize stored handle, then fetched handle, then placeholder
   const getAuthorDisplay = () => {
     if (rawHandle) return `@${rawHandle}`;
-    if (isNewFormat) {
-      return photoPost?.displayName || "Anonymous";
-    } else {
-      return photo?.displayName || "Anonymous";
-    }
+    // Use getConnectDisplayHandle for fallback - never show "Anonymous"
+    const fallbackName = isNewFormat ? photoPost?.displayName : photo?.displayName;
+    return `@${getConnectDisplayHandle(fallbackName, authorUserId)}`;
   };
   const displayName = getAuthorDisplay();
   const legacyTags = !isNewFormat && photo?.tags ? photo.tags : [];
@@ -860,7 +859,7 @@ export default function PhotoDetailScreen() {
                               marginBottom: 4,
                             }}
                           >
-                            {comment.userHandle || comment.username || "Anonymous"}
+                            @{getConnectDisplayHandle(comment.userHandle || comment.username, comment.userId)}
                           </Text>
                         </Pressable>
                       ) : (
@@ -872,7 +871,7 @@ export default function PhotoDetailScreen() {
                             marginBottom: 4,
                           }}
                         >
-                          {comment.userHandle || comment.username || "Anonymous"}
+                          @{getConnectDisplayHandle(comment.userHandle || comment.username, comment.userId)}
                         </Text>
                       )}
                       <Text

@@ -14,7 +14,7 @@ import { auth } from "../../config/firebase";
 import AccountRequiredModal from "../../components/AccountRequiredModal";
 import OnboardingModal from "../../components/OnboardingModal";
 import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
-import { requireProForAction } from "../../utils/gating";
+import { requireAccount } from "../../utils/gating";
 import { shouldShowInFeed } from "../../services/moderationService";
 import { RootStackNavigationProp } from "../../navigation/types";
 import CommunitySectionHeader from "../../components/CommunitySectionHeader";
@@ -101,59 +101,50 @@ export default function FeedbackListScreen() {
   };
   
   const handleCreatePost = () => {
-    // Feedback submission requires Pro
-    requireProForAction(
-      () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        navigation.navigate("CreateFeedback");
-      },
-      {
-        openAccountModal: () => setShowLoginModal(true),
-        openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "feedback_create", variant }),
-      }
-    );
+    // Feedback submission requires account (free for all logged-in users)
+    if (!requireAccount({
+      openAccountModal: () => setShowLoginModal(true),
+    })) {
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate("CreateFeedback");
   };
 
   const handleUpvote = async (postId: string) => {
-    // Voting requires Pro
-    requireProForAction(
-      async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        try {
-          await feedbackService.upvoteFeedback(postId);
-          setPosts(prev =>
-            prev.map(p => (p.id === postId ? { ...p, karmaScore: p.karmaScore + 1 } : p))
-          );
-        } catch (err) {
-          // Silently fail
-        }
-      },
-      {
-        openAccountModal: () => setShowLoginModal(true),
-        openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "feedback_vote", variant }),
-      }
-    );
+    // Voting requires account (free for all logged-in users)
+    if (!requireAccount({
+      openAccountModal: () => setShowLoginModal(true),
+    })) {
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await feedbackService.upvoteFeedback(postId);
+      setPosts(prev =>
+        prev.map(p => (p.id === postId ? { ...p, karmaScore: p.karmaScore + 1 } : p))
+      );
+    } catch (err) {
+      // Silently fail
+    }
   };
 
   const handleDownvote = async (postId: string) => {
-    // Voting requires Pro
-    requireProForAction(
-      async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        try {
-          await feedbackService.adjustKarma(postId, -1);
-          setPosts(prev =>
-            prev.map(p => (p.id === postId ? { ...p, karmaScore: p.karmaScore - 1 } : p))
-          );
-        } catch (err) {
-          // Silently fail
-        }
-      },
-      {
-        openAccountModal: () => setShowLoginModal(true),
-        openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "feedback_vote", variant }),
-      }
-    );
+    // Voting requires account (free for all logged-in users)
+    if (!requireAccount({
+      openAccountModal: () => setShowLoginModal(true),
+    })) {
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await feedbackService.adjustKarma(postId, -1);
+      setPosts(prev =>
+        prev.map(p => (p.id === postId ? { ...p, karmaScore: p.karmaScore - 1 } : p))
+      );
+    } catch (err) {
+      // Silently fail
+    }
   };
 
   const getCategoryLabel = (category: string) => {

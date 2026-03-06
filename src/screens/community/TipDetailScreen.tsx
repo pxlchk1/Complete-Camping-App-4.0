@@ -33,6 +33,7 @@ import VotePill from "../../components/VotePill";
 import AccountRequiredModal from "../../components/AccountRequiredModal";
 import { ContentActionsAffordance } from "../../components/contentActions";
 import { isAdmin, isModerator, canModerateContent, getUser } from "../../services/userService";
+import { getConnectDisplayHandle } from "../../services/handleService";
 import { User } from "../../types/user";
 import {
   DEEP_FOREST,
@@ -58,7 +59,7 @@ export default function TipDetailScreen() {
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showAccountRequired, setShowAccountRequired] = useState(false);
-  const [authorName, setAuthorName] = useState<string>("Anonymous");
+  const [authorName, setAuthorName] = useState<string>("");
 
   // Permission checks for content actions
   const canModerate = currentUser ? canModerateContent(currentUser as User) : false;
@@ -146,10 +147,13 @@ export default function TipDetailScreen() {
       try {
         const author = await getUser(tipData.authorId);
         if (author) {
-          setAuthorName(author.handle || author.displayName || 'Anonymous');
+          setAuthorName(getConnectDisplayHandle(author.handle || author.displayName, tipData.authorId));
+        } else {
+          setAuthorName(getConnectDisplayHandle(null, tipData.authorId));
         }
       } catch (authorErr) {
-        // Silently ignore - author name is not critical for viewing
+        // Fallback to placeholder handle if author load fails
+        setAuthorName(getConnectDisplayHandle(null, tipData.authorId));
         console.log("[TipDetail] Could not load author:", authorErr);
       }
     } catch (err: any) {
@@ -191,7 +195,7 @@ export default function TipDetailScreen() {
         tipId,
         body: commentText.trim(),
         authorId: currentUser.id,
-        username: currentUser.handle || currentUser.displayName || 'Anonymous',
+        username: getConnectDisplayHandle(currentUser.handle || currentUser.displayName, currentUser.id),
       });
       setCommentText("");
       await loadTip(); // Reload to get new comment
@@ -417,7 +421,7 @@ export default function TipDetailScreen() {
                     />
                   </View>
                   <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
-                    by @{(comment as any).username || 'Anonymous'} • {formatTimeAgo(comment.createdAt)}
+                    by @{getConnectDisplayHandle((comment as any).username, comment.authorId)} • {formatTimeAgo(comment.createdAt)}
                   </Text>
                 </View>
               ))

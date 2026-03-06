@@ -73,6 +73,7 @@ export interface CampgroundInvite {
 export interface CreateInviteData {
   inviteeEmail?: string;
   inviteePhone?: string;
+  inviteeName?: string;
   inviterName: string;
   campgroundId: string;
 }
@@ -82,11 +83,13 @@ export interface CreateInviteResult {
   inviteId: string;
   token: string;
   inviteLink: string;
+  campgroundId?: string;
 }
 
 export interface SendInviteEmailResult {
   success: boolean;
   message: string;
+  messageId?: string;
 }
 
 export interface RedeemInviteResult {

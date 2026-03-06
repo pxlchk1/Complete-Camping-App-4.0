@@ -245,7 +245,10 @@ export const sendCampgroundInviteEmail = functions
       // Template ID: d-a00eabe7198844468abf694b6cbea063 (My Campground Invite)
       const msg = {
         to: invite.inviteeEmail,
-        from: sendgridFromEmail.value(),
+        from: {
+          email: "noreply@tentandlantern.com",
+          name: "Complete Camping App",
+        },
         templateId: "d-a00eabe7198844468abf694b6cbea063",
         dynamicTemplateData: {
           // Use first name only for invite message
@@ -575,6 +578,196 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
       stack: error instanceof Error ? error.stack : undefined,
     });
     // Don't throw - we don't want to block user creation
+  }
+});
+
+// ============================================
+// USER DELETION CLEANUP
+// ============================================
+
+/**
+ * Normalize email for consistent lookups
+ */
+function normalizeEmailForIndex(email: string | null | undefined): string | null {
+  if (!email) return null;
+  return email.toLowerCase().trim();
+}
+
+/**
+ * Clean up Firestore documents when a user is deleted from Firebase Auth
+ * 
+ * This function:
+ * 1. Deletes userEmailIndex/{normalizedEmail} ONLY if it belongs to this user
+ * 2. Deletes users/{uid}
+ * 3. Deletes profiles/{uid}
+ * 4. Deletes emailSubscribers/{uid}
+ * 5. Deletes pushTokens where userId == uid
+ * 
+ * SAFETY INVARIANT: userEmailIndex is only deleted if index.userId === deletedUid
+ */
+export const onUserDeleted = functions.auth.user().onDelete(async (user) => {
+  const uid = user.uid;
+  const db = admin.firestore();
+  
+  // Track what we're doing for logging
+  const cleanupLog: {
+    uid: string;
+    hadAuthEmail: boolean;
+    hadUsersDocEmail: boolean;
+    normalizedEmail: string | null;
+    indexFound: boolean;
+    indexUserId: string | null;
+    indexAction: "deleted" | "skipped-mismatch" | "skipped-no-email" | "skipped-not-found";
+    deletedDocs: string[];
+    deletedPushTokensCount: number;
+    errors: string[];
+  } = {
+    uid,
+    hadAuthEmail: !!user.email,
+    hadUsersDocEmail: false,
+    normalizedEmail: null,
+    indexFound: false,
+    indexUserId: null,
+    indexAction: "skipped-no-email",
+    deletedDocs: [],
+    deletedPushTokensCount: 0,
+    errors: [],
+  };
+
+  functions.logger.info("onUserDeleted triggered", { uid, email: user.email });
+
+  try {
+    // Step 1: Determine normalizedEmail
+    // First try from users/{uid} doc (more reliable), then from Auth record
+    let normalizedEmail: string | null = null;
+    
+    try {
+      const usersDoc = await db.collection("users").doc(uid).get();
+      if (usersDoc.exists) {
+        const userData = usersDoc.data();
+        const emailFromDoc = userData?.email || userData?.normalizedEmail;
+        if (emailFromDoc) {
+          normalizedEmail = normalizeEmailForIndex(emailFromDoc);
+          cleanupLog.hadUsersDocEmail = true;
+        }
+      }
+    } catch (err) {
+      cleanupLog.errors.push(`Failed to read users/${uid}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    
+    // Fallback to Auth record email
+    if (!normalizedEmail && user.email) {
+      normalizedEmail = normalizeEmailForIndex(user.email);
+    }
+    
+    cleanupLog.normalizedEmail = normalizedEmail;
+
+    // Step 2: Handle userEmailIndex cleanup (CRITICAL SAFETY CHECK)
+    if (normalizedEmail) {
+      try {
+        const indexRef = db.collection("userEmailIndex").doc(normalizedEmail);
+        const indexDoc = await indexRef.get();
+        
+        if (indexDoc.exists) {
+          cleanupLog.indexFound = true;
+          const indexData = indexDoc.data();
+          const indexUserId = indexData?.userId;
+          cleanupLog.indexUserId = indexUserId || null;
+          
+          // SAFETY INVARIANT: Only delete if userId matches
+          if (indexUserId === uid) {
+            await indexRef.delete();
+            cleanupLog.indexAction = "deleted";
+            cleanupLog.deletedDocs.push(`userEmailIndex/${normalizedEmail}`);
+            functions.logger.info("Deleted userEmailIndex", { normalizedEmail, uid });
+          } else {
+            // CRITICAL: Do NOT delete - belongs to different user
+            cleanupLog.indexAction = "skipped-mismatch";
+            functions.logger.warn("userEmailIndex belongs to different user, NOT deleting", {
+              normalizedEmail,
+              deletedUid: uid,
+              indexUserId,
+            });
+          }
+        } else {
+          cleanupLog.indexAction = "skipped-not-found";
+          functions.logger.info("userEmailIndex not found", { normalizedEmail });
+        }
+      } catch (err) {
+        cleanupLog.errors.push(`Failed to process userEmailIndex: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    } else {
+      cleanupLog.indexAction = "skipped-no-email";
+      functions.logger.info("No email available for userEmailIndex cleanup", { uid });
+    }
+
+    // Step 3: Delete UID-keyed documents (users, profiles, emailSubscribers)
+    const uidKeyedDocs = [
+      `users/${uid}`,
+      `profiles/${uid}`,
+      `emailSubscribers/${uid}`,
+    ];
+
+    for (const docPath of uidKeyedDocs) {
+      try {
+        const docRef = db.doc(docPath);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
+          await docRef.delete();
+          cleanupLog.deletedDocs.push(docPath);
+          functions.logger.info("Deleted document", { path: docPath });
+        }
+      } catch (err) {
+        cleanupLog.errors.push(`Failed to delete ${docPath}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    // Step 4: Delete pushTokens where userId == uid (query-based, chunked)
+    try {
+      const pushTokensQuery = db.collection("pushTokens").where("userId", "==", uid);
+      let deletedTokens = 0;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const snapshot = await pushTokensQuery.limit(450).get();
+        
+        if (snapshot.empty) {
+          hasMore = false;
+          break;
+        }
+        
+        const batch = db.batch();
+        snapshot.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+          deletedTokens++;
+        });
+        
+        await batch.commit();
+        
+        // If we got less than 450, we're done
+        if (snapshot.size < 450) {
+          hasMore = false;
+        }
+      }
+      
+      cleanupLog.deletedPushTokensCount = deletedTokens;
+      if (deletedTokens > 0) {
+        functions.logger.info("Deleted pushTokens", { uid, count: deletedTokens });
+      }
+    } catch (err) {
+      cleanupLog.errors.push(`Failed to delete pushTokens: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
+    // Final summary log
+    functions.logger.info("onUserDeleted cleanup complete", cleanupLog);
+
+  } catch (error) {
+    // Top-level catch - should never throw to avoid blocking Auth deletion
+    functions.logger.error("onUserDeleted encountered unexpected error", {
+      uid,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   }
 });
 
@@ -1582,7 +1775,10 @@ export const processEmailQueue = functions
 
           const msg = {
             to: queueItem.toEmail,
-            from: sendgridFromEmail.value(),
+            from: {
+              email: "noreply@tentandlantern.com",
+              name: "Complete Camping App",
+            },
             templateId: queueItem.templateId,
             dynamicTemplateData: {
               ...queueItem.templateData,
@@ -1853,7 +2049,10 @@ export const processDripEmails = functions
 
           const msg = {
             to: userData.email,
-            from: sendgridFromEmail.value(),
+            from: {
+              email: "noreply@tentandlantern.com",
+              name: "Complete Camping App",
+            },
             templateId: "d-33e554033ea641fdb7288ce884923c33", // Drip template
             dynamicTemplateData: {
               firstName,
@@ -2014,7 +2213,10 @@ export const sendInactiveReengagementEmail = functions
 
           const msg = {
             to: userData.email,
-            from: sendgridFromEmail.value(),
+            from: {
+              email: "noreply@tentandlantern.com",
+              name: "Complete Camping App",
+            },
             templateId: "d-33e554033ea641fdb7288ce884923c33", // Drip template
             dynamicTemplateData: {
               firstName,
@@ -2289,3 +2491,985 @@ export const adminUpdateProfile = functions.https.onCall(
   }
 );
 
+// ============================================
+// ADMIN TEST PUSH - SEND IMMEDIATELY
+// ============================================
+
+/**
+ * Send a test push notification immediately (admin only)
+ * Sends to the admin's own device
+ */
+export const sendAdminTestPush = functions.https.onCall(
+  async (
+    data: {
+      title: string;
+      body: string;
+      deepLink?: string;
+      campaignName?: string;
+    },
+    context
+  ) => {
+    // Require authentication
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Must be authenticated"
+      );
+    }
+
+    const callerUid = context.auth.uid;
+    const db = admin.firestore();
+
+    // Check if caller is an administrator
+    const callerProfile = await db.collection("profiles").doc(callerUid).get();
+    const profileData = callerProfile.data();
+    const isAdminUser =
+      callerProfile.exists &&
+      (profileData?.isAdministrator === true ||
+        profileData?.isAdmin === true ||
+        profileData?.role === "admin" ||
+        profileData?.role === "administrator" ||
+        profileData?.membershipTier === "isAdmin");
+
+    if (!isAdminUser) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "Only administrators can send test push notifications"
+      );
+    }
+
+    // Validate input
+    if (!data.title || !data.body) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Missing required fields: title and body are required"
+      );
+    }
+
+    try {
+      // Get admin's push tokens
+      const tokensSnapshot = await db
+        .collection("pushTokens")
+        .where("userId", "==", callerUid)
+        .get();
+
+      if (tokensSnapshot.empty) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "No push token found for your device. Make sure notifications are enabled."
+        );
+      }
+
+      const tokens = tokensSnapshot.docs.map((doc) => doc.data().token);
+      let successCount = 0;
+      let failureCount = 0;
+
+      // Filter for Expo push tokens only
+      const expoTokens = tokens.filter((t: string) => t.startsWith("ExponentPushToken"));
+      
+      if (expoTokens.length === 0) {
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "No valid Expo push token found. Make sure notifications are enabled in the app."
+        );
+      }
+
+      // Send via Expo Push API
+      const messages = expoTokens.map((token: string) => ({
+        to: token,
+        sound: "default" as const,
+        title: data.title,
+        body: data.body,
+        data: {
+          deepLink: data.deepLink || "",
+          campaignName: data.campaignName || "",
+          isTest: "true",
+        },
+      }));
+
+      // Call Expo Push API
+      const response = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(messages),
+      });
+
+      const result = await response.json();
+      
+      if (result.data) {
+        for (const ticket of result.data) {
+          if (ticket.status === "ok") {
+            successCount++;
+          } else {
+            failureCount++;
+            functions.logger.warn("Expo push ticket error", { ticket });
+          }
+        }
+      }
+
+      functions.logger.info("Admin test push sent via Expo", {
+        adminUid: callerUid,
+        title: data.title,
+        successCount,
+        failureCount,
+      });
+
+      return {
+        success: successCount > 0,
+        message: `Push sent to ${successCount} device(s)`,
+        successCount,
+        failureCount,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      functions.logger.error("Failed to send admin test push", {
+        adminUid: callerUid,
+        error: errorMessage,
+      });
+      throw new functions.https.HttpsError("internal", `Failed to send push: ${errorMessage}`);
+    }
+  }
+);
+
+// ============================================
+// ADMIN TEST EMAIL - SEND IMMEDIATELY
+// ============================================
+
+/**
+ * Send a test email immediately (admin only)
+ * Uses the drip template for campaign emails
+ */
+export const sendAdminTestEmail = functions
+  .runWith({ secrets: [sendgridApiKey, sendgridFromEmail] })
+  .https.onCall(
+    async (
+      data: {
+        toEmail: string;
+        subjectLine?: string;
+        templateData: {
+          firstName?: string;
+          headline: string;
+          body: string;
+          ctaText?: string;
+          ctaLink?: string;
+          preheader?: string;
+          tip1?: string;
+          tip2?: string;
+          tip3?: string;
+        };
+        campaignName?: string;
+      },
+      context
+    ) => {
+      // Require authentication
+      if (!context.auth) {
+        throw new functions.https.HttpsError(
+          "unauthenticated",
+          "Must be authenticated"
+        );
+      }
+
+      const callerUid = context.auth.uid;
+      const db = admin.firestore();
+
+      // Check if caller is an administrator
+      const callerProfile = await db.collection("profiles").doc(callerUid).get();
+      const profileData = callerProfile.data();
+      const isAdminUser =
+        callerProfile.exists &&
+        (profileData?.isAdministrator === true ||
+          profileData?.isAdmin === true ||
+          profileData?.role === "admin" ||
+          profileData?.role === "administrator" ||
+          profileData?.membershipTier === "isAdmin");
+
+      if (!isAdminUser) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Only administrators can send test emails"
+        );
+      }
+
+      // Validate input
+      if (!data.toEmail || !data.templateData?.headline || !data.templateData?.body) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Missing required fields: toEmail, headline, and body are required"
+        );
+      }
+
+      try {
+        sgMail.setApiKey(sendgridApiKey.value());
+
+        const subjectLine = data.subjectLine || `🏕️ ${data.templateData.headline}`;
+
+        // Normalize body: strip any <br> tags, fix double-escaped newlines
+        const normalizeEmailBody = (input: string) => {
+          if (!input) return '';
+          return input
+            .replace(/<br\s*\/?>/gi, '\n')
+            .replace(/\\n/g, '\n');
+        };
+
+        const body = normalizeEmailBody(data.templateData.body);
+        const includesBr = /<br\s*\/?>/i.test(body);
+        functions.logger.info("sendAdminTestEmail body normalized", {
+          first120: body.substring(0, 120),
+          includesBr,
+        });
+
+        const msg = {
+          to: data.toEmail,
+          from: {
+            email: "noreply@tentandlantern.com",
+            name: "Complete Camping App",
+          },
+          subject: subjectLine,
+          templateId: "d-184d34133fdb40f3b753592c223c0315", // Admin campaign template
+          dynamicTemplateData: {
+            subject: subjectLine, // For template to use via {{{subject}}}
+            firstName: data.templateData.firstName || "Camper",
+            headline: data.templateData.headline,
+            body: body, // Plain text with \n intact, no <br> tags
+            ctaText: data.templateData.ctaText || "Open App",
+            ctaLink: data.templateData.ctaLink || "https://tentandlantern.com/app",
+            preheader: data.templateData.preheader || data.templateData.body.substring(0, 100),
+            year: new Date().getFullYear(),
+            tip1: data.templateData.tip1,
+            tip2: data.templateData.tip2,
+            tip3: data.templateData.tip3,
+          },
+        };
+
+        await sgMail.send(msg);
+
+        // Log the test email
+        await db.collection("adminTestEmails").add({
+          to: data.toEmail,
+          subjectLine: data.subjectLine,
+          templateData: data.templateData,
+          campaignName: data.campaignName,
+          sentBy: callerUid,
+          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: "sent",
+        });
+
+        functions.logger.info("Admin test email sent", {
+          adminUid: callerUid,
+          to: data.toEmail,
+          headline: data.templateData.headline,
+        });
+
+        return { success: true, message: `Test email sent to ${data.toEmail}` };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        functions.logger.error("Failed to send admin test email", {
+          adminUid: callerUid,
+          to: data.toEmail,
+          error: errorMessage,
+        });
+        throw new functions.https.HttpsError("internal", `Failed to send email: ${errorMessage}`);
+      }
+    }
+  );
+
+/**
+ * Publish email campaign to all eligible recipients (admin only)
+ * Sends to all users with verified emails who have notifications enabled
+ */
+export const publishAdminEmail = functions
+  .runWith({ secrets: [sendgridApiKey, sendgridFromEmail], timeoutSeconds: 300 })
+  .https.onCall(
+    async (
+      data: {
+        subjectLine?: string;
+        templateData: {
+          firstName?: string;
+          headline: string;
+          body: string;
+          ctaText?: string;
+          ctaLink?: string;
+          preheader?: string;
+          tip1?: string;
+          tip2?: string;
+          tip3?: string;
+        };
+        campaignName: string;
+      },
+      context
+    ) => {
+      // Require authentication
+      if (!context.auth) {
+        throw new functions.https.HttpsError(
+          "unauthenticated",
+          "Must be authenticated"
+        );
+      }
+
+      const callerUid = context.auth.uid;
+      const db = admin.firestore();
+
+      // Check if caller is an administrator
+      const callerProfile = await db.collection("profiles").doc(callerUid).get();
+      const profileData = callerProfile.data();
+      const isAdminUser =
+        callerProfile.exists &&
+        (profileData?.isAdministrator === true ||
+          profileData?.isAdmin === true ||
+          profileData?.role === "admin" ||
+          profileData?.role === "administrator" ||
+          profileData?.membershipTier === "isAdmin");
+
+      if (!isAdminUser) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Only administrators can publish email campaigns"
+        );
+      }
+
+      // Validate input
+      if (!data.campaignName || !data.templateData?.headline || !data.templateData?.body) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Missing required fields: campaignName, headline, and body are required"
+        );
+      }
+
+      // Idempotency check: has this campaign already been sent?
+      const existingCampaign = await db
+        .collection("adminEmailCampaigns")
+        .where("campaignName", "==", data.campaignName)
+        .where("status", "==", "sent")
+        .limit(1)
+        .get();
+
+      if (!existingCampaign.empty) {
+        functions.logger.warn("Campaign already sent, blocking duplicate", {
+          campaignName: data.campaignName,
+        });
+        return {
+          success: false,
+          status: "already_sent",
+          message: `Campaign "${data.campaignName}" has already been sent.`,
+        };
+      }
+
+      try {
+        sgMail.setApiKey(sendgridApiKey.value());
+
+        // Get all users with email addresses
+        const usersSnapshot = await db.collection("profiles").get();
+        const totalUsersFound = usersSnapshot.size;
+
+        // Filter to eligible recipients: has email, notifications not disabled
+        const eligibleRecipients: Array<{ uid: string; email: string; firstName: string }> = [];
+
+        usersSnapshot.forEach((doc) => {
+          const userData = doc.data();
+          const email = userData.email;
+          // Skip if no email or if email notifications explicitly disabled
+          if (email && userData.emailNotificationsDisabled !== true) {
+            eligibleRecipients.push({
+              uid: doc.id,
+              email: email,
+              firstName: userData.firstName || userData.displayName?.split(" ")[0] || "Camper",
+            });
+          }
+        });
+
+        const usersWithEmailCount = eligibleRecipients.length;
+        const usersEligibleCount = eligibleRecipients.length;
+
+        // Hard ceiling failsafe (1000 max)
+        if (usersEligibleCount > 1000) {
+          functions.logger.error("Recipient count exceeds hard ceiling", {
+            usersEligibleCount,
+            hardCeiling: 1000,
+          });
+          throw new functions.https.HttpsError(
+            "failed-precondition",
+            `Too many recipients (${usersEligibleCount}). Maximum allowed is 1000.`
+          );
+        }
+
+        // Log masked sample of 5 recipients
+        const maskedSample = eligibleRecipients.slice(0, 5).map((r) => {
+          const [localPart, domain] = r.email.split("@");
+          return `${localPart.substring(0, 3)}***@${domain}`;
+        });
+
+        functions.logger.info("publishAdminEmail starting", {
+          campaignName: data.campaignName,
+          totalUsersFound,
+          usersWithEmailCount,
+          usersEligibleCount,
+          maskedSample,
+        });
+
+        // Normalize body
+        const normalizeEmailBody = (input: string) => {
+          if (!input) return "";
+          return input.replace(/<br\s*\/?>/gi, "\n").replace(/\\n/g, "\n");
+        };
+
+        const body = normalizeEmailBody(data.templateData.body);
+        const subjectLine = data.subjectLine || `🏕️ ${data.templateData.headline}`;
+
+        // Send emails in batches of 100 (SendGrid recommends max 1000 personalizations per request)
+        const BATCH_SIZE = 100;
+        let successCount = 0;
+        let failCount = 0;
+        const errors: string[] = [];
+
+        for (let i = 0; i < eligibleRecipients.length; i += BATCH_SIZE) {
+          const batch = eligibleRecipients.slice(i, i + BATCH_SIZE);
+
+          const personalizations = batch.map((recipient) => ({
+            to: { email: recipient.email },
+            dynamicTemplateData: {
+              subject: subjectLine,
+              firstName: recipient.firstName,
+              headline: data.templateData.headline,
+              body: body,
+              ctaText: data.templateData.ctaText || "Open App",
+              ctaLink: data.templateData.ctaLink || "https://tentandlantern.com/app",
+              preheader: data.templateData.preheader || body.substring(0, 100),
+              year: new Date().getFullYear(),
+              tip1: data.templateData.tip1,
+              tip2: data.templateData.tip2,
+              tip3: data.templateData.tip3,
+            },
+          }));
+
+          const msg = {
+            from: {
+              email: "noreply@tentandlantern.com",
+              name: "Complete Camping App",
+            },
+            subject: subjectLine,
+            templateId: "d-184d34133fdb40f3b753592c223c0315",
+            personalizations,
+          };
+
+          try {
+            await sgMail.send(msg);
+            successCount += batch.length;
+          } catch (batchError) {
+            failCount += batch.length;
+            const errorBody = batchError instanceof Error ? batchError.message : JSON.stringify(batchError);
+            errors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${errorBody}`);
+            functions.logger.error("SendGrid batch error", {
+              batchIndex: Math.floor(i / BATCH_SIZE),
+              errorBody,
+            });
+          }
+        }
+
+        const recipientsAttemptedCount = eligibleRecipients.length;
+
+        // Log campaign to Firestore
+        await db.collection("adminEmailCampaigns").add({
+          campaignName: data.campaignName,
+          subjectLine,
+          templateData: data.templateData,
+          sentBy: callerUid,
+          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: "sent",
+          totalUsersFound,
+          usersWithEmailCount,
+          usersEligibleCount,
+          recipientsAttemptedCount,
+          successCount,
+          failCount,
+          errors: errors.length > 0 ? errors : null,
+        });
+
+        functions.logger.info("publishAdminEmail completed", {
+          campaignName: data.campaignName,
+          totalUsersFound,
+          usersWithEmailCount,
+          usersEligibleCount,
+          recipientsAttemptedCount,
+          successCount,
+          failCount,
+        });
+
+        return {
+          success: true,
+          status: "sent",
+          recipientsAttemptedCount,
+          usersEligibleCount,
+          successCount,
+          failCount,
+          message: `Campaign sent to ${successCount} recipients${failCount > 0 ? ` (${failCount} failed)` : ""}.`,
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        functions.logger.error("Failed to publish admin email campaign", {
+          adminUid: callerUid,
+          campaignName: data.campaignName,
+          error: errorMessage,
+        });
+        throw new functions.https.HttpsError("internal", `Failed to publish campaign: ${errorMessage}`);
+      }
+    }
+  );
+
+/**
+ * Publish push notification to all users with push tokens (admin only)
+ */
+export const publishAdminPush = functions
+  .runWith({ timeoutSeconds: 300 })
+  .https.onCall(
+    async (
+      data: {
+        title: string;
+        body: string;
+        deepLink?: string;
+        campaignName: string;
+        ctaMode?: "url" | "subscription";
+      },
+      context
+    ) => {
+      if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be authenticated");
+      }
+
+      const callerUid = context.auth.uid;
+      const db = admin.firestore();
+
+      // Admin check
+      const callerProfile = await db.collection("profiles").doc(callerUid).get();
+      const profileData = callerProfile.data();
+      const isAdminUser =
+        callerProfile.exists &&
+        (profileData?.isAdministrator === true ||
+          profileData?.isAdmin === true ||
+          profileData?.role === "admin" ||
+          profileData?.role === "administrator" ||
+          profileData?.membershipTier === "isAdmin");
+
+      if (!isAdminUser) {
+        throw new functions.https.HttpsError("permission-denied", "Only administrators can publish push notifications");
+      }
+
+      if (!data.title || !data.body || !data.campaignName) {
+        throw new functions.https.HttpsError("invalid-argument", "Missing required fields: title, body, and campaignName");
+      }
+
+      // Idempotency check
+      const existingCampaign = await db
+        .collection("adminPushCampaigns")
+        .where("campaignName", "==", data.campaignName)
+        .where("status", "==", "sent")
+        .limit(1)
+        .get();
+
+      if (!existingCampaign.empty) {
+        functions.logger.warn("Push campaign already sent", { campaignName: data.campaignName });
+        return { success: false, status: "already_sent", message: `Campaign "${data.campaignName}" has already been sent.` };
+      }
+
+      try {
+        // Get all active push tokens
+        const tokensSnapshot = await db.collection("pushTokens").where("disabled", "!=", true).get();
+        const tokenCount = tokensSnapshot.size;
+
+        // Hard ceiling
+        if (tokenCount > 2000) {
+          throw new functions.https.HttpsError("failed-precondition", `Too many recipients (${tokenCount}). Maximum is 2000.`);
+        }
+
+        const tokens: { token: string; userId: string }[] = [];
+        tokensSnapshot.forEach((doc) => {
+          const d = doc.data();
+          if (d.token && d.token.startsWith("ExponentPushToken")) {
+            tokens.push({ token: d.token, userId: d.userId });
+          }
+        });
+
+        // Log masked sample
+        const maskedSample = tokens.slice(0, 5).map((t) => t.token.substring(0, 25) + "...");
+        functions.logger.info("publishAdminPush starting", {
+          campaignName: data.campaignName,
+          tokenCount,
+          expoTokenCount: tokens.length,
+          maskedSample,
+        });
+
+        // Send in batches of 100 (Expo limit)
+        const BATCH_SIZE = 100;
+        let successCount = 0;
+        let failureCount = 0;
+        const sampleFailures: string[] = [];
+
+        for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
+          const batch = tokens.slice(i, i + BATCH_SIZE);
+          const messages = batch.map((t) => ({
+            to: t.token,
+            sound: "default" as const,
+            title: data.title,
+            body: data.body,
+            data: {
+              deepLink: data.ctaMode === "subscription" ? "paywall" : (data.deepLink || ""),
+              campaignName: data.campaignName,
+            },
+          }));
+
+          const response = await fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: { Accept: "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify(messages),
+          });
+
+          const result = await response.json();
+          if (result.data) {
+            for (let j = 0; j < result.data.length; j++) {
+              const ticket = result.data[j];
+              if (ticket.status === "ok") {
+                successCount++;
+              } else {
+                failureCount++;
+                if (sampleFailures.length < 3) {
+                  sampleFailures.push(`Token ${batch[j].token.substring(0, 20)}...: ${ticket.message || ticket.details?.error || "unknown"}`);
+                }
+              }
+            }
+          }
+        }
+
+        // Log campaign
+        await db.collection("adminPushCampaigns").add({
+          campaignName: data.campaignName,
+          title: data.title,
+          body: data.body,
+          deepLink: data.deepLink,
+          ctaMode: data.ctaMode,
+          sentBy: callerUid,
+          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+          status: "sent",
+          tokenCount,
+          attemptedCount: tokens.length,
+          successCount,
+          failureCount,
+          sampleFailures: sampleFailures.length > 0 ? sampleFailures : null,
+        });
+
+        functions.logger.info("publishAdminPush completed", {
+          campaignName: data.campaignName,
+          tokenCount,
+          attemptedCount: tokens.length,
+          successCount,
+          failureCount,
+          sampleFailures,
+        });
+
+        return {
+          success: true,
+          status: "sent",
+          tokenCount,
+          attemptedCount: tokens.length,
+          successCount,
+          failureCount,
+          message: `Push sent to ${successCount} devices${failureCount > 0 ? ` (${failureCount} failed)` : ""}.`,
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        functions.logger.error("Failed to publish push campaign", { campaignName: data.campaignName, error: errorMessage });
+        throw new functions.https.HttpsError("internal", `Failed to publish: ${errorMessage}`);
+      }
+    }
+  );
+
+/**
+ * Publish announcement modal to all users (admin only)
+ * Writes to announcements/active document
+ */
+export const publishAdminModal = functions.https.onCall(
+  async (
+    data: {
+      campaignName: string;
+      headline: string;
+      body: string;
+      microCopy?: string;
+      ctaText?: string;
+      ctaMode: "url" | "subscription" | "none";
+      ctaLink?: string;
+      preserveVersionId?: boolean;
+    },
+    context
+  ) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Must be authenticated");
+    }
+
+    const callerUid = context.auth.uid;
+    const db = admin.firestore();
+
+    // Admin check
+    const callerProfile = await db.collection("profiles").doc(callerUid).get();
+    const profileData = callerProfile.data();
+    const isAdminUser =
+      callerProfile.exists &&
+      (profileData?.isAdministrator === true ||
+        profileData?.isAdmin === true ||
+        profileData?.role === "admin" ||
+        profileData?.role === "administrator" ||
+        profileData?.membershipTier === "isAdmin");
+
+    if (!isAdminUser) {
+      throw new functions.https.HttpsError("permission-denied", "Only administrators can publish announcements");
+    }
+
+    if (!data.campaignName || !data.headline || !data.body) {
+      throw new functions.https.HttpsError("invalid-argument", "Missing required fields: campaignName, headline, and body");
+    }
+
+    try {
+      // Determine versionId: reuse existing if preserveVersionId=true, otherwise generate new
+      let versionId: string;
+      if (data.preserveVersionId) {
+        const existingDoc = await db.collection("announcements").doc("active").get();
+        if (existingDoc.exists && existingDoc.data()?.versionId) {
+          versionId = existingDoc.data()!.versionId;
+          functions.logger.info("publishAdminModal: preserving existing versionId", { versionId });
+        } else {
+          versionId = `v_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+          functions.logger.info("publishAdminModal: no existing versionId, generating new", { versionId });
+        }
+      } else {
+        versionId = `v_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+      }
+
+      // Write to announcements/active
+      await db.collection("announcements").doc("active").set({
+        isActive: true,
+        versionId,
+        campaignName: data.campaignName,
+        headline: data.headline,
+        body: data.body,
+        microCopy: data.microCopy || "",
+        ctaText: data.ctaText || "OK",
+        ctaMode: data.ctaMode,
+        ctaLink: data.ctaLink || "",
+        audience: "all",
+        publishedBy: callerUid,
+        publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      functions.logger.info("publishAdminModal completed", {
+        campaignName: data.campaignName,
+        versionId,
+        preservedVersionId: data.preserveVersionId || false,
+        publishedBy: callerUid,
+      });
+
+      return {
+        success: true,
+        status: "published",
+        versionId,
+        message: `Announcement "${data.campaignName}" published to all users.`,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      functions.logger.error("Failed to publish announcement", { campaignName: data.campaignName, error: errorMessage });
+      throw new functions.https.HttpsError("internal", `Failed to publish: ${errorMessage}`);
+    }
+  }
+);
+
+// ============================================
+// SENDGRID DRIP SUBSCRIPTION FUNCTION
+// ============================================
+
+/**
+ * SendGrid Marketing Contacts List ID for CCA Drip Entry
+ * Set via: firebase functions:secrets:set SENDGRID_DRIP_LIST_ID
+ */
+const sendgridDripListId = defineSecret("SENDGRID_DRIP_LIST_ID");
+
+/**
+ * Subscribe a user to the email drip campaign
+ * 
+ * This function:
+ * 1. Validates the authenticated user matches the payload
+ * 2. Upserts the contact in SendGrid Marketing Contacts
+ * 3. Adds the contact to the "CCA Drip Entry" list
+ * 4. Updates Firestore with subscription status
+ * 
+ * The SendGrid Automation triggers automatically when contact is added to the list.
+ * 
+ * Required secrets:
+ * - SENDGRID_API_KEY: SendGrid API key with Marketing permissions
+ * - SENDGRID_DRIP_LIST_ID: The list ID for "CCA Drip Entry"
+ */
+export const sendgridSubscribeToDrip = functions
+  .runWith({ secrets: [sendgridApiKey, sendgridDripListId] })
+  .https.onCall(
+    async (
+      data: {
+        email: string;
+        firstName: string;
+        userId: string;
+        source: string;
+      },
+      context
+    ) => {
+      // Require authentication
+      if (!context.auth) {
+        throw new functions.https.HttpsError(
+          "unauthenticated",
+          "Must be authenticated to subscribe"
+        );
+      }
+
+      const { email, firstName, userId, source } = data;
+
+      // Validate uid matches payload userId
+      if (context.auth.uid !== userId) {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "User ID mismatch"
+        );
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email.trim())) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Invalid email address"
+        );
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+      const trimmedFirstName = firstName?.trim() || "";
+      const db = admin.firestore();
+      const listId = sendgridDripListId.value();
+
+      if (!listId) {
+        functions.logger.error("SENDGRID_DRIP_LIST_ID secret not set");
+        throw new functions.https.HttpsError(
+          "failed-precondition",
+          "Email subscription service not configured"
+        );
+      }
+
+      try {
+        functions.logger.info("sendgridSubscribeToDrip: Starting", {
+          userId,
+          email: normalizedEmail,
+          source,
+        });
+
+        // Use SendGrid Marketing API to upsert contact and add to list
+        const apiKey = sendgridApiKey.value();
+        
+        // Import SendGrid client dynamically to use Marketing API
+        const client = require("@sendgrid/client");
+        client.setApiKey(apiKey);
+
+        // Upsert contact and add to list in one API call
+        // Using PUT /marketing/contacts with list_ids
+        const contactData = {
+          list_ids: [listId],
+          contacts: [
+            {
+              email: normalizedEmail,
+              first_name: trimmedFirstName,
+              custom_fields: {
+                // Add any custom fields defined in SendGrid
+              },
+            },
+          ],
+        };
+
+        const [response] = await client.request({
+          url: "/v3/marketing/contacts",
+          method: "PUT",
+          body: contactData,
+        });
+
+        functions.logger.info("SendGrid Marketing API response", {
+          statusCode: response.statusCode,
+          body: response.body,
+        });
+
+        // Check for success (202 Accepted is the expected response)
+        if (response.statusCode !== 202 && response.statusCode !== 200) {
+          throw new Error(`SendGrid API returned status ${response.statusCode}`);
+        }
+
+        // Extract job_id from response (contacts are processed async)
+        const jobId = response.body?.job_id;
+
+        // Update Firestore with successful subscription
+        const now = admin.firestore.FieldValue.serverTimestamp();
+
+        // Update users/{uid}
+        await db.collection("users").doc(userId).update({
+          emailSubscribed: true,
+          emailSubscribedAt: now,
+          updatedAt: now,
+        });
+
+        // Upsert emailSubscribers/{uid}
+        await db.collection("emailSubscribers").doc(userId).set(
+          {
+            email: normalizedEmail,
+            userId,
+            unsubscribed: false,
+            source: source || "app_optin",
+            updatedAt: now,
+            sendgrid: {
+              status: "subscribed",
+              subscribedAt: now,
+              listId: listId,
+              jobId: jobId || null,
+            },
+          },
+          { merge: true }
+        );
+
+        // Ensure createdAt exists
+        const subscriberDoc = await db.collection("emailSubscribers").doc(userId).get();
+        if (subscriberDoc.exists && !subscriberDoc.data()?.createdAt) {
+          await db.collection("emailSubscribers").doc(userId).update({
+            createdAt: now,
+          });
+        }
+
+        functions.logger.info("sendgridSubscribeToDrip: Success", {
+          userId,
+          email: normalizedEmail,
+          jobId,
+        });
+
+        return {
+          success: true,
+          message: "Successfully subscribed to email updates",
+          jobId: jobId || undefined,
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorDetails = error instanceof Error ? error.stack : String(error);
+        
+        functions.logger.error("sendgridSubscribeToDrip: Failed", {
+          userId,
+          email: normalizedEmail,
+          error: errorMessage,
+          details: errorDetails,
+        });
+
+        // Do NOT update Firestore as subscribed on error
+        throw new functions.https.HttpsError(
+          "internal",
+          `Failed to subscribe: ${errorMessage}`
+        );
+      }
+    }
+  );

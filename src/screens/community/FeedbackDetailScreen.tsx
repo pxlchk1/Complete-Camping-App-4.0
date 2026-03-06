@@ -15,7 +15,7 @@ import { useContentActions } from "../../hooks/useContentActions";
 import { isAdmin, isModerator, canModerateContent } from "../../services/userService";
 import { deleteFeedback } from "../../services/connectDeletionService";
 import { User } from "../../types/user";
-import { requireProForAction } from "../../utils/gating";
+import { requireAccount } from "../../utils/gating";
 import { requireEmailVerification } from "../../utils/authHelper";
 import * as Haptics from "expo-haptics";
 import {
@@ -167,41 +167,39 @@ export default function FeedbackDetailScreen() {
     const isVerified = await requireEmailVerification("comment on feedback");
     if (!isVerified) return;
 
-    // Gate commenting behind Pro subscription
-    requireProForAction(
-      async () => {
-        if (!currentUser || !commentText.trim() || submitting) return;
+    // Gate commenting behind account (free for all logged-in users)
+    if (!requireAccount({
+      openAccountModal: () => setShowAccountRequired(true),
+    })) {
+      return;
+    }
+    
+    if (!currentUser || !commentText.trim() || submitting) return;
 
-        try {
-          setSubmitting(true);
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      setSubmitting(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-          await addFeedbackComment({
-            feedbackId: postId,
-            body: commentText.trim(),
-            authorId: currentUser.id,
-          });
+      await addFeedbackComment({
+        feedbackId: postId,
+        body: commentText.trim(),
+        authorId: currentUser.id,
+      });
 
-          // Reload comments
-          const updatedComments = await getFeedbackComments(postId);
-          setComments(updatedComments);
-          setCommentText("");
+      // Reload comments
+      const updatedComments = await getFeedbackComments(postId);
+      setComments(updatedComments);
+      setCommentText("");
 
-          // Update post comment count
-          if (post) {
-            setPost({ ...post, commentCount: post.commentCount + 1 });
-          }
-        } catch (err: any) {
-          setError("Failed to submit comment");
-        } finally {
-          setSubmitting(false);
-        }
-      },
-      {
-        openAccountModal: () => setShowAccountRequired(true),
-        openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "feedback_comment", variant }),
+      // Update post comment count
+      if (post) {
+        setPost({ ...post, commentCount: post.commentCount + 1 });
       }
-    );
+    } catch (err: any) {
+      setError("Failed to submit comment");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const formatTimeAgo = (dateString: string | any) => {
@@ -366,7 +364,6 @@ export default function FeedbackDetailScreen() {
                 itemId={postId}
                 initialScore={post.score || (post.upvoteCount || 0) - (post.downvoteCount || 0)}
                 onRequireAccount={() => setShowAccountRequired(true)}
-                onRequirePro={(variant) => navigation.navigate("Paywall", { triggerKey: "feedback_vote", variant })}
               />
             </View>
           </View>

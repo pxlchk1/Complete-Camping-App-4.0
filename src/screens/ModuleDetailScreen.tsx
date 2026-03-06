@@ -17,6 +17,7 @@ import {
   Alert,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -50,6 +51,10 @@ import {
   TEXT_SECONDARY,
   TEXT_MUTED,
 } from "../constants/colors";
+import { getLearningTrackBadgeImage } from "../assets/images/merit_badges/learningTrackBadgeImages";
+import { useSubscriptionStore } from "../state/subscriptionStore";
+import UpsellModal from "../components/UpsellModal";
+import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
 
 type ModuleDetailRouteProp = RouteProp<RootStackParamList, "ModuleDetail">;
 type ModuleDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, "ModuleDetail">;
@@ -150,6 +155,8 @@ export default function ModuleDetailScreen() {
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [badgeEarned, setBadgeEarned] = useState<BadgeId | null>(null);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
+  const isPro = useSubscriptionStore((s) => s.isPro);
   
   // Scroll tracking
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
@@ -245,6 +252,13 @@ export default function ModuleDetailScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (result.badgeEarned) {
           setBadgeEarned(result.badgeEarned);
+          // Show upsell nudge for non-Pro users after earning a learning badge
+          if (!isPro) {
+            setTimeout(() => {
+              trackUpsellModalViewed("learning_complete");
+              setShowUpsellModal(true);
+            }, 1500); // Delay to let the celebration UI show first
+          }
         }
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -629,19 +643,38 @@ export default function ModuleDetailScreen() {
                   >
                     <View
                       style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: 32,
-                        backgroundColor: LEARNING_BADGES[badgeEarned]?.color || GRANITE_GOLD,
+                        width: 80,
+                        height: 80,
+                        borderRadius: 40,
+                        overflow: "hidden",
                         justifyContent: "center",
                         alignItems: "center",
                       }}
                     >
-                      <Ionicons
-                        name={(LEARNING_BADGES[badgeEarned]?.icon || "ribbon") as any}
-                        size={32}
-                        color={PARCHMENT}
-                      />
+                      {getLearningTrackBadgeImage(badgeEarned) ? (
+                        <Image
+                          source={getLearningTrackBadgeImage(badgeEarned)}
+                          style={{ width: 80, height: 80 }}
+                          resizeMode="contain"
+                        />
+                      ) : (
+                        <View
+                          style={{
+                            width: 64,
+                            height: 64,
+                            borderRadius: 32,
+                            backgroundColor: LEARNING_BADGES[badgeEarned]?.color || GRANITE_GOLD,
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Ionicons
+                            name={(LEARNING_BADGES[badgeEarned]?.icon || "ribbon") as any}
+                            size={32}
+                            color={PARCHMENT}
+                          />
+                        </View>
+                      )}
                     </View>
                     <Text style={{ fontFamily: "SourceSans3_700Bold", fontSize: 20, color: TEXT_PRIMARY_STRONG, marginTop: 12 }}>
                       {LEARNING_BADGES[badgeEarned]?.name}
@@ -698,6 +731,29 @@ export default function ModuleDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Upsell Modal after learning badge earned */}
+      <UpsellModal
+        visible={showUpsellModal}
+        title="Go Pro"
+        body="Unlock the full camping toolkit with a 3-day free trial!"
+        primaryCtaText="Start 3-Day Free Trial"
+        secondaryCtaText="Maybe Later"
+        finePrint="After your free trial, your annual subscription begins. Cancel anytime."
+        onPrimaryPress={() => {
+          trackUpsellCtaClicked("learning_complete");
+          setShowUpsellModal(false);
+          navigation.navigate("Paywall", { triggerKey: "learning_complete" });
+        }}
+        onSecondaryPress={() => {
+          trackUpsellModalDismissed("learning_complete");
+          setShowUpsellModal(false);
+        }}
+        onDismiss={() => {
+          trackUpsellModalDismissed("learning_complete");
+          setShowUpsellModal(false);
+        }}
+      />
     </View>
   );
 }

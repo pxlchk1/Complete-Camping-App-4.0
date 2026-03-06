@@ -45,6 +45,10 @@ import {
   RUST,
 } from "../constants/colors";
 import { PrefillLocation, RootStackParamList } from "../navigation/types";
+import { isLearningTrackBadge, getLearningTrackBadgeImage, LEARNING_TRACK_BADGE_IDS } from "../assets/images/merit_badges/learningTrackBadgeImages";
+import { resolveBadgeImage } from "../assets/images/merit_badges/resolveBadgeImage";
+import type { BadgeId } from "../types/learning";
+import { LEARNING_BADGES } from "../types/learning";
 
 type MembershipTier = "free" | "freeMember" | "subscribed" | "weekendCamper" | "trailLeader" | "backcountryGuide" | "isAdmin" | "isModerator";
 
@@ -897,21 +901,26 @@ export default function MyCampsiteScreen({ navigation }: any) {
               {/* User Identity */}
               <View className="items-center mt-3">
                 <Text
-                  className="text-3xl mb-1"
-                  style={{ fontFamily: "Raleway_700Bold", color: PARCHMENT, textAlign: "center" }}
+                  style={{ 
+                    fontFamily: "Raleway_700Bold", 
+                    fontSize: 32,
+                    color: PARCHMENT, 
+                    textAlign: "center",
+                    marginBottom: 2,
+                  }}
                 >
-                  {profile.displayName}
+                  {profile.displayName?.split(" ")?.[0] || profile.displayName || "Camper"}
                 </Text>
                 <Text
-                  className="text-base mb-2"
-                  style={{ fontFamily: "SourceSans3_400Regular", color: PARCHMENT, textAlign: "center" }}
+                  className="text-base"
+                  style={{ fontFamily: "SourceSans3_400Regular", color: PARCHMENT, opacity: 0.9, textAlign: "center" }}
                 >
-                  @{profile.handle}
+                  @{profile.handle || "user"}
                 </Text>
                 
                 {/* Membership Badge */}
                 <View
-                  className="rounded-full px-3 py-1"
+                  className="rounded-full px-3 py-1 mt-2"
                   style={{ backgroundColor: getMembershipBadgeColor(profile.membershipTier) }}
                 >
                   <Text
@@ -928,69 +937,27 @@ export default function MyCampsiteScreen({ navigation }: any) {
 
         {/* Profile Section */}
         <View className="px-5" style={{ marginTop: 16 }}>
-          {/* Merit Badges Label */}
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowBadgesInfo(true);
-            }}
-            className="flex-row items-center justify-center mb-3"
-          >
-            <Text
-              className="text-sm mr-1"
-              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}
+          {/* Learning Badges Row */}
+          <View className="mb-4">
+            <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowBadgesInfo(true);
+              }}
+              className="flex-row items-center mb-3"
             >
-              Merit Badges
-            </Text>
-            <Ionicons name="information-circle-outline" size={16} color={TEXT_SECONDARY} />
-          </Pressable>
-
-          {/* Merit Badges Row */}
-          <View className="flex-row items-start justify-center mb-4">
-            {/* Merit Badges from Firebase */}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 4 }}>
-              <View className="flex-row gap-2">
-                {/* Show badges from Firestore or a "No badges yet" message */}
-                {profile.meritBadges && profile.meritBadges.length > 0 ? (
-                  profile.meritBadges.map((badge) => (
-                    <View
-                      key={badge.id}
-                      className="items-center"
-                      style={{ width: 70 }}
-                    >
-                      <View
-                        style={{
-                          width: 56,
-                          height: 56,
-                          borderRadius: 28,
-                          backgroundColor: badge.color,
-                          borderWidth: 3,
-                          borderColor: PARCHMENT,
-                          alignItems: "center",
-                          justifyContent: "center",
-                          shadowColor: "#000",
-                          shadowOffset: { width: 0, height: 2 },
-                          shadowOpacity: 0.15,
-                          shadowRadius: 3,
-                          elevation: 3,
-                        }}
-                      >
-                        <Ionicons name={badge.icon as any} size={28} color={PARCHMENT} />
-                      </View>
-                      <Text
-                        className="text-center mt-1"
-                        style={{
-                          fontFamily: "SourceSans3_600SemiBold",
-                          fontSize: 9,
-                          color: TEXT_SECONDARY,
-                          lineHeight: 11,
-                        }}
-                      >
-                        {badge.name.split(' ').join('\n')}
-                      </Text>
-                    </View>
-                  ))
-                ) : (
+              <Text
+                className="text-sm mr-1"
+                style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}
+              >
+                Learning Badges
+              </Text>
+              <Ionicons name="information-circle-outline" size={16} color={TEXT_SECONDARY} />
+            </Pressable>
+            {(() => {
+              const earnedLearningBadges = profile.meritBadges?.filter((b) => isLearningTrackBadge(b.id)) || [];
+              if (earnedLearningBadges.length === 0) {
+                return (
                   <View className="items-center px-4 py-2">
                     <Text
                       style={{
@@ -1000,12 +967,128 @@ export default function MyCampsiteScreen({ navigation }: any) {
                         fontStyle: "italic",
                       }}
                     >
-                      No badges earned yet
+                      No learning badges earned yet
                     </Text>
                   </View>
-                )}
-              </View>
-            </ScrollView>
+                );
+              }
+              return (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    {earnedLearningBadges.map((badge) => {
+                      const badgeImage = getLearningTrackBadgeImage(badge.id as BadgeId);
+                      return (
+                        <View key={badge.id} style={{ alignItems: "center", width: 72 }}>
+                          <View
+                            style={{
+                              width: 56,
+                              height: 56,
+                              borderRadius: 28,
+                              overflow: "hidden",
+                            }}
+                          >
+                            {badgeImage && (
+                              <Image
+                                source={badgeImage}
+                                style={{ width: 56, height: 56 }}
+                                resizeMode="contain"
+                              />
+                            )}
+                          </View>
+                          <Text
+                            style={{
+                              fontFamily: "SourceSans3_600SemiBold",
+                              fontSize: 9,
+                              color: TEXT_PRIMARY_STRONG,
+                              lineHeight: 11,
+                              textAlign: "center",
+                              marginTop: 4,
+                            }}
+                            numberOfLines={2}
+                          >
+                            {badge.name}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              );
+            })()}
+          </View>
+
+          {/* Merit Badges Row */}
+          <View className="mb-4">
+            <Text
+              className="text-sm mb-3"
+              style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}
+            >
+              Merit Badges
+            </Text>
+            {(() => {
+              const meritBadgesOnly = profile.meritBadges?.filter((b) => !isLearningTrackBadge(b.id)) || [];
+              if (meritBadgesOnly.length === 0) {
+                return (
+                  <View className="items-center px-4 py-2">
+                    <Text
+                      style={{
+                        fontFamily: "SourceSans3_400Regular",
+                        fontSize: 13,
+                        color: TEXT_SECONDARY,
+                        fontStyle: "italic",
+                      }}
+                    >
+                      No merit badges earned yet
+                    </Text>
+                  </View>
+                );
+              }
+              return (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 16 }}>
+                  <View style={{ flexDirection: "row", gap: 12 }}>
+                    {meritBadgesOnly.map((badge) => {
+                      const badgeImage = resolveBadgeImage(badge.id);
+                      return (
+                        <View key={badge.id} style={{ alignItems: "center", width: 72 }}>
+                          <View
+                            style={{
+                              width: 56,
+                              height: 56,
+                              borderRadius: 28,
+                              overflow: "hidden",
+                            }}
+                          >
+                            <Image
+                              source={badgeImage}
+                              style={{
+                                width: "120%",
+                                height: "120%",
+                                marginLeft: "-10%",
+                                marginTop: "-10%",
+                              }}
+                              resizeMode="cover"
+                            />
+                          </View>
+                          <Text
+                            style={{
+                              fontFamily: "SourceSans3_600SemiBold",
+                              fontSize: 9,
+                              color: TEXT_PRIMARY_STRONG,
+                              lineHeight: 11,
+                              textAlign: "center",
+                              marginTop: 4,
+                            }}
+                            numberOfLines={2}
+                          >
+                            {badge.name}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </ScrollView>
+              );
+            })()}
           </View>
 
           {/* Social Stats Row */}
