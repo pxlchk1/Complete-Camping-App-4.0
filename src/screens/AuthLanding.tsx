@@ -26,6 +26,13 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
   const [linkingPassword, setLinkingPassword] = useState("");
   const [pendingAppleCredential, setPendingAppleCredential] = useState<any>(null);
   const [linkingError, setLinkingError] = useState("");
+  // Retry state for when Auth succeeds but Firestore fails
+  const [pendingOnboardingRetry, setPendingOnboardingRetry] = useState<{
+    userId: string;
+    email: string;
+    displayName: string;
+    handle: string;
+  } | null>(null);
   const setUser = useAuthStore((s) => s.setUser);
   const setCurrentUser = useUserStore((s) => s.setCurrentUser);
 
@@ -297,10 +304,70 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
     }
   };
 
+  // Retry handler for when Auth succeeded but Firestore failed
+  const handleRetryOnboarding = async () => {
+    if (!pendingOnboardingRetry) return;
+    
+    try {
+      setLoading(true);
+      setError("");
+      
+      console.log("RETRY_ONBOARDING_START", { uid: pendingOnboardingRetry.userId });
+      
+      // Ensure we're still signed in
+      const currentUser = auth.currentUser;
+      if (!currentUser || currentUser.uid !== pendingOnboardingRetry.userId) {
+        setError("Session expired. Please try again.");
+        setPendingOnboardingRetry(null);
+        return;
+      }
+      
+      // Refresh token before Firestore writes
+      await currentUser.getIdToken(true);
+      
+      const result = await bootstrapNewAccount(pendingOnboardingRetry);
+      
+      if (!result.success) {
+        console.log("RETRY_ONBOARDING_FAILED", { error: result.error, emailInUse: result.emailInUse });
+        if (result.emailInUse) {
+          setError("This email is already in use by another account.");
+          setPendingOnboardingRetry(null);
+        } else {
+          setError("Setup still failed. Please check your connection and tap Retry.");
+        }
+        return;
+      }
+      
+      console.log("RETRY_ONBOARDING_SUCCESS");
+      setPendingOnboardingRetry(null);
+      
+      // Send verification email
+      try {
+        await sendEmailVerification(currentUser);
+        Alert.alert(
+          "Verify Your Email",
+          "We've sent a verification link to your email address. Please check your inbox.",
+          [{ text: "OK" }]
+        );
+      } catch (verifyError) {
+        // Non-blocking
+      }
+      
+      // Load profile and navigate to home
+      await loadUserProfile(currentUser.uid);
+    } catch (error: any) {
+      console.log("RETRY_ONBOARDING_ERROR", { code: error?.code, message: error?.message });
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEmailAuth = async () => {
     try {
       setLoading(true);
       setError("");
+      setPendingOnboardingRetry(null); // Clear any pending retry
 
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -336,44 +403,51 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
           return;
         }
 
-        console.log("[Auth] Creating account for:", email.trim());
-        userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        // TEMP LOGGING: Auth phase
+        try {
+          userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+          console.log("AUTH_CREATE_SUCCESS", { uid: userCredential.user.uid });
+        } catch (authError: any) {
+          console.log("AUTH_CREATE_FAILED", { code: authError?.code, message: authError?.message });
+          throw authError;
+        }
 
         // Force token refresh to ensure Firestore rules see the new auth state
-        console.log("[Auth] Refreshing auth token before Firestore writes...");
         await userCredential.user.getIdToken(true);
-        console.log("[Auth] Token refreshed successfully");
 
         // Create user profile using protected onboarding layer
         // Normalize handle - remove any @ prefix before saving
         const normalizedHandle = handle.trim().replace(/^@+/, "");
-
-        // Use protected onboarding layer for all account creation writes
-        const result = await bootstrapNewAccount({
+        const onboardingParams = {
           userId: userCredential.user.uid,
           email: email.trim(),
           displayName: displayName.trim(),
           handle: normalizedHandle,
           photoURL: null,
-        });
+        };
+
+        // Use protected onboarding layer for all account creation writes
+        const result = await bootstrapNewAccount(onboardingParams);
 
         if (!result.success) {
-          console.error("[Email Auth] Bootstrap failed:", result.error, result.debugInfo);
-          // Handle email-in-use error specifically
+          console.log("ONBOARDING_FAILED", { error: result.error, emailInUse: result.emailInUse });
+          // Handle email-in-use error specifically (email index owned by different user)
           if (result.emailInUse) {
-            setError("That email is already in use. Try signing in instead.");
-          } else {
-            setError(result.error || "We couldn't finish setting up your account. Please try again.");
+            setError("This email is already in use by another account.");
+            return;
           }
+          // Auth succeeded but Firestore setup failed
+          // Keep user signed in, store params for retry, show retry message
+          setPendingOnboardingRetry(onboardingParams);
+          setError("Your login was created, but we couldn't finish setup. Tap Retry.");
           return;
         }
         
-        console.log("[Email Auth] Account bootstrapped successfully");
+        console.log("ONBOARDING_SUCCESS");
 
         // Send email verification
         try {
           await sendEmailVerification(userCredential.user);
-          console.log("[Email Auth] Verification email sent to:", email.trim());
           
           // Notify user about verification email
           Alert.alert(
@@ -449,6 +523,62 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
       if (isPermissionDeniedError(error)) {
         setError(getOnboardingErrorMessage(error));
       } else if (error.code === "auth/email-already-in-use") {
+        // RECOVERY: During signup, this may indicate a previous attempt where Auth succeeded
+        // but Firestore setup failed. Attempt to sign in and complete setup.
+        if (isSignUp) {
+          console.log("RECOVERY_ATTEMPT_START", { email: email.trim() });
+          try {
+            // Try signing in with the credentials they just entered
+            const recoveryCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+            console.log("RECOVERY_SIGNIN_SUCCESS", { uid: recoveryCredential.user.uid });
+            
+            // Check if Firestore profile exists
+            const profileDoc = await getDoc(doc(db, "profiles", recoveryCredential.user.uid));
+            
+            if (!profileDoc.exists()) {
+              // Profile missing - complete Firestore setup
+              console.log("RECOVERY_PROFILE_MISSING_COMPLETING_SETUP");
+              const normalizedHandle = handle.trim().replace(/^@+/, "");
+              const onboardingParams = {
+                userId: recoveryCredential.user.uid,
+                email: email.trim(),
+                displayName: displayName.trim(),
+                handle: normalizedHandle,
+                photoURL: null,
+              };
+              const result = await bootstrapNewAccount(onboardingParams);
+              
+              if (!result.success) {
+                console.log("RECOVERY_BOOTSTRAP_FAILED", { error: result.error, emailInUse: result.emailInUse });
+                if (result.emailInUse) {
+                  setError("This email is already in use by another account.");
+                } else {
+                  // Store for retry
+                  setPendingOnboardingRetry(onboardingParams);
+                  setError("Your login was created, but we couldn't finish setup. Tap Retry.");
+                }
+                return;
+              }
+              console.log("RECOVERY_BOOTSTRAP_SUCCESS");
+            } else {
+              console.log("RECOVERY_PROFILE_EXISTS_USER_ALREADY_SETUP");
+            }
+            
+            // Load profile and navigate to home
+            await loadUserProfile(recoveryCredential.user.uid);
+            return; // Success - exit catch block
+          } catch (recoveryError: any) {
+            console.log("RECOVERY_FAILED", { code: recoveryError?.code, message: recoveryError?.message });
+            // Recovery failed (wrong password or other issue) - show appropriate message
+            if (recoveryError.code === "auth/wrong-password" || recoveryError.code === "auth/invalid-credential") {
+              setError("An account with this email already exists. Please sign in with your password.");
+            } else {
+              setError("This email is already registered. Please sign in instead.");
+            }
+            return;
+          }
+        }
+        // Not in signup mode, show standard message
         setError("This email is already registered. Please sign in instead.");
       } else if (error.code === "auth/invalid-email") {
         setError("Invalid email address.");
@@ -467,9 +597,8 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
       } else if (error.code === "auth/operation-not-allowed") {
         setError("Email/password sign-in is not enabled. Please contact support.");
       } else {
-        // Log full error details for debugging
-        if (__DEV__) console.error("Unhandled auth error:", JSON.stringify(error, null, 2));
-        setError(getOnboardingErrorMessage(error));
+        // Default error for unknown issues
+        setError("Couldn't create your account. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -502,6 +631,7 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
                     setPassword("");
                     setHandle("");
                     setDisplayName("");
+                    setPendingOnboardingRetry(null);
                   }}
                 >
                   <Ionicons name="arrow-back" size={24} color="#F4EBD0" />
@@ -511,7 +641,24 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
 
                 <View style={styles.content}>
 
-                  {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                  {error ? (
+                    <View style={{ marginBottom: 16 }}>
+                      <Text style={styles.errorText}>{error}</Text>
+                      {pendingOnboardingRetry && (
+                        <TouchableOpacity
+                          style={[styles.authButton, { marginTop: 12 }]}
+                          onPress={handleRetryOnboarding}
+                          disabled={loading}
+                        >
+                          {loading ? (
+                            <ActivityIndicator color="#1A2F1C" />
+                          ) : (
+                            <Text style={styles.authButtonText}>Retry</Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ) : null}
 
                   {isSignUp && (
                     <>
