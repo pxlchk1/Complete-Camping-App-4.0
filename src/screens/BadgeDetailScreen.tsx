@@ -1,19 +1,15 @@
 /**
  * BadgeDetailScreen
- * 
- * Shows badge details, requirements, and earning actions.
- * Layout: Large Badge → Title → Description → Requirements → CTA
- * 
- * NEW FLOW (photo-first):
- * 1. ALL badges require a photo to submit
- * 2. SOME badges also require witness approval
- * 
- * CTA states:
- * - No photo: "Add Photo"
- * - Photo exists, no witness needed: "Submit Proof"
- * - Photo exists, witness needed: "Choose Witness"
- * - Submitted, pending: "Awaiting Approval"
- * - Approved: "Completed on MM.DD.YYYY"
+ *
+ * Clean implementation based on UX wireframes.
+ * Shows badge details, requirements, photo upload, and earning actions.
+ *
+ * CTA Flow (photo-first):
+ * 1. not_started → "Add Photo"
+ * 2. has photo, no witness needed → "Submit Proof"
+ * 3. has photo, witness needed → "Choose Witness"
+ * 4. pending_stamp → "Awaiting Approval" (disabled)
+ * 5. earned → Shows completion date
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -39,10 +35,10 @@ import {
   getUserBadge,
   getClaimForBadge,
   createUserBadge,
-  updateUserBadge,
-  updateBadgeClaim,
   uploadBadgePhoto,
   deleteBadgePhoto,
+  updateUserBadge,
+  updateBadgeClaim,
 } from "../services/meritBadgesService";
 import { resolveBadgeImage, deriveImageKey } from "../assets/images/merit_badges/resolveBadgeImage";
 import {
@@ -65,28 +61,33 @@ import {
 import ModalHeader from "../components/ModalHeader";
 import ErrorModal from "../components/ErrorModal";
 
-type BadgeDetailScreenRouteProp = RouteProp<RootStackParamList, "BadgeDetail">;
-type BadgeDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RoutePropType = RouteProp<RootStackParamList, "BadgeDetail">;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
+
+// Hero badge size from UX spec
+const BADGE_HERO_SIZE = 210;
 
 export default function BadgeDetailScreen() {
-  const navigation = useNavigation<BadgeDetailNavigationProp>();
-  const route = useRoute<BadgeDetailScreenRouteProp>();
+  const navigation = useNavigation<NavProp>();
+  const route = useRoute<RoutePropType>();
   const { badgeId } = route.params;
   const insets = useSafeAreaInsets();
 
+  // Data state
   const [loading, setLoading] = useState(true);
   const [badge, setBadge] = useState<BadgeDefinition | null>(null);
   const [earnedBadge, setEarnedBadge] = useState<UserBadge | null>(null);
   const [pendingClaim, setPendingClaim] = useState<BadgeClaim | null>(null);
   const [displayState, setDisplayState] = useState<BadgeDisplayState>("not_started");
-  const [actionLoading, setActionLoading] = useState(false);
-  
-  // Local photo state for unsubmitted photos
+
+  // Photo state
   const [localPhotoUrl, setLocalPhotoUrl] = useState<string | null>(null);
-  
-  // Error modal state
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Error modal
   const [errorModal, setErrorModal] = useState<{ title: string; message: string } | null>(null);
 
+  // Load badge data
   const loadData = useCallback(async () => {
     const user = auth.currentUser;
     if (!user) {
@@ -96,6 +97,7 @@ export default function BadgeDetailScreen() {
 
     try {
       setLoading(true);
+
       const [badgeDef, earned, claim] = await Promise.all([
         getBadgeDefinition(badgeId),
         getUserBadge(user.uid, badgeId),
@@ -116,7 +118,7 @@ export default function BadgeDetailScreen() {
         const start = new Date(badgeDef.seasonWindow.startsAt as any);
         const end = new Date(badgeDef.seasonWindow.endsAt as any);
         const isAvailable = now >= start && now <= end;
-        
+
         if (badgeDef.isLimitedEdition && badgeDef.limitedYear && now.getFullYear() !== badgeDef.limitedYear) {
           setDisplayState("seasonal_locked");
         } else if (isAvailable) {
@@ -128,7 +130,7 @@ export default function BadgeDetailScreen() {
         setDisplayState("not_started");
       }
     } catch (error) {
-      console.error("[BadgeDetailScreen] Error loading badge:", error);
+      console.error("[BadgeDetailScreen] Load error:", error);
     } finally {
       setLoading(false);
     }
@@ -141,17 +143,17 @@ export default function BadgeDetailScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
-      // Clear local photo on focus if already submitted
+      // Clear local photo if already submitted
       if (pendingClaim?.photoUrl || earnedBadge?.photoUrl) {
         setLocalPhotoUrl(null);
       }
     }, [loadData, pendingClaim?.photoUrl, earnedBadge?.photoUrl])
   );
 
-  // Check if this badge requires witness approval (using centralized config)
+  // Check if badge requires witness
   const requiresWitness = badge ? doesBadgeRequireWitness(badge.id) : false;
 
-  // Handler: Add/Replace Photo
+  // Photo picker handler
   const handleAddPhoto = async () => {
     if (!badge) return;
 
@@ -168,34 +170,14 @@ export default function BadgeDetailScreen() {
     setActionLoading(true);
 
     try {
-      const photoUri = result.assets[0].uri;
       const user = auth.currentUser;
       if (!user) throw new Error("Not signed in");
 
-      // Log upload attempt for debugging
-      console.log("[BadgeDetailScreen] Uploading photo:", {
-        userId: user.uid,
-        badgeId: badge.id,
-        photoUri: photoUri.substring(0, 50) + "...",
-      });
-
-      // Upload photo to Firebase Storage
-      const photoUrl = await uploadBadgePhoto(user.uid, badge.id, photoUri);
-      
-      // Store locally until submission
+      const photoUrl = await uploadBadgePhoto(user.uid, badge.id, result.assets[0].uri);
       setLocalPhotoUrl(photoUrl);
-      
-      console.log("[BadgeDetailScreen] Photo uploaded successfully:", {
-        photoUrl: photoUrl.substring(0, 50) + "...",
-      });
-      
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error: any) {
-      console.error("[BadgeDetailScreen] Photo upload failed:", {
-        error: error.message,
-        code: error.code,
-        badgeId: badge.id,
-      });
+      console.error("[BadgeDetailScreen] Photo upload error:", error);
       setErrorModal({
         title: "Upload Failed",
         message: error.message || "Failed to upload photo. Please try again.",
@@ -206,7 +188,7 @@ export default function BadgeDetailScreen() {
     }
   };
 
-  // Handler: Submit Proof (for badges that don't require witness)
+  // Submit proof (no witness needed)
   const handleSubmitProof = async () => {
     if (!badge || !localPhotoUrl) return;
 
@@ -217,21 +199,17 @@ export default function BadgeDetailScreen() {
       const user = auth.currentUser;
       if (!user) throw new Error("Not signed in");
 
-      // Create earned badge record directly (no witness needed)
       await createUserBadge({
         badgeId: badge.id,
         earnedVia: "PHOTO",
         photoUrl: localPhotoUrl,
       });
-      
+
       setLocalPhotoUrl(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await loadData();
     } catch (error: any) {
-      console.error("[BadgeDetailScreen] Submit proof failed:", {
-        error: error.message,
-        badgeId: badge.id,
-      });
+      console.error("[BadgeDetailScreen] Submit error:", error);
       setErrorModal({
         title: "Submission Failed",
         message: error.message || "Failed to submit proof. Please try again.",
@@ -242,23 +220,21 @@ export default function BadgeDetailScreen() {
     }
   };
 
-  // Handler: Choose Witness (for badges that require witness)
+  // Choose witness (witness required)
   const handleChooseWitness = () => {
     if (!badge || !localPhotoUrl) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Pass the photoUrl to SelectWitness screen
     navigation.navigate("SelectWitness", { badgeId: badge.id, photoUrl: localPhotoUrl });
   };
 
-  // Handler: Delete Photo
+  // Delete photo
   const handleDeletePhoto = async () => {
-    // If it's a local photo (not yet submitted), just clear state
+    // If local photo only, just clear state
     if (localPhotoUrl && !pendingClaim?.photoUrl && !earnedBadge?.photoUrl) {
       setLocalPhotoUrl(null);
       return;
     }
-    
-    // Otherwise, delete from storage/database
+
     setActionLoading(true);
     try {
       const user = auth.currentUser;
@@ -276,62 +252,44 @@ export default function BadgeDetailScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await loadData();
     } catch (error: any) {
-      console.error("[BadgeDetailScreen] Delete photo failed:", error);
+      console.error("[BadgeDetailScreen] Delete error:", error);
       setErrorModal({
         title: "Delete Failed",
-        message: error.message || "Failed to delete photo. Please try again.",
+        message: error.message || "Failed to delete photo.",
       });
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Format date as MM.DD.YYYY
-  const formatCompletedDate = (date: any): string | null => {
-    if (!date) {
-      console.warn("[BadgeDetailScreen] Missing approvedAt/earnedAt date for badge:", badge?.id);
-      return null;
-    }
-    
+  // Format completion date
+  const formatDate = (date: any): string | null => {
+    if (!date) return null;
     try {
-      let dateObj: Date;
-      if (date.toDate && typeof date.toDate === "function") {
-        dateObj = date.toDate();
-      } else if (date instanceof Date) {
-        dateObj = date;
-      } else {
-        dateObj = new Date(date);
-      }
-      
-      if (isNaN(dateObj.getTime())) {
-        console.warn("[BadgeDetailScreen] Invalid date for badge:", badge?.id, date);
-        return null;
-      }
-      
-      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const dd = String(dateObj.getDate()).padStart(2, "0");
-      const yyyy = dateObj.getFullYear();
-      return `${mm}.${dd}.${yyyy}`;
-    } catch (e) {
-      console.error("[BadgeDetailScreen] Date formatting error:", e);
+      const d = date.toDate ? date.toDate() : new Date(date);
+      if (isNaN(d.getTime())) return null;
+      return `${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}.${d.getFullYear()}`;
+    } catch {
       return null;
     }
   };
 
+  // Loading state
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: PARCHMENT, justifyContent: "center", alignItems: "center" }}>
+      <View className="flex-1 bg-parchment justify-center items-center">
         <ActivityIndicator size="large" color={DEEP_FOREST} />
       </View>
     );
   }
 
+  // Badge not found
   if (!badge) {
     return (
-      <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
+      <View className="flex-1 bg-parchment">
         <ModalHeader title="Badge" onBack={() => navigation.goBack()} />
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
+        <View className="flex-1 justify-center items-center">
+          <Text className="font-source-regular" style={{ color: TEXT_MUTED }}>
             Badge not found
           </Text>
         </View>
@@ -339,67 +297,42 @@ export default function BadgeDetailScreen() {
     );
   }
 
+  // Derived state
   const isEarned = displayState === "earned";
   const isPending = displayState === "pending_stamp";
   const isSeasonalLocked = displayState === "seasonal_locked";
-  const canEarn = !isEarned && !isPending && !isSeasonalLocked;
-
-  // Determine current photo URL (local or server)
   const currentPhotoUrl = localPhotoUrl || pendingClaim?.photoUrl || earnedBadge?.photoUrl;
   const hasPhoto = !!currentPhotoUrl;
-  
-  // Determine CTA state based on new photo-first flow
-  const getCTAConfig = () => {
-    // Already earned - no CTA needed
-    if (isEarned) {
-      return null;
-    }
-    
-    // Pending witness approval - show waiting state
-    if (isPending) {
-      return { label: "Awaiting Approval", handler: () => {}, disabled: true };
-    }
-    
-    // Seasonal locked - no action
-    if (isSeasonalLocked) {
-      return null;
-    }
-    
-    // No photo yet - must add photo first
-    if (!hasPhoto) {
-      return { label: "Add Photo", handler: handleAddPhoto, icon: "camera-outline" as const };
-    }
-    
-    // Has photo - check if witness required
-    if (requiresWitness) {
-      return { label: "Choose Witness", handler: handleChooseWitness, icon: "people-outline" as const };
-    }
-    
-    // Photo exists, no witness needed - submit directly
+
+  // CTA configuration
+  const getCTA = () => {
+    if (isEarned) return null;
+    if (isPending) return { label: "Awaiting Approval", handler: () => {}, disabled: true };
+    if (isSeasonalLocked) return null;
+    if (!hasPhoto) return { label: "Add Photo", handler: handleAddPhoto, icon: "camera-outline" as const };
+    if (requiresWitness) return { label: "Choose Witness", handler: handleChooseWitness, icon: "people-outline" as const };
     return { label: "Submit Proof", handler: handleSubmitProof, icon: "checkmark-circle-outline" as const };
   };
 
-  const ctaConfig = getCTAConfig();
-  const completedDate = isEarned && earnedBadge ? formatCompletedDate(earnedBadge.earnedAt) : null;
+  const cta = getCTA();
+  const completedDate = isEarned && earnedBadge ? formatDate(earnedBadge.earnedAt) : null;
+  const imageKey = badge.imageKey || deriveImageKey(badge.iconAssetKey);
 
   return (
-    <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
-      <ModalHeader
-        title=""
-        onBack={() => navigation.goBack()}
-      />
+    <View className="flex-1 bg-parchment">
+      <ModalHeader title="" onBack={() => navigation.goBack()} />
 
       <ScrollView
-        style={{ flex: 1 }}
+        className="flex-1"
         contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 24 }}
       >
-        {/* Large Badge Image - NO checkmark mask overlay */}
-        <View style={{ alignItems: "center", marginBottom: 20 }}>
+        {/* Hero Badge Image */}
+        <View className="items-center mb-5">
           <View
             style={{
-              width: 210,
-              height: 210,
-              borderRadius: 105,
+              width: BADGE_HERO_SIZE,
+              height: BADGE_HERO_SIZE,
+              borderRadius: BADGE_HERO_SIZE / 2,
               overflow: "hidden",
               backgroundColor: CARD_BACKGROUND_LIGHT,
               shadowColor: "#000",
@@ -410,8 +343,8 @@ export default function BadgeDetailScreen() {
             }}
           >
             <Image
-              source={resolveBadgeImage(badge.imageKey || deriveImageKey(badge.iconAssetKey))}
-              style={{ width: 210, height: 210, borderRadius: 105 }}
+              source={resolveBadgeImage(imageKey)}
+              style={{ width: BADGE_HERO_SIZE, height: BADGE_HERO_SIZE, borderRadius: BADGE_HERO_SIZE / 2 }}
               resizeMode="cover"
             />
           </View>
@@ -419,95 +352,67 @@ export default function BadgeDetailScreen() {
 
         {/* Badge Title */}
         <Text
-          style={{
-            fontFamily: "SourceSans3_700Bold",
-            fontSize: 24,
-            color: TEXT_PRIMARY_STRONG,
-            textAlign: "center",
-            marginBottom: 8,
-          }}
+          className="font-source-bold text-2xl text-center mb-2"
+          style={{ color: TEXT_PRIMARY_STRONG }}
         >
           {badge.name}
         </Text>
 
-        {/* Completed Date - shown as text under title when earned */}
+        {/* Completed Date */}
         {isEarned && completedDate && (
           <Text
-            style={{
-              fontFamily: "SourceSans3_500Medium",
-              fontSize: 14,
-              color: EARTH_GREEN,
-              textAlign: "center",
-              marginBottom: 16,
-            }}
+            className="font-source-medium text-sm text-center mb-4"
+            style={{ color: EARTH_GREEN }}
           >
             Completed on {completedDate}
           </Text>
         )}
 
-        {/* Badge Description */}
+        {/* Description */}
         {badge.description && (
           <Text
-            style={{
-              fontFamily: "SourceSans3_400Regular",
-              fontSize: 15,
-              color: TEXT_SECONDARY,
-              textAlign: "center",
-              marginBottom: 24,
-              lineHeight: 22,
-            }}
+            className="font-source-regular text-base text-center mb-6 leading-relaxed"
+            style={{ color: TEXT_SECONDARY }}
           >
             {badge.description}
           </Text>
         )}
 
-        {/* Witness Requirement Info - shown when badge requires witness */}
+        {/* Witness Requirement Notice */}
         {requiresWitness && !isEarned && (
           <View
-            style={{
-              backgroundColor: "#EEF2FF",
-              borderRadius: 12,
-              padding: 14,
-              marginBottom: 20,
-              flexDirection: "row",
-              alignItems: "flex-start",
-            }}
+            className="rounded-xl p-3.5 mb-5 flex-row items-start"
+            style={{ backgroundColor: "#EEF2FF" }}
           >
             <Ionicons name="people" size={18} color="#4F46E5" style={{ marginTop: 1 }} />
-            <View style={{ marginLeft: 10, flex: 1 }}>
-              <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: "#4F46E5", marginBottom: 2 }}>
+            <View className="ml-2.5 flex-1">
+              <Text className="font-source-semibold text-sm mb-0.5" style={{ color: "#4F46E5" }}>
                 Witness Required
               </Text>
-              <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 13, color: "#6366F1", lineHeight: 18 }}>
+              <Text className="font-source-regular text-[13px] leading-[18px]" style={{ color: "#6366F1" }}>
                 {getWitnessRequirementReason(badge.id)}
               </Text>
             </View>
           </View>
         )}
 
-        {/* Requirements Section */}
+        {/* Requirements Card */}
         <View
+          className="rounded-xl p-4 mb-6"
           style={{
             backgroundColor: CARD_BACKGROUND_LIGHT,
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 24,
             borderWidth: 1,
             borderColor: BORDER_SOFT,
           }}
         >
           <Text
-            style={{
-              fontFamily: "SourceSans3_600SemiBold",
-              fontSize: 14,
-              color: TEXT_PRIMARY_STRONG,
-              marginBottom: 12,
-            }}
+            className="font-source-semibold text-sm mb-3"
+            style={{ color: TEXT_PRIMARY_STRONG }}
           >
             Requirements
           </Text>
-          {badge.requirements.map((req, index) => (
-            <View key={index} style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: index < badge.requirements.length - 1 ? 8 : 0 }}>
+          {badge.requirements.map((req, i) => (
+            <View key={i} className="flex-row items-start mb-2">
               <Ionicons
                 name={isEarned ? "checkmark-circle" : "ellipse-outline"}
                 size={18}
@@ -515,13 +420,8 @@ export default function BadgeDetailScreen() {
                 style={{ marginRight: 10, marginTop: 1 }}
               />
               <Text
-                style={{
-                  fontFamily: "SourceSans3_400Regular",
-                  fontSize: 14,
-                  color: TEXT_PRIMARY_STRONG,
-                  flex: 1,
-                  lineHeight: 20,
-                }}
+                className="font-source-regular text-sm flex-1 leading-5"
+                style={{ color: TEXT_PRIMARY_STRONG }}
               >
                 {req}
               </Text>
@@ -529,54 +429,44 @@ export default function BadgeDetailScreen() {
           ))}
         </View>
 
-        {/* Pending Status (awaiting witness approval) */}
+        {/* Pending Status Banner */}
         {isPending && (
-          <View
-            style={{
-              backgroundColor: "#FEF3C7",
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 20,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+          <View className="rounded-xl p-4 mb-5" style={{ backgroundColor: "#FEF3C7" }}>
+            <View className="flex-row items-center mb-1">
               <Ionicons name="time-outline" size={16} color="#92400E" />
-              <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: "#92400E", marginLeft: 8 }}>
+              <Text className="font-source-semibold text-sm ml-2" style={{ color: "#92400E" }}>
                 Awaiting Approval
               </Text>
             </View>
-            <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 13, color: "#92400E" }}>
+            <Text className="font-source-regular text-[13px]" style={{ color: "#92400E" }}>
               Your evidence has been submitted. Waiting for your witness to confirm.
             </Text>
           </View>
         )}
 
-        {/* Photo Evidence - shown if there's a photo (local or server) */}
+        {/* Photo Evidence Section */}
         {currentPhotoUrl && (
-          <View style={{ marginBottom: 20 }}>
-            <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: TEXT_PRIMARY_STRONG, marginBottom: 10 }}>
+          <View className="mb-5">
+            <Text
+              className="font-source-semibold text-sm mb-2.5"
+              style={{ color: TEXT_PRIMARY_STRONG }}
+            >
               Your Photo Evidence
             </Text>
             <Image
               source={{ uri: currentPhotoUrl }}
-              style={{ width: "100%", height: 200, borderRadius: 12 }}
+              className="w-full h-[200px] rounded-xl"
               resizeMode="cover"
             />
-            {/* Only show delete for non-earned, non-pending badges */}
+            {/* Delete option for non-earned, non-pending */}
             {!isEarned && !isPending && (
               <Pressable
                 onPress={handleDeletePhoto}
                 disabled={actionLoading}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginTop: 8,
-                  paddingVertical: 8,
-                }}
+                className="flex-row items-center justify-center mt-2 py-2"
               >
                 <Ionicons name="trash-outline" size={16} color="#DC2626" />
-                <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 13, color: "#DC2626", marginLeft: 4 }}>
+                <Text className="font-source-regular text-[13px] ml-1" style={{ color: "#DC2626" }}>
                   Remove Photo
                 </Text>
               </Pressable>
@@ -587,71 +477,62 @@ export default function BadgeDetailScreen() {
         {/* Seasonal Locked Notice */}
         {isSeasonalLocked && (
           <View
-            style={{
-              backgroundColor: "#F3F4F6",
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 20,
-              flexDirection: "row",
-              alignItems: "center",
-            }}
+            className="rounded-xl p-4 mb-5 flex-row items-center"
+            style={{ backgroundColor: "#F3F4F6" }}
           >
             <Ionicons name="lock-closed" size={18} color={TEXT_MUTED} />
-            <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 14, color: TEXT_SECONDARY, marginLeft: 10, flex: 1 }}>
+            <Text
+              className="font-source-regular text-sm ml-2.5 flex-1"
+              style={{ color: TEXT_SECONDARY }}
+            >
               This badge is only available during its season.
             </Text>
           </View>
         )}
 
-        {/* Primary CTA Button */}
-        {ctaConfig && (
+        {/* Primary CTA */}
+        {cta && (
           <Pressable
-            onPress={ctaConfig.handler}
-            disabled={actionLoading || ctaConfig.disabled}
+            onPress={cta.handler}
+            disabled={actionLoading || cta.disabled}
+            className="py-4 rounded-xl items-center flex-row justify-center"
             style={{
-              backgroundColor: ctaConfig.disabled ? "#9CA3AF" : DEEP_FOREST,
-              paddingVertical: 16,
-              borderRadius: 12,
-              alignItems: "center",
+              backgroundColor: cta.disabled ? "#9CA3AF" : DEEP_FOREST,
               opacity: actionLoading ? 0.6 : 1,
-              flexDirection: "row",
-              justifyContent: "center",
             }}
           >
             {actionLoading ? (
               <ActivityIndicator color={PARCHMENT} />
             ) : (
               <>
-                {ctaConfig.icon && (
-                  <Ionicons name={ctaConfig.icon} size={20} color={PARCHMENT} style={{ marginRight: 8 }} />
+                {cta.icon && (
+                  <Ionicons name={cta.icon} size={20} color={PARCHMENT} style={{ marginRight: 8 }} />
                 )}
-                <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 16, color: PARCHMENT }}>
-                  {ctaConfig.label}
+                <Text className="font-source-semibold text-base" style={{ color: PARCHMENT }}>
+                  {cta.label}
                 </Text>
               </>
             )}
           </Pressable>
         )}
 
-        {/* Secondary action: Change photo if already has one but hasn't submitted */}
+        {/* Secondary: Change Photo */}
         {hasPhoto && !isEarned && !isPending && !isSeasonalLocked && (
           <Pressable
             onPress={handleAddPhoto}
             disabled={actionLoading}
+            className="py-3.5 rounded-xl items-center flex-row justify-center mt-3"
             style={{
               backgroundColor: CARD_BACKGROUND_LIGHT,
-              paddingVertical: 14,
-              borderRadius: 12,
-              alignItems: "center",
               borderWidth: 1,
               borderColor: BORDER_SOFT,
-              marginTop: 12,
-              flexDirection: "row",
-              justifyContent: "center",
             }}
           >
             <Ionicons name="camera-outline" size={18} color={TEXT_PRIMARY_STRONG} />
-            <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 15, color: TEXT_PRIMARY_STRONG, marginLeft: 8 }}>
+            <Text
+              className="font-source-semibold text-base ml-2"
+              style={{ color: TEXT_PRIMARY_STRONG }}
+            >
               Change Photo
             </Text>
           </Pressable>

@@ -1,10 +1,8 @@
 /**
  * MeritBadgesScreen
- * 
- * Main screen for browsing and tracking Merit Badges.
- * Shows:
- * - Simple tally progress card
- * - Category blocks with horizontal scroll badge rows
+ *
+ * Clean implementation based on UX wireframes.
+ * Shows progress card, witness requests banner, and badge categories.
  */
 
 import React, { useState, useCallback, memo } from "react";
@@ -21,18 +19,13 @@ import {
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-
-import ModalHeader from "../components/ModalHeader";
-import { resolveBadgeImage, deriveImageKey } from "../assets/images/merit_badges/resolveBadgeImage";
 
 import { auth } from "../config/firebase";
 import { RootStackParamList } from "../navigation/types";
 import {
   getBadgesByCategory,
   getBadgeProgressStats,
-  seedBadgeDefinitions,
   getPendingClaimsForWitness,
 } from "../services/meritBadgesService";
 import {
@@ -40,6 +33,7 @@ import {
   BadgeProgressStats,
   BadgeWithProgress,
 } from "../types/badges";
+import { resolveBadgeImage, deriveImageKey } from "../assets/images/merit_badges/resolveBadgeImage";
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -51,26 +45,22 @@ import {
   TEXT_MUTED,
 } from "../constants/colors";
 
-type MeritBadgesNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
+// Layout constants from UX spec
 const BADGE_TILE_WIDTH = 88;
 const BADGE_IMAGE_SIZE = 72;
 
 export default function MeritBadgesScreen() {
-  const navigation = useNavigation<MeritBadgesNavigationProp>();
-  const insets = useSafeAreaInsets();
-
-  // Show ModalHeader when accessed standalone (not via LearnTopTabsNavigator)
-  const isStandalone = navigation.canGoBack();
+  const navigation = useNavigation<NavProp>();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [seeding, setSeeding] = useState(false);
-  const [categoryGroups, setCategoryGroups] = useState<BadgeCategoryGroup[]>([]);
-  const [progressStats, setProgressStats] = useState<BadgeProgressStats | null>(null);
-  const [pendingWitnessCount, setPendingWitnessCount] = useState(0);
+  const [categories, setCategories] = useState<BadgeCategoryGroup[]>([]);
+  const [stats, setStats] = useState<BadgeProgressStats | null>(null);
+  const [witnessCount, setWitnessCount] = useState(0);
 
-  const loadData = useCallback(async (showRefresh = false) => {
+  const loadData = useCallback(async (isRefresh = false) => {
     const user = auth.currentUser;
     if (!user) {
       setLoading(false);
@@ -78,26 +68,26 @@ export default function MeritBadgesScreen() {
     }
 
     try {
-      if (showRefresh) setRefreshing(true);
+      if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const [groups, stats] = await Promise.all([
+      const [categoryData, statsData] = await Promise.all([
         getBadgesByCategory(user.uid),
         getBadgeProgressStats(user.uid),
       ]);
 
-      setCategoryGroups(groups);
-      setProgressStats(stats);
+      setCategories(categoryData);
+      setStats(statsData);
 
-      // Load pending witness requests count
+      // Load witness request count
       try {
-        const pendingClaims = await getPendingClaimsForWitness(user.uid);
-        setPendingWitnessCount(pendingClaims.length);
+        const pending = await getPendingClaimsForWitness(user.uid);
+        setWitnessCount(pending.length);
       } catch {
-        console.log("[MeritBadgesScreen] Could not load pending witness count");
+        // Silently fail - not critical
       }
     } catch (error) {
-      console.error("[MeritBadgesScreen] Error loading data:", error);
+      console.error("[MeritBadgesScreen] Load error:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,207 +96,79 @@ export default function MeritBadgesScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadData(categoryGroups.length > 0);
-    }, [loadData, categoryGroups.length])
+      loadData(categories.length > 0);
+    }, [loadData, categories.length])
   );
 
-  const handleBadgePress = useCallback((badge: BadgeWithProgress) => {
+  const handleBadgePress = useCallback(
+    (badge: BadgeWithProgress) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      navigation.navigate("BadgeDetail", { badgeId: badge.id });
+    },
+    [navigation]
+  );
+
+  const handleWitnessPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate("BadgeDetail", { badgeId: badge.id });
+    navigation.navigate("WitnessRequests");
   }, [navigation]);
 
-  const handleSeedBadges = useCallback(async () => {
-    setSeeding(true);
-    try {
-      await seedBadgeDefinitions();
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await loadData(false);
-    } catch (error) {
-      console.error("[MeritBadgesScreen] Error seeding badges:", error);
-    } finally {
-      setSeeding(false);
-    }
-  }, [loadData]);
-
+  // Loading state
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
-        {isStandalone && (
-          <ModalHeader title="Merit Badges" onBack={() => navigation.goBack()} />
-        )}
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <ActivityIndicator size="large" color={DEEP_FOREST} />
-          <Text style={{ marginTop: 16, fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
-            Loading badges...
-          </Text>
-        </View>
+      <View className="flex-1 justify-center items-center bg-parchment">
+        <ActivityIndicator size="large" color={DEEP_FOREST} />
+        <Text className="mt-4 font-source-regular text-base" style={{ color: TEXT_SECONDARY }}>
+          Loading badges...
+        </Text>
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
-      {isStandalone && (
-        <ModalHeader title="Merit Badges" onBack={() => navigation.goBack()} />
-      )}
+    <View className="flex-1 bg-parchment">
       <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: 24 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => loadData(true)} />
         }
       >
-        {/* Subline */}
+        {/* Subtitle */}
         <Text
-          style={{
-            fontFamily: "SourceSans3_400Regular",
-            fontSize: 15,
-            color: TEXT_SECONDARY,
-            marginTop: 8,
-            marginBottom: 16,
-            paddingHorizontal: 16,
-          }}
+          className="font-source-regular text-base px-4 mt-2 mb-4"
+          style={{ color: TEXT_SECONDARY }}
         >
           Earn badges by doing real things outdoors.
         </Text>
 
-        {/* Progress Card - Simple Tally */}
-        {progressStats && (
-          <View
-            style={{
-              backgroundColor: CARD_BACKGROUND_LIGHT,
-              borderRadius: 12,
-              padding: 16,
-              marginBottom: 24,
-              marginHorizontal: 16,
-              borderWidth: 1,
-              borderColor: BORDER_SOFT,
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: "SourceSans3_600SemiBold",
-                fontSize: 16,
-                color: TEXT_PRIMARY_STRONG,
-                marginBottom: 12,
-              }}
-            >
-              Total Badges Earned: {progressStats.earnedBadges}
-            </Text>
+        {/* Progress Card */}
+        {stats && <ProgressCard stats={stats} />}
 
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 14, color: TEXT_SECONDARY }}>
-                Core: {progressStats.coreEarned} / {progressStats.coreTotal}
-              </Text>
-              <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 14, color: TEXT_SECONDARY }}>
-                Seasonal: {progressStats.seasonalEarned} / {progressStats.seasonalTotal}
-              </Text>
-            </View>
-          </View>
+        {/* Witness Requests Banner */}
+        {witnessCount > 0 && (
+          <WitnessBanner count={witnessCount} onPress={handleWitnessPress} />
         )}
 
-        {/* Stamp Requests Button - Show if there are pending requests */}
-        {pendingWitnessCount > 0 && (
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              navigation.navigate("WitnessRequests");
-            }}
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? EARTH_GREEN : DEEP_FOREST,
-              borderRadius: 12,
-              paddingVertical: 14,
-              paddingHorizontal: 16,
-              marginHorizontal: 16,
-              marginBottom: 16,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            })}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Ionicons name="checkmark-circle" size={24} color={PARCHMENT} />
-              <Text
-                style={{
-                  fontFamily: "SourceSans3_600SemiBold",
-                  fontSize: 16,
-                  color: PARCHMENT,
-                  marginLeft: 12,
-                }}
-              >
-                Stamp Requests
-              </Text>
-            </View>
-            <View
-              style={{
-                backgroundColor: EARTH_GREEN,
-                borderRadius: 12,
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                minWidth: 24,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: "SourceSans3_700Bold",
-                  fontSize: 14,
-                  color: PARCHMENT,
-                }}
-              >
-                {pendingWitnessCount}
-              </Text>
-            </View>
-          </Pressable>
-        )}
-
-        {/* Category Blocks */}
-        {categoryGroups.map((group) => (
-          <CategoryBlock
+        {/* Category Sections */}
+        {categories.map((group) => (
+          <CategorySection
             key={group.categoryId}
             group={group}
             onBadgePress={handleBadgePress}
           />
         ))}
 
-        {categoryGroups.length === 0 && !loading && (
-          <View style={{ alignItems: "center", paddingVertical: 40, paddingHorizontal: 24 }}>
+        {/* Empty State */}
+        {categories.length === 0 && (
+          <View className="items-center py-10 px-6">
             <Ionicons name="ribbon-outline" size={48} color={TEXT_MUTED} />
             <Text
-              style={{
-                fontFamily: "SourceSans3_400Regular",
-                fontSize: 15,
-                color: TEXT_SECONDARY,
-                marginTop: 12,
-                textAlign: "center",
-              }}
+              className="font-source-regular text-base mt-3 text-center"
+              style={{ color: TEXT_SECONDARY }}
             >
               No badges available yet.
             </Text>
-            
-            {/* Seed sample badges button (dev) */}
-            {__DEV__ && (
-              <Pressable
-                onPress={handleSeedBadges}
-                disabled={seeding}
-                style={{
-                  marginTop: 20,
-                  backgroundColor: DEEP_FOREST,
-                  paddingVertical: 12,
-                  paddingHorizontal: 24,
-                  borderRadius: 8,
-                  opacity: seeding ? 0.6 : 1,
-                }}
-              >
-                {seeding ? (
-                  <ActivityIndicator color={PARCHMENT} size="small" />
-                ) : (
-                  <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 14, color: PARCHMENT }}>
-                    Seed Sample Badges
-                  </Text>
-                )}
-              </Pressable>
-            )}
           </View>
         )}
       </ScrollView>
@@ -314,62 +176,140 @@ export default function MeritBadgesScreen() {
   );
 }
 
-// ============================================
-// Category Block Component
-// ============================================
+// ==============================================
+// Progress Card Component
+// ==============================================
 
-interface CategoryBlockProps {
+interface ProgressCardProps {
+  stats: BadgeProgressStats;
+}
+
+const ProgressCard = memo(function ProgressCard({ stats }: ProgressCardProps) {
+  const percent = Math.round(stats.percentComplete);
+
+  return (
+    <View
+      className="mx-4 mb-5 p-4 rounded-xl"
+      style={{
+        backgroundColor: CARD_BACKGROUND_LIGHT,
+        borderWidth: 1,
+        borderColor: BORDER_SOFT,
+      }}
+    >
+      {/* Main stat */}
+      <Text
+        className="font-source-semibold text-lg mb-3"
+        style={{ color: TEXT_PRIMARY_STRONG }}
+      >
+        {stats.earnedBadges} of {stats.totalBadges} Badges Earned
+      </Text>
+
+      {/* Progress bar */}
+      <View
+        className="h-2 rounded-full mb-3 overflow-hidden"
+        style={{ backgroundColor: BORDER_SOFT }}
+      >
+        <View
+          className="h-full rounded-full"
+          style={{
+            width: `${percent}%`,
+            backgroundColor: EARTH_GREEN,
+          }}
+        />
+      </View>
+
+      {/* Breakdown */}
+      <View className="flex-row justify-between">
+        <Text className="font-source-regular text-sm" style={{ color: TEXT_SECONDARY }}>
+          Core: {stats.coreEarned} / {stats.coreTotal}
+        </Text>
+        <Text className="font-source-regular text-sm" style={{ color: TEXT_SECONDARY }}>
+          Seasonal: {stats.seasonalEarned} / {stats.seasonalTotal}
+        </Text>
+      </View>
+    </View>
+  );
+});
+
+// ==============================================
+// Witness Banner Component
+// ==============================================
+
+interface WitnessBannerProps {
+  count: number;
+  onPress: () => void;
+}
+
+const WitnessBanner = memo(function WitnessBanner({ count, onPress }: WitnessBannerProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="mx-4 mb-4 py-3.5 px-4 rounded-xl flex-row items-center justify-between"
+      style={({ pressed }) => ({
+        backgroundColor: pressed ? EARTH_GREEN : DEEP_FOREST,
+      })}
+    >
+      <View className="flex-row items-center">
+        <Ionicons name="checkmark-circle" size={24} color={PARCHMENT} />
+        <Text className="font-source-semibold text-base ml-3" style={{ color: PARCHMENT }}>
+          Stamp Requests
+        </Text>
+      </View>
+      <View
+        className="px-2.5 py-1 rounded-full min-w-[28px] items-center"
+        style={{ backgroundColor: EARTH_GREEN }}
+      >
+        <Text className="font-source-bold text-sm" style={{ color: PARCHMENT }}>
+          {count}
+        </Text>
+      </View>
+    </Pressable>
+  );
+});
+
+// ==============================================
+// Category Section Component
+// ==============================================
+
+interface CategorySectionProps {
   group: BadgeCategoryGroup;
   onBadgePress: (badge: BadgeWithProgress) => void;
 }
 
-const CategoryBlock = memo(function CategoryBlock({ group, onBadgePress }: CategoryBlockProps) {
-  const earnedCount = group.badges.filter(b => b.displayState === "earned").length;
-  const totalCount = group.badges.length;
+const CategorySection = memo(function CategorySection({
+  group,
+  onBadgePress,
+}: CategorySectionProps) {
+  const earned = group.badges.filter((b) => b.displayState === "earned").length;
+  const total = group.badges.length;
 
-  const renderBadge = useCallback(({ item }: { item: BadgeWithProgress }) => (
-    <BadgeTile badge={item} onPress={() => onBadgePress(item)} />
-  ), [onBadgePress]);
-
-  const keyExtractor = useCallback((item: BadgeWithProgress) => item.id, []);
+  const renderBadge = useCallback(
+    ({ item }: { item: BadgeWithProgress }) => (
+      <BadgeTile badge={item} onPress={() => onBadgePress(item)} />
+    ),
+    [onBadgePress]
+  );
 
   return (
-    <View style={{ marginBottom: 24 }}>
-      {/* Category Header */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 16,
-          marginBottom: 12,
-        }}
-      >
+    <View className="mb-6">
+      {/* Header */}
+      <View className="flex-row justify-between items-center px-4 mb-3">
         <Text
-          style={{
-            fontFamily: "SourceSans3_600SemiBold",
-            fontSize: 16,
-            color: TEXT_PRIMARY_STRONG,
-          }}
+          className="font-source-semibold text-base"
+          style={{ color: TEXT_PRIMARY_STRONG }}
         >
           {group.categoryName}
         </Text>
-        <Text
-          style={{
-            fontFamily: "SourceSans3_400Regular",
-            fontSize: 14,
-            color: TEXT_SECONDARY,
-          }}
-        >
-          {earnedCount} / {totalCount} earned
+        <Text className="font-source-regular text-sm" style={{ color: TEXT_SECONDARY }}>
+          {earned} / {total}
         </Text>
       </View>
 
-      {/* Horizontal Scroll Row */}
+      {/* Horizontal Badge Row */}
       <FlatList
         data={group.badges}
         renderItem={renderBadge}
-        keyExtractor={keyExtractor}
+        keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 12 }}
@@ -379,9 +319,9 @@ const CategoryBlock = memo(function CategoryBlock({ group, onBadgePress }: Categ
   );
 });
 
-// ============================================
-// Badge Tile Component (Memoized) - No borders
-// ============================================
+// ==============================================
+// Badge Tile Component
+// ==============================================
 
 interface BadgeTileProps {
   badge: BadgeWithProgress;
@@ -392,32 +332,25 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
   const isEarned = badge.displayState === "earned";
   const isPending = badge.displayState === "pending_stamp";
   const isInProgress = badge.displayState === "in_progress";
-  const isLocked = badge.displayState === "seasonal_locked" || badge.displayState === "locked";
+  const isLocked =
+    badge.displayState === "seasonal_locked" || badge.displayState === "locked";
 
-  // Get the badge image
   const imageKey = badge.imageKey || deriveImageKey(badge.iconAssetKey);
   const badgeImage = resolveBadgeImage(imageKey);
 
-  // Visual states - only show accent ring for pending/in-progress
-  const showAccentRing = isPending || isInProgress;
+  // Show accent ring for pending/in-progress states
+  const showRing = isPending || isInProgress;
 
   return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        width: BADGE_TILE_WIDTH,
-        alignItems: "center",
-        paddingHorizontal: 4,
-      }}
-    >
+    <Pressable onPress={onPress} style={{ width: BADGE_TILE_WIDTH, alignItems: "center" }}>
       <View
         style={{
           width: BADGE_IMAGE_SIZE,
           height: BADGE_IMAGE_SIZE,
           borderRadius: BADGE_IMAGE_SIZE / 2,
           overflow: "hidden",
-          borderWidth: showAccentRing ? 3 : 0,
-          borderColor: showAccentRing ? EARTH_GREEN : "transparent",
+          borderWidth: showRing ? 3 : 0,
+          borderColor: showRing ? EARTH_GREEN : "transparent",
           shadowColor: isEarned ? "#000" : "transparent",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isEarned ? 0.15 : 0,
@@ -425,7 +358,7 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
           elevation: isEarned ? 3 : 0,
         }}
       >
-        {/* Badge PNG image - scaled up to crop out cream borders */}
+        {/* Badge image - scaled to crop cream borders */}
         <Image
           source={badgeImage}
           style={{
@@ -436,8 +369,8 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
           }}
           resizeMode="cover"
         />
-        
-        {/* Desaturated overlay for locked/unearned badges */}
+
+        {/* Overlay for non-earned badges */}
         {!isEarned && (
           <View
             style={{
@@ -446,7 +379,9 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: isLocked ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.5)",
+              backgroundColor: isLocked
+                ? "rgba(255,255,255,0.7)"
+                : "rgba(255,255,255,0.5)",
               justifyContent: "center",
               alignItems: "center",
             }}
@@ -455,7 +390,7 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
           </View>
         )}
 
-        {/* Checkmark for earned badges */}
+        {/* Earned checkmark */}
         {isEarned && (
           <View
             style={{
@@ -477,16 +412,10 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
         )}
       </View>
 
-      {/* Badge Name */}
+      {/* Badge name */}
       <Text
-        style={{
-          fontFamily: "SourceSans3_400Regular",
-          fontSize: 11,
-          color: isEarned ? TEXT_PRIMARY_STRONG : TEXT_MUTED,
-          marginTop: 6,
-          textAlign: "center",
-          lineHeight: 13,
-        }}
+        className="font-source-regular text-xs mt-1.5 text-center leading-tight"
+        style={{ color: isEarned ? TEXT_PRIMARY_STRONG : TEXT_MUTED }}
         numberOfLines={2}
       >
         {badge.name}
@@ -494,4 +423,3 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
     </Pressable>
   );
 });
-
