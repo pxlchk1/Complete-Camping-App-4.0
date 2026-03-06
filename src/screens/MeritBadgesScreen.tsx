@@ -49,7 +49,7 @@ type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
 // Layout constants from UX spec
 const BADGE_TILE_WIDTH = 88;
-const BADGE_IMAGE_SIZE = 72;
+const BADGE_IMAGE_SIZE = 84; // Mask size increased to show more badge
 
 export default function MeritBadgesScreen() {
   const navigation = useNavigation<NavProp>();
@@ -362,10 +362,10 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
         <Image
           source={badgeImage}
           style={{
-            width: "130%",
-            height: "130%",
-            marginLeft: "-15%",
-            marginTop: "-15%",
+            width: "120%",
+            height: "120%",
+            marginLeft: "-10%",
+            marginTop: "-10%",
           }}
           resizeMode="cover"
         />
@@ -390,26 +390,6 @@ const BadgeTile = memo(function BadgeTile({ badge, onPress }: BadgeTileProps) {
           </View>
         )}
 
-        {/* Earned checkmark */}
-        {isEarned && (
-          <View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              right: 0,
-              width: 18,
-              height: 18,
-              borderRadius: 9,
-              backgroundColor: EARTH_GREEN,
-              justifyContent: "center",
-              alignItems: "center",
-              borderWidth: 2,
-              borderColor: PARCHMENT,
-            }}
-          >
-            <Ionicons name="checkmark" size={10} color="#FFF" />
-          </View>
-        )}
       </View>
 
       {/* Badge name */}
