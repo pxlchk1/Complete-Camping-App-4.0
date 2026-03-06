@@ -23,6 +23,7 @@ import { useCurrentUser } from "../../state/userStore";
 import { RootStackNavigationProp } from "../../navigation/types";
 import CommunitySectionHeader from "../../components/CommunitySectionHeader";
 import AccountRequiredModal from "../../components/AccountRequiredModal";
+import PremiumFeatureModal from "../../components/PremiumFeatureModal";
 import OnboardingModal from "../../components/OnboardingModal";
 import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
 import { requireAccount } from "../../utils/gating";
@@ -99,6 +100,7 @@ export default function PhotosListScreen() {
 
   // Gating modal state
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showPhotoLimitModal, setShowPhotoLimitModal] = useState(false);
 
   // Onboarding modal
   const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("Photos");
@@ -223,10 +225,7 @@ export default function PhotosListScreen() {
 
     const limitCheck = await canUploadPhotoToday();
     if (!limitCheck.canUpload) {
-      Alert.alert("Daily Limit Reached", limitCheck.message || "Try again tomorrow.", [
-        { text: "Maybe Later", style: "cancel" },
-        { text: "Upgrade", onPress: () => navigation.navigate("Paywall") },
-      ]);
+      setShowPhotoLimitModal(true);
       return;
     }
 
@@ -701,6 +700,17 @@ export default function PhotosListScreen() {
         visible={showModal}
         tooltip={currentTooltip}
         onDismiss={dismissModal}
+      />
+
+      {/* Photo Limit Modal */}
+      <PremiumFeatureModal
+        visible={showPhotoLimitModal}
+        featureType="photos"
+        onUpgrade={() => {
+          setShowPhotoLimitModal(false);
+          navigation.navigate("Paywall", { triggerKey: "photo_limit" });
+        }}
+        onDismiss={() => setShowPhotoLimitModal(false)}
       />
     </View>
   );

@@ -48,6 +48,9 @@ import {
   BadgeDisplayState,
 } from "../types/badges";
 import { doesBadgeRequireWitness, getWitnessRequirementReason } from "../config/badgeWitnessRequirements";
+import { useSubscriptionStore } from "../state/subscriptionStore";
+import UpsellModal from "../components/UpsellModal";
+import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -78,6 +81,8 @@ export default function BadgeDetailScreen() {
   const [badge, setBadge] = useState<BadgeDefinition | null>(null);
   const [earnedBadge, setEarnedBadge] = useState<UserBadge | null>(null);
   const [pendingClaim, setPendingClaim] = useState<BadgeClaim | null>(null);
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
+  const isPro = useSubscriptionStore((s) => s.isPro);
   const [displayState, setDisplayState] = useState<BadgeDisplayState>("not_started");
 
   // Photo state
@@ -208,6 +213,12 @@ export default function BadgeDetailScreen() {
       setLocalPhotoUrl(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await loadData();
+      
+      // Show upsell nudge for non-Pro users
+      if (!isPro) {
+        trackUpsellModalViewed("badge_earned");
+        setShowUpsellModal(true);
+      }
     } catch (error: any) {
       console.error("[BadgeDetailScreen] Submit error:", error);
       setErrorModal({
@@ -548,6 +559,29 @@ export default function BadgeDetailScreen() {
           onDismiss={() => setErrorModal(null)}
         />
       )}
+
+      {/* Upsell Modal after badge earned */}
+      <UpsellModal
+        visible={showUpsellModal}
+        title="Nice work, camper!"
+        body="You just earned a badge. Unlock unlimited trips, custom packing lists, and more with Pro."
+        primaryCtaText="See Pro Features"
+        secondaryCtaText="Maybe Later"
+        finePrint="Cancel anytime"
+        onPrimaryPress={() => {
+          trackUpsellCtaClicked("badge_earned");
+          setShowUpsellModal(false);
+          navigation.navigate("Paywall", { triggerKey: "badge_earned" });
+        }}
+        onSecondaryPress={() => {
+          trackUpsellModalDismissed("badge_earned");
+          setShowUpsellModal(false);
+        }}
+        onDismiss={() => {
+          trackUpsellModalDismissed("badge_earned");
+          setShowUpsellModal(false);
+        }}
+      />
     </View>
   );
 }

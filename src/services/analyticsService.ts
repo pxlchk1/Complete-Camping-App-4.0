@@ -439,7 +439,7 @@ export const trackMyCampsiteWelcomeDismissed = () =>
   analyticsService.trackEvent(AnalyticsEvents.MY_CAMPSITE_WELCOME_DISMISSED);
 
 // Upsell modal tracking functions
-export type UpsellModalAnalyticsType = "completion" | "packing" | "invite" | "trip2_gate";
+export type UpsellModalAnalyticsType = "completion" | "packing" | "invite" | "trip2_gate" | "badge_earned" | "learning_complete";
 
 export const trackUpsellModalViewed = (type: UpsellModalAnalyticsType) => 
   analyticsService.trackEvent(AnalyticsEvents.UPSELL_MODAL_VIEWED, { type });

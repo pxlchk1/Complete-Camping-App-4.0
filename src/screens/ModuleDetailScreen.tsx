@@ -52,6 +52,9 @@ import {
   TEXT_MUTED,
 } from "../constants/colors";
 import { getLearningTrackBadgeImage } from "../assets/images/merit_badges/learningTrackBadgeImages";
+import { useSubscriptionStore } from "../state/subscriptionStore";
+import UpsellModal from "../components/UpsellModal";
+import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
 
 type ModuleDetailRouteProp = RouteProp<RootStackParamList, "ModuleDetail">;
 type ModuleDetailNavigationProp = NativeStackNavigationProp<RootStackParamList, "ModuleDetail">;
@@ -152,6 +155,8 @@ export default function ModuleDetailScreen() {
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [badgeEarned, setBadgeEarned] = useState<BadgeId | null>(null);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
+  const isPro = useSubscriptionStore((s) => s.isPro);
   
   // Scroll tracking
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
@@ -247,6 +252,13 @@ export default function ModuleDetailScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         if (result.badgeEarned) {
           setBadgeEarned(result.badgeEarned);
+          // Show upsell nudge for non-Pro users after earning a learning badge
+          if (!isPro) {
+            setTimeout(() => {
+              trackUpsellModalViewed("learning_complete");
+              setShowUpsellModal(true);
+            }, 1500); // Delay to let the celebration UI show first
+          }
         }
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -719,6 +731,29 @@ export default function ModuleDetailScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Upsell Modal after learning badge earned */}
+      <UpsellModal
+        visible={showUpsellModal}
+        title="Learning pays off!"
+        body="You just completed a learning track. Unlock all content, unlimited trips, and more with Pro."
+        primaryCtaText="Go Pro"
+        secondaryCtaText="Maybe Later"
+        finePrint="Cancel anytime"
+        onPrimaryPress={() => {
+          trackUpsellCtaClicked("learning_complete");
+          setShowUpsellModal(false);
+          navigation.navigate("Paywall", { triggerKey: "learning_complete" });
+        }}
+        onSecondaryPress={() => {
+          trackUpsellModalDismissed("learning_complete");
+          setShowUpsellModal(false);
+        }}
+        onDismiss={() => {
+          trackUpsellModalDismissed("learning_complete");
+          setShowUpsellModal(false);
+        }}
+      />
     </View>
   );
 }

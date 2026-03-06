@@ -15,9 +15,9 @@ import React from "react";
 import { Modal, View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { DEEP_FOREST, PARCHMENT } from "../constants/colors";
+import { DEEP_FOREST } from "../constants/colors";
 
-type FeatureType = "packing" | "meals";
+type FeatureType = "packing" | "meals" | "photos";
 
 interface PremiumFeatureModalProps {
   visible: boolean;
@@ -26,12 +26,18 @@ interface PremiumFeatureModalProps {
   onDismiss: () => void;
 }
 
-const COPY: Record<FeatureType, { body: string }> = {
+const COPY: Record<FeatureType, { title: string; body: string }> = {
   packing: {
+    title: "Premium feature",
     body: "Customizing packing lists is part of Premium. You can still use the checklist for this trip.",
   },
   meals: {
+    title: "Premium feature",
     body: "Customizing meal plans is part of Premium. You can still use the grocery checklist for this trip.",
+  },
+  photos: {
+    title: "Daily limit reached",
+    body: "Free users can share one photo per day. Upgrade to Pro for unlimited photo posts.",
   },
 };
 
@@ -70,7 +76,7 @@ export default function PremiumFeatureModal({
               className="text-lg font-semibold text-[#16492f] flex-1"
               style={{ fontFamily: "Raleway_600SemiBold" }}
             >
-              Premium feature
+              {copy.title}
             </Text>
           </View>
 
