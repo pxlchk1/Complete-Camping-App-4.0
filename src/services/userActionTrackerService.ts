@@ -5,8 +5,15 @@
  */
 
 import { db } from "../config/firebase";
-import { doc, getDoc, updateDoc, serverTimestamp, increment } from "firebase/firestore";
+import { doc, getDoc, updateDoc, setDoc, serverTimestamp, increment } from "firebase/firestore";
 import { analyticsService } from "./analyticsService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
+
+// Version key for push permission prompt - bump this to re-prompt all users
+const PUSH_PROMPT_VERSION = "v1";
+const PUSH_PROMPT_STORAGE_KEY = `@push_permission_prompted_${PUSH_PROMPT_VERSION}`;
 
 // ============================================
 // CORE ACTION TYPES
@@ -154,53 +161,90 @@ class UserActionTrackerService {
 
   /**
    * Check if user should see push permission soft prompt
-   * Returns true if user has 1+ core action and hasn't been prompted
+   * Shows immediately for new users and existing users who haven't been prompted
+   * Handles both new downloads and app updates
    */
   async shouldShowPushPrompt(userId: string): Promise<boolean> {
     if (!userId) return false;
 
+    // Skip if not a physical device (push doesn't work on simulators)
+    if (!Device.isDevice) {
+      return false;
+    }
+
     try {
+      // First check: OS-level permission status
+      // If already granted or denied, no need to show our soft prompt
+      const { status: osPermissionStatus } = await Notifications.getPermissionsAsync();
+      if (osPermissionStatus === "granted" || osPermissionStatus === "denied") {
+        return false;
+      }
+
+      // Second check: Local AsyncStorage (fast, works across devices for same user)
+      // This handles app updates - if we've prompted in this version, don't prompt again
+      const localPromptShown = await AsyncStorage.getItem(PUSH_PROMPT_STORAGE_KEY);
+      if (localPromptShown === userId) {
+        return false;
+      }
+
+      // Third check: Firestore (handles cross-device sync)
       const userRef = doc(db, "users", userId);
       const userDocSnap = await getDoc(userRef);
       
-      if (!userDocSnap.exists()) return false;
-
-      const userData = userDocSnap.data();
-      
-      // Check if already granted or denied OS permission
-      const permissionStatus = userData?.notificationPermissionStatus;
-      if (permissionStatus === "granted" || permissionStatus === "denied") {
-        return false;
+      // If user doc exists, check if already prompted
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        if (userData?.softPushPromptShown) {
+          // Sync to local storage for faster future checks
+          await AsyncStorage.setItem(PUSH_PROMPT_STORAGE_KEY, userId);
+          return false;
+        }
       }
 
-      // Check if already shown soft prompt
-      if (userData?.softPushPromptShown) {
-        return false;
-      }
-
-      // Check if has at least 1 core action
-      const coreActionsCount = userData?.onboarding?.coreActionsCount || 0;
-      return coreActionsCount >= 1;
+      // No existing prompt record - show the prompt!
+      // This covers: new users, existing users who update, cross-device scenarios
+      return true;
     } catch (error) {
       console.error("[UserActionTracker] Failed to check push prompt status:", error);
+      // On error, don't show prompt to avoid poor UX
       return false;
     }
   }
 
   /**
-   * Mark soft push prompt as shown
+   * Mark soft push prompt as shown (saves to both AsyncStorage and Firestore)
    */
   async markSoftPromptShown(userId: string): Promise<void> {
     if (!userId) return;
 
     try {
+      // Save to local AsyncStorage for fast future checks
+      await AsyncStorage.setItem(PUSH_PROMPT_STORAGE_KEY, userId);
+
+      // Save to Firestore for cross-device sync
       const userRef = doc(db, "users", userId);
-      await updateDoc(userRef, {
-        softPushPromptShown: true,
-        softPushPromptShownAt: serverTimestamp(),
-      });
+      const userDocSnap = await getDoc(userRef);
+
+      if (userDocSnap.exists()) {
+        await updateDoc(userRef, {
+          softPushPromptShown: true,
+          softPushPromptShownAt: serverTimestamp(),
+        });
+      } else {
+        // User doc doesn't exist yet (edge case) - create it with minimal data
+        await setDoc(userRef, {
+          softPushPromptShown: true,
+          softPushPromptShownAt: serverTimestamp(),
+        }, { merge: true });
+      }
     } catch (error) {
       console.error("[UserActionTracker] Failed to mark soft prompt shown:", error);
+      // Still mark locally even if Firestore fails
+      try {
+        await AsyncStorage.setItem(PUSH_PROMPT_STORAGE_KEY, userId);
+      } catch {
+        // Silent fail - best effort
+      }
     }
   }
 

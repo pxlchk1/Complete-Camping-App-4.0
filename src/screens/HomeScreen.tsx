@@ -209,7 +209,7 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-forest">
-      {/* Push Permission Soft Prompt - shows after 1+ core action */}
+      {/* Push Permission Soft Prompt - shows for new users and existing users who update */}
       <PushPermissionPrompt />
       
       <View className="flex-1" style={{ backgroundColor: PARCHMENT_BACKGROUND }}>
