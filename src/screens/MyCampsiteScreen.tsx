@@ -990,8 +990,13 @@ export default function MyCampsiteScreen({ navigation }: any) {
                             {badgeImage && (
                               <Image
                                 source={badgeImage}
-                                style={{ width: 56, height: 56 }}
-                                resizeMode="contain"
+                                style={{
+                                  width: "120%",
+                                  height: "120%",
+                                  marginLeft: "-10%",
+                                  marginTop: "-10%",
+                                }}
+                                resizeMode="cover"
                               />
                             )}
                           </View>
