@@ -29,6 +29,7 @@ import { useSubscriptionStore } from "../state/subscriptionStore";
 import { useUserStatus } from "../utils/authHelper";
 import { getProAttemptState } from "../services/proAttemptService";
 import { trackTrip2GateViewed, trackTrip2GateDismissed, trackUpsellCtaClicked, trackPurchaseCompleted } from "../services/analyticsService";
+import { trackGateImpression, trackGateConversion } from "../services/gateAnalyticsService";
 import { RootStackParamList } from "../navigation/types";
 
 // Constants
@@ -187,6 +188,11 @@ export default function PaywallScreen() {
       proAttemptCount,
     });
     
+    // Track gate impression for admin analytics
+    if (triggerKey && triggerKey !== "default") {
+      trackGateImpression(triggerKey);
+    }
+    
     // Track Trip #2 gate specifically
     if (triggerKey === "second_trip") {
       trackTrip2GateViewed();
@@ -297,6 +303,11 @@ export default function PaywallScreen() {
         // Track purchase completion
         const planType = pkg.identifier.includes("annual") || pkg.identifier.includes("yearly") ? "annual" : "monthly";
         trackPurchaseCompleted(planType);
+        
+        // Track gate conversion for admin analytics
+        if (triggerKey && triggerKey !== "default") {
+          trackGateConversion(triggerKey);
+        }
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         Alert.alert(
