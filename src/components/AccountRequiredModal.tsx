@@ -9,7 +9,7 @@
  * DO NOT use for: Pro-gated features (use PaywallModal instead)
  */
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { trackGateImpression } from "../services/gateAnalyticsService";
 import {
   DEEP_FOREST,
   EARTH_GREEN,
@@ -104,6 +105,13 @@ export default function AccountRequiredModal({
   triggerKey = "default",
 }: AccountRequiredModalProps) {
   const content = ACCOUNT_MODAL_CONTENT[triggerKey] || ACCOUNT_MODAL_CONTENT.default;
+  
+  // Track gate impression when modal becomes visible
+  useEffect(() => {
+    if (visible && triggerKey && triggerKey !== "default") {
+      trackGateImpression(triggerKey);
+    }
+  }, [visible, triggerKey]);
   
   // Use onClose for dismiss actions if specific handlers not provided
   const handleCreateAccount = onCreateAccount || onClose;

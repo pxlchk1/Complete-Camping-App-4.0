@@ -395,7 +395,7 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
       if (isSignUp) {
         // Create new account - validate additional fields
         if (!displayName.trim()) {
-          setError("Please enter your display name.");
+          setError("Please enter your first name.");
           return;
         }
         if (!handle.trim()) {
@@ -664,7 +664,7 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
                     <>
                       <TextInput
                         style={styles.input}
-                        placeholder="Display Name"
+                        placeholder="First Name"
                         placeholderTextColor="#828872"
                         value={displayName}
                         onChangeText={setDisplayName}

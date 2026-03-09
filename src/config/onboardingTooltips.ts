@@ -21,16 +21,16 @@ export const onboardingTooltips: OnboardingTooltip[] = [
   {
     id: 'packing-intro',
     screenName: 'Packing',
-    title: 'ⓘ Packing List',
-    message: 'This is where packing stops being chaos. Start with a template filled with suggestions to help you along, tweak it for your trip, then check items off as you go (and reuse lists later). Some templates, smart tools, or advanced features may be locked for Pro.',
+    title: 'ⓘ Packing Lists',
+    message: 'Build a packing list for your trip, check things off as you pack, and keep everything organized in one place.',
     order: 1,
   },
   // MealPlanningScreen (Recipes/Meals)
   {
     id: 'recipes-intro',
     screenName: 'MealPlanning',
-    title: 'ⓘ Meal Planning',
-    message: 'Plan meals for the whole trip in one place, with preplanned meal suggestions and recipes to make it easy. Then tap once to turn everything into a single shopping list. Add notes, keep it realistic, and avoid the "we forgot utensils" moment. Meal planning features require a Pro subscription.',
+    title: 'ⓘ Meal Planner',
+    message: 'Plan your trip meals, keep track of what you need, and make camp cooking a whole lot easier.',
     order: 1,
   },
   // ParksBrowseScreen (Parks tab)

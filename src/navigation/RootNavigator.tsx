@@ -1,10 +1,14 @@
-import React from "react";
+import React, { useCallback } from "react";
+import { View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "./types";
 import CustomBottomTabBar from "../components/CustomBottomTabBar";
+import EmailVerificationGate from "../components/EmailVerificationGate";
 import { useAuthStore } from "../state/authStore";
 import { PAYWALL_ENABLED } from "../config/subscriptions";
+import { useNotificationListeners } from "../hooks/useNotifications";
 
 // Screens
 import HomeScreen from "../screens/HomeScreen";
@@ -141,8 +145,21 @@ function HomeTabs() {
 
 export default function RootNavigator() {
   const user = useAuthStore((s) => s.user);
+  const navigation = useNavigation();
+
+  // Stable navigate wrapper for notification tap routing
+  const navigateFn = useCallback(
+    (screen: string, params?: Record<string, any>) => {
+      (navigation as any).navigate(screen, params);
+    },
+    [navigation]
+  );
+
+  // Register notification listeners (tap handler, badge clear, push token)
+  useNotificationListeners(navigateFn);
   
   return (
+    <View style={{ flex: 1 }}>
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
@@ -267,5 +284,7 @@ export default function RootNavigator() {
       <Stack.Screen name="AdminGatingReport" component={AdminGatingReportScreen} />
       <Stack.Screen name="AdminCommunications" component={AdminCommunicationsScreen} />
     </Stack.Navigator>
+    {user && <EmailVerificationGate />}
+    </View>
   );
 }

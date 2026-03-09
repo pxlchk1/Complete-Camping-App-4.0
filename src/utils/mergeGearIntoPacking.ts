@@ -22,6 +22,15 @@ function normalizeName(name: string): string {
 }
 
 /**
+ * Map gear closet categories to functional groups for shelter/sleep dedup.
+ * When a user's gear item matches a group, generic template items in that
+ * group are replaced by the user's owned gear.
+ */
+const GEAR_CATEGORY_TO_GROUP: Record<string, string> = {
+  shelter: "tent",
+};
+
+/**
  * Merge gear closet items into packing list sections
  * 
  * @param sections - Existing packing sections (from templates or empty)
@@ -48,14 +57,25 @@ export function mergeGearIntoPacking(
 
   // Group gear items by their target packing section
   const gearBySection: Record<string, PackingItem[]> = {};
+  // Track which functional groups gear closet items will replace
+  const groupsToReplace: Record<string, Set<string>> = {};
 
   gearItems.forEach((gear) => {
     const sectionTitle = getPackingSectionForGear(gear.category);
     const normalizedGearName = normalizeName(gear.name);
 
-    // Skip if already exists (deduplication)
+    // Skip if already exists (exact name deduplication)
     if (existingNames.has(normalizedGearName)) {
       return;
+    }
+
+    // Check if this gear category maps to a functional group
+    const gearGroup = GEAR_CATEGORY_TO_GROUP[gear.category];
+    if (gearGroup) {
+      if (!groupsToReplace[sectionTitle]) {
+        groupsToReplace[sectionTitle] = new Set();
+      }
+      groupsToReplace[sectionTitle].add(gearGroup);
     }
 
     // Create packing item from gear
@@ -93,6 +113,14 @@ export function mergeGearIntoPacking(
         collapsed: false,
       };
       updatedSections.push(targetSection);
+    }
+
+    // Remove generic template items whose functional group is replaced by gear closet items
+    const replacedGroups = groupsToReplace[sectionTitle];
+    if (replacedGroups && replacedGroups.size > 0) {
+      targetSection.items = targetSection.items.filter(
+        (item) => !item.group || !replacedGroups.has(item.group)
+      );
     }
 
     // Append gear items to the section (after template items)

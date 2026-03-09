@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { View, Text, ScrollView, Pressable, ImageBackground, Image, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,6 +26,13 @@ import { getPhotoPosts } from "../services/photoPostsService";
 import { getUser } from "../services/userService";
 import { getConnectDisplayHandle } from "../services/handleService";
 import { PhotoPost } from "../types/photoPost";
+import {
+  checkNotificationModalEligibility,
+  recordModalShown,
+  trackModalEligible,
+  trackModalShown,
+  NotificationCohort,
+} from "../services/notificationEligibilityService";
 
 // State
 import { useTripsStore } from "../state/tripsStore";
@@ -33,6 +40,10 @@ import { useGearStore } from "../state/gearStore";
 import { useUserStore, createTestUser } from "../state/userStore";
 import { usePlanTabStore } from "../state/planTabStore";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useUpsellStore, UPSELL_COPY, UPSELL_MODALS_ENABLED } from "../state/upsellStore";
+import UpsellModal from "../components/UpsellModal";
+import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
+import { PAYWALL_ENABLED } from "../config/subscriptions";
 
 // Utils
 import { getWelcomeTitle, getWelcomeSubtext } from "../utils/welcomeCopy";
@@ -96,8 +107,9 @@ export default function HomeScreen() {
   // User flags for welcome greeting (real-time subscription to Firestore)
   const { hasSeenWelcomeHome, hasSeenStayInLoop, firstName: userFirstName } = useUserFlags();
 
-  // Stay in the loop modal state - show after first login for logged-in users who haven't seen it
+  // Notification opt-in modal state
   const [showStayInLoopModal, setShowStayInLoopModal] = useState(false);
+  const [notificationCohort, setNotificationCohort] = useState<NotificationCohort | null>(null);
 
   // Featured Community Photo state
   const [featuredPhoto, setFeaturedPhoto] = useState<PhotoPost | null>(null);
@@ -134,17 +146,56 @@ export default function HomeScreen() {
   // Email opt-in modal state
   const [showEmailOptIn, setShowEmailOptIn] = useState(false);
 
-  // Show stay-in-the-loop modal for logged-in users who haven't seen it yet
+  // Session soft upsell nudge state
+  const [showSessionNudge, setShowSessionNudge] = useState(false);
+  const canShowSessionNudge = useUpsellStore((s) => s.canShowSessionNudge);
+  const markSessionUpsellShown = useUpsellStore((s) => s.markSessionUpsellShown);
+  const recordUpsellDismissal = useUpsellStore((s) => s.recordModalDismissal);
+  const sessionNudgeChecked = useRef(false);
+
+  // Show notification opt-in modal for eligible users immediately after login
   useEffect(() => {
-    // Only show for authenticated non-guest users who haven't seen it
-    if (isAuthenticated && !isGuest && !hasSeenStayInLoop) {
-      // Small delay to let the home screen render first
-      const timer = setTimeout(() => {
-        setShowStayInLoopModal(true);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [isAuthenticated, isGuest, hasSeenStayInLoop]);
+    // Only proceed for authenticated non-guest users
+    if (!isAuthenticated || isGuest) return;
+    
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    let cancelled = false;
+
+    const checkEligibility = async () => {
+      try {
+        const eligibility = await checkNotificationModalEligibility(userId);
+        
+        if (cancelled) return;
+
+        if (eligibility.isEligible && eligibility.cohort) {
+          // Track eligibility
+          trackModalEligible(eligibility.cohort);
+          setNotificationCohort(eligibility.cohort);
+          
+          // Record that we showed the modal
+          await recordModalShown(userId, eligibility.cohort);
+          
+          // Show modal immediately (small delay for UI stability)
+          setTimeout(() => {
+            if (!cancelled) {
+              trackModalShown(eligibility.cohort!);
+              setShowStayInLoopModal(true);
+            }
+          }, 300);
+        }
+      } catch (error) {
+        console.error("[HomeScreen] Error checking notification eligibility:", error);
+      }
+    };
+
+    checkEligibility();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, isGuest]);
 
   // Check for admin test modal on mount (admin-only, user-scoped)
   useEffect(() => {
@@ -395,6 +446,39 @@ export default function HomeScreen() {
 
     checkEmailOptIn();
   }, [isGuest, adminTestModal, announcementModal, showAccountModal]);
+
+  // Session soft upsell nudge — once per session, after other modals settle
+  useEffect(() => {
+    // Only check once per component mount; session flag prevents re-show anyway
+    if (sessionNudgeChecked.current) return;
+    if (!isAuthenticated || isGuest) return;
+    if (!UPSELL_MODALS_ENABLED || !PAYWALL_ENABLED) return;
+
+    sessionNudgeChecked.current = true;
+
+    const timer = setTimeout(() => {
+      // Don't stack on top of other active modals
+      if (
+        showStayInLoopModal ||
+        adminTestModal ||
+        announcementModal ||
+        showEmailOptIn ||
+        showAccountModal ||
+        showModal
+      ) {
+        return;
+      }
+
+      if (canShowSessionNudge()) {
+        markSessionUpsellShown();
+        trackUpsellModalViewed("learning_complete"); // reuse closest analytics type for session browse
+        setShowSessionNudge(true);
+      }
+    }, 5000); // 5s delay to let other modals settle
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, isGuest, canShowSessionNudge, markSessionUpsellShown,
+      showStayInLoopModal, adminTestModal, announcementModal, showEmailOptIn, showAccountModal, showModal]);
 
   // Fetch a random featured photo on screen focus
   useFocusEffect(
@@ -1085,7 +1169,7 @@ export default function HomeScreen() {
           >
             <View
               style={{
-                backgroundColor: CARD_BACKGROUND_LIGHT,
+                backgroundColor: PARCHMENT,
                 borderRadius: 16,
                 padding: 24,
                 width: "100%",
@@ -1253,6 +1337,32 @@ export default function HomeScreen() {
       <StayInLoopModal
         visible={showStayInLoopModal}
         onDismiss={() => setShowStayInLoopModal(false)}
+        cohort={notificationCohort}
+      />
+
+      {/* Session Soft Upsell Nudge - once per session for eligible free users */}
+      <UpsellModal
+        visible={showSessionNudge}
+        title={UPSELL_COPY.session_browse.title}
+        body={UPSELL_COPY.session_browse.body}
+        primaryCtaText={UPSELL_COPY.session_browse.primaryCta}
+        secondaryCtaText={UPSELL_COPY.session_browse.secondaryCta}
+        finePrint={UPSELL_COPY.session_browse.finePrint}
+        onPrimaryPress={() => {
+          setShowSessionNudge(false);
+          trackUpsellCtaClicked("learning_complete");
+          navigation.navigate("Paywall" as any, { triggerKey: "session_browse_nudge" });
+        }}
+        onSecondaryPress={() => {
+          setShowSessionNudge(false);
+          recordUpsellDismissal();
+          trackUpsellModalDismissed("learning_complete");
+        }}
+        onDismiss={() => {
+          setShowSessionNudge(false);
+          recordUpsellDismissal();
+          trackUpsellModalDismissed("learning_complete");
+        }}
       />
     </View>
   );

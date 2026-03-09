@@ -1370,29 +1370,60 @@ async function sendQueuedNotifications(db: admin.firestore.Firestore): Promise<v
         continue;
       }
 
-      // Send push notification
+      // Send push notification via Expo Push API
       const tokens = tokensSnapshot.docs.map((t) => t.data().token);
-      const message: admin.messaging.MulticastMessage = {
-        tokens,
-        notification: {
-          title: notification.payload.title,
-          body: notification.payload.body,
-        },
+      const expoTokens = tokens.filter((t: string) => t.startsWith("ExponentPushToken"));
+
+      if (expoTokens.length === 0) {
+        await doc.ref.update({
+          status: "suppressed",
+          suppressionReason: "no_expo_token",
+        });
+        continue;
+      }
+
+      const messages = expoTokens.map((token: string) => ({
+        to: token,
+        sound: "default" as const,
+        title: notification.payload.title,
+        body: notification.payload.body,
         data: {
-          deepLink: notification.payload.deepLink,
+          deepLink: notification.payload.deepLink || "",
           type: notification.type,
         },
-        apns: {
-          payload: {
-            aps: {
-              sound: "default",
-              badge: 1,
-            },
-          },
-        },
-      };
+      }));
 
-      await admin.messaging().sendEachForMulticast(message);
+      const pushResponse = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(messages),
+      });
+
+      const pushResult = await pushResponse.json();
+      let anySuccess = false;
+      if (pushResult.data) {
+        for (const ticket of pushResult.data) {
+          if (ticket.status === "ok") {
+            anySuccess = true;
+          } else {
+            functions.logger.warn("Expo push ticket error", {
+              notificationId: doc.id,
+              ticket,
+            });
+          }
+        }
+      }
+
+      if (!anySuccess) {
+        await doc.ref.update({
+          status: "failed",
+          suppressionReason: "all_tickets_errored",
+        });
+        continue;
+      }
 
       // Update notification as sent
       await doc.ref.update({
