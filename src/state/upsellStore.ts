@@ -50,6 +50,7 @@ export interface UpsellState {
   
   // Eligibility checks (read-only helpers)
   canShowSoftModal: (type: UpsellModalType, hasUsedFreeTrip: boolean) => boolean;
+  canShowSessionNudge: () => boolean;
   isTrialOrSubscribed: () => boolean;
   canShowTrip2Gate: (hasUsedFreeTrip: boolean) => boolean;
 }
@@ -139,6 +140,12 @@ export const useUpsellStore = create<UpsellState>()(
           return false;
         }
         
+        // 1b. Exclude admin and moderator users
+        const userState = useUserStore.getState();
+        if (userState.isAdministrator() || userState.isModerator()) {
+          return false;
+        }
+        
         // 2. Check if still on free trip (soft modals only during free trip)
         // Note: Completion modal is shown at the moment of completion before marking as used
         if (type !== "completion" && hasUsedFreeTrip) {
@@ -171,6 +178,40 @@ export const useUpsellStore = create<UpsellState>()(
           }
         }
         
+        return true;
+      },
+
+      /**
+       * Check if a session-level browsing nudge can be shown.
+       * Unlike canShowSoftModal, this has NO permanent show-once flag —
+       * it can show once per new app session (gated by cooldown).
+       *
+       * Exclusions: Pro, admin, moderator, guest/unauthenticated.
+       */
+      canShowSessionNudge: () => {
+        if (!UPSELL_MODALS_ENABLED) return false;
+
+        const state = get();
+
+        // Not for Pro users
+        if (state.isTrialOrSubscribed()) return false;
+
+        // Not for admin or moderator
+        const userState = useUserStore.getState();
+        if (userState.isAdministrator() || userState.isModerator()) return false;
+
+        // Must be authenticated (not guest)
+        if (!userState.isAuthenticated()) return false;
+
+        // Max 1 soft upsell per session (covers action-specific modals too)
+        if (state.sessionUpsellShownThisSession) return false;
+
+        // 24h cooldown after last dismissal
+        if (state.lastUpsellModalDismissedAt) {
+          const elapsed = Date.now() - state.lastUpsellModalDismissedAt;
+          if (elapsed < COOLDOWN_MS) return false;
+        }
+
         return true;
       },
     }),
@@ -226,6 +267,13 @@ export const UPSELL_COPY = {
     body: "Unlock the full camping toolkit with a 3-day free trial!",
     primaryCta: "Start 3-Day Free Trial",
     secondaryCta: "Not now",
+    finePrint: "After your free trial, your annual subscription begins. Cancel anytime.",
+  },
+  session_browse: {
+    title: "Go Pro",
+    body: "Unlock unlimited trips, meal plans, packing lists, and more with a 3-day free trial!",
+    primaryCta: "Start 3-Day Free Trial",
+    secondaryCta: "Maybe later",
     finePrint: "After your free trial, your annual subscription begins. Cancel anytime.",
   },
 } as const;

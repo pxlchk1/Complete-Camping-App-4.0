@@ -198,6 +198,7 @@ export async function getExpoPushToken(): Promise<string | null> {
 
 /**
  * Register push token with Firestore
+ * Uses deterministic doc ID {userId}_{platform} to prevent duplicates
  */
 export async function registerPushToken(userId: string): Promise<boolean> {
   try {
@@ -208,32 +209,20 @@ export async function registerPushToken(userId: string): Promise<boolean> {
       return false;
     }
 
-    const pushTokensRef = collection(db, "pushTokens");
-    const q = query(
-      pushTokensRef, 
-      where("userId", "==", userId), 
-      where("token", "==", token)
-    );
-    const existingTokens = await getDocs(q);
-
-    if (existingTokens.empty) {
-      await setDoc(doc(pushTokensRef), {
-        userId,
-        token,
-        platform: Platform.OS,
-        deviceName: Device.deviceName,
-        createdAt: serverTimestamp(),
-        lastUsed: serverTimestamp(),
-      });
-      console.log("[Notifications] Registered new push token");
-    } else {
-      // Update lastUsed timestamp
-      const tokenDoc = existingTokens.docs[0];
-      await updateDoc(tokenDoc.ref, {
-        lastUsed: serverTimestamp(),
-      });
-    }
-
+    // Use deterministic doc ID to prevent duplicate tokens
+    const docId = `${userId}_${Platform.OS}`;
+    const pushTokenRef = doc(db, "pushTokens", docId);
+    
+    await setDoc(pushTokenRef, {
+      userId,
+      token,
+      platform: Platform.OS,
+      deviceName: Device.deviceName || "Unknown",
+      createdAt: serverTimestamp(),
+      lastUsed: serverTimestamp(),
+    }, { merge: true });
+    
+    console.log("[Notifications] Registered push token:", { userId, platform: Platform.OS });
     return true;
   } catch (error) {
     console.error("[Notifications] Error registering token:", error);

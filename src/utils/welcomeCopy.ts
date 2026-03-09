@@ -1,19 +1,17 @@
 /**
  * Welcome Copy Utility
- * Provides personalized welcome messages based on user login state and welcome history.
+ * Provides personalized welcome messages based on whether user has set their first name.
  * 
- * Requirements:
- * A) First ever visit (hasSeenWelcomeHome == false):
- *    Title: "Welcome Camper!"
- *    Subtitle: "Your camping adventure starts here."
+ * REQUIREMENTS (March 2026 - DO NOT CHANGE WITHOUT PRODUCT APPROVAL):
+ * ====================================================================
+ * Title Logic (based ONLY on firstName from My Campsite):
+ *   - NO firstName set: "Welcome Camper!"
+ *   - firstName IS set: "Welcome back FirstName!"
  * 
- * B) Subsequent visits, no firstName:
- *    Title: "Welcome back, Camper!"
- *    Subtitle: "Hope you've got snacks and a headlamp. Let's get you trip-ready."
- * 
- * C) Subsequent visits, with firstName:
- *    Title: "Welcome back, {FirstName}!"
- *    Subtitle: "Hope you've got snacks and a headlamp. Let's get you trip-ready."
+ * Subtitle Logic:
+ *   - First ever visit (hasSeenWelcomeHome == false): "Your camping adventure starts here."
+ *   - Subsequent visits: "Hope you've got snacks and a headlamp. Let's get you trip-ready."
+ * ====================================================================
  */
 
 // The single consistent cute subtitle for returning users
@@ -49,10 +47,15 @@ const CAMPING_TYPE_MESSAGES: Record<string, string> = {
 };
 
 /**
- * Get the welcome title based on welcome state.
- * @param hasSeenWelcomeHome - Whether user has seen the first-time welcome
- * @param firstName - User's firstName from users collection (optional)
- * @param isLoggedIn - Whether the user is logged in
+ * Get the welcome title based on whether firstName is set.
+ * 
+ * IMPORTANT: Title is determined ONLY by firstName presence, not by visit history.
+ * - No firstName → "Welcome Camper!"
+ * - Has firstName → "Welcome back FirstName!"
+ * 
+ * @param hasSeenWelcomeHome - (Unused for title) Whether user has seen the first-time welcome
+ * @param firstName - User's firstName from users collection (determines greeting)
+ * @param isLoggedIn - (Unused for title) Whether the user is logged in
  * @returns The welcome title string
  */
 export function getWelcomeTitle(
@@ -60,23 +63,15 @@ export function getWelcomeTitle(
   firstName?: string | null,
   isLoggedIn?: boolean
 ): string {
-  // Not logged in - always show first-time copy
-  if (!isLoggedIn) {
-    return "Welcome Camper!";
-  }
-
-  // First-time user (hasSeenWelcomeHome == false)
-  if (!hasSeenWelcomeHome) {
-    return "Welcome Camper!";
-  }
-
-  // Returning user - determine display name
+  // Title is determined ONLY by whether firstName is set
   const trimmedFirstName = firstName?.trim();
-  const displayNameForWelcome = trimmedFirstName && trimmedFirstName.length > 0
-    ? trimmedFirstName
-    : "Camper";
+  const hasFirstName = trimmedFirstName && trimmedFirstName.length > 0;
 
-  return `Welcome back, ${displayNameForWelcome}!`;
+  if (hasFirstName) {
+    return `Welcome back ${trimmedFirstName}!`;
+  }
+
+  return "Welcome Camper!";
 }
 
 /**

@@ -46,13 +46,21 @@ export function useNotificationListeners(
 
     // Navigate based on notification type
     switch (data.type) {
+      // Client-originated trip types
       case "trip_reminder":
       case "packing_reminder":
       case "arrival_day":
       case "trip_ending":
       case "post_trip_recap":
+      // Server-queued trip types
+      case "trip_starts_3_days":
+      case "trip_starts_tomorrow":
+      case "trip_no_packing_list_24h":
         if (data.tripId) {
-          navigateFn("TripDetails", { tripId: data.tripId });
+          navigateFn("TripDetail", { tripId: data.tripId });
+        } else {
+          // No tripId in payload — fall back to Plan tab
+          navigateFn("HomeTabs", { screen: "Plan" });
         }
         break;
 
@@ -97,6 +105,17 @@ export function useNotificationListeners(
         break;
 
       default:
+        // Handle onboarding_day_* and inactive_* types → route to Home
+        if (data.type?.startsWith("onboarding_day_") || data.type?.startsWith("inactive_")) {
+          navigateFn("HomeTabs");
+          break;
+        }
+        // If there's a deepLink in the payload, try to navigate to it
+        if (data.deepLink) {
+          // deepLink format: "HomeTabs", "CreateTrip", "LearnTab", etc.
+          navigateFn(data.deepLink as string);
+          break;
+        }
         console.log("[Notifications] Unhandled notification type:", data.type);
     }
   }, [navigateFn]);

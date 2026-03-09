@@ -30,6 +30,7 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { doc, setDoc, serverTimestamp, collection } from "firebase/firestore";
 import { db, auth } from "../config/firebase";
+import { registerPushToken } from "../services/notificationService";
 import {
   DEEP_FOREST,
   PARCHMENT,
@@ -122,33 +123,6 @@ export default function PermissionsOptInModal({
     }
 
     return status === "granted";
-  };
-
-  const registerPushToken = async (userId: string): Promise<void> => {
-    try {
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-      if (!projectId) {
-        console.warn("[PermissionsOptIn] No project ID for push token");
-        return;
-      }
-
-      const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
-      const token = tokenData.data;
-
-      const pushTokenRef = doc(collection(db, "pushTokens"), `${userId}_${Platform.OS}`);
-      await setDoc(pushTokenRef, {
-        userId,
-        token,
-        platform: Platform.OS,
-        deviceName: Device.deviceName || "Unknown",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-
-      console.log("[PermissionsOptIn] Push token registered");
-    } catch (error) {
-      console.error("[PermissionsOptIn] Failed to register push token:", error);
-    }
   };
 
   const handleSave = async () => {

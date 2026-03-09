@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useOnboardingContext } from '../context/OnboardingContext';
 import { getTooltipsForScreen } from '../config/onboardingTooltips';
 import { OnboardingTooltip } from '../types/onboarding';
@@ -16,6 +16,11 @@ export const useScreenOnboarding = (screenName: string): UseScreenOnboardingResu
   const [showModal, setShowModal] = useState(false);
   const [currentTooltip, setCurrentTooltip] = useState<OnboardingTooltip | null>(null);
 
+  // Guard: track which screen has been auto-evaluated so we only run the
+  // first-visit check once per component mount, preventing re-shows caused
+  // by unstable effect dependencies or provider re-renders.
+  const autoShowCheckedRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (contextLoading) return;
 
@@ -24,17 +29,20 @@ export const useScreenOnboarding = (screenName: string): UseScreenOnboardingResu
     if (tooltips.length > 0) {
       setCurrentTooltip(tooltips[0]);
       
-      // Only auto-show if user hasn't seen it
-      if (!hasSeenScreen(screenName)) {
-        setShowModal(true);
+      // Only run auto-show logic once per screen per mount
+      if (autoShowCheckedRef.current !== screenName) {
+        autoShowCheckedRef.current = screenName;
+        if (!hasSeenScreen(screenName)) {
+          setShowModal(true);
+        }
       }
     }
   }, [screenName, contextLoading, hasSeenScreen]);
 
-  const dismissModal = async () => {
+  const dismissModal = useCallback(async () => {
     setShowModal(false);
     await markAsSeen(screenName);
-  };
+  }, [screenName, markAsSeen]);
 
   const openModal = useCallback(() => {
     const tooltips = getTooltipsForScreen(screenName);

@@ -14,6 +14,7 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { PARCHMENT } from "../constants/colors";
 import { auth } from "../config/firebase";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { userActionTracker } from "../services/userActionTrackerService";
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   container: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: PARCHMENT,
     borderRadius: 20,
     padding: 24,
     width: SCREEN_WIDTH - 48,
