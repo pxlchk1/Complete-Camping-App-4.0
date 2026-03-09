@@ -47,6 +47,7 @@ export interface PackingItem {
   essential?: boolean;
   source?: PackingItemSource;
   gearItemId?: string; // Link to Gear Closet item
+  group?: string; // Functional group for single-instance dedup (e.g., "tent", "sleepingBag")
 }
 
 export interface PackingSection {
@@ -163,20 +164,39 @@ export const usePackingStore = create<PackingState>()(
                 itemsByCategory[category] = [];
               }
               
-              // Check for duplicates
-              const exists = itemsByCategory[category].some(
+              // Check for exact name duplicates
+              const nameExists = itemsByCategory[category].some(
                 (existing) => existing.name.toLowerCase() === item.name.toLowerCase()
               );
+              if (nameExists) return;
               
-              if (!exists) {
-                itemsByCategory[category].push({
-                  id: generateId(),
-                  name: item.name,
-                  checked: false,
-                  essential: item.essential,
-                  source: "template",
-                });
+              // Functional group dedup: specialized template items replace generic ones
+              if (item.group) {
+                const groupIndex = itemsByCategory[category].findIndex(
+                  (existing) => existing.group === item.group
+                );
+                if (groupIndex !== -1) {
+                  // Replace the generic item with the specialized variant
+                  itemsByCategory[category][groupIndex] = {
+                    id: generateId(),
+                    name: item.name,
+                    checked: false,
+                    essential: item.essential,
+                    source: "template",
+                    group: item.group,
+                  };
+                  return;
+                }
               }
+              
+              itemsByCategory[category].push({
+                id: generateId(),
+                name: item.name,
+                checked: false,
+                essential: item.essential,
+                source: "template",
+                group: item.group,
+              });
             });
           });
 
