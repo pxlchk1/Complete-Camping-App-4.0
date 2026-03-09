@@ -47,7 +47,7 @@ import {
   BadgeClaim,
   BadgeDisplayState,
 } from "../types/badges";
-import { doesBadgeRequireWitness, getWitnessRequirementReason } from "../config/badgeWitnessRequirements";
+import { getWitnessRequirementReason } from "../config/badgeWitnessRequirements";
 import { useSubscriptionStore } from "../state/subscriptionStore";
 import UpsellModal from "../components/UpsellModal";
 import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
@@ -155,8 +155,8 @@ export default function BadgeDetailScreen() {
     }, [loadData, pendingClaim?.photoUrl, earnedBadge?.photoUrl])
   );
 
-  // Check if badge requires witness
-  const requiresWitness = badge ? doesBadgeRequireWitness(badge.id) : false;
+  // Check if badge requires witness (use earnType from badge definition)
+  const requiresWitness = badge?.earnType === "WITNESS_REQUIRED";
 
   // Photo picker handler
   const handleAddPhoto = async () => {
@@ -204,15 +204,17 @@ export default function BadgeDetailScreen() {
       const user = auth.currentUser;
       if (!user) throw new Error("Not signed in");
 
-      await createUserBadge({
+      const newBadge = await createUserBadge({
         badgeId: badge.id,
         earnedVia: "PHOTO",
         photoUrl: localPhotoUrl,
       });
 
+      // Update state directly to avoid loading spinner flash
+      setEarnedBadge(newBadge);
+      setDisplayState("earned");
       setLocalPhotoUrl(null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await loadData();
       
       // Show upsell nudge for non-Pro users
       if (!isPro) {
