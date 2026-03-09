@@ -8,6 +8,8 @@
  * - Tracks dismissal in AsyncStorage (durable across sessions).
  * - Also auto-dismisses when the user navigates to MyCampsite.
  * - Includes a small arrow pointing toward the top-right account icon.
+ * - "Go to My Campsite" tap matches the account icon behavior exactly:
+ *   logged-in → MyCampsite, logged-out → Auth.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -21,7 +23,6 @@ import {
   EARTH_GREEN,
   DEEP_FOREST,
   PARCHMENT,
-  CARD_BACKGROUND_LIGHT,
   BORDER_SOFT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
@@ -81,7 +82,14 @@ export default function MyCampsitePrompt() {
 
   const handleGoToCampsite = useCallback(async () => {
     await dismiss();
-    navigation.navigate("MyCampsite");
+    // Match AccountButton behavior exactly:
+    // logged-in → MyCampsite, logged-out → Auth
+    const user = auth.currentUser;
+    if (!user) {
+      navigation.navigate("Auth");
+    } else {
+      navigation.navigate("MyCampsite");
+    }
   }, [dismiss, navigation]);
 
   // Don't render anything until loaded, or if not visible
@@ -90,12 +98,12 @@ export default function MyCampsitePrompt() {
   return (
     <View
       style={{
-        backgroundColor: CARD_BACKGROUND_LIGHT,
+        backgroundColor: PARCHMENT,
         borderWidth: 1,
         borderColor: BORDER_SOFT,
         borderRadius: 16,
         padding: 16,
-        marginBottom: 16,
+        marginBottom: 20,
       }}
     >
       {/* Arrow pointing toward top-right account icon */}
@@ -103,7 +111,7 @@ export default function MyCampsitePrompt() {
         style={{
           position: "absolute",
           top: -8,
-          right: 24,
+          right: 28,
           width: 0,
           height: 0,
           borderLeftWidth: 8,
@@ -111,7 +119,23 @@ export default function MyCampsitePrompt() {
           borderBottomWidth: 8,
           borderLeftColor: "transparent",
           borderRightColor: "transparent",
-          borderBottomColor: EARTH_GREEN,
+          borderBottomColor: BORDER_SOFT,
+        }}
+      />
+      {/* Inner arrow (fills the triangle with PARCHMENT) */}
+      <View
+        style={{
+          position: "absolute",
+          top: -6,
+          right: 29,
+          width: 0,
+          height: 0,
+          borderLeftWidth: 7,
+          borderRightWidth: 7,
+          borderBottomWidth: 7,
+          borderLeftColor: "transparent",
+          borderRightColor: "transparent",
+          borderBottomColor: PARCHMENT,
         }}
       />
 
@@ -123,7 +147,7 @@ export default function MyCampsitePrompt() {
             width: 40,
             height: 40,
             borderRadius: 20,
-            backgroundColor: "#E8F5E9",
+            backgroundColor: EARTH_GREEN + "18",
             justifyContent: "center",
             alignItems: "center",
             marginRight: 12,
@@ -134,7 +158,7 @@ export default function MyCampsitePrompt() {
         </View>
 
         {/* Text */}
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, paddingRight: 4 }}>
           <Text
             style={{
               fontFamily: "SourceSans3_600SemiBold",
@@ -161,7 +185,7 @@ export default function MyCampsitePrompt() {
         <Pressable
           onPress={dismiss}
           hitSlop={12}
-          style={{ padding: 2, marginLeft: 4 }}
+          style={{ padding: 4, marginLeft: 4, marginTop: -2 }}
           accessibilityLabel="Dismiss campsite prompt"
           accessibilityRole="button"
         >

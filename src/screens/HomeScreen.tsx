@@ -16,6 +16,7 @@ import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
 import EmailOptInModal from "../components/EmailOptInModal";
 import StayInLoopModal from "../components/StayInLoopModal";
+import MyCampsitePrompt from "../components/MyCampsitePrompt";
 
 // Hooks
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
@@ -340,6 +341,14 @@ export default function HomeScreen() {
           }
         }
 
+        // Suppress announcement modal for brand-new users on first login.
+        // hasSeenWelcomeHome is false until their first Home visit is
+        // recorded in Firestore, so first-run onboarding prompts take priority.
+        if (!hasSeenWelcomeHome) {
+          console.log("[HomeScreen] Suppressing announcement for first-run user");
+          return;
+        }
+
         console.log("[HomeScreen] Showing announcement modal:", data.headline);
         setAnnouncementModal({
           versionId: data.versionId,
@@ -356,7 +365,7 @@ export default function HomeScreen() {
     };
 
     checkAnnouncementModal();
-  }, []);
+  }, [hasSeenWelcomeHome]);
 
   // Dismiss announcement modal and mark as dismissed
   const dismissAnnouncementModal = async () => {
@@ -680,6 +689,9 @@ export default function HomeScreen() {
           contentContainerStyle={{ paddingBottom: bottomSpacer }}
           showsVerticalScrollIndicator={false}
         >
+          {/* My Campsite Prompt — new-user onboarding nudge */}
+          <MyCampsitePrompt />
+
           {/* Quick Actions */}
           <View className="mb-6">
             <SectionTitle className="mb-4" color={DEEP_FOREST} style={{ fontSize: 18 }}>
