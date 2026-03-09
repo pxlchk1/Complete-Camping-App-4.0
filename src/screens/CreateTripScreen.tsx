@@ -20,7 +20,7 @@ import AccountRequiredModal from "../components/AccountRequiredModal";
 import { DEEP_FOREST, EARTH_GREEN, GRANITE_GOLD, RIVER_ROCK, SIERRA_SKY, PARCHMENT, PARCHMENT_BORDER } from "../constants/colors";
 import { trackTripCreated } from "../services/analyticsService";
 import { trackCoreAction } from "../services/userActionTrackerService";
-import { useAuth } from "../context/AuthContext";
+import { useAuthStore } from "../state/authStore";
 
 type CreateTripScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -46,7 +46,7 @@ export default function CreateTripScreen() {
   const navigation = useNavigation<CreateTripScreenNavigationProp>();
   const route = useRoute<CreateTripScreenRouteProp>();
   const addTrip = useTripsStore((s) => s.addTrip);
-  const { user } = useAuth();
+  const currentUser = useAuthStore((s) => s.user);
 
   // Get prefill location from navigation params
   const prefillLocation = route.params?.prefillLocation;
@@ -85,8 +85,8 @@ export default function CreateTripScreen() {
   // Gate: Redirect free users who already have a trip
   useEffect(() => {
     const checkEntitlement = async () => {
-      if (!isPremiumUser() && user?.uid) {
-        const existingTripId = await getFreePremiumTripId(user.uid);
+      if (!isPremiumUser() && currentUser?.id) {
+        const existingTripId = await getFreePremiumTripId(currentUser.id);
         if (existingTripId) {
           // Free user already has a trip - redirect to paywall
           navigation.replace("Paywall", { triggerKey: "second_trip" });
@@ -94,7 +94,7 @@ export default function CreateTripScreen() {
       }
     };
     checkEntitlement();
-  }, [user?.uid, navigation]);
+  }, [currentUser?.id, navigation]);
 
   const handleClearDestination = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -125,8 +125,8 @@ export default function CreateTripScreen() {
     }
 
     // Gate: Free users can only create one trip
-    if (!isPremiumUser() && user?.uid) {
-      const freeTripId = await getFreePremiumTripId(user.uid);
+    if (!isPremiumUser() && currentUser?.id) {
+      const freeTripId = await getFreePremiumTripId(currentUser.id);
       if (freeTripId) {
         // Free user already has a trip - show paywall
         navigation.navigate("Paywall", { triggerKey: "second_trip" });
@@ -162,17 +162,17 @@ export default function CreateTripScreen() {
       });
 
       // Set free premium trip ID for free users creating their first trip (guard against double-set)
-      if (!isPremiumUser() && user?.uid) {
-        const existingId = await getFreePremiumTripId(user.uid);
+      if (!isPremiumUser() && currentUser?.id) {
+        const existingId = await getFreePremiumTripId(currentUser.id);
         if (!existingId) {
-          await setFreePremiumTripId(user.uid, tripId);
+          await setFreePremiumTripId(currentUser.id, tripId);
         }
       }
 
       // Track analytics and core action
       trackTripCreated(tripId);
-      if (user?.uid) {
-        trackCoreAction(user.uid, "trip_created");
+      if (currentUser?.id) {
+        trackCoreAction(currentUser.id, "trip_created");
       }
 
       // Navigate to trip detail

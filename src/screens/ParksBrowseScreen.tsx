@@ -38,6 +38,7 @@ import {
 import { db, auth } from "../config/firebase";
 import { useTripsStore } from "../state/tripsStore";
 import { useUserStore } from "../state/userStore";
+import { useSubscriptionStore } from "../state/subscriptionStore";
 import { usePlanTabStore } from "../state/planTabStore";
 
 // Components
@@ -47,7 +48,7 @@ import ParkListItem from "../components/ParkListItem";
 import ParkDetailModal from "../components/ParkDetailModal";
 import FireflyLoader from "../components/common/FireflyLoader";
 import AccountRequiredModal from "../components/AccountRequiredModal";
-import { requirePro } from "../utils/gating";
+import { requireAccount, requirePro } from "../utils/gating";
 
 // Types
 import { Park, TripDestination } from "../types/camping";
@@ -1124,19 +1125,34 @@ export default function ParksBrowseScreen({ onTabChange, selectedParkId: selecte
             } else {
               // Create new trip flow - user will set destination after trip creation
               console.log("[ParksBrowse] Create new trip for park:", park.name);
-              const canProceed = requirePro({
+              
+              // First check if user has an account
+              const hasAccount = requireAccount({
+                showAccountPrompt: () => {},
                 openAccountModal: () => setShowAccountModal(true),
-                openPaywallModal: (variant) => navigation.navigate("Paywall", { triggerKey: "second_trip", variant }),
               });
-              if (!canProceed) {
+              if (!hasAccount) {
                 setSelectedPark(null);
                 onParkDetailClosed?.();
                 return;
               }
-              // TODO: Pass park info to CreateTrip so it can be set as destination after creation
+              
+              // Check if user has used their free trip
+              const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
+              const isPro = useSubscriptionStore.getState().isPro;
+              
+              // If first trip (not used free trip yet) OR user is Pro, allow
+              if (!hasUsedFreeTrip || isPro) {
+                setSelectedPark(null);
+                onParkDetailClosed?.();
+                navigation.navigate("CreateTrip" as never);
+                return;
+              }
+              
+              // Second+ trip and not Pro - show paywall
               setSelectedPark(null);
               onParkDetailClosed?.();
-              navigation.navigate("CreateTrip" as never);
+              navigation.navigate("Paywall", { triggerKey: "second_trip" });
             }
           }}
           onRequireAccount={(triggerKey) => {
