@@ -14,6 +14,7 @@ export interface PackingTemplateItem {
   name: string;
   category: string;
   essential: boolean;
+  group?: string; // Functional group for single-instance dedup (e.g., "tent", "sleepingBag")
 }
 
 export interface PackingTemplate {
@@ -52,14 +53,14 @@ const ESSENTIAL_CAMPING: PackingTemplate = {
   description: "The must-have basics for any camping trip",
   icon: "checkmark-circle",
   items: [
-    { name: "Tent", category: "Shelter & Sleep", essential: true },
+    { name: "Tent", category: "Shelter & Sleep", essential: true, group: "tent" },
     { name: "Tent footprint/ground cloth", category: "Shelter & Sleep", essential: false },
     { name: "Tent stakes", category: "Shelter & Sleep", essential: true },
-    { name: "Sleeping bag", category: "Shelter & Sleep", essential: true },
-    { name: "Sleeping pad", category: "Shelter & Sleep", essential: true },
+    { name: "Sleeping bag", category: "Shelter & Sleep", essential: true, group: "sleepingBag" },
+    { name: "Sleeping pad", category: "Shelter & Sleep", essential: true, group: "sleepingPad" },
     { name: "Pillow", category: "Shelter & Sleep", essential: false },
-    { name: "Camp stove", category: "Meal Prep", essential: true },
-    { name: "Fuel", category: "Meal Prep", essential: true },
+    { name: "Camp stove", category: "Meal Prep", essential: true, group: "stove" },
+    { name: "Fuel", category: "Meal Prep", essential: true, group: "fuel" },
     { name: "Lighter/matches", category: "Meal Prep", essential: true },
     { name: "Headlamp", category: "Navigation & Safety", essential: true },
     { name: "Extra batteries", category: "Navigation & Safety", essential: true },
@@ -87,23 +88,23 @@ const COOKING_FOOD: PackingTemplate = {
     { name: "Sugar", category: "Cooking & Food", essential: false },
     { name: "Water", category: "Cooking & Food", essential: true },
     // Meal Prep items (alphabetized)
-    { name: "Bear canister/hang bag", category: "Meal Prep", essential: false },
-    { name: "Camp stove", category: "Meal Prep", essential: true },
+    { name: "Bear canister/hang bag", category: "Meal Prep", essential: false, group: "bearStorage" },
+    { name: "Camp stove", category: "Meal Prep", essential: true, group: "stove" },
     { name: "Camp-safe dish soap & sponge", category: "Meal Prep", essential: true },
     { name: "Campfire skewers", category: "Meal Prep", essential: false },
     { name: "Cooking supplies", category: "Meal Prep", essential: true },
     { name: "Cooking utensils", category: "Meal Prep", essential: true },
-    { name: "Cooler", category: "Meal Prep", essential: false },
+    { name: "Cooler", category: "Meal Prep", essential: false, group: "cooler" },
     { name: "Cups/mugs", category: "Meal Prep", essential: true },
     { name: "Cutting board", category: "Meal Prep", essential: false },
     { name: "Food storage containers", category: "Meal Prep", essential: false },
-    { name: "Fuel canister", category: "Meal Prep", essential: true },
+    { name: "Fuel canister", category: "Meal Prep", essential: true, group: "fuel" },
     { name: "Lighter/matches", category: "Meal Prep", essential: true },
     { name: "Plates/bowls", category: "Meal Prep", essential: true },
     { name: "Pots/pans", category: "Meal Prep", essential: true },
     { name: "Trash bags", category: "Meal Prep", essential: true },
     { name: "Water bottles", category: "Meal Prep", essential: true },
-    { name: "Water filter/purification", category: "Meal Prep", essential: false },
+    { name: "Water filter/purification", category: "Meal Prep", essential: false, group: "waterFilter" },
   ],
 };
 
@@ -118,7 +119,7 @@ const SAFETY_FIRST_AID: PackingTemplate = {
     { name: "Emergency blanket", category: "Navigation & Safety", essential: true },
     { name: "Sunscreen", category: "Personal Care", essential: true },
     { name: "Bug spray", category: "Personal Care", essential: true },
-    { name: "Personal medications", category: "Personal Care", essential: true },
+    { name: "Personal medications", category: "Personal Care", essential: true, group: "medications" },
     { name: "Map/GPS", category: "Navigation & Safety", essential: false },
   ],
 };
@@ -147,7 +148,7 @@ const CLOTHING_PERSONAL: PackingTemplate = {
     { name: "Toilet paper", category: "Personal Care", essential: true },
     { name: "Sunscreen", category: "Personal Care", essential: true },
     { name: "Bug spray", category: "Personal Care", essential: true },
-    { name: "Medications (daily meds)", category: "Personal Care", essential: true },
+    { name: "Medications (daily meds)", category: "Personal Care", essential: true, group: "medications" },
     { name: "Feminine hygiene products", category: "Personal Care", essential: false },
   ],
 };
@@ -168,11 +169,11 @@ const MEAL_PLANNING: PackingTemplate = {
     { name: "Sugar", category: "Cooking & Food", essential: false },
     { name: "Water", category: "Cooking & Food", essential: true },
     // Meal Prep items (alphabetized)
-    { name: "Bear canister/hang bag", category: "Meal Prep", essential: false },
+    { name: "Bear canister/hang bag", category: "Meal Prep", essential: false, group: "bearStorage" },
     { name: "Food storage containers", category: "Meal Prep", essential: false },
     { name: "Trash bags", category: "Meal Prep", essential: true },
     { name: "Water bottles", category: "Meal Prep", essential: true },
-    { name: "Water filter/purification", category: "Meal Prep", essential: false },
+    { name: "Water filter/purification", category: "Meal Prep", essential: false, group: "waterFilter" },
   ],
 };
 
@@ -183,16 +184,16 @@ const BACKPACKING: PackingTemplate = {
   icon: "walk",
   items: [
     { name: "Backpack (60-70L)", category: "Other", essential: true },
-    { name: "Ultralight tent", category: "Shelter & Sleep", essential: true },
-    { name: "Lightweight sleeping bag", category: "Shelter & Sleep", essential: true },
-    { name: "Inflatable sleeping pad", category: "Shelter & Sleep", essential: true },
+    { name: "Ultralight tent", category: "Shelter & Sleep", essential: true, group: "tent" },
+    { name: "Lightweight sleeping bag", category: "Shelter & Sleep", essential: true, group: "sleepingBag" },
+    { name: "Inflatable sleeping pad", category: "Shelter & Sleep", essential: true, group: "sleepingPad" },
     { name: "Trekking poles", category: "Tools & Utilities", essential: false },
     { name: "Trail runners/hiking boots", category: "Clothing", essential: true },
     { name: "Gaiters", category: "Clothing", essential: false },
     { name: "Water bladder", category: "Meal Prep", essential: true },
-    { name: "Water filter", category: "Meal Prep", essential: true },
-    { name: "Lightweight stove", category: "Meal Prep", essential: true },
-    { name: "Bear canister", category: "Meal Prep", essential: false },
+    { name: "Water filter", category: "Meal Prep", essential: true, group: "waterFilter" },
+    { name: "Lightweight stove", category: "Meal Prep", essential: true, group: "stove" },
+    { name: "Bear canister", category: "Meal Prep", essential: false, group: "bearStorage" },
     { name: "Trowel", category: "Personal Care", essential: true },
   ],
 };
@@ -206,11 +207,11 @@ const CAR_CAMPING: PackingTemplate = {
     { name: "Camp chairs", category: "Camp Furniture", essential: false },
     { name: "Camp table", category: "Camp Furniture", essential: false },
     { name: "Lantern", category: "Navigation & Safety", essential: false },
-    { name: "Large cooler", category: "Meal Prep", essential: true },
+    { name: "Large cooler", category: "Meal Prep", essential: true, group: "cooler" },
     { name: "Ice", category: "Meal Prep", essential: true },
     { name: "Tablecloth", category: "Camp Furniture", essential: false },
     { name: "Camp rug", category: "Camp Furniture", essential: false },
-    { name: "Air mattress", category: "Shelter & Sleep", essential: false },
+    { name: "Air mattress", category: "Shelter & Sleep", essential: false, group: "sleepingPad" },
     { name: "Extra blankets", category: "Shelter & Sleep", essential: false },
     { name: "Portable speaker", category: "Entertainment", essential: false },
     { name: "Games/cards", category: "Entertainment", essential: false },
@@ -223,9 +224,9 @@ const WINTER_CAMPING: PackingTemplate = {
   description: "Stay warm in cold weather",
   icon: "snow",
   items: [
-    { name: "4-season tent", category: "Shelter & Sleep", essential: true },
-    { name: "Cold-rated sleeping bag (0-20°F)", category: "Shelter & Sleep", essential: true },
-    { name: "Insulated sleeping pad (R4+)", category: "Shelter & Sleep", essential: true },
+    { name: "4-season tent", category: "Shelter & Sleep", essential: true, group: "tent" },
+    { name: "Cold-rated sleeping bag (0-20°F)", category: "Shelter & Sleep", essential: true, group: "sleepingBag" },
+    { name: "Insulated sleeping pad (R4+)", category: "Shelter & Sleep", essential: true, group: "sleepingPad" },
     { name: "Insulated jacket", category: "Clothing", essential: true },
     { name: "Base layers (top & bottom)", category: "Clothing", essential: true },
     { name: "Warm hat/beanie", category: "Clothing", essential: true },
@@ -295,9 +296,9 @@ const FAMILY_CAMPING: PackingTemplate = {
   description: "Extra items for camping with kids",
   icon: "people",
   items: [
-    { name: "Large family tent", category: "Shelter & Sleep", essential: true },
-    { name: "Sleeping bags for all", category: "Shelter & Sleep", essential: true },
-    { name: "Sleeping pads/air mattresses", category: "Shelter & Sleep", essential: true },
+    { name: "Large family tent", category: "Shelter & Sleep", essential: true, group: "tent" },
+    { name: "Sleeping bags for all", category: "Shelter & Sleep", essential: true, group: "sleepingBag" },
+    { name: "Sleeping pads/air mattresses", category: "Shelter & Sleep", essential: true, group: "sleepingPad" },
     { name: "Extra blankets", category: "Shelter & Sleep", essential: false },
     { name: "Kids' comfort items", category: "Shelter & Sleep", essential: false },
     { name: "Kid-friendly meals", category: "Cooking & Food", essential: true },
