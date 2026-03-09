@@ -11,6 +11,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useUserStore } from "../state/userStore";
 import { auth } from "../config/firebase";
 import { Trip } from "../types/camping";
 
@@ -18,9 +19,15 @@ import { Trip } from "../types/camping";
 const getFreePremiumTripKey = (userId: string) => `freePremiumTripId:${userId}`;
 
 /**
- * Check if user is premium (has Pro subscription)
+ * Check if user is premium (has Pro subscription, or is admin/moderator)
  */
 export function isPremiumUser(): boolean {
+  // Admin and moderator users always have premium access
+  const userState = useUserStore.getState();
+  if (userState.isAdministrator() || userState.isModerator()) {
+    return true;
+  }
+
   return useSubscriptionStore.getState().isPro;
 }
 
