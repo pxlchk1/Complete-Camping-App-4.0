@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { OnboardingState } from '../types/onboarding';
 import { getOnboardingState, markScreenAsSeen, resetOnboardingState } from '../services/onboardingStorage';
 
@@ -30,30 +30,30 @@ export const OnboardingProvider: React.FC<OnboardingProviderProps> = ({ children
     setIsLoading(false);
   };
 
-  const hasSeenScreen = (screenName: string): boolean => {
+  const hasSeenScreen = useCallback((screenName: string): boolean => {
     return seenScreens[screenName] === true;
-  };
+  }, [seenScreens]);
 
-  const markAsSeen = async (screenName: string): Promise<void> => {
+  const markAsSeen = useCallback(async (screenName: string): Promise<void> => {
     await markScreenAsSeen(screenName);
     setSeenScreens((prev) => ({ ...prev, [screenName]: true }));
-  };
+  }, []);
 
-  const resetOnboarding = async (): Promise<void> => {
+  const resetOnboarding = useCallback(async (): Promise<void> => {
     await resetOnboardingState();
     setSeenScreens({});
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    seenScreens,
+    hasSeenScreen,
+    markAsSeen,
+    resetOnboarding,
+    isLoading,
+  }), [seenScreens, hasSeenScreen, markAsSeen, resetOnboarding, isLoading]);
 
   return (
-    <OnboardingContext.Provider
-      value={{
-        seenScreens,
-        hasSeenScreen,
-        markAsSeen,
-        resetOnboarding,
-        isLoading,
-      }}
-    >
+    <OnboardingContext.Provider value={contextValue}>
       {children}
     </OnboardingContext.Provider>
   );
