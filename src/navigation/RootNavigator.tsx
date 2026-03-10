@@ -1,14 +1,17 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, CommonActions } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { RootStackParamList } from "./types";
 import CustomBottomTabBar from "../components/CustomBottomTabBar";
 import EmailVerificationGate from "../components/EmailVerificationGate";
 import { useAuthStore } from "../state/authStore";
 import { PAYWALL_ENABLED } from "../config/subscriptions";
 import { useNotificationListeners } from "../hooks/useNotifications";
+import CampsiteSetupScreen from "../screens/CampsiteSetupScreen";
+import { CAMPSITE_SETUP_DONE_KEY } from "../screens/CampsiteSetupScreen";
 
 // Screens
 import HomeScreen from "../screens/HomeScreen";
@@ -157,7 +160,54 @@ export default function RootNavigator() {
 
   // Register notification listeners (tap handler, badge clear, push token)
   useNotificationListeners(navigateFn);
-  
+
+  // --- Campsite Setup redirect for incomplete profiles ---
+  useEffect(() => {
+    if (!user) return;
+
+    const checkCampsiteSetup = async () => {
+      try {
+        const done = await AsyncStorage.getItem(CAMPSITE_SETUP_DONE_KEY(user.id));
+        if (done) return;
+
+        // Profile completeness check — real handle and real displayName
+        const hasRealName =
+          !!user.displayName &&
+          user.displayName !== "User" &&
+          user.displayName !== "Anonymous User" &&
+          user.displayName.trim() !== "";
+        const hasRealHandle =
+          !!user.handle &&
+          user.handle !== "user" &&
+          user.handle.trim() !== "";
+
+        if (hasRealName && hasRealHandle) {
+          // Profile already complete — auto-mark done so we never redirect
+          await AsyncStorage.setItem(CAMPSITE_SETUP_DONE_KEY(user.id), "true");
+          return;
+        }
+
+        // Needs setup — redirect (small delay ensures nav tree is stable)
+        setTimeout(() => {
+          try {
+            (navigation as any).dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: "CampsiteSetup" }],
+              })
+            );
+          } catch (navError) {
+            console.error("[RootNavigator] CampsiteSetup redirect failed:", navError);
+          }
+        }, 80);
+      } catch (err) {
+        console.error("[RootNavigator] Campsite setup check failed:", err);
+      }
+    };
+
+    checkCampsiteSetup();
+  }, [user?.id]);
+
   return (
     <View style={{ flex: 1 }}>
     <Stack.Navigator
@@ -169,6 +219,7 @@ export default function RootNavigator() {
     >
       <Stack.Screen name="Auth" component={AuthLanding} options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false, presentation: 'card' }} />
+      <Stack.Screen name="CampsiteSetup" component={CampsiteSetupScreen} options={{ headerShown: false, animation: 'none' }} />
       <Stack.Screen name="HomeTabs" component={HomeTabs} />
       <Stack.Screen name="CreateTrip" component={CreateTripScreen} />
       <Stack.Screen name="TripDetail" component={TripDetailScreen} />

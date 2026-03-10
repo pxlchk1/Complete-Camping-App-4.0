@@ -44,6 +44,7 @@ export type RootStackParamList = {
   Settings: undefined;
   Auth: undefined;
   ForgotPassword: undefined;
+  CampsiteSetup: undefined;
   Paywall: { triggerKey?: string; variant?: "standard" | "nudge_trial" } | undefined;
   SeedData: undefined;
 
