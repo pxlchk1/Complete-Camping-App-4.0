@@ -40,7 +40,19 @@ export function useNotificationListeners(
   ) => {
     const data = response.notification.request.content.data as NotificationData;
 
-    if (!data?.type || !navigateFn) {
+    if (!navigateFn) {
+      return;
+    }
+
+    // If no type, check for deepLink before bailing
+    if (!data?.type) {
+      if (data?.deepLink && typeof data.deepLink === "string" && data.deepLink.length > 0) {
+        try {
+          navigateFn(data.deepLink);
+        } catch (navErr) {
+          console.log("[Notifications] deepLink navigation failed:", navErr);
+        }
+      }
       return;
     }
 
