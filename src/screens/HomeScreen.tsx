@@ -154,10 +154,24 @@ export default function HomeScreen() {
   const recordUpsellDismissal = useUpsellStore((s) => s.recordModalDismissal);
   const sessionNudgeChecked = useRef(false);
 
-  // Show notification opt-in modal for eligible users immediately after login
+  // ── Orchestration: campsite prompt → notification modal sequencing ──
+  // Becomes true once MyCampsitePrompt resolves (hidden, dismissed, or completed).
+  // Gates the notification eligibility check to enforce: campsite first, then notifications.
+  const [campsitePromptResolved, setCampsitePromptResolved] = useState(false);
+  const [notifEligibilityChecked, setNotifEligibilityChecked] = useState(false);
+  const notifFlowDoneRef = useRef(false);
+
+  const handleCampsitePromptResolved = useCallback(() => {
+    setCampsitePromptResolved(true);
+  }, []);
+
+  // Show notification opt-in modal for eligible users — gated on campsite prompt resolution
   useEffect(() => {
     // Only proceed for authenticated non-guest users
     if (!isAuthenticated || isGuest) return;
+
+    // Orchestration: wait for campsite prompt to resolve before evaluating notifications
+    if (!campsitePromptResolved) return;
     
     const userId = auth.currentUser?.uid;
     if (!userId) return;
@@ -178,16 +192,27 @@ export default function HomeScreen() {
           // Record that we showed the modal
           await recordModalShown(userId, eligibility.cohort);
           
-          // Show modal immediately (small delay for UI stability)
+          // Show modal after small delay for UI stability
+          // Set notifEligibilityChecked in same tick as showModal to prevent
+          // PushPermissionPrompt from flashing during the 300ms window
           setTimeout(() => {
             if (!cancelled) {
               trackModalShown(eligibility.cohort!);
               setShowStayInLoopModal(true);
+              setNotifEligibilityChecked(true);
             }
           }, 300);
+        } else {
+          // Not eligible for StayInLoop — allow PushPermissionPrompt to fire
+          if (!cancelled) {
+            setNotifEligibilityChecked(true);
+          }
         }
       } catch (error) {
         console.error("[HomeScreen] Error checking notification eligibility:", error);
+        if (!cancelled) {
+          setNotifEligibilityChecked(true);
+        }
       }
     };
 
@@ -196,7 +221,7 @@ export default function HomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isGuest]);
+  }, [isAuthenticated, isGuest, campsitePromptResolved]);
 
   // Check for admin test modal on mount (admin-only, user-scoped)
   useEffect(() => {
@@ -600,8 +625,10 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-forest">
-      {/* Push Permission Soft Prompt - shows for new users and existing users who update */}
-      <PushPermissionPrompt />
+      {/* Push Permission Soft Prompt — gated: after campsite resolved + StayInLoop check */}
+      {campsitePromptResolved && notifEligibilityChecked && !showStayInLoopModal && !notifFlowDoneRef.current && (
+        <PushPermissionPrompt />
+      )}
       
       <View className="flex-1" style={{ backgroundColor: PARCHMENT_BACKGROUND }}>
         {/* Welcome Hero Image - full bleed */}
@@ -690,7 +717,7 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* My Campsite Prompt — new-user onboarding nudge */}
-          <MyCampsitePrompt />
+          <MyCampsitePrompt onResolve={handleCampsitePromptResolved} />
 
           {/* Quick Actions */}
           <View className="mb-6">
@@ -1345,10 +1372,13 @@ export default function HomeScreen() {
         onDismiss={dismissModal}
       />
 
-      {/* Stay in the Loop Modal - shown once after first login */}
+      {/* Stay in the Loop Modal - shown after campsite prompt resolves */}
       <StayInLoopModal
         visible={showStayInLoopModal}
-        onDismiss={() => setShowStayInLoopModal(false)}
+        onDismiss={() => {
+          setShowStayInLoopModal(false);
+          notifFlowDoneRef.current = true;
+        }}
         cohort={notificationCohort}
       />
 

@@ -12,7 +12,7 @@
  *   logged-in → MyCampsite, logged-out → Auth.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -33,10 +33,26 @@ const STORAGE_KEY = "@campsite_prompt_dismissed";
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-export default function MyCampsitePrompt() {
+interface MyCampsitePromptProps {
+  /** Called once when the prompt resolves (hidden, dismissed, or completed) */
+  onResolve?: () => void;
+}
+
+export default function MyCampsitePrompt({ onResolve }: MyCampsitePromptProps) {
   const navigation = useNavigation<Nav>();
   const [visible, setVisible] = useState(false);
   const [loaded, setLoaded] = useState(false);
+
+  // Ref-based resolve to prevent double-calls across render cycles
+  const onResolveRef = useRef(onResolve);
+  onResolveRef.current = onResolve;
+  const resolvedRef = useRef(false);
+  const resolve = useCallback(() => {
+    if (!resolvedRef.current) {
+      resolvedRef.current = true;
+      onResolveRef.current?.();
+    }
+  }, []);
 
   // On mount, check AsyncStorage to decide visibility
   useEffect(() => {
@@ -45,15 +61,19 @@ export default function MyCampsitePrompt() {
         const dismissed = await AsyncStorage.getItem(STORAGE_KEY);
         if (!dismissed && auth.currentUser) {
           setVisible(true);
+        } else {
+          // Already dismissed or no user — prompt won't show, resolve immediately
+          resolve();
         }
       } catch {
         // Fail silently — don't show if storage is unavailable
+        resolve();
       } finally {
         setLoaded(true);
       }
     };
     checkDismissed();
-  }, []);
+  }, [resolve]);
 
   // Auto-check on screen focus whether user has visited MyCampsite
   // (covers the case where they tapped the account icon directly)
@@ -62,13 +82,16 @@ export default function MyCampsitePrompt() {
       const recheck = async () => {
         try {
           const dismissed = await AsyncStorage.getItem(STORAGE_KEY);
-          if (dismissed) setVisible(false);
+          if (dismissed) {
+            setVisible(false);
+            resolve();
+          }
         } catch {
           // no-op
         }
       };
       recheck();
-    }, [])
+    }, [resolve])
   );
 
   const dismiss = useCallback(async () => {
@@ -78,7 +101,8 @@ export default function MyCampsitePrompt() {
     } catch {
       // no-op
     }
-  }, []);
+    resolve();
+  }, [resolve]);
 
   const handleGoToCampsite = useCallback(async () => {
     await dismiss();
