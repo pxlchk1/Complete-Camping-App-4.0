@@ -26,6 +26,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import * as Notifications from "expo-notifications";
+import { registerPushToken } from "../services/notificationService";
 import { auth, db, storage } from "../config/firebase";
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -485,20 +486,9 @@ export default function SettingsScreen() {
         }
 
         if (finalStatus === "granted") {
-          // Permission granted - get push token and save
-          const tokenData = await Notifications.getExpoPushTokenAsync({
-            projectId: "your-expo-project-id", // This will be replaced by EAS config
-          });
-
-          // Save token to pushTokens collection
-          const pushTokenRef = doc(collection(db, "pushTokens"), `${user.uid}_${Platform.OS}`);
-          await setDoc(pushTokenRef, {
-            userId: user.uid,
-            token: tokenData.data,
-            platform: Platform.OS,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          });
+          // Permission granted — register token via centralized service
+          // (uses correct projectId + cleans up stale tokens)
+          await registerPushToken(user.uid);
 
           // Update users document
           await updateDoc(doc(db, "users", user.uid), {

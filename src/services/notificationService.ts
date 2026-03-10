@@ -198,7 +198,8 @@ export async function getExpoPushToken(): Promise<string | null> {
 
 /**
  * Register push token with Firestore
- * Uses deterministic doc ID {userId}_{platform} to prevent duplicates
+ * Uses deterministic doc ID {userId}_{platform} to prevent duplicates.
+ * Also cleans up any stale/legacy token documents for this user+platform.
  */
 export async function registerPushToken(userId: string): Promise<boolean> {
   try {
@@ -218,10 +219,28 @@ export async function registerPushToken(userId: string): Promise<boolean> {
       token,
       platform: Platform.OS,
       deviceName: Device.deviceName || "Unknown",
+      disabled: false,
       createdAt: serverTimestamp(),
       lastUsed: serverTimestamp(),
     }, { merge: true });
     
+    // Clean up stale/legacy token docs for this user that don't use the
+    // deterministic ID. This prevents duplicate push delivery caused by
+    // old documents with auto-generated IDs.
+    try {
+      const pushTokensRef = collection(db, "pushTokens");
+      const q = query(pushTokensRef, where("userId", "==", userId));
+      const allDocs = await getDocs(q);
+      const stale = allDocs.docs.filter((d) => d.id !== docId);
+      if (stale.length > 0) {
+        await Promise.all(stale.map((d) => deleteDoc(d.ref)));
+        console.log(`[Notifications] Cleaned up ${stale.length} stale token doc(s)`);
+      }
+    } catch (cleanupErr) {
+      // Non-fatal — stale docs will be cleaned up on next registration
+      console.log("[Notifications] Stale token cleanup skipped:", cleanupErr);
+    }
+
     console.log("[Notifications] Registered push token:", { userId, platform: Platform.OS });
     return true;
   } catch (error) {
