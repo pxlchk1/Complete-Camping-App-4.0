@@ -381,9 +381,14 @@ export default function MealPlanningScreen() {
 
   // Handler: Open MealSlotSheet for a category with specific tab
   const handleOpenMealSheet = (category: SuggestibleMealCategory, tab: "suggest" | "recipes" | "custom" = "suggest") => {
-    // Gate: Premium required for suggestions and custom meals
-    if (tab === "suggest" || tab === "custom") {
+    // Gate: Custom meals require Premium; Suggest and Recipes require meal access (first-trip OK)
+    if (tab === "custom") {
       if (!canCustomize) {
+        setShowPremiumModal(true);
+        return;
+      }
+    } else if (tab === "suggest" || tab === "recipes") {
+      if (!canAccessMeals) {
         setShowPremiumModal(true);
         return;
       }
@@ -545,8 +550,8 @@ export default function MealPlanningScreen() {
 
   // Handler: MealSlotSheet suggestion selection
   const handleSelectSuggestion = async (suggestion: MealSuggestion) => {
-    // Gate: Premium required
-    if (!canCustomize) {
+    // Gate: Meal access required (first-trip free users can use suggestions)
+    if (!canAccessMeals) {
       setShowPremiumModal(true);
       return;
     }
@@ -616,8 +621,8 @@ export default function MealPlanningScreen() {
 
   // NEW: Handler: Open AutoFillPreviewSheet (replaces direct auto-fill)
   const handleOpenAutoFillPreview = () => {
-    // Gate: Premium required
-    if (!canCustomize) {
+    // Gate: Meal access required (first-trip free users can use auto-fill suggestions)
+    if (!canAccessMeals) {
       setShowPremiumModal(true);
       return;
     }
@@ -932,17 +937,17 @@ export default function MealPlanningScreen() {
         </ScrollView>
       </View>
 
-      {/* Premium Banner for Free Users */}
-      {!canCustomize && (
+      {/* Premium Banner for Free Users — only Custom is gated; Suggest and Recipes are available */}
+      {!canCustomize && canAccessMeals && (
         <View className="mx-5 mt-3 p-3 rounded-xl border border-amber-300" style={{ backgroundColor: "#FEF9E7" }}>
           <View className="flex-row items-start">
             <Ionicons name="lock-closed" size={16} color="#B8860B" style={{ marginTop: 2 }} />
             <View className="flex-1 ml-2">
               <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 13, color: "#5D4E37" }}>
-                Customizing meal plans is Premium
+                Custom meals require Pro
               </Text>
               <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: "#7D6E57", marginTop: 2 }}>
-                You can still use the grocery checklist for this trip.
+                Suggested meals and recipes are available for this trip.
               </Text>
             </View>
             <Pressable
@@ -951,7 +956,7 @@ export default function MealPlanningScreen() {
               style={{ backgroundColor: DEEP_FOREST }}
             >
               <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: PARCHMENT }}>
-                Go Premium
+                Go Pro
               </Text>
             </Pressable>
           </View>
@@ -1082,14 +1087,18 @@ export default function MealPlanningScreen() {
                           <Pressable
                             onPress={() => handleOpenMealSheet(category.key as SuggestibleMealCategory, "custom")}
                             className="flex-row items-center px-3 py-2 rounded-lg active:opacity-80"
-                            style={{ backgroundColor: "rgba(26, 76, 57, 0.1)" }}
+                            style={{ backgroundColor: !canCustomize ? "rgba(26, 76, 57, 0.05)" : "rgba(26, 76, 57, 0.1)" }}
                           >
-                            <Ionicons name="create-outline" size={14} color={EARTH_GREEN} />
+                            {!canCustomize ? (
+                              <Ionicons name="lock-closed" size={14} color="#B8860B" />
+                            ) : (
+                              <Ionicons name="create-outline" size={14} color={EARTH_GREEN} />
+                            )}
                             <Text
                               className="ml-1.5"
-                              style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 13, color: EARTH_GREEN }}
+                              style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 13, color: !canCustomize ? "#B8860B" : EARTH_GREEN }}
                             >
-                              Custom
+                              Custom{!canCustomize ? " (Pro)" : ""}
                             </Text>
                           </Pressable>
                         </View>
@@ -1155,14 +1164,18 @@ export default function MealPlanningScreen() {
                               <Pressable
                                 onPress={() => handleOpenMealSheet(category.key as SuggestibleMealCategory, "custom")}
                                 className="flex-row items-center px-3 py-1.5 rounded-lg active:opacity-80"
-                                style={{ backgroundColor: "rgba(26, 76, 57, 0.1)" }}
+                                style={{ backgroundColor: !canCustomize ? "rgba(26, 76, 57, 0.05)" : "rgba(26, 76, 57, 0.1)" }}
                               >
-                                <Ionicons name="create-outline" size={12} color={EARTH_GREEN} />
+                                {!canCustomize ? (
+                                  <Ionicons name="lock-closed" size={12} color="#B8860B" />
+                                ) : (
+                                  <Ionicons name="create-outline" size={12} color={EARTH_GREEN} />
+                                )}
                                 <Text
                                   className="ml-1"
-                                  style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: EARTH_GREEN }}
+                                  style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: !canCustomize ? "#B8860B" : EARTH_GREEN }}
                                 >
-                                  Custom
+                                  Custom{!canCustomize ? " (Pro)" : ""}
                                 </Text>
                               </Pressable>
                             </View>
