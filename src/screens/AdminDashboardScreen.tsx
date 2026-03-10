@@ -12,6 +12,7 @@ import * as Haptics from "expo-haptics";
 import { db } from "../config/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import ModalHeader from "../components/ModalHeader";
+import AdminTestAccountCleanupScreen from "./AdminTestAccountCleanupScreen";
 import {
   PARCHMENT,
   CARD_BACKGROUND_LIGHT,
@@ -33,6 +34,7 @@ export default function AdminDashboardScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
+  const [showCleanup, setShowCleanup] = useState(false);
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     totalPosts: 0,
@@ -139,6 +141,10 @@ export default function AdminDashboardScreen() {
       color: "#00897B",
     },
   ];
+
+  if (showCleanup) {
+    return <AdminTestAccountCleanupScreen onDismiss={() => setShowCleanup(false)} />;
+  }
 
   return (
     <View className="flex-1" style={{ backgroundColor: PARCHMENT }}>
@@ -252,6 +258,46 @@ export default function AdminDashboardScreen() {
               </View>
             </Pressable>
           ))}
+
+          {/* Utilities */}
+          <Text
+            className="text-lg mb-3 mt-4"
+            style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+          >
+            Utilities
+          </Text>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowCleanup(true);
+            }}
+            className="mb-3 p-4 rounded-xl border active:opacity-70"
+            style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
+          >
+            <View className="flex-row items-center">
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center mr-3"
+                style={{ backgroundColor: "#B71C1C20" }}
+              >
+                <Ionicons name="trash-bin" size={24} color="#B71C1C" />
+              </View>
+              <View className="flex-1">
+                <Text
+                  className="text-base mb-1"
+                  style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                >
+                  Test Account Cleanup
+                </Text>
+                <Text
+                  className="text-sm"
+                  style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                >
+                  Remove @alanawaters.com accounts
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={TEXT_SECONDARY} />
+            </View>
+          </Pressable>
         </View>
       </ScrollView>
     </View>

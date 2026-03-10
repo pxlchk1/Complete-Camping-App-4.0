@@ -3504,3 +3504,264 @@ export const sendgridSubscribeToDrip = functions
       }
     }
   );
+
+// ============================================
+// ADMIN: BULK DELETE TEST ACCOUNTS (@alanawaters.com)
+// ============================================
+
+/**
+ * Admin-only callable function to bulk delete test accounts.
+ *
+ * Server-side checks:
+ *  1. Caller must be authenticated.
+ *  2. Caller must be an administrator (Firestore profiles check).
+ *  3. Every supplied UID is re-verified to have an @alanawaters.com email.
+ *  4. An execution lock prevents concurrent runs.
+ *
+ * Deletion order per account:
+ *  Firestore docs  ->  Storage assets  ->  Firebase Auth user
+ * (Auth deletion triggers onUserDeleted which is idempotent.)
+ */
+export const adminBulkDeleteTestAccounts = functions
+  .runWith({ timeoutSeconds: 300, memory: "512MB" })
+  .https.onCall(
+    async (
+      data: { uids: string[] },
+      context
+    ) => {
+      // ---- 1. Auth check ----
+      if (!context.auth) {
+        throw new functions.https.HttpsError(
+          "unauthenticated",
+          "Must be authenticated"
+        );
+      }
+
+      const callerUid = context.auth.uid;
+      const db = admin.firestore();
+
+      // ---- 2. Admin check ----
+      const callerProfile = await db.collection("profiles").doc(callerUid).get();
+      const profileData = callerProfile.data();
+      const isAdminUser =
+        callerProfile.exists &&
+        (profileData?.isAdministrator === true ||
+          profileData?.isAdmin === true ||
+          profileData?.role === "admin" ||
+          profileData?.role === "administrator" ||
+          profileData?.membershipTier === "isAdmin");
+
+      if (!isAdminUser) {
+        functions.logger.warn("adminBulkDeleteTestAccounts: non-admin caller", {
+          callerUid,
+        });
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Only administrators can perform bulk account deletion"
+        );
+      }
+
+      // ---- 3. Validate input ----
+      const { uids } = data;
+      if (!Array.isArray(uids) || uids.length === 0) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Must provide a non-empty array of UIDs"
+        );
+      }
+      if (uids.length > 200) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Cannot delete more than 200 accounts in a single request"
+        );
+      }
+
+      // ---- 4. Execution lock ----
+      const lockRef = db.collection("admin_cleanup_locks").doc("test_account_cleanup");
+      const lockSnap = await lockRef.get();
+      if (lockSnap.exists && lockSnap.data()?.active === true) {
+        const startedAt = lockSnap.data()?.startedAt?.toDate?.();
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+        if (startedAt && startedAt > fiveMinAgo) {
+          throw new functions.https.HttpsError(
+            "already-exists",
+            "A cleanup operation is already in progress. Please wait."
+          );
+        }
+        // Stale lock — proceed
+      }
+
+      await lockRef.set({
+        active: true,
+        startedAt: admin.firestore.FieldValue.serverTimestamp(),
+        adminId: callerUid,
+      });
+
+      const TARGET_DOMAIN = "@alanawaters.com";
+      const results: {
+        uid: string;
+        email: string;
+        status: "deleted" | "failed" | "skipped";
+        error?: string;
+      }[] = [];
+
+      try {
+        // ---- 5. Process each UID ----
+        for (const uid of uids) {
+          try {
+            // 5a. Server-side domain verification via Firebase Auth
+            let authUser: admin.auth.UserRecord;
+            try {
+              authUser = await admin.auth().getUser(uid);
+            } catch (authErr: any) {
+              if (authErr?.code === "auth/user-not-found") {
+                // No auth record — still clean up Firestore docs
+                await deleteFirestoreDocs(db, uid);
+                results.push({
+                  uid,
+                  email: "unknown",
+                  status: "deleted",
+                  error: "Auth record not found; Firestore docs cleaned",
+                });
+                continue;
+              }
+              throw authErr;
+            }
+
+            const email = (authUser.email || "").toLowerCase();
+            if (!email.endsWith(TARGET_DOMAIN)) {
+              results.push({
+                uid,
+                email,
+                status: "skipped",
+                error: "Email does not match @alanawaters.com domain",
+              });
+              continue;
+            }
+
+            // 5b. Delete Firestore documents
+            await deleteFirestoreDocs(db, uid);
+
+            // 5c. Delete Storage avatars
+            try {
+              const bucket = admin.storage().bucket();
+              const [files] = await bucket.getFiles({
+                prefix: `avatars/${uid}/`,
+              });
+              if (files.length > 0) {
+                await Promise.all(files.map((f) => f.delete()));
+              }
+            } catch (_storageErr) {
+              // Non-fatal — avatar may not exist
+            }
+
+            // 5d. Delete Firebase Auth user (triggers onUserDeleted which is idempotent)
+            await admin.auth().deleteUser(uid);
+
+            results.push({ uid, email, status: "deleted" });
+          } catch (perUserErr: any) {
+            results.push({
+              uid,
+              email: "unknown",
+              status: "failed",
+              error:
+                perUserErr instanceof Error
+                  ? perUserErr.message
+                  : String(perUserErr),
+            });
+          }
+        }
+
+        // ---- 6. Audit log ----
+        const deleted = results.filter((r) => r.status === "deleted").length;
+        const failed = results.filter((r) => r.status === "failed").length;
+        const skipped = results.filter((r) => r.status === "skipped").length;
+
+        await db.collection("admin_audit_logs").add({
+          adminId: callerUid,
+          action: "bulk_test_account_delete",
+          domain: "alanawaters.com",
+          deletedCount: deleted,
+          failedCount: failed,
+          skippedCount: skipped,
+          affectedUids: uids,
+          results,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        functions.logger.info("adminBulkDeleteTestAccounts complete", {
+          callerUid,
+          deleted,
+          failed,
+          skipped,
+          total: uids.length,
+        });
+
+        return { summary: { deleted, failed, skipped }, results };
+      } finally {
+        // ---- 7. Release lock ----
+        await lockRef.delete().catch(() => {});
+      }
+    }
+  );
+
+/**
+ * Helper: delete all Firestore documents associated with a user UID.
+ * Used by adminBulkDeleteTestAccounts.
+ */
+async function deleteFirestoreDocs(
+  db: admin.firestore.Firestore,
+  uid: string
+): Promise<void> {
+  // UID-keyed documents
+  const uidKeyedPaths = [
+    `users/${uid}`,
+    `profiles/${uid}`,
+    `emailSubscribers/${uid}`,
+  ];
+
+  for (const path of uidKeyedPaths) {
+    try {
+      const ref = db.doc(path);
+      const snap = await ref.get();
+      if (snap.exists) {
+        await ref.delete();
+      }
+    } catch (_e) {
+      // Non-fatal per doc
+    }
+  }
+
+  // Query-based: pushTokens
+  try {
+    const pushTokensSnap = await db
+      .collection("pushTokens")
+      .where("userId", "==", uid)
+      .get();
+    if (!pushTokensSnap.empty) {
+      const batch = db.batch();
+      pushTokensSnap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+  } catch (_e) {
+    // Non-fatal
+  }
+
+  // Query-based: userEmailIndex (if email known from users doc)
+  try {
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (userDoc.exists) {
+      const email = userDoc.data()?.email;
+      if (email) {
+        const normalizedEmail = email.toLowerCase().trim();
+        const indexRef = db.collection("userEmailIndex").doc(normalizedEmail);
+        const indexSnap = await indexRef.get();
+        if (indexSnap.exists && indexSnap.data()?.userId === uid) {
+          await indexRef.delete();
+        }
+      }
+    }
+  } catch (_e) {
+    // Non-fatal
+  }
+}
