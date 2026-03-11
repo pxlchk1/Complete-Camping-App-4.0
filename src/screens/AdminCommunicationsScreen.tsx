@@ -471,9 +471,11 @@ export default function AdminCommunicationsScreen() {
       );
     } catch (error: any) {
       console.error("[Communications] Failed to send test push:", error);
+      const errorDetail = error?.details || error?.message || "Unknown error";
+      const errorCode = error?.code ? ` (${error.code})` : "";
       Alert.alert(
         "Error",
-        `Failed to send test push: ${error.message || "Unknown error"}`,
+        `Failed to send test push${errorCode}: ${errorDetail}`,
         [{ text: "OK" }]
       );
     } finally {

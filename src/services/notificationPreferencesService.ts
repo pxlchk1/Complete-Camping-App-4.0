@@ -12,6 +12,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
   collection,
   query,
@@ -123,6 +124,24 @@ export async function registerPushToken(): Promise<string | null> {
     });
 
     console.log("[NotificationPrefs] Push token registered:", token.slice(0, 20) + "...");
+
+    // Clean up stale/legacy token docs that don't use the deterministic ID.
+    // This prevents duplicate push delivery caused by old auto-generated doc IDs.
+    const docId = `${user.uid}_${Platform.OS}`;
+    try {
+      const pushTokensRef = collection(db, "pushTokens");
+      const q = query(pushTokensRef, where("userId", "==", user.uid));
+      const allDocs = await getDocs(q);
+      const stale = allDocs.docs.filter((d) => d.id !== docId);
+      if (stale.length > 0) {
+        await Promise.all(stale.map((d) => deleteDoc(d.ref)));
+        console.log(`[NotificationPrefs] Cleaned up ${stale.length} stale token doc(s)`);
+      }
+    } catch (cleanupErr) {
+      // Non-fatal — stale docs will be cleaned up on next registration
+      console.log("[NotificationPrefs] Stale token cleanup skipped:", cleanupErr);
+    }
+
     return token;
   } catch (error) {
     console.error("[NotificationPrefs] Error registering push token:", error);

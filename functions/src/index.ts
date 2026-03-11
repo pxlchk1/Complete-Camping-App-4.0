@@ -2671,6 +2671,10 @@ export const sendAdminTestPush = functions.https.onCall(
         failureCount,
       };
     } catch (error) {
+      // Re-throw HttpsError as-is so the client gets the real error code/message
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       functions.logger.error("Failed to send admin test push", {
         adminUid: callerUid,
@@ -3227,6 +3231,10 @@ export const publishAdminPush = functions
           message: `Push sent to ${successCount} devices${failureCount > 0 ? ` (${failureCount} failed)` : ""}.`,
         };
       } catch (error) {
+        // Re-throw HttpsError as-is so the client gets the real error code/message
+        if (error instanceof functions.https.HttpsError) {
+          throw error;
+        }
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         functions.logger.error("Failed to publish push campaign", { campaignName: data.campaignName, error: errorMessage });
         throw new functions.https.HttpsError("internal", `Failed to publish: ${errorMessage}`);
