@@ -24,8 +24,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { db, functions as fbFunctions } from "../config/firebase";
-import { httpsCallable } from "firebase/functions";
+import { db, auth } from "../config/firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import ModalHeader from "../components/ModalHeader";
 import {
@@ -52,6 +52,7 @@ interface TestAccount {
   handle: string;
   displayName: string;
   avatarUrl?: string;
+  authProvider: string;
   createdAt?: any;
   lastActiveAt?: any;
   hasProfile: boolean;
@@ -133,12 +134,29 @@ export default function AdminTestAccountCleanupScreen({ onDismiss }: Props) {
         else if (!hasRealHandle || !hasRealName) status = "incomplete";
         else status = "active";
 
+        // Determine auth provider from stored data
+        const provider =
+          data.providerId ||
+          data.authProvider ||
+          data.provider ||
+          (data.providerData?.[0]?.providerId) ||
+          "password";
+        const providerLabel =
+          provider === "google.com"
+            ? "Google"
+            : provider === "apple.com"
+              ? "Apple"
+              : provider === "facebook.com"
+                ? "Facebook"
+                : "Email/Password";
+
         matched.push({
           uid: userDoc.id,
           email,
           handle: data.handle || "",
           displayName: data.displayName || "",
           avatarUrl: data.avatarUrl || data.photoURL || undefined,
+          authProvider: providerLabel,
           createdAt: data.createdAt,
           lastActiveAt: data.lastActiveAt || data.lastLoginAt,
           hasProfile,
@@ -241,13 +259,20 @@ export default function AdminTestAccountCleanupScreen({ onDismiss }: Props) {
     Keyboard.dismiss();
 
     try {
+      // Force-refresh the auth token so the callable receives valid credentials
+      if (!auth.currentUser) {
+        throw new Error("Not authenticated. Please sign out and sign back in.");
+      }
+      await auth.currentUser.getIdToken(true);
+
+      const functions = getFunctions();
       const bulkDelete = httpsCallable<
         { uids: string[] },
         {
           summary: { deleted: number; failed: number; skipped: number };
           results: DeleteResult[];
         }
-      >(fbFunctions, "adminBulkDeleteTestAccounts");
+      >(functions, "adminBulkDeleteTestAccounts");
 
       const response = await bulkDelete({ uids: Array.from(selectedIds) });
 
@@ -587,7 +612,7 @@ export default function AdminTestAccountCleanupScreen({ onDismiss }: Props) {
                     >
                       {account.email}
                     </Text>
-                    <View className="flex-row items-center">
+                    <View className="flex-row items-center flex-wrap">
                       <Text
                         className="text-xs mr-2"
                         style={{
@@ -597,7 +622,37 @@ export default function AdminTestAccountCleanupScreen({ onDismiss }: Props) {
                       >
                         Created {formatDate(account.createdAt)}
                       </Text>
+                      <Text
+                        className="text-xs mr-2"
+                        style={{
+                          fontFamily: "SourceSans3_400Regular",
+                          color: TEXT_MUTED,
+                        }}
+                      >
+                        {"\u00B7"} Active {formatDate(account.lastActiveAt)}
+                      </Text>
                       {statusBadge(account.status)}
+                    </View>
+                    <View className="flex-row items-center mt-0.5">
+                      <Text
+                        className="text-xs mr-2"
+                        style={{
+                          fontFamily: "SourceSans3_400Regular",
+                          color: TEXT_MUTED,
+                        }}
+                      >
+                        {account.authProvider}
+                      </Text>
+                      <Text
+                        className="text-xs"
+                        style={{
+                          fontFamily: "SourceSans3_400Regular",
+                          color: TEXT_MUTED,
+                        }}
+                        numberOfLines={1}
+                      >
+                        {"\u00B7"} {account.uid}
+                      </Text>
                     </View>
                   </View>
                 </Pressable>
