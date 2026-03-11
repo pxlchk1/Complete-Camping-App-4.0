@@ -58,6 +58,12 @@ export function useNotificationListeners(
 
     // Navigate based on notification type
     switch (data.type) {
+      // Admin test/broadcast — just open home, no special routing
+      case "admin_test":
+      case "admin_broadcast":
+        navigateFn("HomeTabs");
+        break;
+
       // Client-originated trip types
       case "trip_reminder":
       case "packing_reminder":

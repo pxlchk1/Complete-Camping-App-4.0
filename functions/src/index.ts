@@ -1370,9 +1370,13 @@ async function sendQueuedNotifications(db: admin.firestore.Firestore): Promise<v
         continue;
       }
 
-      // Send push notification via Expo Push API
-      const tokens = tokensSnapshot.docs.map((t) => t.data().token);
-      const expoTokens = tokens.filter((t: string) => t.startsWith("ExponentPushToken"));
+      // Filter out disabled tokens, deduplicate by value
+      const tokens = tokensSnapshot.docs
+        .filter((t) => t.data().disabled !== true)
+        .map((t) => t.data().token);
+      const expoTokens = [...new Set(
+        tokens.filter((t: string) => t && t.startsWith("ExponentPushToken"))
+      )];
 
       if (expoTokens.length === 0) {
         await doc.ref.update({
@@ -2578,7 +2582,7 @@ export const sendAdminTestPush = functions.https.onCall(
     }
 
     try {
-      // Get admin's push tokens
+      // Get admin's push tokens (only non-disabled)
       const tokensSnapshot = await db
         .collection("pushTokens")
         .where("userId", "==", callerUid)
@@ -2591,12 +2595,17 @@ export const sendAdminTestPush = functions.https.onCall(
         );
       }
 
-      const tokens = tokensSnapshot.docs.map((doc) => doc.data().token);
+      // Filter out disabled tokens, extract token strings, and deduplicate
+      const tokens = tokensSnapshot.docs
+        .filter((d) => d.data().disabled !== true)
+        .map((d) => d.data().token);
       let successCount = 0;
       let failureCount = 0;
 
-      // Filter for Expo push tokens only
-      const expoTokens = tokens.filter((t: string) => t.startsWith("ExponentPushToken"));
+      // Filter for Expo push tokens and deduplicate by value
+      const expoTokens = [...new Set(
+        tokens.filter((t: string) => t && t.startsWith("ExponentPushToken"))
+      )];
       
       if (expoTokens.length === 0) {
         throw new functions.https.HttpsError(
@@ -2605,6 +2614,12 @@ export const sendAdminTestPush = functions.https.onCall(
         );
       }
 
+      functions.logger.info("sendAdminTestPush: token summary", {
+        totalDocs: tokensSnapshot.size,
+        afterDisabledFilter: tokens.length,
+        uniqueExpoTokens: expoTokens.length,
+      });
+
       // Send via Expo Push API
       const messages = expoTokens.map((token: string) => ({
         to: token,
@@ -2612,6 +2627,7 @@ export const sendAdminTestPush = functions.https.onCall(
         title: data.title,
         body: data.body,
         data: {
+          type: "admin_test",
           deepLink: data.deepLink || "",
           campaignName: data.campaignName || "",
           isTest: "true",
@@ -3115,9 +3131,11 @@ export const publishAdminPush = functions
         }
 
         const tokens: { token: string; userId: string }[] = [];
+        const seenTokens = new Set<string>();
         tokensSnapshot.forEach((doc) => {
           const d = doc.data();
-          if (d.token && d.token.startsWith("ExponentPushToken")) {
+          if (d.token && d.token.startsWith("ExponentPushToken") && !seenTokens.has(d.token)) {
+            seenTokens.add(d.token);
             tokens.push({ token: d.token, userId: d.userId });
           }
         });
@@ -3145,6 +3163,7 @@ export const publishAdminPush = functions
             title: data.title,
             body: data.body,
             data: {
+              type: "admin_broadcast",
               deepLink: data.ctaMode === "subscription" ? "paywall" : (data.deepLink || ""),
               campaignName: data.campaignName,
             },
