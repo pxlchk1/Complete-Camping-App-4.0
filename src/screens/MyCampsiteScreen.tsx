@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   Alert,
   Modal,
+  ActionSheetIOS,
 } from "react-native";
 import { useFocusEffect, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -830,10 +831,34 @@ export default function MyCampsiteScreen({ navigation }: any) {
                       
                       navigation.navigate("EditProfile");
                     }}
-                    className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
+                    className="w-10 h-10 rounded-full items-center justify-center active:opacity-70 mr-2"
                     style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
                   >
                     <Ionicons name="create-outline" size={24} color={PARCHMENT} />
+                  </Pressable>
+                  {/* More Options Button */}
+                  <Pressable
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      ActionSheetIOS.showActionSheetWithOptions(
+                        {
+                          options: ["Settings", "Sign Out", "Cancel"],
+                          destructiveButtonIndex: 1,
+                          cancelButtonIndex: 2,
+                        },
+                        (buttonIndex) => {
+                          if (buttonIndex === 0) {
+                            navigation.navigate("Settings");
+                          } else if (buttonIndex === 1) {
+                            handleSignOut();
+                          }
+                        }
+                      );
+                    }}
+                    className="w-10 h-10 rounded-full items-center justify-center active:opacity-70"
+                    style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+                  >
+                    <Ionicons name="ellipsis-horizontal" size={24} color={PARCHMENT} />
                   </Pressable>
                 </View>
               ) : (
