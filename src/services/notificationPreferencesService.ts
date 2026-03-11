@@ -118,28 +118,39 @@ export async function registerPushToken(): Promise<string | null> {
 
     const token = tokenData.data;
 
+    // Separate Expo Go tokens from standalone to prevent mutual overwrite.
+    // Standalone: {uid}_ios   |   Expo Go: {uid}_ios_expo
+    const isExpoGo = Constants.appOwnership === "expo";
+    const docId = isExpoGo
+      ? `${user.uid}_${Platform.OS}_expo`
+      : `${user.uid}_${Platform.OS}`;
+
     // Save token to Firestore
-    const pushTokenRef = doc(db, "pushTokens", `${user.uid}_${Platform.OS}`);
+    const pushTokenRef = doc(db, "pushTokens", docId);
     await setDoc(pushTokenRef, {
       userId: user.uid,
       token,
       platform: Platform.OS,
+      appOwnership: isExpoGo ? "expo" : "standalone",
       deviceName: Device.deviceName || "Unknown",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       disabled: false,
     });
 
-    console.log("[NotificationPrefs] Push token registered:", token.slice(0, 20) + "...");
+    console.log("[NotificationPrefs] Push token registered:", token.slice(0, 20) + "...", "ownership:", isExpoGo ? "expo" : "standalone");
 
-    // Clean up stale/legacy token docs that don't use the deterministic ID.
-    // This prevents duplicate push delivery caused by old auto-generated doc IDs.
-    const docId = `${user.uid}_${Platform.OS}`;
+    // Clean up stale/legacy token docs (old auto-generated IDs).
+    // Preserve both the standalone and expo deterministic docs so they can coexist.
     try {
+      const knownDocIds = [
+        `${user.uid}_${Platform.OS}`,
+        `${user.uid}_${Platform.OS}_expo`,
+      ];
       const pushTokensRef = collection(db, "pushTokens");
       const q = query(pushTokensRef, where("userId", "==", user.uid));
       const allDocs = await getDocs(q);
-      const stale = allDocs.docs.filter((d) => d.id !== docId);
+      const stale = allDocs.docs.filter((d) => !knownDocIds.includes(d.id));
       if (stale.length > 0) {
         await Promise.all(stale.map((d) => deleteDoc(d.ref)));
         console.log(`[NotificationPrefs] Cleaned up ${stale.length} stale token doc(s)`);
@@ -164,7 +175,11 @@ export async function disablePushToken(): Promise<void> {
   if (!user) return;
 
   try {
-    const pushTokenRef = doc(db, "pushTokens", `${user.uid}_${Platform.OS}`);
+    const isExpoGo = Constants.appOwnership === "expo";
+    const docId = isExpoGo
+      ? `${user.uid}_${Platform.OS}_expo`
+      : `${user.uid}_${Platform.OS}`;
+    const pushTokenRef = doc(db, "pushTokens", docId);
     await updateDoc(pushTokenRef, {
       disabled: true,
       updatedAt: serverTimestamp(),

@@ -1370,10 +1370,11 @@ async function sendQueuedNotifications(db: admin.firestore.Firestore): Promise<v
         continue;
       }
 
-      // Filter out disabled tokens, deduplicate by value
-      const tokens = tokensSnapshot.docs
-        .filter((t) => t.data().disabled !== true)
-        .map((t) => t.data().token);
+      // Filter out disabled tokens, prefer standalone over Expo Go, deduplicate by value
+      const enabledDocs = tokensSnapshot.docs.filter((t) => t.data().disabled !== true);
+      const standaloneDocs = enabledDocs.filter((t) => t.data().appOwnership !== "expo");
+      const preferredDocs = standaloneDocs.length > 0 ? standaloneDocs : enabledDocs;
+      const tokens = preferredDocs.map((t) => t.data().token);
       const expoTokens = [...new Set(
         tokens.filter((t: string) => t && t.startsWith("ExponentPushToken"))
       )];
@@ -2596,9 +2597,12 @@ export const sendAdminTestPush = functions.https.onCall(
       }
 
       // Filter out disabled tokens, extract token strings, and deduplicate
-      const tokens = tokensSnapshot.docs
-        .filter((d) => d.data().disabled !== true)
-        .map((d) => d.data().token);
+      const enabledDocs = tokensSnapshot.docs.filter((d) => d.data().disabled !== true);
+      
+      // Prefer standalone tokens over Expo Go tokens to avoid sending to the dev client
+      const standaloneDocs = enabledDocs.filter((d) => d.data().appOwnership !== "expo");
+      const preferredDocs = standaloneDocs.length > 0 ? standaloneDocs : enabledDocs;
+      const tokens = preferredDocs.map((d) => d.data().token);
       let successCount = 0;
       let failureCount = 0;
 
@@ -2616,7 +2620,8 @@ export const sendAdminTestPush = functions.https.onCall(
 
       functions.logger.info("sendAdminTestPush: token summary", {
         totalDocs: tokensSnapshot.size,
-        afterDisabledFilter: tokens.length,
+        afterDisabledFilter: enabledDocs.length,
+        standaloneDocs: standaloneDocs.length,
         uniqueExpoTokens: expoTokens.length,
       });
 
@@ -3125,7 +3130,7 @@ export const publishAdminPush = functions
       }
 
       try {
-        // Get all active push tokens
+        // Get all active push tokens, prefer standalone over Expo Go
         const tokensSnapshot = await db.collection("pushTokens").where("disabled", "!=", true).get();
         const tokenCount = tokensSnapshot.size;
 
@@ -3134,13 +3139,24 @@ export const publishAdminPush = functions
           throw new functions.https.HttpsError("failed-precondition", `Too many recipients (${tokenCount}). Maximum is 2000.`);
         }
 
-        const tokens: { token: string; userId: string }[] = [];
-        const seenTokens = new Set<string>();
+        // Group by userId and prefer standalone tokens per user
+        const userTokenMap = new Map<string, { token: string; appOwnership?: string }>();
         tokensSnapshot.forEach((doc) => {
           const d = doc.data();
-          if (d.token && d.token.startsWith("ExponentPushToken") && !seenTokens.has(d.token)) {
-            seenTokens.add(d.token);
-            tokens.push({ token: d.token, userId: d.userId });
+          if (!d.token || !d.token.startsWith("ExponentPushToken")) return;
+          const existing = userTokenMap.get(d.userId);
+          // Keep standalone over expo; first standalone wins
+          if (!existing || (existing.appOwnership === "expo" && d.appOwnership !== "expo")) {
+            userTokenMap.set(d.userId, { token: d.token, appOwnership: d.appOwnership || "standalone" });
+          }
+        });
+
+        const tokens: { token: string; userId: string }[] = [];
+        const seenTokens = new Set<string>();
+        userTokenMap.forEach((val, userId) => {
+          if (!seenTokens.has(val.token)) {
+            seenTokens.add(val.token);
+            tokens.push({ token: val.token, userId });
           }
         });
 

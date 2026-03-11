@@ -207,8 +207,9 @@ export async function getExpoPushToken(): Promise<string | null> {
 
 /**
  * Register push token with Firestore
- * Uses deterministic doc ID {userId}_{platform} to prevent duplicates.
- * Also cleans up any stale/legacy token documents for this user+platform.
+ * Uses deterministic doc ID {userId}_{platform} for standalone builds
+ * and {userId}_{platform}_expo for Expo Go to prevent them from overwriting each other.
+ * Also cleans up any stale/legacy token documents for this user.
  */
 export async function registerPushToken(userId: string): Promise<boolean> {
   try {
@@ -219,28 +220,36 @@ export async function registerPushToken(userId: string): Promise<boolean> {
       return false;
     }
 
-    // Use deterministic doc ID to prevent duplicate tokens
-    const docId = `${userId}_${Platform.OS}`;
+    // Separate Expo Go tokens from standalone to prevent mutual overwrite.
+    // Standalone: {userId}_ios   |   Expo Go: {userId}_ios_expo
+    const isExpoGo = Constants.appOwnership === "expo";
+    const docId = isExpoGo
+      ? `${userId}_${Platform.OS}_expo`
+      : `${userId}_${Platform.OS}`;
     const pushTokenRef = doc(db, "pushTokens", docId);
     
     await setDoc(pushTokenRef, {
       userId,
       token,
       platform: Platform.OS,
+      appOwnership: isExpoGo ? "expo" : "standalone",
       deviceName: Device.deviceName || "Unknown",
       disabled: false,
       createdAt: serverTimestamp(),
       lastUsed: serverTimestamp(),
     }, { merge: true });
     
-    // Clean up stale/legacy token docs for this user that don't use the
-    // deterministic ID. This prevents duplicate push delivery caused by
-    // old documents with auto-generated IDs.
+    // Clean up stale/legacy token docs (old auto-generated IDs).
+    // Preserve both the standalone and expo deterministic docs so they can coexist.
     try {
+      const knownDocIds = [
+        `${userId}_${Platform.OS}`,
+        `${userId}_${Platform.OS}_expo`,
+      ];
       const pushTokensRef = collection(db, "pushTokens");
       const q = query(pushTokensRef, where("userId", "==", userId));
       const allDocs = await getDocs(q);
-      const stale = allDocs.docs.filter((d) => d.id !== docId);
+      const stale = allDocs.docs.filter((d) => !knownDocIds.includes(d.id));
       if (stale.length > 0) {
         await Promise.all(stale.map((d) => deleteDoc(d.ref)));
         console.log(`[Notifications] Cleaned up ${stale.length} stale token doc(s)`);
@@ -250,7 +259,7 @@ export async function registerPushToken(userId: string): Promise<boolean> {
       console.log("[Notifications] Stale token cleanup skipped:", cleanupErr);
     }
 
-    console.log("[Notifications] Registered push token:", { userId, platform: Platform.OS });
+    console.log("[Notifications] Registered push token:", { userId, platform: Platform.OS, appOwnership: isExpoGo ? "expo" : "standalone" });
     return true;
   } catch (error) {
     console.error("[Notifications] Error registering token:", error);

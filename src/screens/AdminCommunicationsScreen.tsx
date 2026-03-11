@@ -114,10 +114,14 @@ export default function AdminCommunicationsScreen() {
         const status = await getPushPermissionStatus();
         setPushPermissionStatus(status);
 
-        // Check if token exists in Firestore
+        // Check if token exists in Firestore (use correct doc ID for current environment)
         const user = auth.currentUser;
         if (user) {
-          const tokenDoc = await getDoc(doc(db, "pushTokens", `${user.uid}_${Platform.OS}`));
+          const isExpoGo = Constants.appOwnership === "expo";
+          const tokenDocId = isExpoGo
+            ? `${user.uid}_${Platform.OS}_expo`
+            : `${user.uid}_${Platform.OS}`;
+          const tokenDoc = await getDoc(doc(db, "pushTokens", tokenDocId));
           if (tokenDoc.exists() && tokenDoc.data()?.token && !tokenDoc.data()?.disabled) {
             setPushToken(tokenDoc.data().token);
           } else {
