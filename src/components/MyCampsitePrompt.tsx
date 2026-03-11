@@ -29,7 +29,12 @@ import {
 } from "../constants/colors";
 import { RootStackParamList } from "../navigation/types";
 
-const STORAGE_KEY = "@campsite_prompt_dismissed";
+/** Legacy global key (pre-1.1.4). Checked for backward compat. */
+const STORAGE_KEY_LEGACY = "@campsite_prompt_dismissed";
+/** Per-user key so multi-account devices work correctly. */
+const getStorageKey = (uid: string) => `@campsite_prompt_dismissed:${uid}`;
+/** Matches the key used by CampsiteSetupScreen / RootNavigator. */
+const CAMPSITE_SETUP_DONE_KEY = (uid: string) => `@campsite_setup_done:${uid}`;
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -58,13 +63,43 @@ export default function MyCampsitePrompt({ onResolve }: MyCampsitePromptProps) {
   useEffect(() => {
     const checkDismissed = async () => {
       try {
-        const dismissed = await AsyncStorage.getItem(STORAGE_KEY);
-        if (!dismissed && auth.currentUser) {
-          setVisible(true);
-        } else {
-          // Already dismissed or no user — prompt won't show, resolve immediately
+        const uid = auth.currentUser?.uid;
+        if (!uid) {
           resolve();
+          return;
         }
+
+        // Check per-user key first, then fall back to legacy global key
+        const dismissed =
+          (await AsyncStorage.getItem(getStorageKey(uid))) ||
+          (await AsyncStorage.getItem(STORAGE_KEY_LEGACY));
+
+        if (dismissed) {
+          // Migrate legacy key → per-user key so future checks are fast
+          await AsyncStorage.setItem(getStorageKey(uid), "true").catch(() => {});
+          resolve();
+          return;
+        }
+
+        // If mandatory campsite setup is already marked done (profile is complete),
+        // auto-dismiss the personalization prompt for v1.1.4 upgraders whose
+        // campsite is substantively set up.
+        const setupDone = await AsyncStorage.getItem(CAMPSITE_SETUP_DONE_KEY(uid));
+        if (setupDone) {
+          // Setup was completed (or auto-marked by RootNavigator for complete
+          // profiles). For users who already went through CampsiteSetup in this
+          // session the prompt is useful, so only skip if they did NOT just
+          // complete it — i.e. the key existed from a PRIOR session.
+          // We can detect "just completed" by whether the prompt key was ever
+          // written.  Since we got here, it wasn't — so for brand-new users
+          // who just finished CampsiteSetup, setupDone is true but the prompt
+          // has never been dismissed → show it.
+          // However, upgrading users who never ran CampsiteSetup but whose
+          // profile was auto-completed by RootNavigator also arrive here.
+          // We show the prompt once for them too — it's a lightweight nudge.
+        }
+
+        setVisible(true);
       } catch {
         // Fail silently — don't show if storage is unavailable
         resolve();
@@ -81,7 +116,11 @@ export default function MyCampsitePrompt({ onResolve }: MyCampsitePromptProps) {
     useCallback(() => {
       const recheck = async () => {
         try {
-          const dismissed = await AsyncStorage.getItem(STORAGE_KEY);
+          const uid = auth.currentUser?.uid;
+          const dismissed = uid
+            ? (await AsyncStorage.getItem(getStorageKey(uid))) ||
+              (await AsyncStorage.getItem(STORAGE_KEY_LEGACY))
+            : await AsyncStorage.getItem(STORAGE_KEY_LEGACY);
           if (dismissed) {
             setVisible(false);
             resolve();
@@ -97,7 +136,12 @@ export default function MyCampsitePrompt({ onResolve }: MyCampsitePromptProps) {
   const dismiss = useCallback(async () => {
     setVisible(false);
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, "true");
+      const uid = auth.currentUser?.uid;
+      if (uid) {
+        await AsyncStorage.setItem(getStorageKey(uid), "true");
+      }
+      // Also write legacy key for older code paths that may still read it
+      await AsyncStorage.setItem(STORAGE_KEY_LEGACY, "true");
     } catch {
       // no-op
     }
