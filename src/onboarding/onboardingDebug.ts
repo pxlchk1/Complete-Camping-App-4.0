@@ -63,7 +63,7 @@ function getPayloadKeys(data: Record<string, unknown>): string[] {
 
 export interface OnboardingLogMeta {
   step: string;
-  op: 'setDoc' | 'updateDoc' | 'batchCommit' | 'getDoc' | 'deleteDoc';
+  op: 'setDoc' | 'updateDoc' | 'batchCommit' | 'getDoc' | 'deleteDoc' | 'transaction.get' | 'transaction.set';
   path: string;
 }
 
