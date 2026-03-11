@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { View, Text, ScrollView, Pressable, TextInput, KeyboardAvoidingView, Platform, Alert, Modal, FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -63,6 +63,36 @@ const EMPTY_DRAFT: DraftState = {
   microCopy: "",
 };
 
+// Deep link / screen options for the CTA dropdown
+const DEEP_LINK_OPTIONS: Array<{ label: string; value: string; icon: string; section: string }> = [
+  // Main Tabs
+  { label: "Home", value: "HomeTabs", icon: "home", section: "Main Tabs" },
+  { label: "Plan / My Trips", value: "HomeTabs|Plan", icon: "calendar", section: "Main Tabs" },
+  { label: "Learn", value: "HomeTabs|Learn", icon: "book", section: "Main Tabs" },
+  { label: "Connect / Community", value: "HomeTabs|Connect", icon: "people", section: "Main Tabs" },
+  { label: "First Aid", value: "HomeTabs|FirstAid", icon: "medkit", section: "Main Tabs" },
+  // Features
+  { label: "Create a Trip", value: "CreateTrip", icon: "add-circle", section: "Features" },
+  { label: "My Gear Closet", value: "MyGearCloset", icon: "shirt", section: "Features" },
+  { label: "My Campsite Profile", value: "MyCampsite", icon: "bonfire", section: "Features" },
+  { label: "My Campground", value: "MyCampground", icon: "trail-sign", section: "Features" },
+  { label: "Browse Parks", value: "ParksBrowse", icon: "leaf", section: "Features" },
+  { label: "Packing List", value: "PackingListCreate", icon: "checkbox", section: "Features" },
+  // Learning & Badges
+  { label: "Merit Badges", value: "MeritBadges", icon: "ribbon", section: "Learning" },
+  { label: "My Badges", value: "MyBadges", icon: "trophy", section: "Learning" },
+  // Community
+  { label: "Ask a Question", value: "AskQuestion", icon: "chatbubble-ellipses", section: "Community" },
+  { label: "Submit a Tip", value: "CreateTip", icon: "bulb", section: "Community" },
+  { label: "Write a Gear Review", value: "CreateGearReview", icon: "star", section: "Community" },
+  { label: "Share a Photo", value: "PhotoComposer", icon: "camera", section: "Community" },
+  // Account
+  { label: "Account / Profile", value: "Account", icon: "person-circle", section: "Account" },
+  { label: "Settings", value: "Settings", icon: "settings", section: "Account" },
+  { label: "Notifications", value: "Notifications", icon: "notifications", section: "Account" },
+  { label: "Subscription / Paywall", value: "Paywall", icon: "card", section: "Account" },
+];
+
 export default function AdminCommunicationsScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -75,6 +105,7 @@ export default function AdminCommunicationsScreen() {
   const [pushToken, setPushToken] = useState<string | null>(null);
   const [pushSetupMessage, setPushSetupMessage] = useState<string>("");
   const [isSettingUpPush, setIsSettingUpPush] = useState(false);
+  const [showDeepLinkPicker, setShowDeepLinkPicker] = useState(false);
 
   // Check push status on mount and when tab changes to push
   useEffect(() => {
@@ -386,14 +417,14 @@ export default function AdminCommunicationsScreen() {
           heading: "New Feature: Trip Sharing!",
           body: "You can now invite friends to your camping trips...",
           ctaLabel: "Open App",
-          ctaLink: "tentandlantern://trips",
+          ctaLink: "HomeTabs|Plan",
         };
       case "modal":
         return {
           heading: "Welcome to Winter Camping Season!",
           body: "Check out our new winter gear guides and tips...",
           ctaLabel: "Learn More",
-          ctaLink: "tentandlantern://learn",
+          ctaLink: "HomeTabs|Learn",
         };
       case "email":
         return {
@@ -407,7 +438,7 @@ export default function AdminCommunicationsScreen() {
           heading: "New Feature: Trip Sharing!",
           body: "You can now invite friends to your camping trips...",
           ctaLabel: "Open App",
-          ctaLink: "tentandlantern://trips",
+          ctaLink: "HomeTabs",
         };
     }
   };
@@ -1046,25 +1077,48 @@ export default function AdminCommunicationsScreen() {
                 >
                   CTA Link / Deep Link
                 </Text>
-                <TextInput
-                  value={draft.ctaLink}
-                  onChangeText={(text: string) => updateCurrentDraft("ctaLink", text)}
-                  placeholder={placeholders.ctaLink}
-                  placeholderTextColor={TEXT_MUTED}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="url"
+                <Pressable
+                  onPress={() => setShowDeepLinkPicker(true)}
                   style={{
                     backgroundColor: CARD_BACKGROUND_LIGHT,
                     borderWidth: 1,
                     borderColor: BORDER_SOFT,
                     borderRadius: 8,
                     padding: 12,
-                    fontFamily: "SourceSans3_400Regular",
-                    fontSize: 16,
-                    color: TEXT_PRIMARY_STRONG,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
                   }}
-                />
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                    {(() => {
+                      const selected = DEEP_LINK_OPTIONS.find(o => o.value === draft.ctaLink);
+                      if (selected) {
+                        return (
+                          <>
+                            <Ionicons name={selected.icon as any} size={18} color={EARTH_GREEN} style={{ marginRight: 8 }} />
+                            <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 16, color: TEXT_PRIMARY_STRONG }}>
+                              {selected.label}
+                            </Text>
+                          </>
+                        );
+                      }
+                      if (draft.ctaLink) {
+                        return (
+                          <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 16, color: TEXT_PRIMARY_STRONG }}>
+                            {draft.ctaLink}
+                          </Text>
+                        );
+                      }
+                      return (
+                        <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 16, color: TEXT_MUTED }}>
+                          Select a destination...
+                        </Text>
+                      );
+                    })()}
+                  </View>
+                  <Ionicons name="chevron-down" size={20} color={TEXT_SECONDARY} />
+                </Pressable>
               </View>
             ) : (
               <View
@@ -1686,6 +1740,142 @@ export default function AdminCommunicationsScreen() {
           </Button>
         </View>
       </View>
+
+      {/* Deep Link Picker Modal */}
+      <Modal
+        visible={showDeepLinkPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowDeepLinkPicker(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 16,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: BORDER_SOFT,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: "Raleway_700Bold",
+                fontSize: 18,
+                color: TEXT_PRIMARY_STRONG,
+              }}
+            >
+              Select Destination
+            </Text>
+            <Pressable
+              onPress={() => setShowDeepLinkPicker(false)}
+              hitSlop={12}
+            >
+              <Ionicons name="close-circle" size={28} color={TEXT_SECONDARY} />
+            </Pressable>
+          </View>
+
+          <FlatList
+            data={(() => {
+              // Group options by section
+              const sections: Array<{ type: "header"; section: string } | { type: "option"; option: typeof DEEP_LINK_OPTIONS[0] }> = [];
+              let lastSection = "";
+              for (const opt of DEEP_LINK_OPTIONS) {
+                if (opt.section !== lastSection) {
+                  sections.push({ type: "header", section: opt.section });
+                  lastSection = opt.section;
+                }
+                sections.push({ type: "option", option: opt });
+              }
+              return sections;
+            })()}
+            keyExtractor={(item, idx) => item.type === "header" ? `h-${item.section}` : `o-${(item as any).option.value}-${idx}`}
+            contentContainerStyle={{ paddingBottom: 40 }}
+            renderItem={({ item }) => {
+              if (item.type === "header") {
+                return (
+                  <Text
+                    style={{
+                      fontFamily: "SourceSans3_600SemiBold",
+                      fontSize: 12,
+                      color: TEXT_MUTED,
+                      letterSpacing: 0.8,
+                      paddingHorizontal: 16,
+                      paddingTop: 20,
+                      paddingBottom: 6,
+                    }}
+                  >
+                    {item.section.toUpperCase()}
+                  </Text>
+                );
+              }
+              const opt = item.option;
+              const isSelected = draft.ctaLink === opt.value;
+              return (
+                <Pressable
+                  onPress={() => {
+                    updateCurrentDraft("ctaLink", opt.value);
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowDeepLinkPicker(false);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
+                    paddingHorizontal: 16,
+                    backgroundColor: isSelected ? EARTH_GREEN + "10" : "transparent",
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      backgroundColor: isSelected ? EARTH_GREEN + "20" : CARD_BACKGROUND_LIGHT,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 12,
+                    }}
+                  >
+                    <Ionicons
+                      name={opt.icon as any}
+                      size={18}
+                      color={isSelected ? EARTH_GREEN : TEXT_SECONDARY}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontFamily: "SourceSans3_600SemiBold",
+                        fontSize: 16,
+                        color: isSelected ? EARTH_GREEN : TEXT_PRIMARY_STRONG,
+                      }}
+                    >
+                      {opt.label}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: "SourceSans3_400Regular",
+                        fontSize: 12,
+                        color: TEXT_MUTED,
+                        marginTop: 1,
+                      }}
+                    >
+                      {opt.value}
+                    </Text>
+                  </View>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={22} color={EARTH_GREEN} />
+                  )}
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }

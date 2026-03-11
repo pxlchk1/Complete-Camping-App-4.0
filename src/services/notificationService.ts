@@ -183,12 +183,21 @@ export async function getExpoPushToken(): Promise<string | null> {
   }
 
   try {
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    // Use multiple fallback paths for project ID — standalone builds may not
+    // populate Constants.expoConfig.extra.eas.projectId, so we also check
+    // Constants.easConfig.projectId which is set in EAS-built binaries.
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      Constants.easConfig?.projectId ??
+      undefined;
+    
+    console.log("[Notifications] getExpoPushToken projectId:", projectId, "appOwnership:", Constants.appOwnership);
     
     const tokenData = await Notifications.getExpoPushTokenAsync({
       projectId: projectId,
     });
     
+    console.log("[Notifications] Got push token:", tokenData.data?.substring(0, 20) + "...");
     return tokenData.data;
   } catch (error) {
     console.error("[Notifications] Error getting push token:", error);

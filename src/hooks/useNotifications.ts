@@ -26,6 +26,20 @@ type NotificationData = {
 type NavigateFunction = (screen: string, params?: Record<string, any>) => void;
 
 /**
+ * Resolve a deep link value into a navigation call.
+ * Supports pipe-separated format "HomeTabs|Plan" → navigate("HomeTabs", { screen: "Plan" })
+ * and plain screen names like "CreateTrip" → navigate("CreateTrip")
+ */
+function handleDeepLink(navigateFn: NavigateFunction, deepLink: string) {
+  if (deepLink.includes("|")) {
+    const [parent, child] = deepLink.split("|");
+    navigateFn(parent, { screen: child });
+  } else {
+    navigateFn(deepLink);
+  }
+}
+
+/**
  * Hook to manage notification listeners and handle notification responses
  * Should be used in the root App component
  */
@@ -48,7 +62,7 @@ export function useNotificationListeners(
     if (!data?.type) {
       if (data?.deepLink && typeof data.deepLink === "string" && data.deepLink.length > 0) {
         try {
-          navigateFn(data.deepLink);
+          handleDeepLink(navigateFn, data.deepLink);
         } catch (navErr) {
           console.log("[Notifications] deepLink navigation failed:", navErr);
         }
@@ -58,10 +72,14 @@ export function useNotificationListeners(
 
     // Navigate based on notification type
     switch (data.type) {
-      // Admin test/broadcast — just open home, no special routing
+      // Admin test/broadcast — use deepLink if present, else open home
       case "admin_test":
       case "admin_broadcast":
-        navigateFn("HomeTabs");
+        if (data.deepLink && typeof data.deepLink === "string" && data.deepLink.length > 0) {
+          handleDeepLink(navigateFn, data.deepLink);
+        } else {
+          navigateFn("HomeTabs");
+        }
         break;
 
       // Client-originated trip types
@@ -130,8 +148,8 @@ export function useNotificationListeners(
         }
         // If there's a deepLink in the payload, try to navigate to it
         if (data.deepLink) {
-          // deepLink format: "HomeTabs", "CreateTrip", "LearnTab", etc.
-          navigateFn(data.deepLink as string);
+          // deepLink format: "HomeTabs", "CreateTrip", "HomeTabs|Plan", etc.
+          handleDeepLink(navigateFn, data.deepLink as string);
           break;
         }
         console.log("[Notifications] Unhandled notification type:", data.type);
