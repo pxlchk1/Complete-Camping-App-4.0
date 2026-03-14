@@ -615,9 +615,11 @@ export const onUserDeleted = functions.auth.user().onDelete(async (user) => {
     hadAuthEmail: boolean;
     hadUsersDocEmail: boolean;
     normalizedEmail: string | null;
+    userHandle: string | null;
     indexFound: boolean;
     indexUserId: string | null;
     indexAction: "deleted" | "skipped-mismatch" | "skipped-no-email" | "skipped-not-found";
+    handleIndexAction: "deleted" | "skipped-mismatch" | "skipped-no-handle" | "skipped-not-found";
     deletedDocs: string[];
     deletedPushTokensCount: number;
     errors: string[];
@@ -626,9 +628,11 @@ export const onUserDeleted = functions.auth.user().onDelete(async (user) => {
     hadAuthEmail: !!user.email,
     hadUsersDocEmail: false,
     normalizedEmail: null,
+    userHandle: null,
     indexFound: false,
     indexUserId: null,
     indexAction: "skipped-no-email",
+    handleIndexAction: "skipped-no-handle",
     deletedDocs: [],
     deletedPushTokensCount: 0,
     errors: [],
@@ -649,6 +653,11 @@ export const onUserDeleted = functions.auth.user().onDelete(async (user) => {
         if (emailFromDoc) {
           normalizedEmail = normalizeEmailForIndex(emailFromDoc);
           cleanupLog.hadUsersDocEmail = true;
+        }
+        // ISSUE #13 FIX: Also capture handle for userHandlesIndex cleanup
+        const handleFromDoc = userData?.handle || userData?.placeholderHandle;
+        if (handleFromDoc) {
+          cleanupLog.userHandle = handleFromDoc.toLowerCase();
         }
       }
     } catch (err) {
@@ -699,6 +708,38 @@ export const onUserDeleted = functions.auth.user().onDelete(async (user) => {
     } else {
       cleanupLog.indexAction = "skipped-no-email";
       functions.logger.info("No email available for userEmailIndex cleanup", { uid });
+    }
+
+    // Step 2.5: ISSUE #13 FIX - Handle userHandlesIndex cleanup
+    if (cleanupLog.userHandle) {
+      try {
+        const handleIndexRef = db.collection("userHandlesIndex").doc(cleanupLog.userHandle);
+        const handleDoc = await handleIndexRef.get();
+        
+        if (handleDoc.exists) {
+          const handleData = handleDoc.data();
+          const handleUserId = handleData?.userId;
+          
+          // SAFETY INVARIANT: Only delete if userId matches
+          if (handleUserId === uid) {
+            await handleIndexRef.delete();
+            cleanupLog.handleIndexAction = "deleted";
+            cleanupLog.deletedDocs.push(`userHandlesIndex/${cleanupLog.userHandle}`);
+            functions.logger.info("Deleted userHandlesIndex", { handle: cleanupLog.userHandle, uid });
+          } else {
+            cleanupLog.handleIndexAction = "skipped-mismatch";
+            functions.logger.warn("userHandlesIndex belongs to different user, NOT deleting", {
+              handle: cleanupLog.userHandle,
+              deletedUid: uid,
+              handleUserId,
+            });
+          }
+        } else {
+          cleanupLog.handleIndexAction = "skipped-not-found";
+        }
+      } catch (err) {
+        cleanupLog.errors.push(`Failed to process userHandlesIndex: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
 
     // Step 3: Delete UID-keyed documents (users, profiles, emailSubscribers)
@@ -3504,3 +3545,231 @@ export const sendgridSubscribeToDrip = functions
       }
     }
   );
+
+// ============================================================================
+// ISSUE #14 FIX: Server-Side Handle Uniqueness Enforcement
+// ============================================================================
+// This callable provides server-owned handle reservation/creation with
+// atomic uniqueness enforcement. Clients should call this instead of
+// writing directly to userHandlesIndex.
+//
+// NORMALIZATION: Handles are normalized to lowercase for uniqueness comparison.
+// IDEMPOTENT: Same user can retry with same handle without error.
+// HANDLE CHANGES: Supports releasing old handle and reserving new one atomically.
+// ============================================================================
+
+/**
+ * Validate handle format
+ * Returns error message if invalid, null if valid
+ */
+function validateHandleFormat(handle: string): string | null {
+  if (!handle || typeof handle !== "string") {
+    return "Handle is required";
+  }
+  
+  const trimmed = handle.trim();
+  if (trimmed.length === 0) {
+    return "Handle cannot be empty";
+  }
+  
+  if (trimmed.length < 3) {
+    return "Handle must be at least 3 characters";
+  }
+  
+  if (trimmed.length > 30) {
+    return "Handle must be 30 characters or less";
+  }
+  
+  // Only allow alphanumeric and underscores
+  if (!/^[a-zA-Z0-9_]+$/.test(trimmed)) {
+    return "Handle can only contain letters, numbers, and underscores";
+  }
+  
+  // Cannot start or end with underscore
+  if (trimmed.startsWith("_") || trimmed.endsWith("_")) {
+    return "Handle cannot start or end with underscore";
+  }
+  
+  return null;
+}
+
+/**
+ * Normalize handle for uniqueness comparison
+ * Converts to lowercase for case-insensitive uniqueness
+ */
+function normalizeHandle(handle: string): string {
+  return handle.trim().toLowerCase();
+}
+
+/**
+ * Server-side handle reservation callable
+ * 
+ * Provides atomic handle uniqueness enforcement that clients cannot bypass.
+ * Uses Firestore transactions to prevent race conditions.
+ * 
+ * @param data.newHandle - The handle to reserve (required)
+ * @param data.oldHandle - Previous handle to release (optional, for handle changes)
+ * @returns { success: true, handle: string, normalized: string } on success
+ * @throws HttpsError on failure with human-readable reason
+ */
+export const reserveUserHandle = functions.https.onCall(
+  async (
+    data: {
+      newHandle: string;
+      oldHandle?: string;
+    },
+    context
+  ) => {
+    // SECURITY: Require authentication
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Must be authenticated to reserve a handle"
+      );
+    }
+
+    const uid = context.auth.uid;
+    const { newHandle, oldHandle } = data;
+
+    // Validate new handle format
+    const formatError = validateHandleFormat(newHandle);
+    if (formatError) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        formatError
+      );
+    }
+
+    const normalizedNewHandle = normalizeHandle(newHandle);
+    const normalizedOldHandle = oldHandle ? normalizeHandle(oldHandle) : null;
+
+    // Get Firestore reference
+    const db = admin.firestore();
+
+    // Skip if same handle (no change needed)
+    if (normalizedOldHandle === normalizedNewHandle) {
+      functions.logger.info("reserveUserHandle: No change needed, same handle", {
+        uid,
+        handle: normalizedNewHandle,
+      });
+      return {
+        success: true,
+        handle: newHandle.trim(),
+        normalized: normalizedNewHandle,
+        message: "Handle unchanged",
+      };
+    }
+
+    const newHandleRef = db.collection("userHandlesIndex").doc(normalizedNewHandle);
+    const oldHandleRef = normalizedOldHandle
+      ? db.collection("userHandlesIndex").doc(normalizedOldHandle)
+      : null;
+
+    try {
+      await db.runTransaction(async (transaction) => {
+        // Read new handle index document
+        const newHandleDoc = await transaction.get(newHandleRef);
+
+        // Check if new handle is already taken by ANOTHER user
+        if (newHandleDoc.exists) {
+          const existingData = newHandleDoc.data();
+          const existingUserId = existingData?.userId;
+
+          if (existingUserId && existingUserId !== uid) {
+            // Handle is owned by someone else - reject
+            throw new functions.https.HttpsError(
+              "already-exists",
+              "This handle is already taken. Please choose a different one."
+            );
+          }
+
+          // Same user owns this handle - idempotent success
+          if (existingUserId === uid) {
+            functions.logger.info("reserveUserHandle: Idempotent retry, same owner", {
+              uid,
+              handle: normalizedNewHandle,
+            });
+            // Still need to release old handle if different
+            if (oldHandleRef && normalizedOldHandle !== normalizedNewHandle) {
+              const oldHandleDoc = await transaction.get(oldHandleRef);
+              if (oldHandleDoc.exists) {
+                const oldData = oldHandleDoc.data();
+                if (oldData?.userId === uid) {
+                  transaction.delete(oldHandleRef);
+                  functions.logger.info("reserveUserHandle: Released old handle", {
+                    uid,
+                    oldHandle: normalizedOldHandle,
+                  });
+                }
+              }
+            }
+            return; // Transaction success, no write needed for new handle
+          }
+        }
+
+        // If changing handles, verify and release old handle first
+        if (oldHandleRef && normalizedOldHandle !== normalizedNewHandle) {
+          const oldHandleDoc = await transaction.get(oldHandleRef);
+          if (oldHandleDoc.exists) {
+            const oldData = oldHandleDoc.data();
+            // SAFETY: Only delete if owned by this user
+            if (oldData?.userId === uid) {
+              transaction.delete(oldHandleRef);
+              functions.logger.info("reserveUserHandle: Releasing old handle", {
+                uid,
+                oldHandle: normalizedOldHandle,
+              });
+            } else {
+              functions.logger.warn("reserveUserHandle: Old handle not owned by user, skipping release", {
+                uid,
+                oldHandle: normalizedOldHandle,
+                actualOwner: oldData?.userId,
+              });
+            }
+          }
+        }
+
+        // Reserve new handle
+        transaction.set(newHandleRef, {
+          userId: uid,
+          handle: newHandle.trim(), // Store original case for display
+          normalizedHandle: normalizedNewHandle,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        functions.logger.info("reserveUserHandle: Reserved new handle", {
+          uid,
+          handle: newHandle.trim(),
+          normalized: normalizedNewHandle,
+        });
+      });
+
+      return {
+        success: true,
+        handle: newHandle.trim(),
+        normalized: normalizedNewHandle,
+        message: "Handle reserved successfully",
+      };
+    } catch (error) {
+      // Re-throw HttpsErrors (validation/already-exists)
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
+
+      // Log unexpected errors
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      functions.logger.error("reserveUserHandle: Transaction failed", {
+        uid,
+        newHandle: normalizedNewHandle,
+        oldHandle: normalizedOldHandle,
+        error: errorMessage,
+      });
+
+      throw new functions.https.HttpsError(
+        "internal",
+        "Failed to reserve handle. Please try again."
+      );
+    }
+  }
+);

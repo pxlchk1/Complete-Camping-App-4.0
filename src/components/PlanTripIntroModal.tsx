@@ -31,13 +31,13 @@ const SLIDES: SlideContent[] = [
     icon: "map-outline",
   },
   {
-    title: "Packing Lists is Pro",
-    body: "Packing Lists is a Pro feature. Upgrade to use smart templates, build lists from your Gear Closet, and check items off as you pack—so you're not doing it from memory the night before.",
+    title: "Packing Lists",
+    body: "Use smart templates, build lists from your Gear Closet, and check items off as you pack—so you're not doing it from memory the night before.",
     icon: "checkbox-outline",
   },
   {
-    title: "Meal Planner is Pro",
-    body: "Meal Planner is a Pro feature. Upgrade to get preplanned meal suggestions and recipes, then make one-tap shopping lists for the whole trip. It's the easiest way to avoid the \"what are we eating\" scramble at camp.",
+    title: "Meal Planner",
+    body: "Get preplanned meal suggestions and recipes, then make one-tap shopping lists for the whole trip. It's the easiest way to avoid the \"what are we eating\" scramble at camp.",
     icon: "restaurant-outline",
   },
 ];

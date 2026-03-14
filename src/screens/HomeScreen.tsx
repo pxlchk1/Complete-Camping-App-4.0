@@ -16,6 +16,7 @@ import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
 import EmailOptInModal from "../components/EmailOptInModal";
 import StayInLoopModal from "../components/StayInLoopModal";
+import MyCampsitePrompt from "../components/MyCampsitePrompt";
 
 // Hooks
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
@@ -33,6 +34,7 @@ import {
   trackModalShown,
   NotificationCohort,
 } from "../services/notificationEligibilityService";
+import { userActionTracker } from "../services/userActionTrackerService";
 
 // State
 import { useTripsStore } from "../state/tripsStore";
@@ -153,7 +155,60 @@ export default function HomeScreen() {
   const recordUpsellDismissal = useUpsellStore((s) => s.recordModalDismissal);
   const sessionNudgeChecked = useRef(false);
 
-  // Show notification opt-in modal for eligible users immediately after login
+  // ============================================================================
+  // ISSUE #12 FIX: Modal Priority Gate System
+  // ============================================================================
+  // PRIORITY ORDER (highest to lowest):
+  // 1. AccountRequiredModal - user-action triggered, blocks everything
+  // 2. AdminTestModal - admin testing, highest passive priority
+  // 3. AnnouncementModal - system announcements
+  // 4. PushPermissionPrompt - push opt-in
+  // 5. StayInLoopModal - notification cohort opt-in
+  // 6. OnboardingModal - screen onboarding tooltips
+  // 7. EmailOptInModal - email subscription
+  // 8. SessionNudge (UpsellModal) - lowest priority upsell
+  //
+  // Only one modal may be visible at a time. Lower-priority modals are blocked
+  // when higher-priority modals are eligible or active.
+  // ============================================================================
+
+  // Push prompt eligibility state (checked once, used for priority gating)
+  const [pushPromptEligible, setPushPromptEligible] = useState(false);
+  const [pushPromptCompleted, setPushPromptCompleted] = useState(false);
+  const pushPromptChecked = useRef(false);
+
+  // Email opt-in eligibility (checked asynchronously)
+  const [emailOptInEligible, setEmailOptInEligible] = useState(false);
+  const emailOptInChecked = useRef(false);
+
+  // Session nudge eligibility (checked asynchronously)
+  const [sessionNudgeEligible, setSessionNudgeEligible] = useState(false);
+
+  // Check push prompt eligibility (for modal priority gating)
+  // Note: PushPermissionPrompt will be conditionally rendered based on priority gate
+  useEffect(() => {
+    if (pushPromptChecked.current) return;
+    
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    pushPromptChecked.current = true;
+
+    const checkPushEligibility = async () => {
+      try {
+        const shouldShow = await userActionTracker.shouldShowPushPrompt(userId);
+        if (shouldShow) {
+          setPushPromptEligible(true);
+        }
+      } catch (error) {
+        console.error("[HomeScreen] Error checking push prompt eligibility:", error);
+      }
+    };
+
+    checkPushEligibility();
+  }, []);
+
+  // Check StayInLoopModal eligibility (sets state for priority gating)
   useEffect(() => {
     // Only proceed for authenticated non-guest users
     if (!isAuthenticated || isGuest) return;
@@ -170,20 +225,13 @@ export default function HomeScreen() {
         if (cancelled) return;
 
         if (eligibility.isEligible && eligibility.cohort) {
-          // Track eligibility
+          // Track eligibility and store cohort
           trackModalEligible(eligibility.cohort);
           setNotificationCohort(eligibility.cohort);
-          
-          // Record that we showed the modal
+          // Record that we will show the modal
           await recordModalShown(userId, eligibility.cohort);
-          
-          // Show modal immediately (small delay for UI stability)
-          setTimeout(() => {
-            if (!cancelled) {
-              trackModalShown(eligibility.cohort!);
-              setShowStayInLoopModal(true);
-            }
-          }, 300);
+          // Set eligible - modal priority gate will show when it's this modal's turn
+          setShowStayInLoopModal(true);
         }
       } catch (error) {
         console.error("[HomeScreen] Error checking notification eligibility:", error);
@@ -379,15 +427,18 @@ export default function HomeScreen() {
     setAnnouncementModal(null);
   };
 
-  // Check if user should see email opt-in modal
-  // Show after 3rd app open if user is logged in and hasn't opted in
+  // Check email opt-in eligibility (for modal priority gating)
   useEffect(() => {
+    if (emailOptInChecked.current) return;
+    
     const checkEmailOptIn = async () => {
       const user = auth.currentUser;
       if (!user || isGuest) {
         console.log("[HomeScreen] No auth user or guest, skipping email opt-in check");
         return;
       }
+
+      emailOptInChecked.current = true;
 
       try {
         // Check if already shown too recently (don't show more than once per week)
@@ -419,7 +470,7 @@ export default function HomeScreen() {
         const newCount = currentCount + 1;
         await AsyncStorage.setItem(openCountKey, String(newCount));
 
-        // Show opt-in modal on 3rd app open (or later, if not dismissed permanently)
+        // User is eligible on 3rd app open or later
         if (newCount >= 3) {
           // Check if permanently dismissed
           const dismissedKey = "email_optin_dismissed_permanently";
@@ -429,15 +480,9 @@ export default function HomeScreen() {
             return;
           }
 
-          console.log("[HomeScreen] Showing email opt-in modal");
-          // Small delay to let other modals settle
-          setTimeout(() => {
-            // Only show if no other modals are active
-            if (!adminTestModal && !announcementModal && !showAccountModal) {
-              setShowEmailOptIn(true);
-              AsyncStorage.setItem(lastShownKey, new Date().toISOString());
-            }
-          }, 1500);
+          console.log("[HomeScreen] Email opt-in eligible, waiting for modal priority gate");
+          // Mark eligible - priority gate will show when it's this modal's turn
+          setEmailOptInEligible(true);
         }
       } catch (error) {
         console.log("[HomeScreen] Error checking email opt-in:", error);
@@ -445,40 +490,94 @@ export default function HomeScreen() {
     };
 
     checkEmailOptIn();
-  }, [isGuest, adminTestModal, announcementModal, showAccountModal]);
+  }, [isGuest]);
 
-  // Session soft upsell nudge — once per session, after other modals settle
+  // Check session nudge eligibility (for modal priority gating)
   useEffect(() => {
-    // Only check once per component mount; session flag prevents re-show anyway
     if (sessionNudgeChecked.current) return;
     if (!isAuthenticated || isGuest) return;
     if (!UPSELL_MODALS_ENABLED || !PAYWALL_ENABLED) return;
 
     sessionNudgeChecked.current = true;
 
-    const timer = setTimeout(() => {
-      // Don't stack on top of other active modals
-      if (
-        showStayInLoopModal ||
-        adminTestModal ||
-        announcementModal ||
-        showEmailOptIn ||
-        showAccountModal ||
-        showModal
-      ) {
-        return;
-      }
+    // Check eligibility - priority gate will handle timing
+    if (canShowSessionNudge()) {
+      console.log("[HomeScreen] Session nudge eligible, waiting for modal priority gate");
+      setSessionNudgeEligible(true);
+    }
+  }, [isAuthenticated, isGuest, canShowSessionNudge]);
 
-      if (canShowSessionNudge()) {
-        markSessionUpsellShown();
-        trackUpsellModalViewed("learning_complete"); // reuse closest analytics type for session browse
-        setShowSessionNudge(true);
-      }
-    }, 5000); // 5s delay to let other modals settle
+  // ============================================================================
+  // MODAL PRIORITY GATE - Derived active modal based on priority order
+  // ============================================================================
+  // This useMemo determines which modal should be visible at any given time.
+  // Only ONE modal can be active. Lower-priority modals are blocked until
+  // higher-priority ones are dismissed or ineligible.
+  // ============================================================================
+  const activeModal = useMemo(() => {
+    // Priority 1: AccountRequiredModal (user-triggered, blocks everything)
+    if (showAccountModal) return "account";
 
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, isGuest, canShowSessionNudge, markSessionUpsellShown,
-      showStayInLoopModal, adminTestModal, announcementModal, showEmailOptIn, showAccountModal, showModal]);
+    // Priority 2: AdminTestModal (admin testing modal)
+    if (adminTestModal) return "admin";
+
+    // Priority 3: AnnouncementModal (system announcements)
+    if (announcementModal) return "announcement";
+
+    // Priority 4: PushPermissionPrompt (push opt-in)
+    if (pushPromptEligible && !pushPromptCompleted) return "push";
+
+    // Priority 5: StayInLoopModal (notification cohort opt-in)
+    if (showStayInLoopModal) return "stayInLoop";
+
+    // Priority 6: OnboardingModal (screen onboarding tooltips)
+    if (showModal) return "onboarding";
+
+    // Priority 7: EmailOptInModal (email subscription)
+    if (emailOptInEligible && !showEmailOptIn) {
+      // Trigger actual show state when this becomes active
+      return "emailOptIn";
+    }
+    if (showEmailOptIn) return "emailOptIn";
+
+    // Priority 8: SessionNudge (upsell modal - lowest priority)
+    if (sessionNudgeEligible && !showSessionNudge) return "sessionNudge";
+    if (showSessionNudge) return "sessionNudge";
+
+    return null;
+  }, [
+    showAccountModal,
+    adminTestModal,
+    announcementModal,
+    pushPromptEligible,
+    pushPromptCompleted,
+    showStayInLoopModal,
+    showModal,
+    emailOptInEligible,
+    showEmailOptIn,
+    sessionNudgeEligible,
+    showSessionNudge,
+  ]);
+
+  // Effect to activate lower-priority modals when they become the active modal
+  // This bridges eligibility state to actual visibility state
+  useEffect(() => {
+    if (activeModal === "emailOptIn" && emailOptInEligible && !showEmailOptIn) {
+      console.log("[HomeScreen] Email opt-in now active, showing modal");
+      setShowEmailOptIn(true);
+      AsyncStorage.setItem("email_optin_last_shown", new Date().toISOString());
+    }
+    if (activeModal === "sessionNudge" && sessionNudgeEligible && !showSessionNudge) {
+      console.log("[HomeScreen] Session nudge now active, showing modal");
+      markSessionUpsellShown();
+      trackUpsellModalViewed("learning_complete");
+      setShowSessionNudge(true);
+    }
+    if (activeModal === "stayInLoop" && showStayInLoopModal && notificationCohort) {
+      // Track when StayInLoop becomes visible (not blocked by higher-priority)
+      trackModalShown(notificationCohort);
+    }
+  }, [activeModal, emailOptInEligible, showEmailOptIn, sessionNudgeEligible, showSessionNudge, notificationCohort, markSessionUpsellShown, showStayInLoopModal]);
 
   // Fetch a random featured photo on screen focus
   useFocusEffect(
@@ -591,8 +690,16 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-forest">
-      {/* Push Permission Soft Prompt - shows for new users and existing users who update */}
-      <PushPermissionPrompt />
+      {/* Push Permission Soft Prompt - gated by modal priority system */}
+      {/* Only renders when activeModal === "push" to prevent race conditions */}
+      {activeModal === "push" && (
+        <PushPermissionPrompt
+          onComplete={(granted) => {
+            console.log("[HomeScreen] Push prompt completed, granted:", granted);
+            setPushPromptCompleted(true);
+          }}
+        />
+      )}
       
       <View className="flex-1" style={{ backgroundColor: PARCHMENT_BACKGROUND }}>
         {/* Welcome Hero Image - full bleed */}
@@ -680,6 +787,9 @@ export default function HomeScreen() {
           contentContainerStyle={{ paddingBottom: bottomSpacer }}
           showsVerticalScrollIndicator={false}
         >
+          {/* My Campsite Prompt - shown to new users who need profile setup */}
+          <MyCampsitePrompt />
+
           {/* Quick Actions */}
           <View className="mb-6">
             <SectionTitle className="mb-4" color={DEEP_FOREST} style={{ fontSize: 18 }}>
@@ -993,8 +1103,8 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* Admin Test Modal (for Communications screen testing) */}
-      {adminTestModal && (
+      {/* Admin Test Modal - gated by modal priority system (priority 2) */}
+      {activeModal === "admin" && adminTestModal && (
         <View
           style={{
             position: "absolute",
@@ -1142,8 +1252,8 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Published Announcement Modal (for all users) */}
-      {announcementModal && (
+      {/* Published Announcement Modal - gated by modal priority system (priority 3) */}
+      {activeModal === "announcement" && announcementModal && (
         <View
           style={{
             position: "absolute",
@@ -1305,18 +1415,22 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Email Opt-In Modal */}
+      {/* Email Opt-In Modal - gated by modal priority system */}
       <EmailOptInModal
-        visible={showEmailOptIn}
-        onClose={() => setShowEmailOptIn(false)}
+        visible={activeModal === "emailOptIn" && showEmailOptIn}
+        onClose={() => {
+          setShowEmailOptIn(false);
+          setEmailOptInEligible(false);
+        }}
         onOptInComplete={() => {
           console.log("[HomeScreen] Email opt-in completed");
+          setEmailOptInEligible(false);
         }}
       />
 
-      {/* Account Required Modal for Quick Actions */}
+      {/* Account Required Modal - highest priority (user-triggered) */}
       <AccountRequiredModal
-        visible={showAccountModal}
+        visible={activeModal === "account" && showAccountModal}
         onClose={() => setShowAccountModal(false)}
         onCreateAccount={() => {
           setShowAccountModal(false);
@@ -1326,23 +1440,23 @@ export default function HomeScreen() {
         triggerKey={accountModalTriggerKey}
       />
 
-      {/* Onboarding Modal */}
+      {/* Onboarding Modal - gated by modal priority system */}
       <OnboardingModal
-        visible={showModal}
+        visible={activeModal === "onboarding" && showModal}
         tooltip={currentTooltip}
         onDismiss={dismissModal}
       />
 
-      {/* Stay in the Loop Modal - shown once after first login */}
+      {/* Stay in the Loop Modal - gated by modal priority system */}
       <StayInLoopModal
-        visible={showStayInLoopModal}
+        visible={activeModal === "stayInLoop" && showStayInLoopModal}
         onDismiss={() => setShowStayInLoopModal(false)}
         cohort={notificationCohort}
       />
 
-      {/* Session Soft Upsell Nudge - once per session for eligible free users */}
+      {/* Session Soft Upsell Nudge - lowest priority, gated by modal priority system */}
       <UpsellModal
-        visible={showSessionNudge}
+        visible={activeModal === "sessionNudge" && showSessionNudge}
         title={UPSELL_COPY.session_browse.title}
         body={UPSELL_COPY.session_browse.body}
         primaryCtaText={UPSELL_COPY.session_browse.primaryCta}
@@ -1350,16 +1464,19 @@ export default function HomeScreen() {
         finePrint={UPSELL_COPY.session_browse.finePrint}
         onPrimaryPress={() => {
           setShowSessionNudge(false);
+          setSessionNudgeEligible(false);
           trackUpsellCtaClicked("learning_complete");
           navigation.navigate("Paywall" as any, { triggerKey: "session_browse_nudge" });
         }}
         onSecondaryPress={() => {
           setShowSessionNudge(false);
+          setSessionNudgeEligible(false);
           recordUpsellDismissal();
           trackUpsellModalDismissed("learning_complete");
         }}
         onDismiss={() => {
           setShowSessionNudge(false);
+          setSessionNudgeEligible(false);
           recordUpsellDismissal();
           trackUpsellModalDismissed("learning_complete");
         }}

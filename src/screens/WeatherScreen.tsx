@@ -382,7 +382,10 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
             }}
           >
             <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
               style={{
+                flex: 1,
                 fontFamily: fonts.bodyRegular,
                 fontSize: fontSizes.md,
                 color: DEEP_FOREST,
@@ -1120,7 +1123,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               padding: spacing.lg,
-              maxHeight: "70%",
+              maxHeight: "80%",
+              minHeight: 300,
             }}
             onPress={(e) => e.stopPropagation()}
           >
@@ -1272,7 +1276,9 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                         : (pressed ? "rgba(69, 117, 86, 0.15)" : "rgba(69, 117, 86, 0.08)"),
                       borderRadius: radius.md,
                       padding: spacing.md,
+                      paddingVertical: 16,
                       marginBottom: spacing.sm,
+                      minHeight: 72,
                       borderWidth: hasWeather ? 0 : 2,
                       borderColor: EARTH_GREEN,
                       flexDirection: "row",

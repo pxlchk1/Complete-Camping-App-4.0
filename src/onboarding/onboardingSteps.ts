@@ -74,12 +74,23 @@ async function ensureUserDoc(params: BootstrapAccountParams): Promise<void> {
   // Check if document already exists
   const existingDoc = await getDoc(userRef);
   if (existingDoc.exists()) {
+    // ISSUE #6 FIX: Merge firstName for existing users who may not have it
+    const existingData = existingDoc.data();
+    if (!existingData?.firstName && displayName) {
+      const firstName = displayName.split(' ')[0] || displayName;
+      await onboardingSetDoc(
+        userRef,
+        { firstName, updatedAt: serverTimestamp() },
+        { merge: true },
+        { step: STEPS.ENSURE_USER_DOC }
+      );
+    }
     onboardingLog('success', {
       step: STEPS.ENSURE_USER_DOC,
       op: 'getDoc',
       path: userRef.path,
     });
-    return; // Already exists, skip creation
+    return; // Doc exists (with firstName now ensured), skip full creation
   }
 
   // Extract firstName from displayName for Home welcome greeting
