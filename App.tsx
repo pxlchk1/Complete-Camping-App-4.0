@@ -30,6 +30,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { getDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./src/config/firebase";
 import { RootStackParamList } from "./src/navigation/types";
+import { logUpdateDiagnostics } from "./src/utils/updateDiagnostics";
 
 // Deep linking configuration
 const linking: LinkingOptions<RootStackParamList> = {
@@ -99,6 +100,13 @@ export default function App() {
   if (fontsLoaded) {
     console.log("Fonts loaded: Raleway + SourceSans3 + Satisfy");
   }
+
+  // Log update diagnostics on startup (dev/internal builds only)
+  useEffect(() => {
+    if (fontsLoaded) {
+      logUpdateDiagnostics();
+    }
+  }, [fontsLoaded]);
 
   const [appReady, setAppReady] = useState(false);
   const [subscriptionsInitialized, setSubscriptionsInitialized] = useState(false);

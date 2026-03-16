@@ -8,7 +8,20 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "plugins": [],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
+    ],
     "ios": {
       "buildNumber": "120",
       "associatedDomains": [
@@ -34,16 +47,12 @@
         "NSCalendarsUsageDescription": "This app may access your calendar through third-party libraries to enhance your camping trip planning experience.",
         "NSContactsUsageDescription": "This app may access your contacts through third-party libraries to help you share camping trips with friends and family.",
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "runtimeVersion": "1.0.0"
+      }
     },
     "android": {
       "versionCode": 114,
       "edgeToEdgeEnabled": true,
       "package": "com.tentlanternchild.completecampingcompanion",
-      "runtimeVersion": {
-        "policy": "appVersion"
-      },
       "intentFilters": [
         {
           "action": "VIEW",

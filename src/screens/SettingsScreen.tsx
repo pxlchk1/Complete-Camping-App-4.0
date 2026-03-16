@@ -32,6 +32,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { useSubscriptionStore } from "../state/subscriptionStore";
 import { restorePurchases } from "../services/subscriptionService";
+import { clearLocalAppCache, isCacheResetAvailable, getUpdateSummaryText } from "../utils/updateDiagnostics";
 import ModalHeader from "../components/ModalHeader";
 import {
   PARCHMENT,
@@ -182,6 +183,7 @@ export default function SettingsScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [restoringPurchases, setRestoringPurchases] = useState(false);
+  const [resettingCache, setResettingCache] = useState(false);
 
   // User data
   const [displayName, setDisplayName] = useState("");
@@ -1132,7 +1134,7 @@ export default function SettingsScreen() {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     navigation.navigate("AdminDashboard" as any);
                   }}
-                  className="mb-6 p-4 rounded-xl border active:opacity-70"
+                  className="mb-3 p-4 rounded-xl border active:opacity-70"
                   style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
                 >
                   <View className="flex-row items-center justify-between">
@@ -1160,6 +1162,88 @@ export default function SettingsScreen() {
                     <Ionicons name="chevron-forward" size={20} color={TEXT_SECONDARY} />
                   </View>
                 </Pressable>
+
+                {/* Dev-only: Local Cache Reset - Only in development mode */}
+                {isCacheResetAvailable() && (
+                  <Pressable
+                    onPress={async () => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setResettingCache(true);
+                      try {
+                        const result = await clearLocalAppCache();
+                        if (result.success) {
+                          notifySuccess(toast, `Cleared ${result.clearedKeys.length} storage keys. Restart app to see changes.`);
+                          console.log("[CacheReset] Success. Cleared keys:", result.clearedKeys.join(", "));
+                        } else {
+                          notifyError(toast, result.error || "Failed to clear some storage keys");
+                        }
+                      } catch (error) {
+                        console.error("[CacheReset] Error:", error);
+                        notifyError(toast, "Failed to reset cache");
+                      } finally {
+                        setResettingCache(false);
+                      }
+                    }}
+                    disabled={resettingCache}
+                    className="mb-3 p-4 rounded-xl border active:opacity-70"
+                    style={{ 
+                      backgroundColor: CARD_BACKGROUND_LIGHT, 
+                      borderColor: "#FF9800",
+                      opacity: resettingCache ? 0.5 : 1,
+                    }}
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center flex-1">
+                        <View
+                          className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                          style={{ backgroundColor: "#FF9800" + "20" }}
+                        >
+                          {resettingCache ? (
+                            <ActivityIndicator size="small" color="#FF9800" />
+                          ) : (
+                            <Ionicons name="trash-outline" size={24} color="#FF9800" />
+                          )}
+                        </View>
+                        <View className="flex-1">
+                          <Text
+                            className="mb-1"
+                            style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                          >
+                            Reset Local App Cache
+                          </Text>
+                          <Text
+                            style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+                          >
+                            DEV ONLY: Clear persisted local state
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </Pressable>
+                )}
+
+                {/* Dev-only: Update Info Display */}
+                {__DEV__ && (
+                  <View
+                    className="mb-6 p-4 rounded-xl border"
+                    style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
+                  >
+                    <View className="flex-row items-center mb-2">
+                      <Ionicons name="information-circle-outline" size={20} color={TEXT_SECONDARY} />
+                      <Text
+                        className="ml-2"
+                        style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      >
+                        Build Info
+                      </Text>
+                    </View>
+                    <Text
+                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED, fontSize: 12 }}
+                    >
+                      {getUpdateSummaryText()}
+                    </Text>
+                  </View>
+                )}
               </>
             )}
 
