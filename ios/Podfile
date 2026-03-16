@@ -20,6 +20,9 @@ platform :ios, podfile_properties['ios.deploymentTarget'] || '15.1'
 
 prepare_react_native_project!
 
+# Required for Firebase with static frameworks
+use_modular_headers!
+
 target 'CompleteCampingApp' do
   use_expo_modules!
 
