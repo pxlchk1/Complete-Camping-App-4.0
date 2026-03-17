@@ -10,7 +10,6 @@
     "newArchEnabled": true,
     "runtimeVersion": "1.1.4",
     "plugins": [
-      "@react-native-firebase/app",
       [
         "expo-build-properties",
         {
@@ -21,7 +20,6 @@
       ]
     ],
     "ios": {
-      "buildNumber": "120",
       "associatedDomains": [
         "applinks:tentlantern.app",
         "applinks:www.tentlantern.app"
@@ -32,9 +30,6 @@
       "usesAppleSignIn": true,
       "entitlements": {
         "com.apple.developer.applesignin": [
-          "Default",
-          "Default",
-          "Default",
           "Default"
         ]
       },

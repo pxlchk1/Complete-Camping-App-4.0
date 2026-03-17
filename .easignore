@@ -1,7 +1,64 @@
 # EAS Build ignore file
-# Everything is included by default (unlike .gitignore)
-# Use this to explicitly exclude files/folders from EAS builds if needed
+# When .easignore exists, .gitignore is NOT used for EAS uploads.
+# Everything not listed here is included.
 
-# Explicitly ensure GoogleService-Info.plist is included
+# Version control
+.git
+
+# Dependencies (EAS runs its own install)
+node_modules
+
+# CocoaPods (EAS runs pod install)
+ios/Pods
+
+# Xcode build artifacts
+ios/build
+
+# JS build output
+dist
+
+# Environment files
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+
+# Firebase Cloud Functions (server-side, not part of app build)
+functions
+
+# Firebase migration scripts (not part of app build)
+firebase-migrate
+
+# Firebase deploy config (not needed for app build)
+firestore.rules
+firestore.indexes.json
+storage.rules
+firebase.json
+
+# Documentation (not needed for build)
+docs
+*.md
+!README.md
+
+# macOS artifacts
+.DS_Store
+package-lock 2.json
+
+# HTML preview files
+*.html
+
+# StoreKit testing config (not needed for production build)
+CompleteCampingApp.storekit
+
+# Stale patch artifacts (patches directory is now empty)
+patches
+
+# Expo local state
+.expo
+
+# Logs
+*.log
+
+# Ensure build-critical files are included
 !ios/CompleteCampingApp/GoogleService-Info.plist
-!GoogleService-Info.plist
