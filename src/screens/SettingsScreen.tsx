@@ -31,8 +31,11 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serv
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useUserStore } from "../state/userStore";
 import { restorePurchases } from "../services/subscriptionService";
 import { clearLocalAppCache, isCacheResetAvailable, getUpdateSummaryText } from "../utils/updateDiagnostics";
+// FORENSIC TEMP
+import { getForensicBannerText, forensicLog } from "../utils/forensicLogger";
 import ModalHeader from "../components/ModalHeader";
 import {
   PARCHMENT,
@@ -1222,28 +1225,36 @@ export default function SettingsScreen() {
                   </Pressable>
                 )}
 
-                {/* Dev-only: Update Info Display */}
-                {__DEV__ && (
-                  <View
-                    className="mb-6 p-4 rounded-xl border"
-                    style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}
-                  >
-                    <View className="flex-row items-center mb-2">
-                      <Ionicons name="information-circle-outline" size={20} color={TEXT_SECONDARY} />
-                      <Text
-                        className="ml-2"
-                        style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
-                      >
-                        Build Info
-                      </Text>
-                    </View>
+                {/* FORENSIC TEMP — Build diagnostics visible in prod for admin */}
+                <View
+                  className="mb-6 p-4 rounded-xl border"
+                  style={{ backgroundColor: "#FFF3E0", borderColor: "#FF9800" }}
+                >
+                  <View className="flex-row items-center mb-2">
+                    <Ionicons name="bug-outline" size={20} color="#E65100" />
                     <Text
-                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED, fontSize: 12 }}
+                      className="ml-2"
+                      style={{ fontFamily: "SourceSans3_600SemiBold", color: "#E65100" }}
                     >
-                      {getUpdateSummaryText()}
+                      Forensic Build Info
                     </Text>
                   </View>
-                )}
+                  <Text
+                    style={{ fontFamily: "SourceSans3_400Regular", color: "#BF360C", fontSize: 11 }}
+                    selectable
+                  >
+                    {getForensicBannerText() + "\n" + getUpdateSummaryText()}
+                  </Text>
+                  <Text
+                    style={{ fontFamily: "SourceSans3_400Regular", color: "#BF360C", fontSize: 11, marginTop: 4 }}
+                    selectable
+                  >
+                    {"isPro: " + String(useSubscriptionStore.getState().isPro) +
+                    " | hasUsedFreeTrip: " + String(useUserStore.getState().hasUsedFreeTrip) +
+                    " | isAdmin: " + String(useUserStore.getState().isAdministrator()) +
+                    " | uid: " + (auth.currentUser?.uid ?? "none")}
+                  </Text>
+                </View>
               </>
             )}
 

@@ -35,6 +35,8 @@ import { useAuthStore } from '../state/authStore';
 import { useUserStore } from '../state/userStore';
 import { SUBSCRIPTIONS_ENABLED, PAYWALL_ENABLED } from '../config/subscriptions';
 import { getPaywallVariantAndTrack, type PaywallVariant } from '../services/proAttemptService';
+// FORENSIC TEMP
+import { forensicLog } from './forensicLogger';
 
 // Re-export PaywallVariant for convenience
 export type { PaywallVariant };
@@ -58,9 +60,15 @@ export type AccessState = 'NO_ACCOUNT' | 'FREE' | 'PRO';
  */
 export function hasFreeTripPlanningAccess(): boolean {
   const isLoggedIn = !!auth.currentUser;
-  if (!isLoggedIn) return false;
+  if (!isLoggedIn) {
+    // FORENSIC TEMP
+    forensicLog("FREE_TRIP_ACCESS", { isLoggedIn: false, hasUsedFreeTrip: "n/a", result: false });
+    return false;
+  }
   
   const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
+  // FORENSIC TEMP
+  forensicLog("FREE_TRIP_ACCESS", { isLoggedIn: true, hasUsedFreeTrip, result: !hasUsedFreeTrip });
   return !hasUsedFreeTrip;
 }
 

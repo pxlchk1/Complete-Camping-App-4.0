@@ -31,6 +31,8 @@ import { getDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./src/config/firebase";
 import { RootStackParamList } from "./src/navigation/types";
 import { logUpdateDiagnostics } from "./src/utils/updateDiagnostics";
+// FORENSIC TEMP
+import { forensicLogStartup } from "./src/utils/forensicLogger";
 
 // Deep linking configuration
 const linking: LinkingOptions<RootStackParamList> = {
@@ -105,6 +107,8 @@ export default function App() {
   useEffect(() => {
     if (fontsLoaded) {
       logUpdateDiagnostics();
+      // FORENSIC TEMP — always log startup metadata (including production)
+      forensicLogStartup();
     }
   }, [fontsLoaded]);
 

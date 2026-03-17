@@ -14,6 +14,8 @@ import { useSubscriptionStore } from "../state/subscriptionStore";
 import { useUserStore } from "../state/userStore";
 import { auth } from "../config/firebase";
 import { Trip } from "../types/camping";
+// FORENSIC TEMP
+import { forensicLog } from "./forensicLogger";
 
 // Storage key for free premium trip ID
 const getFreePremiumTripKey = (userId: string) => `freePremiumTripId:${userId}`;
@@ -24,11 +26,17 @@ const getFreePremiumTripKey = (userId: string) => `freePremiumTripId:${userId}`;
 export function isPremiumUser(): boolean {
   // Admin and moderator users always have premium access
   const userState = useUserStore.getState();
-  if (userState.isAdministrator() || userState.isModerator()) {
+  const isAdmin = userState.isAdministrator();
+  const isMod = userState.isModerator();
+  const isPro = useSubscriptionStore.getState().isPro;
+  const result = isAdmin || isMod || isPro;
+  // FORENSIC TEMP — log every premium check
+  forensicLog("IS_PREMIUM_USER", { isAdmin, isMod, isPro, result, role: userState.currentUser?.role ?? "none" });
+  if (isAdmin || isMod) {
     return true;
   }
 
-  return useSubscriptionStore.getState().isPro;
+  return isPro;
 }
 
 /**

@@ -49,6 +49,8 @@ import { RootStackParamList } from "../navigation/types";
 import { format } from "date-fns";
 import { requirePro } from "../utils/gating";
 import { isPremiumUser, ensureFreePremiumTripId } from "../utils/entitlements";
+// FORENSIC TEMP
+import { forensicLog } from "../utils/forensicLogger";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import UpsellModal from "../components/UpsellModal";
 import { useUpsellStore, UPSELL_COPY } from "../state/upsellStore";
@@ -258,10 +260,20 @@ export default function TripDetailScreen() {
   const handleOpenPacking = useCallback(async () => {
     // Check if user can access packing for this trip
     const userId = auth.currentUser?.uid;
-    if (!isPremiumUser() && userId) {
-      const trips = useTripsStore.getState().trips;
-      const freeTripId = await ensureFreePremiumTripId(userId, trips);
-      if (tripId !== freeTripId) {
+    // FORENSIC TEMP — log exact boolean inputs for packing gating
+    const _isPremium = isPremiumUser();
+    const _trips = useTripsStore.getState().trips;
+    const _freeTripId = userId ? await ensureFreePremiumTripId(userId, _trips) : null;
+    forensicLog("PACKING_GATE", {
+      isPremiumUser: _isPremium,
+      userId: userId ?? "none",
+      tripId,
+      freeTripId: _freeTripId ?? "none",
+      tripCount: _trips.length,
+      willBlock: !_isPremium && !!userId && tripId !== _freeTripId,
+    });
+    if (!_isPremium && userId) {
+      if (tripId !== _freeTripId) {
         // Not the free trip - show paywall
         navigation.navigate("Paywall", { triggerKey: "packing_list" });
         return;
@@ -298,10 +310,20 @@ export default function TripDetailScreen() {
   const handleOpenMeals = useCallback(async () => {
     // Check if user can access meals for this trip
     const userId = auth.currentUser?.uid;
-    if (!isPremiumUser() && userId) {
-      const trips = useTripsStore.getState().trips;
-      const freeTripId = await ensureFreePremiumTripId(userId, trips);
-      if (tripId !== freeTripId) {
+    // FORENSIC TEMP — log exact boolean inputs for meals gating
+    const _isPremium = isPremiumUser();
+    const _trips = useTripsStore.getState().trips;
+    const _freeTripId = userId ? await ensureFreePremiumTripId(userId, _trips) : null;
+    forensicLog("MEALS_GATE", {
+      isPremiumUser: _isPremium,
+      userId: userId ?? "none",
+      tripId,
+      freeTripId: _freeTripId ?? "none",
+      tripCount: _trips.length,
+      willBlock: !_isPremium && !!userId && tripId !== _freeTripId,
+    });
+    if (!_isPremium && userId) {
+      if (tripId !== _freeTripId) {
         // Not the free trip - show paywall
         navigation.navigate("Paywall", { triggerKey: "meal_planner" });
         return;

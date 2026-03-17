@@ -50,6 +50,8 @@ import { PAYWALL_ENABLED } from "../config/subscriptions";
 // Utils
 import { getWelcomeTitle, getWelcomeSubtext } from "../utils/welcomeCopy";
 import { useUserStatus } from "../utils/authHelper";
+// FORENSIC TEMP
+import { forensicLog, getForensicBannerText } from "../utils/forensicLogger";
 
 // Constants
 import {
@@ -176,6 +178,25 @@ export default function HomeScreen() {
   const [pushPromptEligible, setPushPromptEligible] = useState(false);
   const [pushPromptCompleted, setPushPromptCompleted] = useState(false);
   const pushPromptChecked = useRef(false);
+
+  // FORENSIC TEMP — log key subscription/gating state every time HomeScreen focuses
+  useFocusEffect(
+    useCallback(() => {
+      const userRole = currentUser?.role ?? "none";
+      const userEmail = auth.currentUser?.email ?? "no-email";
+      const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
+      forensicLog("HOME_SCREEN_STATE", {
+        isPro,
+        isAuthenticated,
+        isGuest,
+        userRole,
+        userEmail,
+        hasUsedFreeTrip,
+        tripsCount: trips.length,
+        uid: auth.currentUser?.uid ?? "no-uid",
+      });
+    }, [isPro, isAuthenticated, isGuest, currentUser, trips.length])
+  );
 
   // Email opt-in eligibility (checked asynchronously)
   const [emailOptInEligible, setEmailOptInEligible] = useState(false);
@@ -690,6 +711,12 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-forest">
+      {/* FORENSIC TEMP — Visible test marker banner */}
+      <View style={{ backgroundColor: "#FF0000", paddingTop: insets.top, paddingBottom: 4, paddingHorizontal: 8, zIndex: 999 }}>
+        <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "bold", textAlign: "center" }}>
+          {"FORENSIC BUILD " + getForensicBannerText()}
+        </Text>
+      </View>
       {/* Push Permission Soft Prompt - gated by modal priority system */}
       {/* Only renders when activeModal === "push" to prevent race conditions */}
       {activeModal === "push" && (
