@@ -18,8 +18,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { useLocationStore } from "../state/locationStore";
 import { usePlanTabStore } from "../state/planTabStore";
-import { useUserStore } from "../state/userStore";
-import { useSubscriptionStore } from "../state/subscriptionStore";
+
 import { requireAccount, requirePro } from "../utils/gating";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import { RootStackParamList } from "../navigation/types";
@@ -976,18 +975,8 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     });
                     if (!hasAccount) return;
                     
-                    // Check if user has used their free trip
-                    const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
-                    const isPro = useSubscriptionStore.getState().isPro;
-                    
-                    // If first trip (not used free trip yet) OR user is Pro, allow
-                    if (!hasUsedFreeTrip || isPro) {
-                      setActivePlanTab("trips");
-                      return;
-                    }
-                    
-                    // Second+ trip and not Pro - show paywall
-                    navigation.navigate("Paywall", { triggerKey: "second_trip" });
+                    // Navigate to trips tab — CreateTripScreen handles entitlement gating
+                    setActivePlanTab("trips");
                   }}
                   style={{
                     backgroundColor: DEEP_FOREST,
