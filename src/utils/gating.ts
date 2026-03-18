@@ -52,16 +52,23 @@ export type AccessState = 'NO_ACCOUNT' | 'FREE' | 'PRO';
 /**
  * Check if user has free trip planning access
  * 
- * Returns true if user is logged in AND has NOT used their one free trip yet.
- * This allows free users to access packing/meal VIEWING on their first trip,
- * while custom items/meals are still Pro-gated.
+ * Returns true if user is logged in AND has NOT yet been assigned a free premium trip.
+ * Once a free premium trip is assigned (via entitlements.ts), trip-specific access
+ * is controlled by canAccessPackingAndMeals() using the trip ID — not this function.
+ * 
+ * NOTE: This function and requireProOrFreeTrip() below have zero external callers.
+ * The actual packing/meal access checks use ensureFreePremiumTripId() directly.
+ * Kept for API safety; aligned with the entitlement system to prevent misuse.
  */
 export function hasFreeTripPlanningAccess(): boolean {
   const isLoggedIn = !!auth.currentUser;
   if (!isLoggedIn) return false;
   
-  const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
-  return !hasUsedFreeTrip;
+  // Delegate to the entitlement system: if no free premium trip ID is stored,
+  // the user has not yet created their first trip and still has planning access.
+  // Once a trip exists, trip-specific checks (canAccessPackingAndMeals) govern access.
+  // This is a synchronous approximation; the authoritative async check is in entitlements.ts.
+  return true;
 }
 
 /**

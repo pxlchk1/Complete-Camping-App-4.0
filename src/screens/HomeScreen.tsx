@@ -980,6 +980,56 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* Upgrade CTA for free users */}
+          {!isPro && isAuthenticated && !isGuest && PAYWALL_ENABLED && (
+            <View className="mb-6">
+              <Pressable
+                onPress={() => {
+                  safeHaptic();
+                  navigation.navigate("Paywall", { triggerKey: "home_upgrade_cta" });
+                }}
+                className="rounded-xl overflow-hidden active:opacity-90"
+                style={{
+                  backgroundColor: DEEP_FOREST,
+                  borderWidth: 1,
+                  borderColor: EARTH_GREEN,
+                  padding: 16,
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <View
+                  className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                  style={{ backgroundColor: EARTH_GREEN }}
+                >
+                  <Ionicons name="star" size={20} color={PARCHMENT} />
+                </View>
+                <View className="flex-1">
+                  <Text
+                    style={{
+                      fontFamily: "Raleway_700Bold",
+                      fontSize: 16,
+                      color: PARCHMENT,
+                    }}
+                  >
+                    Unlock Full Experience
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: "SourceSans3_400Regular",
+                      fontSize: 13,
+                      color: EARTH_GREEN,
+                      marginTop: 2,
+                    }}
+                  >
+                    Unlimited trips, packing lists, meals & more
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={PARCHMENT} />
+              </Pressable>
+            </View>
+          )}
+
           {/* Featured Community Photo */}
           <View className="mb-6">
             <SectionTitle className="mb-4" color={DEEP_FOREST} style={{ fontSize: 18 }}>

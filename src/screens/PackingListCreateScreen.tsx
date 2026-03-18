@@ -304,6 +304,59 @@ export default function PackingListCreateScreen() {
             />
           </View>
 
+          {/* Gear Closet Toggle */}
+          {auth.currentUser && (
+            <View className="px-4 pt-5">
+              <View
+                className="bg-white rounded-xl p-4 flex-row items-center justify-between"
+                style={{ borderWidth: 1, borderColor: BORDER_SOFT }}
+              >
+                <View className="flex-row items-center flex-1 mr-3">
+                  <View
+                    className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                    style={{ backgroundColor: includeGearCloset ? DEEP_FOREST : "#F4F2EC" }}
+                  >
+                    <Ionicons
+                      name="briefcase-outline"
+                      size={20}
+                      color={includeGearCloset ? PARCHMENT : DEEP_FOREST}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text
+                      className="text-base"
+                      style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
+                    >
+                      Include my Gear Closet
+                    </Text>
+                    <Text
+                      className="text-xs"
+                      style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                    >
+                      {gearLoading ? (
+                        "Loading gear..."
+                      ) : gearItems.length > 0 ? (
+                        `${gearItems.length} items from your gear collection`
+                      ) : (
+                        "No gear items yet"
+                      )}
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={includeGearCloset}
+                  onValueChange={(value) => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setIncludeGearCloset(value);
+                  }}
+                  trackColor={{ false: "#E6E1D6", true: DEEP_FOREST }}
+                  thumbColor={PARCHMENT}
+                  disabled={gearItems.length === 0}
+                />
+              </View>
+            </View>
+          )}
+
           {/* Trip Type - only show when NOT linked to a trip (standalone packing list) */}
           {!tripId && (
             <View className="px-4 pt-5">
@@ -466,59 +519,6 @@ export default function PackingListCreateScreen() {
               </View>
             )}
           </View>
-
-          {/* Gear Closet Toggle - ISSUE #8: Moved to TOP */}
-          {auth.currentUser && (
-            <View className="px-4 pt-5">
-              <View
-                className="bg-white rounded-xl p-4 flex-row items-center justify-between"
-                style={{ borderWidth: 1, borderColor: BORDER_SOFT }}
-              >
-                <View className="flex-row items-center flex-1 mr-3">
-                  <View
-                    className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                    style={{ backgroundColor: includeGearCloset ? DEEP_FOREST : "#F4F2EC" }}
-                  >
-                    <Ionicons
-                      name="briefcase-outline"
-                      size={20}
-                      color={includeGearCloset ? PARCHMENT : DEEP_FOREST}
-                    />
-                  </View>
-                  <View className="flex-1">
-                    <Text
-                      className="text-base"
-                      style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}
-                    >
-                      Include my Gear Closet
-                    </Text>
-                    <Text
-                      className="text-xs"
-                      style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
-                    >
-                      {gearLoading ? (
-                        "Loading gear..."
-                      ) : gearItems.length > 0 ? (
-                        `${gearItems.length} items from your gear collection`
-                      ) : (
-                        "No gear items yet"
-                      )}
-                    </Text>
-                  </View>
-                </View>
-                <Switch
-                  value={includeGearCloset}
-                  onValueChange={(value) => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setIncludeGearCloset(value);
-                  }}
-                  trackColor={{ false: "#E6E1D6", true: DEEP_FOREST }}
-                  thumbColor={PARCHMENT}
-                  disabled={gearItems.length === 0}
-                />
-              </View>
-            </View>
-          )}
 
           {/* Templates */}
           <View className="px-4 pt-5">

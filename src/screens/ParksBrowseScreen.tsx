@@ -38,7 +38,7 @@ import {
 import { db, auth } from "../config/firebase";
 import { useTripsStore } from "../state/tripsStore";
 import { useUserStore } from "../state/userStore";
-import { useSubscriptionStore } from "../state/subscriptionStore";
+
 import { usePlanTabStore } from "../state/planTabStore";
 
 // Components
@@ -1137,22 +1137,10 @@ export default function ParksBrowseScreen({ onTabChange, selectedParkId: selecte
                 return;
               }
               
-              // Check if user has used their free trip
-              const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
-              const isPro = useSubscriptionStore.getState().isPro;
-              
-              // If first trip (not used free trip yet) OR user is Pro, allow
-              if (!hasUsedFreeTrip || isPro) {
-                setSelectedPark(null);
-                onParkDetailClosed?.();
-                navigation.navigate("CreateTrip" as never);
-                return;
-              }
-              
-              // Second+ trip and not Pro - show paywall
+              // Navigate to create trip — CreateTripScreen handles entitlement gating
               setSelectedPark(null);
               onParkDetailClosed?.();
-              navigation.navigate("Paywall", { triggerKey: "second_trip" });
+              navigation.navigate("CreateTrip" as never);
             }
           }}
           onRequireAccount={(triggerKey) => {
