@@ -33,6 +33,7 @@ import { doc, getDoc, updateDoc, setDoc, deleteDoc, serverTimestamp } from "fire
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useCurrentUser, useUserStore } from "../state/userStore";
+import { reserveHandle } from "../services/handleService";
 import ModalHeader from "../components/ModalHeader";
 import {
   DEEP_FOREST,
@@ -316,6 +317,14 @@ export default function EditProfileScreen() {
 
     try {
       setSaving(true);
+
+      // Reserve handle with transaction-based uniqueness before any writes
+      const handleReserved = await reserveHandle(user.uid, cleanHandle);
+      if (!handleReserved) {
+        Alert.alert("Handle Taken", "That handle is already taken. Please choose a different handle.");
+        setSaving(false);
+        return;
+      }
 
       // Use the entered first name directly for Home welcome greeting
       const enteredFirstName = displayName.trim();

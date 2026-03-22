@@ -20,6 +20,7 @@ import { db } from '../config/firebase';
 import { onboardingSetDoc } from './onboardingWrites';
 import { getDebugErrorString, onboardingLog } from './onboardingDebug';
 import { ONBOARDING_DEBUG } from './onboardingConfig';
+import { reserveHandle } from '../services/handleService';
 
 /**
  * Parameters for bootstrapping a new account.
@@ -41,6 +42,8 @@ export interface BootstrapAccountResult {
   debugInfo?: string;
   /** Set when email is already in use by another account */
   emailInUse?: boolean;
+  /** Set when handle is already taken by another user */
+  handleTaken?: boolean;
 }
 
 /**
@@ -294,6 +297,16 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
   }
 
   try {
+    // Step 0: Reserve handle with transaction-based uniqueness (CRITICAL)
+    const handleReserved = await reserveHandle(params.userId, params.handle);
+    if (!handleReserved) {
+      return {
+        success: false,
+        error: "That handle is already taken. Please choose a different handle.",
+        handleTaken: true,
+      };
+    }
+
     // Step 1: Create users/{uid} document (CRITICAL)
     await ensureUserDoc(params);
 

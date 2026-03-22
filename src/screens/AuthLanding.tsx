@@ -172,6 +172,10 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
           if (result.emailInUse) {
             throw new Error("That email is already in use. Try signing in instead.");
           }
+          // Handle taken error
+          if (result.handleTaken) {
+            throw new Error(result.error || "That handle is already taken.");
+          }
           throw new Error(result.error || "We couldn't finish setting up your account. Please try again.");
         }
         
@@ -332,6 +336,9 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
         if (result.emailInUse) {
           setError("This email is already in use by another account.");
           setPendingOnboardingRetry(null);
+        } else if (result.handleTaken) {
+          setError(result.error || "That handle is already taken. Please choose a different handle.");
+          setPendingOnboardingRetry(null);
         } else {
           setError("Setup still failed. Please check your connection and tap Retry.");
         }
@@ -434,6 +441,11 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
           // Handle email-in-use error specifically (email index owned by different user)
           if (result.emailInUse) {
             setError("This email is already in use by another account.");
+            return;
+          }
+          // Handle taken error - let user pick a different handle
+          if (result.handleTaken) {
+            setError(result.error || "That handle is already taken. Please choose a different handle.");
             return;
           }
           // Auth succeeded but Firestore setup failed
@@ -552,6 +564,8 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
                 console.log("RECOVERY_BOOTSTRAP_FAILED", { error: result.error, emailInUse: result.emailInUse });
                 if (result.emailInUse) {
                   setError("This email is already in use by another account.");
+                } else if (result.handleTaken) {
+                  setError(result.error || "That handle is already taken. Please choose a different handle.");
                 } else {
                   // Store for retry
                   setPendingOnboardingRetry(onboardingParams);

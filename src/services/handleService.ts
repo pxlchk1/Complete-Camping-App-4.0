@@ -154,6 +154,7 @@ export async function createUniquePlaceholderHandle(
 
 /**
  * Reserves a custom handle in the index with transaction-based uniqueness.
+ * Also writes handle to both users/{uid} and profiles/{uid} atomically.
  * Returns true if successful, false if handle is taken.
  */
 export async function reserveHandle(
@@ -188,9 +189,15 @@ export async function reserveHandle(
         isPlaceholder: false,
       });
       
-      // Update the user document
+      // Update both user and profile documents atomically
       const userRef = doc(db, "users", userId);
       transaction.set(userRef, {
+        handle: normalizedHandle,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+
+      const profileRef = doc(db, "profiles", userId);
+      transaction.set(profileRef, {
         handle: normalizedHandle,
         updatedAt: serverTimestamp(),
       }, { merge: true });
