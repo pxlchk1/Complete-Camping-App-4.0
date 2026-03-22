@@ -870,6 +870,69 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          {/* Evergreen Upgrade Card — logged-in free non-admin users only */}
+          {isAuthenticated && !isGuest && !isPro
+            && currentUser?.role !== "administrator"
+            && currentUser?.membershipTier !== "isAdmin" && (
+            <View
+              className="mb-6 rounded-xl overflow-hidden"
+              style={{
+                backgroundColor: CARD_BACKGROUND_LIGHT,
+                borderWidth: 1,
+                borderColor: EARTH_GREEN,
+              }}
+            >
+              <View className="p-5">
+                <View className="flex-row items-center mb-2">
+                  <Ionicons name="sparkles" size={20} color={EARTH_GREEN} />
+                  <Text
+                    className="ml-2"
+                    style={{
+                      fontFamily: "Raleway_700Bold",
+                      fontSize: 17,
+                      color: TEXT_PRIMARY_STRONG,
+                    }}
+                  >
+                    Unlock the full experience
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_400Regular",
+                    fontSize: 14,
+                    color: TEXT_SECONDARY,
+                    lineHeight: 20,
+                    marginBottom: 14,
+                  }}
+                >
+                  Get unlimited trips, smarter planning tools, and more ways to stay organized.
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    safeHaptic();
+                    navigation.navigate("Paywall" as any, { triggerKey: "home_upgrade_card" });
+                  }}
+                  className="rounded-lg active:opacity-85"
+                  style={{
+                    backgroundColor: EARTH_GREEN,
+                    paddingVertical: 12,
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "SourceSans3_600SemiBold",
+                      fontSize: 15,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    See plans
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+
           {/* Featured Community Photo */}
           <View className="mb-6">
             <SectionTitle className="mb-4" color={DEEP_FOREST} style={{ fontSize: 18 }}>
