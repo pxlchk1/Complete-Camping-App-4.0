@@ -1,12 +1,13 @@
 /**
  * Welcome Copy Utility
- * Provides personalized welcome messages based on whether user has set their first name.
+ * Provides personalized welcome messages based on visit history and first name.
  * 
  * REQUIREMENTS (March 2026 - DO NOT CHANGE WITHOUT PRODUCT APPROVAL):
  * ====================================================================
- * Title Logic (based ONLY on firstName from My Campsite):
+ * Title Logic:
  *   - NO firstName set: "Welcome Camper!"
- *   - firstName IS set: "Welcome back FirstName!"
+ *   - firstName IS set + first visit (!hasSeenWelcomeHome): "Welcome, FirstName"
+ *   - firstName IS set + returning (hasSeenWelcomeHome): "Welcome back, FirstName"
  * 
  * Subtitle Logic:
  *   - First ever visit (hasSeenWelcomeHome == false): "Your camping adventure starts here."
@@ -47,15 +48,15 @@ const CAMPING_TYPE_MESSAGES: Record<string, string> = {
 };
 
 /**
- * Get the welcome title based on whether firstName is set.
+ * Get the welcome title based on visit history and firstName.
  * 
- * IMPORTANT: Title is determined ONLY by firstName presence, not by visit history.
  * - No firstName → "Welcome Camper!"
- * - Has firstName → "Welcome back FirstName!"
+ * - First visit + firstName → "Welcome, FirstName"
+ * - Returning + firstName → "Welcome back, FirstName"
  * 
- * @param hasSeenWelcomeHome - (Unused for title) Whether user has seen the first-time welcome
- * @param firstName - User's firstName from users collection (determines greeting)
- * @param isLoggedIn - (Unused for title) Whether the user is logged in
+ * @param hasSeenWelcomeHome - Whether user has seen the first-time welcome
+ * @param firstName - User's firstName from users collection
+ * @param isLoggedIn - Whether the user is logged in
  * @returns The welcome title string
  */
 export function getWelcomeTitle(
@@ -63,12 +64,14 @@ export function getWelcomeTitle(
   firstName?: string | null,
   isLoggedIn?: boolean
 ): string {
-  // Title is determined ONLY by whether firstName is set
   const trimmedFirstName = firstName?.trim();
   const hasFirstName = trimmedFirstName && trimmedFirstName.length > 0;
 
   if (hasFirstName) {
-    return `Welcome back ${trimmedFirstName}!`;
+    if (!hasSeenWelcomeHome) {
+      return `Welcome, ${trimmedFirstName}`;
+    }
+    return `Welcome back, ${trimmedFirstName}`;
   }
 
   return "Welcome Camper!";
