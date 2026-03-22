@@ -215,7 +215,12 @@ export default function MyTripsScreen() {
 
   // Navigate to standalone packing (drafts mode)
   const handleQuickPacking = () => {
-    // Gate: Pro-only feature
+    // Gate: Guest → setup modal, Free → paywall, Pro → proceed
+    const hasAccount = requireAccount({
+      openAccountModal: () => setShowAccountModal(true),
+    });
+    if (!hasAccount) return;
+
     const canProceed = requirePro({
       openAccountModal: () => setShowAccountModal(true),
       openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "packing_list", variant }),
@@ -228,7 +233,12 @@ export default function MyTripsScreen() {
 
   // Navigate to standalone meals (meal planner without trip context)
   const handleQuickMeals = () => {
-    // Gate: Pro-only feature
+    // Gate: Guest → setup modal, Free → paywall, Pro → proceed
+    const hasAccount = requireAccount({
+      openAccountModal: () => setShowAccountModal(true),
+    });
+    if (!hasAccount) return;
+
     const canProceed = requirePro({
       openAccountModal: () => setShowAccountModal(true),
       openPaywallModal: (variant) => nav.navigate("Paywall", { triggerKey: "meal_planner", variant }),
