@@ -16,6 +16,8 @@ import OnboardingModal from "../../components/OnboardingModal";
 import { useScreenOnboarding } from "../../hooks/useScreenOnboarding";
 import { requireAccount } from "../../utils/gating";
 import { shouldShowInFeed } from "../../services/moderationService";
+import { getUser } from "../../services/userService";
+import { getConnectDisplayHandle } from "../../services/handleService";
 import { RootStackNavigationProp } from "../../navigation/types";
 import CommunitySectionHeader from "../../components/CommunitySectionHeader";
 import { seedFeedbackIfEmpty } from "../../features/feedback/seedFeedback";
@@ -44,6 +46,7 @@ export default function FeedbackListScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<CategoryFilter>("all");
+  const [authorHandles, setAuthorHandles] = useState<Record<string, string>>({});
 
   // Seed on mount
   useEffect(() => {
@@ -79,6 +82,27 @@ export default function FeedbackListScreen() {
         ? postsWithVotes
         : postsWithVotes.filter(post => post.category === selectedCategory);
       setPosts(filtered);
+
+      // Batch fetch author handles from profiles
+      const authorIds = [...new Set(
+        filtered.map(p => p.authorId).filter(Boolean)
+      )];
+      if (authorIds.length > 0) {
+        const handleMap: Record<string, string> = {};
+        await Promise.all(
+          authorIds.map(async (authorId) => {
+            try {
+              const author = await getUser(authorId);
+              if (author) {
+                handleMap[authorId] = getConnectDisplayHandle(author.handle || author.displayName, authorId);
+              }
+            } catch {
+              // Will use getConnectDisplayHandle fallback at render
+            }
+          })
+        );
+        setAuthorHandles(prev => ({ ...prev, ...handleMap }));
+      }
     } catch (err: any) {
       setError(err.message || "Failed to load feedback");
     } finally {
@@ -217,7 +241,7 @@ export default function FeedbackListScreen() {
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTopWidth: 1, borderColor: BORDER_SOFT }}>
           <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
             <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-              {item.authorName || "Anonymous"}
+              @{authorHandles[item.authorId] || getConnectDisplayHandle(undefined, item.authorId)}
             </Text>
             <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>
             <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: TEXT_MUTED }}>
