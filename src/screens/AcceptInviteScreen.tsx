@@ -1,9 +1,10 @@
 /**
  * Accept Invite Screen
- * Allows users to accept a campground invitation via deep link token
+ * Allows users to accept a campground invitation via deep link token.
+ * Handles logged-in, logged-out, new-user, already-member, and invalid-invite flows.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -23,6 +24,7 @@ import {
   DEEP_FOREST,
   EARTH_GREEN,
   PARCHMENT,
+  BORDER_SOFT,
   CARD_BACKGROUND_LIGHT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
@@ -32,36 +34,37 @@ import {
 
 type AcceptInviteRouteProp = RouteProp<RootStackParamList, "AcceptInvite">;
 
-type InviteState = "loading" | "ready" | "accepting" | "success" | "error";
+type InviteState = "loading" | "ready" | "accepting" | "success" | "already_member" | "invalid" | "error";
 
 export default function AcceptInviteScreen() {
   const route = useRoute<AcceptInviteRouteProp>();
   const navigation = useNavigation<RootStackNavigationProp>();
   const insets = useSafeAreaInsets();
   const { isGuest } = useUserStatus();
+  const acceptingRef = useRef(false);
 
   const { token } = route.params;
 
   const [state, setState] = useState<InviteState>("loading");
   const [inviterName, setInviterName] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAccountModal, setShowAccountModal] = useState(false);
 
   useEffect(() => {
-    // If user is guest, prompt to sign in
+    if (!token) {
+      setState("invalid");
+      return;
+    }
     if (isGuest) {
       setShowAccountModal(true);
       setState("ready");
     } else {
-      // Token is ready to be redeemed
       setState("ready");
     }
   }, [isGuest, token]);
 
   const handleAcceptInvite = async () => {
     if (!token) {
-      setErrorMessage("Invalid invite link");
-      setState("error");
+      setState("invalid");
       return;
     }
 
@@ -70,6 +73,10 @@ export default function AcceptInviteScreen() {
       return;
     }
 
+    // Prevent duplicate taps
+    if (acceptingRef.current) return;
+    acceptingRef.current = true;
+
     try {
       setState("accepting");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -77,18 +84,31 @@ export default function AcceptInviteScreen() {
       const result = await redeemCampgroundInvite(token);
 
       if (result.success) {
-        setInviterName(result.inviterName);
+        setInviterName(result.inviterName || null);
         setState("success");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
-        setErrorMessage("Failed to accept invite");
-        setState("error");
+        setState("invalid");
       }
     } catch (error: any) {
-      console.error("Error accepting invite:", error);
-      setErrorMessage(error.message || "Failed to accept invite");
-      setState("error");
+      const msg: string = (error.message || "").toLowerCase();
+
+      // Detect already-member: invite was already accepted (status != pending)
+      if (msg.includes("already") || msg.includes("not-found") || msg.includes("invalid or expired")) {
+        // If the invite was already accepted by this user, treat as already_member.
+        // If it was accepted by someone else or truly expired, treat as invalid.
+        // The cloud function returns "Invalid or expired invite" for all non-pending tokens.
+        // We show the friendlier "already part" message only when we can't distinguish,
+        // since the most common case for a returning tap is the same user.
+        setState("already_member");
+      } else if (msg.includes("expired")) {
+        setState("invalid");
+      } else {
+        setState("error");
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      acceptingRef.current = false;
     }
   };
 
@@ -98,7 +118,6 @@ export default function AcceptInviteScreen() {
       index: 0,
       routes: [{ name: "MainTabs", params: { screen: "Profile" } }],
     });
-    // Navigate to My Campground
     setTimeout(() => {
       navigation.navigate("MyCampground");
     }, 100);
@@ -106,7 +125,14 @@ export default function AcceptInviteScreen() {
 
   const handleClose = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.goBack();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "MainTabs" }],
+      });
+    }
   };
 
   const handleAccountModalClose = () => {
@@ -115,11 +141,10 @@ export default function AcceptInviteScreen() {
 
   const handleAuthSuccess = () => {
     setShowAccountModal(false);
-    // After auth, try accepting the invite
     handleAcceptInvite();
   };
 
-  // Loading state
+  // --- Loading state ---
   if (state === "loading") {
     return (
       <View
@@ -137,7 +162,7 @@ export default function AcceptInviteScreen() {
     );
   }
 
-  // Success state
+  // --- Success state ---
   if (state === "success") {
     return (
       <View
@@ -145,24 +170,24 @@ export default function AcceptInviteScreen() {
         style={{ backgroundColor: PARCHMENT, paddingTop: insets.top }}
       >
         <View
-          className="w-24 h-24 rounded-full items-center justify-center mb-6"
+          className="w-20 h-20 rounded-full items-center justify-center mb-6"
           style={{ backgroundColor: EARTH_GREEN + "20" }}
         >
-          <Ionicons name="checkmark-circle" size={64} color={EARTH_GREEN} />
+          <Ionicons name="checkmark-circle" size={52} color={EARTH_GREEN} />
         </View>
 
         <Text
           className="text-2xl text-center mb-3"
-          style={{ fontFamily: "SourceSans3_700Bold", color: TEXT_PRIMARY_STRONG }}
+          style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
         >
-          {"You're In! 🏕️"}
+          Campground invite
         </Text>
 
         <Text
-          className="text-center mb-8"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 16 }}
+          className="text-center mb-10"
+          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 16, lineHeight: 22 }}
         >
-          {`You've joined ${inviterName}'s campground. You can now coordinate camping trips together!`}
+          {"You've joined the campground."}
         </Text>
 
         <Pressable
@@ -174,43 +199,43 @@ export default function AcceptInviteScreen() {
             className="text-center"
             style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT, fontSize: 16 }}
           >
-            Go to My Campground
+            Open campground
           </Text>
         </Pressable>
       </View>
     );
   }
 
-  // Error state
-  if (state === "error") {
+  // --- Already-member state ---
+  if (state === "already_member") {
     return (
       <View
         className="flex-1 items-center justify-center px-8"
         style={{ backgroundColor: PARCHMENT, paddingTop: insets.top }}
       >
         <View
-          className="w-24 h-24 rounded-full items-center justify-center mb-6"
-          style={{ backgroundColor: RUST + "20" }}
+          className="w-20 h-20 rounded-full items-center justify-center mb-6"
+          style={{ backgroundColor: EARTH_GREEN + "20" }}
         >
-          <Ionicons name="alert-circle" size={64} color={RUST} />
+          <Ionicons name="people" size={44} color={EARTH_GREEN} />
         </View>
 
         <Text
           className="text-2xl text-center mb-3"
-          style={{ fontFamily: "SourceSans3_700Bold", color: TEXT_PRIMARY_STRONG }}
+          style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
         >
-          {"Couldn't Accept Invite"}
+          Campground invite
         </Text>
 
         <Text
-          className="text-center mb-8"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 16 }}
+          className="text-center mb-10"
+          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 16, lineHeight: 22 }}
         >
-          {errorMessage || "This invite may have expired or already been used."}
+          {"You're already part of this campground."}
         </Text>
 
         <Pressable
-          onPress={handleClose}
+          onPress={handleGoToCampground}
           className="w-full py-4 rounded-xl active:opacity-90"
           style={{ backgroundColor: DEEP_FOREST }}
         >
@@ -218,14 +243,128 @@ export default function AcceptInviteScreen() {
             className="text-center"
             style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT, fontSize: 16 }}
           >
-            Close
+            Open campground
           </Text>
         </Pressable>
       </View>
     );
   }
 
-  // Ready state - show accept button
+  // --- Invalid / expired invite state ---
+  if (state === "invalid") {
+    return (
+      <View
+        className="flex-1 items-center justify-center px-8"
+        style={{ backgroundColor: PARCHMENT, paddingTop: insets.top }}
+      >
+        <View
+          className="w-20 h-20 rounded-full items-center justify-center mb-6"
+          style={{ backgroundColor: TEXT_MUTED + "20" }}
+        >
+          <Ionicons name="mail-unread-outline" size={44} color={TEXT_MUTED} />
+        </View>
+
+        <Text
+          className="text-2xl text-center mb-3"
+          style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+        >
+          Campground invite
+        </Text>
+
+        <Text
+          className="text-center mb-10"
+          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 16, lineHeight: 22 }}
+        >
+          This invite is no longer available.
+        </Text>
+
+        <Pressable
+          onPress={handleGoToCampground}
+          className="w-full py-4 rounded-xl active:opacity-90"
+          style={{ backgroundColor: DEEP_FOREST }}
+        >
+          <Text
+            className="text-center"
+            style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT, fontSize: 16 }}
+          >
+            Open campground
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleClose}
+          className="mt-4 py-2 active:opacity-70"
+        >
+          <Text
+            className="text-center"
+            style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}
+          >
+            Go home
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  // --- Generic error state ---
+  if (state === "error") {
+    return (
+      <View
+        className="flex-1 items-center justify-center px-8"
+        style={{ backgroundColor: PARCHMENT, paddingTop: insets.top }}
+      >
+        <View
+          className="w-20 h-20 rounded-full items-center justify-center mb-6"
+          style={{ backgroundColor: RUST + "20" }}
+        >
+          <Ionicons name="alert-circle" size={52} color={RUST} />
+        </View>
+
+        <Text
+          className="text-2xl text-center mb-3"
+          style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+        >
+          Campground invite
+        </Text>
+
+        <Text
+          className="text-center mb-10"
+          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 16, lineHeight: 22 }}
+        >
+          Something went wrong. Please try again.
+        </Text>
+
+        <Pressable
+          onPress={() => {
+            setState("ready");
+          }}
+          className="w-full py-4 rounded-xl active:opacity-90"
+          style={{ backgroundColor: DEEP_FOREST }}
+        >
+          <Text
+            className="text-center"
+            style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT, fontSize: 16 }}
+          >
+            Try again
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleClose}
+          className="mt-4 py-2 active:opacity-70"
+        >
+          <Text
+            className="text-center"
+            style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}
+          >
+            Go home
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  // --- Ready state - show accept button ---
   return (
     <View
       className="flex-1 px-8"
@@ -234,7 +373,7 @@ export default function AcceptInviteScreen() {
       {/* Close button */}
       <Pressable
         onPress={handleClose}
-        className="absolute top-4 right-4 w-10 h-10 rounded-full items-center justify-center active:opacity-70"
+        className="absolute top-4 right-4 w-10 h-10 rounded-full items-center justify-center active:opacity-70 z-10"
         style={{ backgroundColor: CARD_BACKGROUND_LIGHT, marginTop: insets.top }}
       >
         <Ionicons name="close" size={24} color={TEXT_PRIMARY_STRONG} />
@@ -242,32 +381,40 @@ export default function AcceptInviteScreen() {
 
       <View className="flex-1 items-center justify-center">
         <View
-          className="w-24 h-24 rounded-full items-center justify-center mb-6"
+          className="w-20 h-20 rounded-full items-center justify-center mb-6"
           style={{ backgroundColor: EARTH_GREEN + "20" }}
         >
-          <Ionicons name="people" size={48} color={EARTH_GREEN} />
+          <Ionicons name="people" size={44} color={EARTH_GREEN} />
         </View>
 
         <Text
           className="text-2xl text-center mb-3"
-          style={{ fontFamily: "SourceSans3_700Bold", color: TEXT_PRIMARY_STRONG }}
+          style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
         >
-          {"You're Invited! 🏕️"}
-        </Text>
-
-        <Text
-          className="text-center mb-2"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 16 }}
-        >
-          Someone has invited you to join their campground on The Complete Camping App!
+          Campground invite
         </Text>
 
         <Text
           className="text-center mb-8"
-          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED, fontSize: 14 }}
+          style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 16, lineHeight: 22 }}
         >
-          Join to coordinate camping trips, share packing lists, and plan adventures together.
+          {"You've been invited to join a campground."}
         </Text>
+
+        {isGuest && (
+          <View
+            className="w-full rounded-xl p-4 mb-6 flex-row items-center"
+            style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderWidth: 1, borderColor: BORDER_SOFT }}
+          >
+            <Ionicons name="information-circle-outline" size={20} color={TEXT_SECONDARY} />
+            <Text
+              className="ml-3 flex-1"
+              style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 14, lineHeight: 20 }}
+            >
+              Log in or create an account to accept this invite.
+            </Text>
+          </View>
+        )}
 
         {/* Accept Button */}
         <Pressable
@@ -283,7 +430,7 @@ export default function AcceptInviteScreen() {
               className="text-center"
               style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT, fontSize: 16 }}
             >
-              Join Campground
+              Accept invite
             </Text>
           )}
         </Pressable>
@@ -297,7 +444,7 @@ export default function AcceptInviteScreen() {
             className="text-center"
             style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_SECONDARY }}
           >
-            Not Now
+            Not now
           </Text>
         </Pressable>
       </View>
@@ -307,6 +454,7 @@ export default function AcceptInviteScreen() {
         visible={showAccountModal}
         onCreateAccount={handleAuthSuccess}
         onMaybeLater={handleAccountModalClose}
+        triggerKey="my_campground_quick_action"
       />
     </View>
   );
