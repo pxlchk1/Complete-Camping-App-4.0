@@ -34,6 +34,7 @@ export type PackingTemplateKey =
   | "backpacking"
   | "car-camping"
   | "winter"
+  | "hammock"
   | "pets"
   | "family";
 

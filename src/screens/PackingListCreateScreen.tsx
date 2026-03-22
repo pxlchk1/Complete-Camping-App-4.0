@@ -144,8 +144,9 @@ export default function PackingListCreateScreen() {
   const season = userOverrideSeason ?? initialSeasonInfo.season;
   const seasonSource: SeasonSource = userOverrideSeason ? "override" : initialSeasonInfo.source;
   
+  const defaultTemplate: PackingTemplateKey = tripCampingStyle === "HAMMOCK" ? "hammock" : "essential";
   const [selectedTemplates, setSelectedTemplates] = useState<Set<PackingTemplateKey>>(
-    new Set(["essential"])
+    new Set([defaultTemplate])
   );
 
   // Handle season change from the sheet

@@ -321,6 +321,30 @@ const FAMILY_CAMPING: PackingTemplate = {
   ],
 };
 
+const HAMMOCK_CAMPING: PackingTemplate = {
+  key: "hammock",
+  name: "Hammock Camping",
+  description: "Core gear for hammock-based trips",
+  icon: "leaf",
+  items: [
+    { name: "Hammock", category: "Shelter & Sleep", essential: true },
+    { name: "Suspension straps", category: "Shelter & Sleep", essential: true },
+    { name: "Rain tarp", category: "Shelter & Sleep", essential: true },
+    { name: "Underquilt", category: "Shelter & Sleep", essential: true },
+    { name: "Top quilt/sleeping bag", category: "Shelter & Sleep", essential: true, group: "sleepingBag" },
+    { name: "Camp stove", category: "Meal Prep", essential: true, group: "stove" },
+    { name: "Fuel", category: "Meal Prep", essential: true, group: "fuel" },
+    { name: "Cookware", category: "Meal Prep", essential: true },
+    { name: "Water filter", category: "Meal Prep", essential: true, group: "waterFilter" },
+    { name: "Lighter/matches", category: "Meal Prep", essential: true },
+    { name: "Headlamp", category: "Navigation & Safety", essential: true },
+    { name: "First aid kit", category: "Navigation & Safety", essential: true },
+    { name: "Multi-tool or knife", category: "Tools & Utilities", essential: true },
+    { name: "Base layers (top & bottom)", category: "Clothing", essential: true },
+    { name: "Rain jacket", category: "Clothing", essential: true },
+  ],
+};
+
 // ============================================================================
 // EXPORT ALL TEMPLATES
 // ============================================================================
@@ -334,6 +358,7 @@ export const PACKING_TEMPLATES: PackingTemplate[] = [
   BACKPACKING,
   CAR_CAMPING,
   WINTER_CAMPING,
+  HAMMOCK_CAMPING,
   PETS,
   FAMILY_CAMPING,
 ];
