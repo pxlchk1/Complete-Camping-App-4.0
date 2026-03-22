@@ -105,6 +105,7 @@ interface PackingState {
   addItem: (listId: string, sectionId: string, name: string, essential?: boolean) => string | null;
   updateItem: (listId: string, sectionId: string, itemId: string, updates: Partial<PackingItem>) => void;
   deleteItem: (listId: string, sectionId: string, itemId: string) => void;
+  deleteItems: (listId: string, items: Array<{ sectionId: string; itemId: string }>) => void;
   toggleItemChecked: (listId: string, sectionId: string, itemId: string) => void;
   duplicateItem: (listId: string, sectionId: string, itemId: string) => void;
 
@@ -414,6 +415,31 @@ export const usePackingStore = create<PackingState>()(
                 return {
                   ...section,
                   items: section.items.filter((item) => item.id !== itemId),
+                };
+              }),
+              updatedAt: new Date().toISOString(),
+            };
+          }),
+        }));
+      },
+
+      deleteItems: (listId, items) => {
+        const bySection = new Map<string, Set<string>>();
+        items.forEach(({ sectionId, itemId }) => {
+          if (!bySection.has(sectionId)) bySection.set(sectionId, new Set());
+          bySection.get(sectionId)!.add(itemId);
+        });
+        set((state) => ({
+          packingLists: state.packingLists.map((list) => {
+            if (list.id !== listId) return list;
+            return {
+              ...list,
+              sections: list.sections.map((section) => {
+                const idsToRemove = bySection.get(section.id);
+                if (!idsToRemove) return section;
+                return {
+                  ...section,
+                  items: section.items.filter((item) => !idsToRemove.has(item.id)),
                 };
               }),
               updatedAt: new Date().toISOString(),

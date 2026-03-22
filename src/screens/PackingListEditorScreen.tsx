@@ -221,6 +221,7 @@ export default function PackingListEditorScreen() {
     toggleSectionCollapsed,
     toggleItemChecked,
     deleteItem,
+    deleteItems,
     addItem,
     addSection,
     deleteSection,
@@ -238,6 +239,11 @@ export default function PackingListEditorScreen() {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<{ sectionId: string; item: PackingItem } | null>(null);
   const [showPackingModal, setShowPackingModal] = useState(false);
+
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Upsell state
   const { hasUsedFreeTrip, setHasUsedFreeTrip } = useUserStore();
@@ -280,6 +286,42 @@ export default function PackingListEditorScreen() {
   const handleDeleteItem = useCallback((sectionId: string, itemId: string) => {
     deleteItem(listId, sectionId, itemId);
   }, [listId, deleteItem]);
+
+  // Edit mode helpers
+  const toggleSelectItem = useCallback((sectionId: string, itemId: string) => {
+    const key = `${sectionId}:${itemId}`;
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedItems.size === 0) return;
+    setShowDeleteConfirm(true);
+  }, [selectedItems]);
+
+  const confirmBulkDelete = useCallback(() => {
+    const itemsToDelete = Array.from(selectedItems).map((key) => {
+      const [sectionId, itemId] = key.split(":");
+      return { sectionId, itemId };
+    });
+    deleteItems(listId, itemsToDelete);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setSelectedItems(new Set());
+    setIsEditMode(false);
+    setShowDeleteConfirm(false);
+  }, [selectedItems, listId, deleteItems]);
+
+  const handleCancelEditMode = useCallback(() => {
+    setSelectedItems(new Set());
+    setIsEditMode(false);
+  }, []);
 
   // Handle edit item
   const handleEditItem = useCallback((sectionId: string, item: PackingItem) => {
@@ -515,13 +557,61 @@ export default function PackingListEditorScreen() {
                 </Text>
               </View>
 
-              <Pressable
-                onPress={handleMoreMenu}
-                className="w-9 h-9 rounded-full items-center justify-center"
-                style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
-              >
-                <Ionicons name="ellipsis-horizontal" size={20} color={PARCHMENT} />
-              </Pressable>
+              <View className="flex-row items-center" style={{ gap: 8 }}>
+                {isEditMode ? (
+                  <>
+                    {selectedItems.size > 0 && (
+                      <Pressable
+                        onPress={handleBulkDelete}
+                        className="w-9 h-9 rounded-full items-center justify-center"
+                        style={{ backgroundColor: RUST }}
+                      >
+                        <Ionicons name="trash" size={18} color="#FFF" />
+                      </Pressable>
+                    )}
+                    <Pressable
+                      onPress={handleCancelEditMode}
+                      className="px-3 h-9 rounded-full items-center justify-center"
+                      style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: "SourceSans3_600SemiBold",
+                          fontSize: 14,
+                          color: PARCHMENT,
+                        }}
+                      >
+                        Cancel
+                      </Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <>
+                    <Pressable
+                      onPress={() => setIsEditMode(true)}
+                      className="px-3 h-9 rounded-full items-center justify-center"
+                      style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: "SourceSans3_600SemiBold",
+                          fontSize: 14,
+                          color: PARCHMENT,
+                        }}
+                      >
+                        Edit
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleMoreMenu}
+                      className="w-9 h-9 rounded-full items-center justify-center"
+                      style={{ backgroundColor: "rgba(255,255,255,0.15)" }}
+                    >
+                      <Ionicons name="ellipsis-horizontal" size={20} color={PARCHMENT} />
+                    </Pressable>
+                  </>
+                )}
+              </View>
             </View>
 
             {/* Progress Bar */}
@@ -619,17 +709,63 @@ export default function PackingListEditorScreen() {
                       </Text>
                     </View>
                   ) : (
-                    section.items.map((item) => (
-                      <SwipeableItem
-                        key={item.id}
-                        item={item}
-                        listId={listId}
-                        sectionId={section.id}
-                        onToggle={() => handleToggleItem(section.id, item.id)}
-                        onDelete={() => handleDeleteItem(section.id, item.id)}
-                        onEdit={() => handleEditItem(section.id, item)}
-                      />
-                    ))
+                    section.items.map((item) =>
+                      isEditMode ? (
+                        <Pressable
+                          key={item.id}
+                          onPress={() => toggleSelectItem(section.id, item.id)}
+                          className="flex-row items-center px-4 py-3"
+                          style={{
+                            borderBottomWidth: 1,
+                            borderBottomColor: BORDER_SOFT,
+                          }}
+                        >
+                          <View
+                            className="w-6 h-6 rounded-full items-center justify-center mr-3"
+                            style={{
+                              borderWidth: 2,
+                              borderColor: selectedItems.has(`${section.id}:${item.id}`) ? RUST : BORDER_SOFT,
+                              backgroundColor: selectedItems.has(`${section.id}:${item.id}`) ? RUST : "transparent",
+                            }}
+                          >
+                            {selectedItems.has(`${section.id}:${item.id}`) && (
+                              <Ionicons name="checkmark" size={14} color="#FFF" />
+                            )}
+                          </View>
+                          <Text
+                            style={{
+                              fontFamily: "SourceSans3_400Regular",
+                              fontSize: 16,
+                              color: DEEP_FOREST,
+                              flex: 1,
+                            }}
+                          >
+                            {item.name}
+                          </Text>
+                          {item.quantity > 1 && (
+                            <Text
+                              style={{
+                                fontFamily: "SourceSans3_400Regular",
+                                fontSize: 13,
+                                color: GRANITE_GOLD,
+                              }}
+                            >
+                              x{item.quantity}
+                            </Text>
+                          )}
+                        </Pressable>
+                      ) : (
+                        <SwipeableItem
+                          key={item.id}
+                          item={item}
+                          listId={listId}
+                          sectionId={section.id}
+                          onToggle={() => handleToggleItem(section.id, item.id)}
+                          onDelete={() => handleDeleteItem(section.id, item.id)}
+                          onEdit={() => handleEditItem(section.id, item)}
+                        />
+                      )
+                    )
                   )}
                 </View>
               )}
@@ -900,6 +1036,76 @@ export default function PackingListEditorScreen() {
             recordModalDismissal();
           }}
         />
+
+        {/* Bulk Delete Confirmation Modal */}
+        <Modal visible={showDeleteConfirm} animationType="fade" transparent>
+          <Pressable
+            className="flex-1 items-center justify-center"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            onPress={() => setShowDeleteConfirm(false)}
+          >
+            <Pressable
+              className="mx-8 rounded-2xl p-6"
+              style={{ backgroundColor: PARCHMENT, width: "80%" }}
+              onPress={() => {}}
+            >
+              <Text
+                style={{
+                  fontFamily: "Raleway_700Bold",
+                  fontSize: 18,
+                  color: DEEP_FOREST,
+                  textAlign: "center",
+                  marginBottom: 8,
+                }}
+              >
+                Delete Items
+              </Text>
+              <Text
+                style={{
+                  fontFamily: "SourceSans3_400Regular",
+                  fontSize: 15,
+                  color: DEEP_FOREST,
+                  textAlign: "center",
+                  marginBottom: 20,
+                }}
+              >
+                {`Remove ${selectedItems.size} selected item${selectedItems.size !== 1 ? "s" : ""}? This cannot be undone.`}
+              </Text>
+              <View className="flex-row" style={{ gap: 12 }}>
+                <Pressable
+                  onPress={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-3 rounded-xl items-center"
+                  style={{ backgroundColor: BORDER_SOFT }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "SourceSans3_600SemiBold",
+                      fontSize: 15,
+                      color: DEEP_FOREST,
+                    }}
+                  >
+                    Cancel
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={confirmBulkDelete}
+                  className="flex-1 py-3 rounded-xl items-center"
+                  style={{ backgroundColor: RUST }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: "SourceSans3_600SemiBold",
+                      fontSize: 15,
+                      color: "#FFF",
+                    }}
+                  >
+                    Delete
+                  </Text>
+                </Pressable>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     </GestureHandlerRootView>
   );
