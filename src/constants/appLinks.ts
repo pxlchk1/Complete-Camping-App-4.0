@@ -6,7 +6,7 @@
 // App Store Links
 export const APP_STORE_ID = "6752673528";
 export const APP_STORE_SKU = "TLCAMP001";
-export const APP_STORE_LINK = `https://apps.apple.com/app/id${APP_STORE_ID}`;
+export const APP_STORE_LINK = `https://apps.apple.com/us/app/complete-camping-app/id${APP_STORE_ID}`;
 
 // Google Play Links (for future Android support)
 export const PLAY_STORE_PACKAGE = "com.tentandlantern.completecampingapp";
@@ -48,14 +48,14 @@ export const APP_SHORT_NAME = "Tent & Lantern";
  * Since deep links aren't configured on the domain, we direct users to the App Store
  * and include instructions to accept the invite within the app.
  */
-export function generateShareInviteMessage(inviterFirstName: string, inviteToken: string): string {
-  return `${inviterFirstName} invited you to join their campground on ${APP_NAME}! 🏕️\n\nDownload the app to accept:\n${APP_STORE_LINK}\n\nYour invite code: ${inviteToken.substring(0, 8)}...`;
+export function generateShareInviteMessage(inviterFirstName: string, _inviteToken: string): string {
+  return `${inviterFirstName} invited you to join their campground in ${APP_NAME}.\n\nTap to open and accept your invite.\n\nDon't have the app yet? Download it here:\n${APP_STORE_LINK}`;
 }
 
 /**
  * Generate the copyable invite link text
  * Includes App Store link since deep links aren't configured
  */
-export function getCopyableInviteText(inviterFirstName: string, inviteToken: string): string {
-  return `${inviterFirstName} wants you to join their campground on ${APP_NAME}! 🏕️\n\nDownload the app: ${APP_STORE_LINK}\n\nThen use invite code: ${inviteToken.substring(0, 8)}`;
+export function getCopyableInviteText(inviterFirstName: string, _inviteToken: string): string {
+  return `${inviterFirstName} invited you to join their campground in ${APP_NAME}.\n\nTap to open and accept your invite.\n\nDon't have the app yet? Download it here:\n${APP_STORE_LINK}`;
 }
