@@ -429,7 +429,7 @@ export default function FeedbackDetailScreen() {
               <TextInput
                 value={commentText}
                 onChangeText={setCommentText}
-                placeholder={currentUser ? "Share your thoughts..." : "Upgrade to Pro to comment..."}
+                placeholder={currentUser ? "Share your thoughts..." : "Log in or create an account to comment."}
                 placeholderTextColor={TEXT_MUTED}
                 multiline
                 numberOfLines={4}
