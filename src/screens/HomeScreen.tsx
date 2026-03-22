@@ -530,7 +530,8 @@ export default function HomeScreen() {
         announcementModal ||
         showEmailOptIn ||
         showAccountModal ||
-        showModal
+        showModal ||
+        showCampsitePrompt
       ) {
         return;
       }
@@ -544,7 +545,7 @@ export default function HomeScreen() {
 
     return () => clearTimeout(timer);
   }, [isAuthenticated, isGuest, canShowSessionNudge, markSessionUpsellShown,
-      showStayInLoopModal, adminTestModal, announcementModal, showEmailOptIn, showAccountModal, showModal]);
+      showStayInLoopModal, adminTestModal, announcementModal, showEmailOptIn, showAccountModal, showModal, showCampsitePrompt]);
 
   // Fetch a random featured photo on screen focus
   useFocusEffect(
