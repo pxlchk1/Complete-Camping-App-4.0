@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { View, Text, ScrollView, Pressable, ImageBackground, Image, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Pressable, ImageBackground, Image, ActivityIndicator, Modal } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -153,8 +153,74 @@ export default function HomeScreen() {
   const recordUpsellDismissal = useUpsellStore((s) => s.recordModalDismissal);
   const sessionNudgeChecked = useRef(false);
 
-  // Show notification opt-in modal for eligible users immediately after login
+  // First-login onboarding sequence state
+  // Steps: "idle" (not first-login), "notifications" (step 1), "campsite" (step 2), "done"
+  const firstLoginStep = useRef<"idle" | "notifications" | "campsite" | "done">("idle");
+  const [showCampsitePrompt, setShowCampsitePrompt] = useState(false);
+  const firstLoginChecked = useRef(false);
+
+  // First-login sequence: detect brand new user and orchestrate steps
   useEffect(() => {
+    if (firstLoginChecked.current) return;
+    if (!isAuthenticated || isGuest) return;
+    // hasSeenWelcomeHome is false only on the very first Home visit
+    if (hasSeenWelcomeHome) {
+      firstLoginStep.current = "idle";
+      return;
+    }
+
+    firstLoginChecked.current = true;
+    firstLoginStep.current = "notifications";
+
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+
+    let cancelled = false;
+
+    const startFirstLoginSequence = async () => {
+      try {
+        const eligibility = await checkNotificationModalEligibility(userId);
+        if (cancelled) return;
+
+        if (eligibility.isEligible && eligibility.cohort) {
+          trackModalEligible(eligibility.cohort);
+          setNotificationCohort(eligibility.cohort);
+          await recordModalShown(userId, eligibility.cohort);
+
+          setTimeout(() => {
+            if (!cancelled) {
+              trackModalShown(eligibility.cohort!);
+              setShowStayInLoopModal(true);
+            }
+          }, 300);
+        } else {
+          // Not eligible for notification ask — skip to campsite step
+          firstLoginStep.current = "campsite";
+          setTimeout(() => {
+            if (!cancelled) setShowCampsitePrompt(true);
+          }, 300);
+        }
+      } catch (error) {
+        console.error("[HomeScreen] First-login sequence error:", error);
+        // On error, skip to campsite step
+        firstLoginStep.current = "campsite";
+        setTimeout(() => {
+          if (!cancelled) setShowCampsitePrompt(true);
+        }, 300);
+      }
+    };
+
+    startFirstLoginSequence();
+
+    return () => { cancelled = true; };
+  }, [isAuthenticated, isGuest, hasSeenWelcomeHome]);
+
+  // Show notification opt-in modal for returning users (non-first-login)
+  // First-login users get this through the first-login sequence above instead
+  useEffect(() => {
+    // Skip if first-login sequence is handling this
+    if (firstLoginStep.current !== "idle") return;
+
     // Only proceed for authenticated non-guest users
     if (!isAuthenticated || isGuest) return;
     
@@ -591,8 +657,8 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-forest">
-      {/* Push Permission Soft Prompt - shows for new users and existing users who update */}
-      <PushPermissionPrompt />
+      {/* Push Permission Soft Prompt - suppressed during first-login onboarding sequence */}
+      <PushPermissionPrompt suppressed={firstLoginStep.current !== "idle" && firstLoginStep.current !== "done"} />
       
       <View className="flex-1" style={{ backgroundColor: PARCHMENT_BACKGROUND }}>
         {/* Welcome Hero Image - full bleed */}
@@ -1389,9 +1455,9 @@ export default function HomeScreen() {
         triggerKey={accountModalTriggerKey}
       />
 
-      {/* Onboarding Modal */}
+      {/* Onboarding Modal — suppressed during first-login sequence to avoid collision */}
       <OnboardingModal
-        visible={showModal}
+        visible={showModal && firstLoginStep.current === "idle"}
         tooltip={currentTooltip}
         onDismiss={dismissModal}
       />
@@ -1399,9 +1465,121 @@ export default function HomeScreen() {
       {/* Stay in the Loop Modal - shown once after first login */}
       <StayInLoopModal
         visible={showStayInLoopModal}
-        onDismiss={() => setShowStayInLoopModal(false)}
+        onDismiss={() => {
+          setShowStayInLoopModal(false);
+          // If this was step 1 of first-login sequence, advance to step 2
+          if (firstLoginStep.current === "notifications") {
+            firstLoginStep.current = "campsite";
+            setTimeout(() => setShowCampsitePrompt(true), 300);
+          }
+        }}
         cohort={notificationCohort}
       />
+
+      {/* First-Login Step 2: My Campsite Setup Prompt */}
+      <Modal
+        visible={showCampsitePrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowCampsitePrompt(false);
+          firstLoginStep.current = "done";
+        }}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }}>
+          <View
+            style={{
+              backgroundColor: CARD_BACKGROUND_LIGHT,
+              borderRadius: 20,
+              padding: 28,
+              marginHorizontal: 32,
+              maxWidth: 360,
+              width: "100%",
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                backgroundColor: EARTH_GREEN + "20",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Ionicons name="person-circle-outline" size={26} color={EARTH_GREEN} />
+            </View>
+            <Text
+              style={{
+                fontFamily: "Raleway_700Bold",
+                fontSize: 20,
+                color: TEXT_PRIMARY_STRONG,
+                textAlign: "center",
+                marginBottom: 8,
+              }}
+            >
+              {"Set up your My Campsite"}
+            </Text>
+            <Text
+              style={{
+                fontFamily: "SourceSans3_400Regular",
+                fontSize: 15,
+                color: TEXT_SECONDARY,
+                textAlign: "center",
+                lineHeight: 22,
+                marginBottom: 24,
+              }}
+            >
+              {"Add your photo, handle, and a few details so people can recognize you in the app."}
+            </Text>
+            <Pressable
+              onPress={() => {
+                safeHaptic();
+                setShowCampsitePrompt(false);
+                firstLoginStep.current = "done";
+                navigation.navigate("MyCampsite" as any);
+              }}
+              style={{
+                backgroundColor: DEEP_FOREST,
+                paddingVertical: 14,
+                borderRadius: 10,
+                alignItems: "center",
+                width: "100%",
+                marginBottom: 12,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: "SourceSans3_600SemiBold",
+                  fontSize: 15,
+                  color: "#FFFFFF",
+                }}
+              >
+                {"Go to My Campsite"}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setShowCampsitePrompt(false);
+                firstLoginStep.current = "done";
+              }}
+              style={{ paddingVertical: 10, alignItems: "center" }}
+            >
+              <Text
+                style={{
+                  fontFamily: "SourceSans3_400Regular",
+                  fontSize: 14,
+                  color: TEXT_SECONDARY,
+                }}
+              >
+                {"Maybe later"}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* Session Soft Upsell Nudge - once per session for eligible free users */}
       <UpsellModal

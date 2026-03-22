@@ -25,10 +25,13 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface PushPermissionPromptProps {
   onComplete?: (granted: boolean) => void;
+  /** When true, the prompt will not check or show — used during first-login sequence */
+  suppressed?: boolean;
 }
 
 export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
   onComplete,
+  suppressed = false,
 }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [visible, setVisible] = useState(false);
@@ -52,8 +55,13 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
   // Check if we should show the prompt when user changes
   useEffect(() => {
     const checkPrompt = async () => {
-      console.log("[PushPermissionPrompt] checkPrompt effect, user?.uid:", user?.uid, "hasChecked:", hasChecked);
+      console.log("[PushPermissionPrompt] checkPrompt effect, user?.uid:", user?.uid, "hasChecked:", hasChecked, "suppressed:", suppressed);
       
+      if (suppressed) {
+        console.log("[PushPermissionPrompt] Suppressed by first-login sequence, skipping");
+        return;
+      }
+
       if (!user?.uid) {
         console.log("[PushPermissionPrompt] No user.uid, skipping check");
         return;
@@ -81,7 +89,7 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
     };
 
     checkPrompt();
-  }, [user?.uid, hasChecked]);
+  }, [user?.uid, hasChecked, suppressed]);
 
   const handleEnableNotifications = async () => {
     if (!user?.uid || isRequesting) return;
