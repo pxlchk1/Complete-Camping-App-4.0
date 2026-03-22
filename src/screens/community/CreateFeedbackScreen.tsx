@@ -17,6 +17,9 @@ import { RootStackNavigationProp } from "../../navigation/types";
 import { FeedbackCategory } from "../../types/community";
 import {
   BORDER_SOFT,
+  DEEP_FOREST,
+  EARTH_GREEN,
+  PARCHMENT_SOFT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
@@ -240,21 +243,24 @@ export default function CreateFeedbackScreen() {
           </View>
 
           {/* Guidelines */}
-          <View className="rounded-xl p-4 border" style={{ backgroundColor: "#eff6ff", borderColor: "#93c5fd" }}>
-            <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: "#1e40af" }}>
-              Feedback Guidelines:
+          <View className="rounded-xl p-4 border" style={{ backgroundColor: PARCHMENT_SOFT, borderColor: BORDER_SOFT }}>
+            <View className="flex-row items-center mb-3">
+              <Ionicons name="information-circle-outline" size={18} color={DEEP_FOREST} />
+              <Text className="ml-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                Feedback Guidelines
+              </Text>
+            </View>
+            <Text className="mb-2" style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN, lineHeight: 20 }}>
+              {"\u2022  Be specific and clear"}
             </Text>
-            <Text className="mb-1" style={{ fontFamily: "SourceSans3_400Regular", color: "#1e40af" }}>
-              • Be specific and clear
+            <Text className="mb-2" style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN, lineHeight: 20 }}>
+              {"\u2022  Provide context and examples"}
             </Text>
-            <Text className="mb-1" style={{ fontFamily: "SourceSans3_400Regular", color: "#1e40af" }}>
-              • Provide context and examples
+            <Text className="mb-2" style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN, lineHeight: 20 }}>
+              {"\u2022  Be respectful and constructive"}
             </Text>
-            <Text className="mb-1" style={{ fontFamily: "SourceSans3_400Regular", color: "#1e40af" }}>
-              • Be respectful and constructive
-            </Text>
-            <Text style={{ fontFamily: "SourceSans3_400Regular", color: "#1e40af" }}>
-              • Check if similar feedback already exists
+            <Text style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN, lineHeight: 20 }}>
+              {"\u2022  Check if similar feedback already exists"}
             </Text>
           </View>
         {/* ...existing code... */}
