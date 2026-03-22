@@ -93,15 +93,19 @@ export default function AcceptInviteScreen() {
     } catch (error: any) {
       const msg: string = (error.message || "").toLowerCase();
 
-      // Detect already-member: invite was already accepted (status != pending)
-      if (msg.includes("already") || msg.includes("not-found") || msg.includes("invalid or expired")) {
-        // If the invite was already accepted by this user, treat as already_member.
-        // If it was accepted by someone else or truly expired, treat as invalid.
-        // The cloud function returns "Invalid or expired invite" for all non-pending tokens.
-        // We show the friendlier "already part" message only when we can't distinguish,
-        // since the most common case for a returning tap is the same user.
-        setState("already_member");
-      } else if (msg.includes("expired")) {
+      // "Invalid or expired invite" — token missing, expired, revoked, or already used
+      // "Invite has expired" — explicit expiration
+      // "not-found" — no matching pending invite
+      // All of these mean the invite is unavailable. We cannot confirm
+      // already-member status without a local membership lookup, so
+      // default to the unavailable state for safety.
+      if (
+        msg.includes("invalid or expired") ||
+        msg.includes("expired") ||
+        msg.includes("not-found") ||
+        msg.includes("already") ||
+        msg.includes("revoked")
+      ) {
         setState("invalid");
       } else {
         setState("error");
