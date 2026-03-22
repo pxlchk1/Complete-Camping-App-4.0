@@ -383,21 +383,6 @@ export const redeemCampgroundInvite = functions.https.onCall(
 
       const contactRef = await db.collection("campgroundContacts").add(contactData);
 
-      // Also add the inviter to the accepter's contacts (bidirectional)
-      const inviterDoc = await db.collection("users").doc(invite.inviterUid).get();
-      const inviterData = inviterDoc.exists ? inviterDoc.data() : {};
-      const inviterEmail = inviterData?.email || "";
-
-      await db.collection("campgroundContacts").add({
-        ownerId: context.auth.uid,
-        contactUserId: invite.inviterUid,
-        contactName: invite.inviterName,
-        contactEmail: inviterEmail,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        addedVia: "invite-accepted",
-        inviteId: inviteDoc.id,
-      });
-
       // Mark invite as accepted
       await inviteDoc.ref.update({
         status: "accepted",
@@ -528,24 +513,6 @@ export const onUserCreated = functions.auth.user().onCreate(async (user) => {
       functions.logger.info("Creating contact for inviter", {
         contactId: contactRef.id,
         ...contactData,
-      });
-
-      // Also add inviter to new user's contacts
-      const reverseContactRef = db.collection("campgroundContacts").doc();
-      const reverseContactData = {
-        ownerId: user.uid,
-        contactUserId: invite.inviterUid,
-        contactName: invite.inviterName,
-        contactEmail: "",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        addedVia: "invite-auto-accepted",
-        inviteId: inviteDoc.id,
-      };
-      batch.set(reverseContactRef, reverseContactData);
-
-      functions.logger.info("Creating reverse contact for new user", {
-        contactId: reverseContactRef.id,
-        ...reverseContactData,
       });
 
       // Mark invite as accepted
@@ -869,18 +836,6 @@ export const checkPendingInvitesOnLogin = functions.https.onCall(
           contactEmail: email,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           addedVia: "invite-login",
-          inviteId: inviteDoc.id,
-        });
-
-        // Also add inviter to user's contacts
-        const reverseContactRef = db.collection("campgroundContacts").doc();
-        batch.set(reverseContactRef, {
-          ownerId: userId,
-          contactUserId: invite.inviterUid,
-          contactName: invite.inviterName,
-          contactEmail: "",
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-          addedVia: "invite-login-accepted",
           inviteId: inviteDoc.id,
         });
 
