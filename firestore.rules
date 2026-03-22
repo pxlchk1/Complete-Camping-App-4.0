@@ -380,18 +380,18 @@ service cloud.firestore {
       allow update, delete: if isOwner() || canModerateContent();
     }
 
-    // Feedback - READ is public, WRITE requires Pro subscription
+    // Feedback - READ is public, WRITE requires signed-in user
     match /feedbackPosts/{id} {
       allow read: if true; // Public read - all users can view feedback
-      allow create: if isSubscribed() || isAdmin(); // Only Pro users can create feedback
-      allow update: if isSubscribed() || isAdmin(); // Only Pro users can update (for voting)
+      allow create: if isSignedIn(); // All logged-in users can create feedback
+      allow update: if isSignedIn(); // All logged-in users can update (for voting)
       // Owner, admin, or moderator can delete
       allow delete: if isOwner() || canModerateContent();
       
-      // Votes subcollection - requires Pro subscription
+      // Votes subcollection - requires signed-in user
       match /votes/{voterId} {
         allow read: if true;
-        allow create, update: if (isSubscribed() || isAdmin()) && request.auth.uid == voterId;
+        allow create, update: if isSignedIn() && request.auth.uid == voterId;
         allow delete: if isSignedIn() && request.auth.uid == voterId;
       }
     }
@@ -399,22 +399,22 @@ service cloud.firestore {
     // Feedback collection (alternate name used by some services)
     match /feedback/{id} {
       allow read: if true; // Public read
-      allow create: if isSubscribed() || isAdmin();
-      allow update: if isSubscribed() || isAdmin();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
       // Owner, admin, or moderator can delete
       allow delete: if isOwner() || canModerateContent();
       
-      // Votes subcollection - requires Pro subscription
+      // Votes subcollection - requires signed-in user
       match /votes/{voterId} {
         allow read: if true;
-        allow create, update: if (isSubscribed() || isAdmin()) && request.auth.uid == voterId;
+        allow create, update: if isSignedIn() && request.auth.uid == voterId;
         allow delete: if isSignedIn() && request.auth.uid == voterId;
       }
     }
 
     match /feedbackComments/{id} {
       allow read: if true; // Public read - all users can view comments
-      allow create: if isSubscribed() || isAdmin(); // Only subscribed users can comment
+      allow create: if isSignedIn(); // All logged-in users can comment
       // Owner, admin, or moderator can update/delete
       allow update, delete: if isOwner() || canModerateContent();
     }

@@ -86,7 +86,7 @@ export const onboardingTooltips: OnboardingTooltip[] = [
     id: 'feedback-intro',
     screenName: 'Feedback',
     title: 'ⓘ Feedback',
-    message: 'Tell us what\'s working, what\'s confusing, and what you want next. Feedback helps shape updates in order to help us make this the best app for this community. Some feedback perks or channels may be Pro-only.',
+    message: 'Tell us what\'s working, what\'s confusing, and what you want next. Feedback helps shape updates in order to help us make this the best app for this community.',    
     order: 1,
   },
   // FirstAidScreen
