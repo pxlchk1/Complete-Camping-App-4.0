@@ -26,6 +26,8 @@ import { usePackingStore, usePackingTemplates, usePackingActiveLists } from "../
 import { RootStackParamList } from "../navigation/types";
 import { requirePro } from "../utils/gating";
 import AccountRequiredModal from "../components/AccountRequiredModal";
+import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
+import { OnboardingModal } from "../components/OnboardingModal";
 
 type PlanTab = "trips" | "parks" | "weather" | "packing" | "meals";
 type PackingTabNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -45,6 +47,9 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
 
   // Gating modal state
   const [showAccountModal, setShowAccountModal] = useState(false);
+
+  // Screen onboarding tip (auto-shows on first visit only)
+  const { showModal, currentTooltip, dismissModal } = useScreenOnboarding("Packing");
 
   // Stats calculations (only for active lists, not templates)
   const stats = useMemo(() => {
@@ -453,6 +458,13 @@ export default function PackingTabScreenNew({ onTabChange }: PackingTabScreenPro
           navigation.navigate("Auth" as never);
         }}
         onMaybeLater={() => setShowAccountModal(false)}
+      />
+
+      {/* First-visit onboarding tip */}
+      <OnboardingModal
+        visible={showModal}
+        tooltip={currentTooltip}
+        onDismiss={dismissModal}
       />
     </View>
   );
