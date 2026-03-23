@@ -138,6 +138,14 @@ export default function AdminDashboardScreen() {
       screen: "AdminCommunications" as const,
       color: "#00897B",
     },
+    {
+      id: "analytics",
+      title: "Analytics",
+      subtitle: "Users, retention & paywall metrics",
+      icon: "bar-chart" as const,
+      screen: "AdminAnalytics" as const,
+      color: "#E65100",
+    },
   ];
 
   return (

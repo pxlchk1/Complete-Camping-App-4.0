@@ -82,6 +82,7 @@ import AdminPhotosScreen from "../screens/AdminPhotosScreen";
 import AdminContentScreen from "../screens/AdminContentScreen";
 import AdminGatingReportScreen from "../screens/admin/AdminGatingReportScreen";
 import AdminCommunicationsScreen from "../screens/AdminCommunicationsScreen";
+import AdminAnalyticsScreen from "../screens/AdminAnalyticsScreen";
 
 // Invite screens
 import AcceptInviteScreen from "../screens/AcceptInviteScreen";
@@ -293,6 +294,7 @@ export default function RootNavigator() {
       <Stack.Screen name="AdminContent" component={AdminContentScreen} />
       <Stack.Screen name="AdminGatingReport" component={AdminGatingReportScreen} />
       <Stack.Screen name="AdminCommunications" component={AdminCommunicationsScreen} />
+      <Stack.Screen name="AdminAnalytics" component={AdminAnalyticsScreen} />
     </Stack.Navigator>
     {user && <EmailVerificationGate />}
     </View>

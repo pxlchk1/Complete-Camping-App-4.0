@@ -121,6 +121,7 @@ export type RootStackParamList = {
   AdminBanned: undefined;
   AdminGatingReport: undefined;
   AdminCommunications: undefined;
+  AdminAnalytics: undefined;
 
   // Invitation
   AcceptInvitation: { invitationToken: string };
