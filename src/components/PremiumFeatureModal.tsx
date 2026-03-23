@@ -17,7 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { DEEP_FOREST } from "../constants/colors";
 
-type FeatureType = "packing" | "meals" | "photos";
+type FeatureType = "packing" | "meals" | "photos" | "customMeals";
 
 interface PremiumFeatureModalProps {
   visible: boolean;
@@ -26,7 +26,7 @@ interface PremiumFeatureModalProps {
   onDismiss: () => void;
 }
 
-const COPY: Record<FeatureType, { title: string; body: string }> = {
+const COPY: Record<FeatureType, { title: string; body: string; cta?: string }> = {
   packing: {
     title: "Go Pro",
     body: "Unlock the full camping toolkit with a 3-day free trial!",
@@ -38,6 +38,11 @@ const COPY: Record<FeatureType, { title: string; body: string }> = {
   photos: {
     title: "Go Pro",
     body: "Unlock unlimited photo posts with a 3-day free trial!",
+  },
+  customMeals: {
+    title: "Custom meals require Pro",
+    body: "You can still use meal ideas and grocery planning for this trip. Upgrade if you want to create and customize your own meals.",
+    cta: "See plans",
   },
 };
 
@@ -90,7 +95,7 @@ export default function PremiumFeatureModal({
 
           {/* Actions */}
           <View className="space-y-3">
-            {/* Primary: Go Premium */}
+            {/* Primary CTA */}
             <Pressable
               onPress={handleUpgrade}
               className="bg-forest rounded-xl px-4 py-3.5 items-center justify-center active:opacity-90"
@@ -99,17 +104,19 @@ export default function PremiumFeatureModal({
                 className="text-parchment font-semibold text-base"
                 style={{ fontFamily: "SourceSans3_600SemiBold" }}
               >
-                Start 3-Day Free Trial
+                {copy.cta || "Start 3-Day Free Trial"}
               </Text>
             </Pressable>
 
-            {/* Trial fine print */}
-            <Text
-              className="text-earthGreen/70 text-center text-xs"
-              style={{ fontFamily: "SourceSans3_400Regular" }}
-            >
-              After your free trial, your annual subscription begins. Cancel anytime.
-            </Text>
+            {/* Trial fine print — hidden for custom-meal variant */}
+            {featureType !== "customMeals" && (
+              <Text
+                className="text-earthGreen/70 text-center text-xs"
+                style={{ fontFamily: "SourceSans3_400Regular" }}
+              >
+                After your free trial, your annual subscription begins. Cancel anytime.
+              </Text>
+            )}
 
             {/* Secondary: Not now */}
             <Pressable

@@ -149,6 +149,7 @@ export default function MealPlanningScreen() {
   const canCustomize = isPremiumUser();
   const [canAccessMeals, setCanAccessMeals] = useState(true);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumModalType, setPremiumModalType] = useState<"meals" | "customMeals">("meals");
   const [accessChecked, setAccessChecked] = useState(false);
 
   // Check meal access on mount
@@ -278,6 +279,7 @@ export default function MealPlanningScreen() {
 
     // Gate: Premium required to add custom meals
     if (!canCustomize) {
+      setPremiumModalType("customMeals");
       setShowPremiumModal(true);
       return;
     }
@@ -384,6 +386,7 @@ export default function MealPlanningScreen() {
     // Gate: Premium required for suggestions and custom meals
     if (tab === "suggest" || tab === "custom") {
       if (!canCustomize) {
+        setPremiumModalType("customMeals");
         setShowPremiumModal(true);
         return;
       }
@@ -547,6 +550,7 @@ export default function MealPlanningScreen() {
   const handleSelectSuggestion = async (suggestion: MealSuggestion) => {
     // Gate: Premium required
     if (!canCustomize) {
+      setPremiumModalType("customMeals");
       setShowPremiumModal(true);
       return;
     }
@@ -558,6 +562,7 @@ export default function MealPlanningScreen() {
   const handleSheetCustomMeal = async (name: string, ingredients?: string[], notes?: string, saveToLibrary?: boolean) => {
     // Gate: Premium required
     if (!canCustomize) {
+      setPremiumModalType("customMeals");
       setShowPremiumModal(true);
       return;
     }
@@ -618,6 +623,7 @@ export default function MealPlanningScreen() {
   const handleOpenAutoFillPreview = () => {
     // Gate: Premium required
     if (!canCustomize) {
+      setPremiumModalType("customMeals");
       setShowPremiumModal(true);
       return;
     }
@@ -939,10 +945,10 @@ export default function MealPlanningScreen() {
             <Ionicons name="lock-closed" size={16} color="#B8860B" style={{ marginTop: 2 }} />
             <View className="flex-1 ml-2">
               <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 13, color: "#5D4E37" }}>
-                Customizing meal plans is Premium
+                Custom meals require Pro
               </Text>
               <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: "#7D6E57", marginTop: 2 }}>
-                You can still use the grocery checklist for this trip.
+                You can still use meal ideas and grocery planning for this trip.
               </Text>
             </View>
             <Pressable
@@ -951,7 +957,7 @@ export default function MealPlanningScreen() {
               style={{ backgroundColor: DEEP_FOREST }}
             >
               <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: PARCHMENT }}>
-                Go Premium
+                See plans
               </Text>
             </Pressable>
           </View>
@@ -1682,7 +1688,7 @@ export default function MealPlanningScreen() {
           setShowPremiumModal(false);
           navigation.navigate("Paywall", { triggerKey: "meal_customization" });
         }}
-        featureType="meals"
+        featureType={premiumModalType}
       />
 
       {/* Onboarding Modal */}
