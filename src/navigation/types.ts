@@ -126,6 +126,9 @@ export type RootStackParamList = {
   AcceptInvitation: { invitationToken: string };
   AcceptInvite: { token: string };
 
+  // Account deletion confirmation (deep link)
+  ConfirmDeleteAccount: { token: string };
+
   // Merit Badges
   MeritBadges: undefined;
   BadgeDetail: { badgeId: string };

@@ -55,6 +55,13 @@ const linking: LinkingOptions<RootStackParamList> = {
       AcceptInvitation: {
         path: 'invite/:invitationToken',
       },
+      // Account deletion confirmation from email
+      ConfirmDeleteAccount: {
+        path: 'delete-account',
+        parse: {
+          token: (token: string) => token,
+        },
+      },
     },
   },
 };

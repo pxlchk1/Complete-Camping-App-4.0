@@ -87,6 +87,9 @@ import AdminCommunicationsScreen from "../screens/AdminCommunicationsScreen";
 import AcceptInviteScreen from "../screens/AcceptInviteScreen";
 import AcceptInvitationScreen from "../screens/AcceptInvitationScreen";
 
+// Account deletion confirmation (deep link)
+import DeleteAccountConfirmScreen from "../screens/DeleteAccountConfirmScreen";
+
 // Merit Badges screens
 import MeritBadgesScreen from "../screens/MeritBadgesScreen";
 import BadgeDetailScreen from "../screens/BadgeDetailScreen";
@@ -197,6 +200,13 @@ export default function RootNavigator() {
         name="AcceptInvitation" 
         component={AcceptInvitationScreen} 
         options={{ headerShown: false, presentation: 'modal' }} 
+      />
+
+      {/* Confirm Account Deletion (from email deep link) */}
+      <Stack.Screen
+        name="ConfirmDeleteAccount"
+        component={DeleteAccountConfirmScreen}
+        options={{ headerShown: false, presentation: 'modal' }}
       />
 
       {/* Learning */}

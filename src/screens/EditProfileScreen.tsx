@@ -28,9 +28,10 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
-import { auth, db, storage } from "../config/firebase";
+import { auth, db, storage, functions } from "../config/firebase";
 import { doc, getDoc, updateDoc, setDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { deleteUser, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
+import { httpsCallable } from "firebase/functions";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useCurrentUser, useUserStore } from "../state/userStore";
 import { reserveHandle } from "../services/handleService";
@@ -235,6 +236,8 @@ export default function EditProfileScreen() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmEmail, setDeleteConfirmEmail] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [deleteRequestSent, setDeleteRequestSent] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [optOutNewsletter, setOptOutNewsletter] = useState(currentUser?.emailSubscribed === false);
   const [optOutNotifications, setOptOutNotifications] = useState(currentUser?.notificationsEnabled === false);
   
@@ -482,50 +485,22 @@ export default function EditProfileScreen() {
 
     // Verify email matches
     if (deleteConfirmEmail.toLowerCase() !== user.email.toLowerCase()) {
-      Alert.alert("Email Mismatch", "The email you entered doesn't match your account email.");
+      setDeleteError("That email doesn't match your account.");
       return;
     }
 
-    Alert.alert(
-      "Final Confirmation",
-      "This action is irreversible. All your data will be permanently deleted. Are you absolutely sure?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete Forever",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setDeleting(true);
-
-              // Delete user profile from Firestore
-              await deleteDoc(doc(db, "profiles", user.uid));
-
-              // Delete the user account
-              await deleteUser(user);
-
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert("Account Deleted", "Your account has been permanently deleted.");
-              
-              setShowDeleteConfirm(false);
-            } catch (error: any) {
-              console.error("[EditProfile] Error deleting account:", error);
-              
-              if (error.code === "auth/requires-recent-login") {
-                Alert.alert(
-                  "Re-authentication Required",
-                  "For security, please sign out and sign back in, then try again."
-                );
-              } else {
-                Alert.alert("Delete Failed", "Unable to delete account. Please contact support.");
-              }
-            } finally {
-              setDeleting(false);
-            }
-          },
-        },
-      ]
-    );
+    setDeleteError("");
+    setDeleting(true);
+    try {
+      const requestDeletion = httpsCallable(functions, "requestAccountDeletion");
+      await requestDeletion();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setDeleteRequestSent(true);
+    } catch {
+      setDeleteError("Something went wrong. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const handleManageSubscription = async () => {
@@ -1258,7 +1233,12 @@ export default function EditProfileScreen() {
         visible={showDeleteConfirm}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowDeleteConfirm(false)}
+        onRequestClose={() => {
+          setShowDeleteConfirm(false);
+          setDeleteRequestSent(false);
+          setDeleteConfirmEmail("");
+          setDeleteError("");
+        }}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -1266,120 +1246,174 @@ export default function EditProfileScreen() {
         >
           <Pressable
             className="flex-1 bg-black/50 items-center justify-end pb-8 px-4"
-            onPress={() => setShowDeleteConfirm(false)}
+            onPress={() => {
+              setShowDeleteConfirm(false);
+              setDeleteRequestSent(false);
+              setDeleteConfirmEmail("");
+              setDeleteError("");
+            }}
           >
             <Pressable
               className="rounded-2xl p-6 w-full max-w-sm"
               style={{ backgroundColor: PARCHMENT, maxHeight: "85%" }}
               onPress={(e) => e.stopPropagation()}
             >
-              <ScrollView 
+              <ScrollView
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 bounces={false}
               >
-                <View className="items-center mb-4">
-                  <View
-                    className="w-16 h-16 rounded-full items-center justify-center mb-3"
-                    style={{ backgroundColor: "#dc2626" }}
-                  >
-                    <Ionicons name="warning" size={32} color={PARCHMENT} />
-                  </View>
-                  <Text
-                    className="text-xl mb-2"
-                    style={{ fontFamily: "Raleway_700Bold", color: "#dc2626" }}
-                  >
-                    Delete Account
-                  </Text>
-                  <Text
-                    className="text-center mb-3"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, lineHeight: 20 }}
-                  >
-                    This action cannot be undone. All your data, trips, and preferences will be permanently deleted. For that reason, we require 2 factor authentication.
-                  </Text>
-                </View>
-
-                <View className="mb-4">
-                  <Text
-                    className="mb-2"
-                    style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
-                  >
-                    Enter your email to confirm:
-                  </Text>
-                  <TextInput
-                    value={deleteConfirmEmail}
-                    onChangeText={setDeleteConfirmEmail}
-                    placeholder={auth.currentUser?.email || "your@email.com"}
-                    placeholderTextColor={TEXT_MUTED}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    className="px-4 py-3 rounded-xl border"
-                    style={{
-                      backgroundColor: PARCHMENT,
-                      borderColor: "#dc2626",
-                      fontFamily: "SourceSans3_400Regular",
-                      color: TEXT_PRIMARY_STRONG,
-                    }}
-                  />
-                  <Text
-                    className="mt-3"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 13, lineHeight: 18 }}
-                  >
-                    Look for a confirmation email at this address and follow instructions from there.
-                  </Text>
-                </View>
-
-                <View 
-                  className="mb-4 p-3 rounded-xl" 
-                  style={{ backgroundColor: CARD_BACKGROUND_LIGHT }}
-                >
-                  <Text
-                    className="text-center"
-                    style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 13, lineHeight: 18 }}
-                  >
-                    Happy trails! We&apos;ll miss you and hope to see you at the campground in the future. Come back anytime.
-                  </Text>
-                </View>
-
-                <View className="flex-row gap-3">
-                  <Pressable
-                    onPress={() => {
-                      setShowDeleteConfirm(false);
-                      setDeleteConfirmEmail("");
-                    }}
-                    className="flex-1 rounded-xl py-3 border active:opacity-70"
-                    style={{ borderColor: BORDER_SOFT }}
-                  >
-                    <Text
-                      className="text-center"
-                      style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                {deleteRequestSent ? (
+                  /* ---- Success: email sent ---- */
+                  <View className="items-center">
+                    <View
+                      className="w-16 h-16 rounded-full items-center justify-center mb-3"
+                      style={{ backgroundColor: DEEP_FOREST }}
                     >
-                      Cancel
+                      <Ionicons name="mail" size={28} color={PARCHMENT} />
+                    </View>
+                    <Text
+                      className="text-xl mb-2"
+                      style={{ fontFamily: "Raleway_700Bold", color: TEXT_PRIMARY_STRONG }}
+                    >
+                      Check your email
                     </Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={handleDeleteAccount}
-                    disabled={deleting || !deleteConfirmEmail}
-                    className="flex-1 rounded-xl py-3 active:opacity-70"
-                    style={{ 
-                      backgroundColor: deleteConfirmEmail ? "#dc2626" : "#f87171",
-                      opacity: deleting ? 0.5 : 1,
-                    }}
-                  >
-                    {deleting ? (
-                      <ActivityIndicator size="small" color={PARCHMENT} />
-                    ) : (
+                    <Text
+                      className="text-center mb-5"
+                      style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, lineHeight: 22 }}
+                    >
+                      {"Check your email for a link to finish deleting your account."}
+                    </Text>
+                    <Pressable
+                      onPress={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteRequestSent(false);
+                        setDeleteConfirmEmail("");
+                      }}
+                      className="rounded-xl py-3 px-8 active:opacity-70"
+                      style={{ backgroundColor: DEEP_FOREST }}
+                    >
                       <Text
                         className="text-center"
                         style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
                       >
-                        Delete
+                        Done
                       </Text>
-                    )}
-                  </Pressable>
-                </View>
+                    </Pressable>
+                  </View>
+                ) : (
+                  /* ---- Request form ---- */
+                  <>
+                    <View className="items-center mb-4">
+                      <View
+                        className="w-16 h-16 rounded-full items-center justify-center mb-3"
+                        style={{ backgroundColor: "#dc2626" }}
+                      >
+                        <Ionicons name="warning" size={32} color={PARCHMENT} />
+                      </View>
+                      <Text
+                        className="text-xl mb-2"
+                        style={{ fontFamily: "Raleway_700Bold", color: "#dc2626" }}
+                      >
+                        Delete your account
+                      </Text>
+                      <Text
+                        className="text-center mb-3"
+                        style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, lineHeight: 20 }}
+                      >
+                        {"Enter your email address to confirm. We'll send you a link to finish deleting your account."}
+                      </Text>
+                    </View>
+
+                    <View className="mb-4">
+                      <Text
+                        className="mb-2"
+                        style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                      >
+                        Email address
+                      </Text>
+                      <TextInput
+                        value={deleteConfirmEmail}
+                        onChangeText={(text) => {
+                          setDeleteConfirmEmail(text);
+                          setDeleteError("");
+                        }}
+                        placeholder={auth.currentUser?.email || "your@email.com"}
+                        placeholderTextColor={TEXT_MUTED}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        className="px-4 py-3 rounded-xl border"
+                        style={{
+                          backgroundColor: PARCHMENT,
+                          borderColor: deleteError ? "#dc2626" : BORDER_SOFT,
+                          fontFamily: "SourceSans3_400Regular",
+                          color: TEXT_PRIMARY_STRONG,
+                        }}
+                      />
+                      {deleteError !== "" && (
+                        <Text
+                          className="mt-2"
+                          style={{ fontFamily: "SourceSans3_400Regular", color: "#dc2626", fontSize: 13 }}
+                        >
+                          {deleteError}
+                        </Text>
+                      )}
+                    </View>
+
+                    <View
+                      className="mb-4 p-3 rounded-xl"
+                      style={{ backgroundColor: CARD_BACKGROUND_LIGHT }}
+                    >
+                      <Text
+                        className="text-center"
+                        style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY, fontSize: 13, lineHeight: 18 }}
+                      >
+                        This action is permanent. All your data, trips, and preferences will be deleted.
+                      </Text>
+                    </View>
+
+                    <View className="flex-row gap-3">
+                      <Pressable
+                        onPress={() => {
+                          setShowDeleteConfirm(false);
+                          setDeleteConfirmEmail("");
+                          setDeleteError("");
+                        }}
+                        className="flex-1 rounded-xl py-3 border active:opacity-70"
+                        style={{ borderColor: BORDER_SOFT }}
+                      >
+                        <Text
+                          className="text-center"
+                          style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
+                        >
+                          Cancel
+                        </Text>
+                      </Pressable>
+
+                      <Pressable
+                        onPress={handleDeleteAccount}
+                        disabled={deleting || !deleteConfirmEmail}
+                        className="flex-1 rounded-xl py-3 active:opacity-70"
+                        style={{
+                          backgroundColor: deleteConfirmEmail ? "#dc2626" : "#f87171",
+                          opacity: deleting ? 0.5 : 1,
+                        }}
+                      >
+                        {deleting ? (
+                          <ActivityIndicator size="small" color={PARCHMENT} />
+                        ) : (
+                          <Text
+                            className="text-center"
+                            style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+                          >
+                            Send link
+                          </Text>
+                        )}
+                      </Pressable>
+                    </View>
+                  </>
+                )}
               </ScrollView>
             </Pressable>
           </Pressable>

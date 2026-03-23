@@ -3459,3 +3459,198 @@ export const sendgridSubscribeToDrip = functions
       }
     }
   );
+
+// ============================================
+// ACCOUNT DELETION — REQUEST + CONFIRM
+// ============================================
+
+/**
+ * requestAccountDeletion
+ *
+ * Authenticated callable. Creates a short-lived deletion token in
+ * Firestore and sends a confirmation email via SendGrid.
+ */
+export const requestAccountDeletion = functions
+  .runWith({ secrets: [sendgridApiKey, sendgridFromEmail] })
+  .https.onCall(async (_data: unknown, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Must be signed in to request account deletion"
+      );
+    }
+
+    const uid = context.auth.uid;
+
+    // Look up the user in Auth to get their email
+    let userRecord: admin.auth.UserRecord;
+    try {
+      userRecord = await admin.auth().getUser(uid);
+    } catch {
+      throw new functions.https.HttpsError("not-found", "User not found");
+    }
+
+    const email = userRecord.email;
+    if (!email) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Account has no email address"
+      );
+    }
+
+    const db = admin.firestore();
+    const token = crypto.randomBytes(32).toString("hex");
+    const now = admin.firestore.Timestamp.now();
+    const expiresAt = admin.firestore.Timestamp.fromMillis(
+      now.toMillis() + 60 * 60 * 1000 // 1 hour
+    );
+
+    // Store the deletion request
+    await db.collection("deletionRequests").doc(token).set({
+      uid,
+      email,
+      createdAt: now,
+      expiresAt,
+      status: "pending",
+    });
+
+    // Build the confirmation link
+    const confirmLink = `https://tentandlantern.com/delete-account?token=${token}`;
+
+    // Send the email via SendGrid
+    sgMail.setApiKey(sendgridApiKey.value());
+
+    const msg = {
+      to: email,
+      from: {
+        email: sendgridFromEmail.value() || "noreply@tentandlantern.com",
+        name: "Complete Camping App",
+      },
+      subject: "Confirm account deletion",
+      html: [
+        "<div style=\"font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px\">",
+        "<h2 style=\"color:#485952\">Confirm account deletion</h2>",
+        "<p>We received a request to delete your Complete Camping App account. If this was you, tap the button below to finish the process.</p>",
+        `<p style="margin:24px 0"><a href="${confirmLink}" style="display:inline-block;padding:12px 32px;background:#dc2626;color:#fff;text-decoration:none;border-radius:8px;font-weight:600">Delete my account</a></p>`,
+        "<p style=\"color:#666;font-size:13px\">This link expires in 1 hour. If you did not request this, you can safely ignore this email.</p>",
+        "<p style=\"color:#999;font-size:12px;margin-top:32px\">&copy; " + new Date().getFullYear() + " Tent &amp; Lantern</p>",
+        "</div>",
+      ].join(""),
+    };
+
+    try {
+      await sgMail.send(msg);
+    } catch (err) {
+      functions.logger.error("requestAccountDeletion: SendGrid failed", {
+        uid,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      // Clean up the orphaned token
+      await db.collection("deletionRequests").doc(token).delete();
+      throw new functions.https.HttpsError(
+        "internal",
+        "Failed to send confirmation email"
+      );
+    }
+
+    functions.logger.info("requestAccountDeletion: email sent", { uid, email });
+    return { success: true };
+  });
+
+/**
+ * confirmAccountDeletion
+ *
+ * Authenticated callable. Validates a deletion token and, when
+ * action === "execute", permanently deletes the user via Admin SDK
+ * (which fires the existing onUserDeleted cleanup trigger).
+ *
+ * Two-phase usage from the client:
+ *   1. { token, action: "validate" } — checks the token is valid
+ *   2. { token, action: "execute" }  — performs the actual deletion
+ */
+export const confirmAccountDeletion = functions.https.onCall(
+  async (
+    data: { token: string; action: "validate" | "execute" },
+    context
+  ) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Must be signed in"
+      );
+    }
+
+    const { token, action } = data;
+
+    if (!token || !action) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "token and action are required"
+      );
+    }
+
+    const uid = context.auth.uid;
+    const db = admin.firestore();
+    const ref = db.collection("deletionRequests").doc(token);
+    const snap = await ref.get();
+
+    if (!snap.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "This deletion link is no longer valid."
+      );
+    }
+
+    const req = snap.data()!;
+
+    // User-bound: token must belong to the signed-in user
+    if (req.uid !== uid) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "This deletion link is no longer valid."
+      );
+    }
+
+    // Expiry check
+    const now = admin.firestore.Timestamp.now();
+    if (req.expiresAt.toMillis() < now.toMillis()) {
+      await ref.update({ status: "expired" });
+      throw new functions.https.HttpsError(
+        "deadline-exceeded",
+        "This deletion link is no longer valid."
+      );
+    }
+
+    // Must still be pending
+    if (req.status !== "pending") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "This deletion link is no longer valid."
+      );
+    }
+
+    // Phase 1: validate only
+    if (action === "validate") {
+      return { valid: true, email: req.email };
+    }
+
+    // Phase 2: execute deletion
+    try {
+      await ref.update({ status: "completed" });
+      await admin.auth().deleteUser(uid);
+      functions.logger.info("confirmAccountDeletion: user deleted", { uid });
+      return { deleted: true };
+    } catch (err) {
+      functions.logger.error("confirmAccountDeletion: deletion failed", {
+        uid,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      // Roll back status so the user can retry
+      await ref.update({ status: "pending" });
+      throw new functions.https.HttpsError(
+        "internal",
+        "Failed to delete account. Please try again."
+      );
+    }
+  }
+);
