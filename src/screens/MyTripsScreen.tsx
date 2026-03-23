@@ -4,7 +4,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from "@react-navigation/native";
 import { useTrips, Trip, useDeleteTrip, useTripsStore } from "../state/tripsStore";
-import { useUserStore } from "../state/userStore";
 import { usePlanTabStore, PlanTab } from "../state/planTabStore";
 import { usePackingStore } from "../state/packingStore";
 import { useUserStatus } from "../utils/authHelper";
@@ -80,8 +79,6 @@ export default function MyTripsScreen() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
-  const hasUsedFreeTrip = useUserStore((s) => s.hasUsedFreeTrip);
-  const setHasUsedFreeTrip = useUserStore((s) => s.setHasUsedFreeTrip);
   const [menuTrip, setMenuTrip] = useState<Trip | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Trip | null>(null);
   const deleteTrip = useDeleteTrip();
@@ -319,7 +316,6 @@ export default function MyTripsScreen() {
                 await setFreePremiumTripId(currentUser.id, tripId);
               }
             }
-            if (isFree) setHasUsedFreeTrip(true);
             setShowCreate(false);
           }}
         />
@@ -537,7 +533,6 @@ export default function MyTripsScreen() {
               await setFreePremiumTripId(currentUser.id, tripId);
             }
           }
-          if (isFree) setHasUsedFreeTrip(true);
           setShowCreate(false);
         }}
       />

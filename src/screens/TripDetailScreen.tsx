@@ -1026,15 +1026,18 @@ export default function TripDetailScreen() {
         finePrint={UPSELL_COPY.completion.finePrint}
         onPrimaryPress={() => {
           setShowCompletionModal(false);
+          setHasUsedFreeTrip(true);
           trackUpsellCtaClicked("completion");
           navigation.navigate("Paywall", { triggerKey: "completion_upsell" });
         }}
         onSecondaryPress={() => {
           setShowCompletionModal(false);
+          setHasUsedFreeTrip(true);
           recordModalDismissal();
         }}
         onDismiss={() => {
           setShowCompletionModal(false);
+          setHasUsedFreeTrip(true);
           recordModalDismissal();
         }}
       />
