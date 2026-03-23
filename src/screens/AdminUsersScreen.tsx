@@ -48,6 +48,7 @@ interface User {
   email: string;
   displayName: string;
   handle?: string;
+  firstName?: string;
   banned?: boolean;
   createdAt: any;
   lastLoginAt?: any;
@@ -353,7 +354,16 @@ export default function AdminUsersScreen() {
                   </View>
                 </View>
 
-                {/* Row 2: Email */}
+                {/* Row 2: First name */}
+                <Text
+                  className="text-sm mb-1"
+                  style={{ fontFamily: "SourceSans3_500Medium", fontSize: 13, color: TEXT_PRIMARY_STRONG }}
+                  numberOfLines={1}
+                >
+                  {user.firstName || "First name not set"}
+                </Text>
+
+                {/* Row 3: Email */}
                 <Text
                   className="text-sm mb-2"
                   style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
