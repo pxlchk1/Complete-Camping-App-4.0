@@ -721,15 +721,15 @@ export default function PackingListEditorScreen() {
                           }}
                         >
                           <View
-                            className="w-6 h-6 rounded-full items-center justify-center mr-3"
+                            className="w-6 h-6 rounded items-center justify-center mr-3"
                             style={{
                               borderWidth: 2,
-                              borderColor: selectedItems.has(`${section.id}:${item.id}`) ? RUST : BORDER_SOFT,
-                              backgroundColor: selectedItems.has(`${section.id}:${item.id}`) ? RUST : "transparent",
+                              borderColor: selectedItems.has(`${section.id}:${item.id}`) ? DEEP_FOREST : BORDER_SOFT,
+                              backgroundColor: selectedItems.has(`${section.id}:${item.id}`) ? DEEP_FOREST : "transparent",
                             }}
                           >
                             {selectedItems.has(`${section.id}:${item.id}`) && (
-                              <Ionicons name="checkmark" size={14} color="#FFF" />
+                              <Ionicons name="checkmark" size={14} color={PARCHMENT} />
                             )}
                           </View>
                           <Text
