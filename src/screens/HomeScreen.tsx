@@ -498,6 +498,11 @@ export default function HomeScreen() {
           console.log("[HomeScreen] Showing email opt-in modal");
           // Small delay to let other modals settle
           setTimeout(() => {
+            // Block during first-login sequence (ref is always current)
+            if (firstLoginStep.current === "notifications" || firstLoginStep.current === "campsite") {
+              console.log("[HomeScreen] Email opt-in deferred — first-login sequence in progress");
+              return;
+            }
             // Only show if no other modals are active
             if (!adminTestModal && !announcementModal && !showAccountModal) {
               setShowEmailOptIn(true);
@@ -523,6 +528,10 @@ export default function HomeScreen() {
     sessionNudgeChecked.current = true;
 
     const timer = setTimeout(() => {
+      // Block during first-login sequence (ref is always current, avoids stale closures)
+      if (firstLoginStep.current === "notifications" || firstLoginStep.current === "campsite") {
+        return;
+      }
       // Don't stack on top of other active modals
       if (
         showStayInLoopModal ||
