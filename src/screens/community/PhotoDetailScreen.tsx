@@ -85,57 +85,23 @@ export default function PhotoDetailScreen() {
 
   // Content action handlers
   const handleDeletePhoto = async () => {
-    Alert.alert(
-      "Delete Photo",
-      "Are you sure you want to delete this photo? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deletePhotoPost(postId!);
-            if (result.success) {
-              Alert.alert("Success", "Photo deleted successfully");
-              navigation.goBack();
-            } else {
-              console.error("[PhotoDetail] Delete failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to delete photo"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deletePhotoPost(postId!);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[PhotoDetail] Delete failed:", result.error);
+      throw new Error(result.error?.message || "Failed to delete photo");
+    }
   };
 
   const handleRemovePhoto = async () => {
-    Alert.alert(
-      "Remove Photo",
-      "Are you sure you want to remove this photo? This moderation action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deletePhotoPost(postId!);
-            if (result.success) {
-              Alert.alert("Success", "Photo removed successfully");
-              navigation.goBack();
-            } else {
-              console.error("[PhotoDetail] Remove failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to remove photo"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deletePhotoPost(postId!);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[PhotoDetail] Remove failed:", result.error);
+      throw new Error(result.error?.message || "Failed to remove photo");
+    }
   };
 
   // Edit handler - only for new format posts and owners

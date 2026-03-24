@@ -79,57 +79,23 @@ export default function QuestionDetailScreen() {
 
   // Content action handlers
   const handleDeleteQuestion = async () => {
-    Alert.alert(
-      "Delete Question",
-      "Are you sure you want to delete this question? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deleteQuestion(questionId);
-            if (result.success) {
-              Alert.alert("Success", "Question deleted successfully");
-              navigation.goBack();
-            } else {
-              console.error("[QuestionDetail] Delete failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to delete question"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deleteQuestion(questionId);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[QuestionDetail] Delete failed:", result.error);
+      throw new Error(result.error?.message || "Failed to delete question");
+    }
   };
 
   const handleRemoveQuestion = async () => {
-    Alert.alert(
-      "Remove Question",
-      "Are you sure you want to remove this question? This moderation action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deleteQuestion(questionId);
-            if (result.success) {
-              Alert.alert("Success", "Question removed successfully");
-              navigation.goBack();
-            } else {
-              console.error("[QuestionDetail] Remove failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to remove question"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deleteQuestion(questionId);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[QuestionDetail] Remove failed:", result.error);
+      throw new Error(result.error?.message || "Failed to remove question");
+    }
   };
 
   useEffect(() => {

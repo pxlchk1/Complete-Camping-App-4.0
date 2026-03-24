@@ -99,58 +99,24 @@ export default function GearReviewDetailScreen() {
 
   const handleDeleteReview = async () => {
     if (!reviewId) return;
-    Alert.alert(
-      "Delete Review",
-      "Are you sure you want to delete this review? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deleteGearReview(reviewId);
-            if (result.success) {
-              Alert.alert("Success", "Review deleted successfully");
-              navigation.goBack();
-            } else {
-              console.error("[GearReviewDetail] Delete failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to delete review"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deleteGearReview(reviewId);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[GearReviewDetail] Delete failed:", result.error);
+      throw new Error(result.error?.message || "Failed to delete review");
+    }
   };
 
   const handleRemoveReview = async () => {
     if (!reviewId) return;
-    Alert.alert(
-      "Remove Review",
-      "Are you sure you want to remove this review? This moderation action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deleteGearReview(reviewId);
-            if (result.success) {
-              Alert.alert("Success", "Review removed successfully");
-              navigation.goBack();
-            } else {
-              console.error("[GearReviewDetail] Remove failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to remove review"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deleteGearReview(reviewId);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[GearReviewDetail] Remove failed:", result.error);
+      throw new Error(result.error?.message || "Failed to remove review");
+    }
   };
 
   const loadReview = useCallback(async () => {

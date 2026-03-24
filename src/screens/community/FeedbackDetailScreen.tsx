@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import ModalHeader from "../../components/ModalHeader";
@@ -67,57 +67,23 @@ export default function FeedbackDetailScreen() {
 
   // Content action handlers for the post
   const handleDeletePost = async () => {
-    Alert.alert(
-      "Delete Feedback",
-      "Are you sure you want to delete this feedback? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deleteFeedback(postId);
-            if (result.success) {
-              Alert.alert("Success", "Feedback deleted successfully");
-              navigation.goBack();
-            } else {
-              console.error("[FeedbackDetail] Delete failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to delete feedback"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deleteFeedback(postId);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[FeedbackDetail] Delete failed:", result.error);
+      throw new Error(result.error?.message || "Failed to delete feedback");
+    }
   };
 
   const handleRemovePost = async () => {
-    Alert.alert(
-      "Remove Feedback",
-      "Are you sure you want to remove this feedback? This moderation action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deleteFeedback(postId);
-            if (result.success) {
-              Alert.alert("Success", "Feedback removed successfully");
-              navigation.goBack();
-            } else {
-              console.error("[FeedbackDetail] Remove failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to remove feedback"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deleteFeedback(postId);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[FeedbackDetail] Remove failed:", result.error);
+      throw new Error(result.error?.message || "Failed to remove feedback");
+    }
   };
 
   useEffect(() => {

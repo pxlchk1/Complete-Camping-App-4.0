@@ -73,57 +73,23 @@ export default function TipDetailScreen() {
 
   // Content action handlers
   const handleDeleteTip = async () => {
-    Alert.alert(
-      "Delete Tip",
-      "Are you sure you want to delete this tip? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deleteTip(tipId);
-            if (result.success) {
-              Alert.alert("Success", "Tip deleted successfully");
-              navigation.goBack();
-            } else {
-              console.error("[TipDetail] Delete failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to delete tip"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deleteTip(tipId);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[TipDetail] Delete failed:", result.error);
+      throw new Error(result.error?.message || "Failed to delete tip");
+    }
   };
 
   const handleRemoveTip = async () => {
-    Alert.alert(
-      "Remove Tip",
-      "Are you sure you want to remove this tip? This moderation action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const result = await deleteTip(tipId);
-            if (result.success) {
-              Alert.alert("Success", "Tip removed successfully");
-              navigation.goBack();
-            } else {
-              console.error("[TipDetail] Remove failed:", result.error);
-              Alert.alert(
-                "Error",
-                result.error?.message || "Failed to remove tip"
-              );
-            }
-          },
-        },
-      ]
-    );
+    const result = await deleteTip(tipId);
+    if (result.success) {
+      navigation.goBack();
+    } else {
+      console.error("[TipDetail] Remove failed:", result.error);
+      throw new Error(result.error?.message || "Failed to remove tip");
+    }
   };
 
   const loadTip = async () => {
