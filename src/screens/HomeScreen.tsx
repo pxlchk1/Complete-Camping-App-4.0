@@ -1530,7 +1530,7 @@ export default function HomeScreen() {
                 marginBottom: 8,
               }}
             >
-              {"Set up your My Campsite"}
+              {"Set up My Campsite"}
             </Text>
             <Text
               style={{
@@ -1542,7 +1542,7 @@ export default function HomeScreen() {
                 marginBottom: 24,
               }}
             >
-              {"Add your photo, handle, and a few details so people can recognize you in the app."}
+              {"Add your name, handle, and a few details so people can recognize you, and so your camping profile feels like yours from the start."}
             </Text>
             <Pressable
               onPress={() => {
@@ -1567,7 +1567,7 @@ export default function HomeScreen() {
                   color: "#FFFFFF",
                 }}
               >
-                {"Go to My Campsite"}
+                {"Set Up My Campsite"}
               </Text>
             </Pressable>
             <Pressable
@@ -1584,7 +1584,7 @@ export default function HomeScreen() {
                   color: TEXT_SECONDARY,
                 }}
               >
-                {"Maybe later"}
+                {"Maybe Later"}
               </Text>
             </Pressable>
           </View>

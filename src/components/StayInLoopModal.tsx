@@ -86,7 +86,7 @@ export default function StayInLoopModal({
 
       // Announce modal for screen readers
       AccessibilityInfo.announceForAccessibility(
-        "Get trail alerts modal. Turn on notifications to receive weather updates and trip reminders."
+        "Stay in the loop. Get helpful reminders for upcoming trips, weather changes, and updates that matter to your camping plans."
       );
     }
   }, [visible]);
@@ -311,46 +311,15 @@ export default function StayInLoopModal({
               style={styles.title}
               accessibilityRole="header"
             >
-              Get trail alerts
+              Stay in the loop
             </Text>
           </View>
 
           {/* Body content */}
           <View style={styles.body}>
             <Text style={styles.bodyText}>
-              Know about weather changes, trip reminders, and important trail updates at the right time.
+              Get helpful reminders for upcoming trips, weather changes, and updates that matter to your camping plans.
             </Text>
-
-            {/* Feature bullet points */}
-            <View style={styles.bulletList}>
-              <View style={styles.bulletItem}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={EARTH_GREEN}
-                  accessibilityElementsHidden={true}
-                />
-                <Text style={styles.bulletText}>Weather changes before you go</Text>
-              </View>
-              <View style={styles.bulletItem}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={EARTH_GREEN}
-                  accessibilityElementsHidden={true}
-                />
-                <Text style={styles.bulletText}>Trip prep reminders</Text>
-              </View>
-              <View style={styles.bulletItem}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color={EARTH_GREEN}
-                  accessibilityElementsHidden={true}
-                />
-                <Text style={styles.bulletText}>Important trail and safety alerts</Text>
-              </View>
-            </View>
 
             {/* Warning if notifications blocked at OS level */}
             {pushDeniedByOS && (
@@ -404,7 +373,7 @@ export default function StayInLoopModal({
               accessibilityHint="Dismisses modal without enabling notifications"
               accessibilityState={{ disabled: loading }}
             >
-              <Text style={styles.tertiaryButtonText}>Not now</Text>
+              <Text style={styles.tertiaryButtonText}>Not Now</Text>
             </Pressable>
           </View>
         </View>
