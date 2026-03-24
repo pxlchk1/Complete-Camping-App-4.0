@@ -54,6 +54,8 @@ interface User {
   lastLoginAt?: any;
   lastActiveAt?: any;
   membershipTier?: string;
+  subscriptionStatus?: string;
+  subscriptionProvider?: string;
   isPro?: boolean;
 }
 
@@ -210,7 +212,7 @@ export default function AdminUsersScreen() {
     if (user.membershipTier === "isModerator") {
       return { label: "MOD", color: "#FFFFFF", bg: "#0369A1" };
     }
-    if (user.isPro || user.membershipTier === "pro") {
+    if (user.isPro || user.membershipTier === "subscribed" || user.membershipTier === "pro" || user.subscriptionStatus === "active") {
       return { label: "PRO", color: "#15803D", bg: "#DCFCE7" };
     }
     return { label: "FREE", color: "#B45309", bg: "#FEF3C7" };

@@ -37,6 +37,14 @@ import {
 // Test email recipient (SAFE: only sends to this address)
 const TEST_EMAIL_RECIPIENT = "alana@alanawaters.com";
 
+/** Extract actionable error message from Firebase callable/Firestore errors.
+ *  Prefers .message (has CF detail) over .code (vague like "functions/internal"). */
+const extractCallableError = (error: any): string => {
+  if (error?.message && typeof error.message === "string") return error.message;
+  if (error?.code && typeof error.code === "string") return error.code;
+  return "Unknown error";
+};
+
 type ChannelTab = "push" | "modal" | "email";
 
 type CtaMode = "url" | "subscription";
@@ -473,7 +481,7 @@ export default function AdminCommunicationsScreen() {
       console.error("[Communications] Failed to send test push:", error);
       Alert.alert(
         "Error",
-        `Failed to send test push: ${error.message || "Unknown error"}`,
+        `Failed to send test push: ${extractCallableError(error)}`,
         [{ text: "OK" }]
       );
     } finally {
@@ -517,7 +525,7 @@ export default function AdminCommunicationsScreen() {
       console.error("[Communications] Failed to create test modal:", error);
       Alert.alert(
         "Error",
-        `Failed to create test modal: ${error.code || error.message || "Unknown error"}`,
+        `Failed to create test modal: ${extractCallableError(error)}`,
         [{ text: "OK" }]
       );
     } finally {
@@ -564,7 +572,7 @@ export default function AdminCommunicationsScreen() {
       console.error("[Communications] Failed to send test email:", error);
       Alert.alert(
         "Error",
-        `Failed to send test email: ${error.code || error.message || "Unknown error"}`,
+        `Failed to send test email: ${extractCallableError(error)}`,
         [{ text: "OK" }]
       );
     } finally {
@@ -646,7 +654,7 @@ export default function AdminCommunicationsScreen() {
       }
     } catch (error) {
       console.error("[Communications] Publish email error:", error);
-      Alert.alert("Error", error instanceof Error ? error.message : "Failed to publish campaign");
+      Alert.alert("Error", extractCallableError(error));
     } finally {
       setIsSending(false);
     }
@@ -690,7 +698,7 @@ export default function AdminCommunicationsScreen() {
       }
     } catch (error) {
       console.error("[Communications] Publish push error:", error);
-      Alert.alert("Error", error instanceof Error ? error.message : "Failed to publish push");
+      Alert.alert("Error", extractCallableError(error));
     } finally {
       setIsSending(false);
     }
@@ -731,7 +739,7 @@ export default function AdminCommunicationsScreen() {
       }
     } catch (error) {
       console.error("[Communications] Publish modal error:", error);
-      Alert.alert("Error", error instanceof Error ? error.message : "Failed to publish modal");
+      Alert.alert("Error", extractCallableError(error));
     } finally {
       setIsSending(false);
     }
