@@ -136,53 +136,41 @@ export default function EmailOptInCard({
         { merge: true }
       );
 
-      // Step 3: Call Cloud Function to add to SendGrid
-      const functions = getFunctions();
-      const sendgridSubscribeToDrip = httpsCallable<
-        {
-          email: string;
-          firstName: string;
-          userId: string;
-          source: string;
-        },
-        { success: boolean; message: string; contactId?: string }
-      >(functions, "sendgridSubscribeToDrip");
+      // Step 3: Call Cloud Function to add to SendGrid drip list
+      // This is a best-effort enhancement — core subscription (Steps 1-2) already succeeded
+      try {
+        const functions = getFunctions();
+        const sendgridSubscribeToDrip = httpsCallable<
+          {
+            email: string;
+            firstName: string;
+            userId: string;
+            source: string;
+          },
+          { success: boolean; message: string; contactId?: string }
+        >(functions, "sendgridSubscribeToDrip");
 
-      const result = await sendgridSubscribeToDrip({
-        email: normalizedEmail,
-        firstName: trimmedFirstName,
-        userId: user.uid,
-        source: "app_optin",
-      });
-
-      if (result.data.success) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        onOptInComplete?.();
-      } else {
-        throw new Error(result.data.message || "Failed to subscribe");
+        await sendgridSubscribeToDrip({
+          email: normalizedEmail,
+          firstName: trimmedFirstName,
+          userId: user.uid,
+          source: "app_optin",
+        });
+      } catch (dripErr) {
+        // SendGrid drip enrollment failed but core subscription succeeded
+        // Do not revert Firestore — user IS subscribed
+        console.error("[EmailOptInCard] SendGrid drip enrollment failed (non-fatal):", dripErr);
       }
+
+      // Core subscription succeeded regardless of drip enrollment
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      onOptInComplete?.();
     } catch (err) {
       console.error("[EmailOptInCard] Error subscribing:", err);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
-      // Revert Firestore changes on error
-      try {
-        const user = auth.currentUser;
-        if (user) {
-          const userRef = doc(db, "users", user.uid);
-          await updateDoc(userRef, {
-            emailSubscribed: false,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      } catch (revertErr) {
-        console.error("[EmailOptInCard] Error reverting:", revertErr);
-      }
-
       setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again."
+        "Something went wrong. Please try again."
       );
     } finally {
       setIsSubmitting(false);

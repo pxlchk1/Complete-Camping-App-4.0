@@ -2610,6 +2610,9 @@ export const sendAdminTestPush = functions.https.onCall(
         failureCount,
       };
     } catch (error) {
+      if (error instanceof functions.https.HttpsError) {
+        throw error;
+      }
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
       functions.logger.error("Failed to send admin test push", {
         adminUid: callerUid,
@@ -2751,6 +2754,9 @@ export const sendAdminTestEmail = functions
 
         return { success: true, message: `Test email sent to ${data.toEmail}` };
       } catch (error) {
+        if (error instanceof functions.https.HttpsError) {
+          throw error;
+        }
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         functions.logger.error("Failed to send admin test email", {
           adminUid: callerUid,
@@ -3441,6 +3447,9 @@ export const sendgridSubscribeToDrip = functions
           jobId: jobId || undefined,
         };
       } catch (error) {
+        if (error instanceof functions.https.HttpsError) {
+          throw error;
+        }
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
         const errorDetails = error instanceof Error ? error.stack : String(error);
         
@@ -3451,7 +3460,6 @@ export const sendgridSubscribeToDrip = functions
           details: errorDetails,
         });
 
-        // Do NOT update Firestore as subscribed on error
         throw new functions.https.HttpsError(
           "internal",
           `Failed to subscribe: ${errorMessage}`

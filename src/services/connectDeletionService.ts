@@ -64,7 +64,7 @@ export async function canUserDeleteContent(
 
     const data = docSnap.data();
     // Check multiple possible owner field names
-    const ownerId = data[ownerField] || data.userId || data.authorId || data.ownerUid;
+    const ownerId = data[ownerField] || data.userId || data.createdByUserId || data.authorId || data.ownerUid;
     const isOwner = ownerId === user.uid;
 
     // Get user profile to check admin status (check both profiles and users collections)
@@ -85,9 +85,7 @@ export async function canUserDeleteContent(
       // Ignore errors fetching user doc
     }
     
-    // Check admin status from either collection OR by email
-    const emailIsAdmin = user.email?.toLowerCase() === "alana@tentandlantern.com";
-    
+    // Check admin status from either collection
     const isAdmin = !!(
       (profileData && (
         profileData.isAdmin === true ||
@@ -100,8 +98,7 @@ export async function canUserDeleteContent(
         userData.role === "admin" ||
         userData.role === "administrator" ||
         userData.membershipTier === "isAdmin"
-      )) ||
-      emailIsAdmin
+      ))
     );
 
     return {
@@ -145,18 +142,14 @@ export async function deleteConnectContent(
   try {
     // Check permissions first
     const { canDelete, isOwner, isAdmin } = await canUserDeleteContent(collectionName, docId, ownerField);
-    
-    // Direct email check for primary admin as fallback
-    const isEmailAdmin = user.email?.toLowerCase() === "alana@tentandlantern.com";
-    const finalCanDelete = canDelete || isEmailAdmin;
 
-    if (!finalCanDelete) {
-      console.error(`${logPrefix} Error: Permission denied`);
+    if (!canDelete) {
+      console.error(`${logPrefix} Error: Permission denied`, { isOwner, isAdmin, uid: user.uid });
       return {
         success: false,
         contentId: docId,
         contentType: collectionName,
-        error: { code: "permission-denied", message: "You don't have permission to delete this content" },
+        error: { code: "permission-denied", message: `Permission denied (owner: ${isOwner}, admin: ${isAdmin})` },
       };
     }
 
@@ -278,11 +271,11 @@ export async function deleteGearReview(reviewId: string): Promise<DeleteResult> 
  * Delete a feedback post
  */
 export async function deleteFeedback(feedbackId: string): Promise<DeleteResult> {
-  // Try feedbackPosts first, then feedback (legacy)
-  let result = await deleteConnectContent("feedbackPosts", feedbackId, "userId");
+  // Try feedbackPosts first (owner field is createdByUserId), then feedback (legacy)
+  let result = await deleteConnectContent("feedbackPosts", feedbackId, "createdByUserId");
   
   if (!result.success && result.error?.message?.includes("not found")) {
-    result = await deleteConnectContent("feedback", feedbackId, "userId");
+    result = await deleteConnectContent("feedback", feedbackId, "createdByUserId");
   }
 
   return result;

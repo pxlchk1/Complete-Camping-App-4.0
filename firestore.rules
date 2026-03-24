@@ -9,7 +9,10 @@ service cloud.firestore {
     }
 
     function isOwner() {
-      return isSignedIn() && request.auth.uid == resource.data.userId;
+      return isSignedIn() && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.uid == resource.data.createdByUserId
+      );
     }
 
     // Check if user is owner using ownerUid field (for photos/stories)
@@ -452,6 +455,12 @@ service cloud.firestore {
       allow read: if isSignedIn() && request.auth.uid == resource.data.ownerId;
       allow create: if isSignedIn() && request.auth.uid == request.resource.data.ownerId;
       allow update, delete: if isSignedIn() && request.auth.uid == resource.data.ownerId;
+    }
+
+    // Admin Test Modals (used by admin communications screen)
+    match /adminTestModals/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && isAdmin() && request.auth.uid == userId;
     }
 
     // Email Subscribers
