@@ -3662,3 +3662,286 @@ export const confirmAccountDeletion = functions.https.onCall(
     }
   }
 );
+
+// ============================================
+// ACCOUNT PROVISIONING
+// ============================================
+
+/**
+ * provisionNewAccount
+ *
+ * Single backend-controlled entry point for new account provisioning.
+ * Uses Admin SDK so Firestore security rules are bypassed — no client
+ * scatter-writes needed.
+ *
+ * Idempotent: safe to call more than once for the same uid.
+ *   - Existing docs are NOT overwritten (merge-only for missing fields).
+ *   - Handle ownership is validated per-uid.
+ *   - Returns success if provisioning is already complete.
+ *
+ * Required payload: email, displayName, handle
+ * Optional payload: photoURL
+ */
+export const provisionNewAccount = functions.https.onCall(
+  async (
+    data: {
+      email: string;
+      displayName: string;
+      handle: string;
+      photoURL?: string | null;
+    },
+    context
+  ) => {
+    // 1. Require authenticated caller
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Must be authenticated to provision an account."
+      );
+    }
+
+    const uid = context.auth.uid;
+    const { email, displayName, handle, photoURL } = data;
+
+    functions.logger.info("provisionNewAccount: start", {
+      uid,
+      stage: "validate",
+    });
+
+    // 2. Validate required fields
+    if (!email || typeof email !== "string" || !email.trim()) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Missing required field: email"
+      );
+    }
+    if (!displayName || typeof displayName !== "string" || !displayName.trim()) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Missing required field: displayName"
+      );
+    }
+    if (!handle || typeof handle !== "string" || !handle.trim()) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Missing required field: handle"
+      );
+    }
+
+    // 3. Validate handle format (3-20 chars, lowercase alphanum + underscore, no leading _)
+    const normalizedHandle = handle.trim().toLowerCase();
+    if (
+      normalizedHandle.length < 3 ||
+      normalizedHandle.length > 20 ||
+      !/^[a-z0-9_]+$/.test(normalizedHandle) ||
+      normalizedHandle.startsWith("_") ||
+      normalizedHandle === "anonymous" ||
+      normalizedHandle === "user"
+    ) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Invalid handle format. Must be 3-20 characters, lowercase letters/numbers/underscores, cannot start with underscore."
+      );
+    }
+
+    const dbRef = admin.firestore();
+    const emailNormalized = email.trim().toLowerCase();
+    const firstName = displayName.trim().split(" ")[0] || displayName.trim();
+    const now = admin.firestore.FieldValue.serverTimestamp();
+
+    try {
+      // ---- Step A: Reserve handle (transaction for atomicity) ----
+      functions.logger.info("provisionNewAccount: reserveHandle", {
+        uid,
+        stage: "handleReserve",
+        handle: normalizedHandle,
+      });
+
+      await dbRef.runTransaction(async (tx) => {
+        const handleRef = dbRef.doc(`userHandlesIndex/${normalizedHandle}`);
+        const handleSnap = await tx.get(handleRef);
+
+        if (handleSnap.exists) {
+          const existingOwner = handleSnap.data()?.userId;
+          if (existingOwner && existingOwner !== uid) {
+            // Handle belongs to a different user — abort
+            throw new functions.https.HttpsError(
+              "already-exists",
+              "HANDLE_TAKEN"
+            );
+          }
+          // Same uid already owns it — idempotent, skip write
+        } else {
+          // Reserve the handle
+          tx.set(handleRef, {
+            userId: uid,
+            createdAt: now,
+            isPlaceholder: false,
+          });
+        }
+      });
+
+      // ---- Step B: Create/merge users/{uid} ----
+      functions.logger.info("provisionNewAccount: ensureUserDoc", {
+        uid,
+        stage: "userDoc",
+        targetPath: `users/${uid}`,
+      });
+
+      const userRef = dbRef.doc(`users/${uid}`);
+      const userSnap = await userRef.get();
+
+      if (!userSnap.exists) {
+        await userRef.set({
+          email: emailNormalized,
+          displayName: displayName.trim(),
+          handle: normalizedHandle,
+          photoURL: photoURL || null,
+          firstName,
+          hasSeenWelcomeHome: false,
+          createdAt: now,
+          updatedAt: now,
+          notificationsEnabled: true,
+          emailSubscribed: true,
+        });
+      } else {
+        // Doc may exist from a partial prior attempt.
+        // Always set canonical signup fields; merge-preserve user-set fields.
+        await userRef.set({
+          email: emailNormalized,
+          displayName: displayName.trim(),
+          handle: normalizedHandle,
+          firstName,
+          updatedAt: now,
+        }, { merge: true });
+      }
+
+      // ---- Step C: Create/merge profiles/{uid} ----
+      functions.logger.info("provisionNewAccount: ensureProfileDoc", {
+        uid,
+        stage: "profileDoc",
+        targetPath: `profiles/${uid}`,
+      });
+
+      const profileRef = dbRef.doc(`profiles/${uid}`);
+      const profileSnap = await profileRef.get();
+
+      if (!profileSnap.exists) {
+        await profileRef.set({
+          email: emailNormalized,
+          displayName: displayName.trim(),
+          handle: normalizedHandle,
+          photoURL: photoURL || null,
+          avatarUrl: photoURL || null,
+          backgroundUrl: null,
+          coverPhotoURL: null,
+          bio: null,
+          location: null,
+          campingStyle: null,
+          joinedAt: now,
+          createdAt: now,
+          updatedAt: now,
+          role: "user",
+          stats: {
+            tripsCount: 0,
+            tipsCount: 0,
+            gearReviewsCount: 0,
+            questionsCount: 0,
+            photosCount: 0,
+          },
+        });
+      } else {
+        // Doc may exist from App.tsx safety-net race (placeholder values).
+        // Always set canonical signup fields; merge-preserve user-set fields.
+        await profileRef.set({
+          email: emailNormalized,
+          displayName: displayName.trim(),
+          handle: normalizedHandle,
+          updatedAt: now,
+        }, { merge: true });
+      }
+
+      // ---- Step D: Create userEmailIndex/{email} ----
+      functions.logger.info("provisionNewAccount: ensureEmailIndex", {
+        uid,
+        stage: "emailIndex",
+        targetPath: `userEmailIndex/${emailNormalized}`,
+      });
+
+      if (emailNormalized) {
+        const emailRef = dbRef.doc(`userEmailIndex/${emailNormalized}`);
+        const emailSnap = await emailRef.get();
+
+        if (emailSnap.exists) {
+          const existingUserId = emailSnap.data()?.userId;
+          if (existingUserId && existingUserId !== uid) {
+            throw new functions.https.HttpsError(
+              "already-exists",
+              "EMAIL_IN_USE"
+            );
+          }
+          // Same uid — idempotent, skip
+        } else {
+          await emailRef.set({
+            userId: uid,
+            email: emailNormalized,
+            createdAt: now,
+          });
+        }
+      }
+
+      // ---- Step E: Create emailSubscribers/{uid} (optional, non-blocking) ----
+      try {
+        const subRef = dbRef.doc(`emailSubscribers/${uid}`);
+        const subSnap = await subRef.get();
+        if (!subSnap.exists) {
+          await subRef.set({
+            emailAddress: emailNormalized,
+            firstname: firstName,
+            subscribedAt: now,
+            subscriptionStatus: "subscribed",
+          });
+        }
+      } catch (subErr) {
+        functions.logger.warn("provisionNewAccount: emailSubscriber non-critical failure", {
+          uid,
+          error: subErr instanceof Error ? subErr.message : String(subErr),
+        });
+      }
+
+      functions.logger.info("provisionNewAccount: complete", {
+        uid,
+        stage: "done",
+        handle: normalizedHandle,
+      });
+
+      return {
+        success: true,
+        uid,
+        handle: normalizedHandle,
+        email: emailNormalized,
+      };
+    } catch (err) {
+      // Re-throw typed HttpsErrors as-is
+      if (err instanceof functions.https.HttpsError) {
+        functions.logger.warn("provisionNewAccount: typed error", {
+          uid,
+          code: err.code,
+          message: err.message,
+        });
+        throw err;
+      }
+
+      functions.logger.error("provisionNewAccount: unexpected error", {
+        uid,
+        error: err instanceof Error ? err.message : String(err),
+        code: (err as any)?.code,
+      });
+
+      throw new functions.https.HttpsError(
+        "internal",
+        "Account provisioning failed. Please try again."
+      );
+    }
+  }
+);
