@@ -145,21 +145,19 @@ export default function App() {
           // This is only a safety net for edge cases (e.g., Apple Sign In session restore).
           // CRITICAL: Do NOT include subscription fields (membershipTier, subscriptionStatus, etc.)
           // as Firestore rules block them on create.
+          // Safety net: ensure a minimal profile doc exists.
+          // CRITICAL: Do NOT include displayName or handle here — those are
+          // canonical identity fields written ONLY by the provisionNewAccount CF.
+          // Using merge:true so this never overwrites CF-written identity data.
           const userRef = doc(db, "profiles", firebaseUser.uid);
           const userSnap = await getDoc(userRef);
           if (!userSnap.exists()) {
-            // Create with minimum safe fields only - NO subscription fields
             const email = firebaseUser.email || "";
-            const displayName = firebaseUser.displayName || "Camper";
             const photoURL = firebaseUser.photoURL || "";
             await setDoc(userRef, {
               email,
-              displayName,
               photoURL,
-              handle: "", // Optionally generate a unique handle here
               role: "user",
-              // NOTE: membershipTier is OMITTED - blocked by Firestore rules on create
-              // The app treats missing membershipTier as "free" tier
               isBanned: false,
               notificationsEnabled: true,
               emailSubscribed: false,
@@ -167,8 +165,8 @@ export default function App() {
               showUsernamePublicly: true,
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
-            });
-            console.log(`[App] Created Firestore user profile for uid: ${firebaseUser.uid}`);
+            }, { merge: true });
+            console.log(`[App] Created safety-net profile for uid: ${firebaseUser.uid}`);
           }
         } catch (error) {
           console.error("[App] Failed to identify user in RevenueCat or create profile:", error);

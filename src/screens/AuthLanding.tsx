@@ -5,7 +5,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 import { OAuthProvider, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, fetchSignInMethodsForEmail, linkWithCredential, sendEmailVerification } from "firebase/auth";
 import { auth, db } from "../config/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { useAuthStore } from "../state/authStore";
 import { useUserStore } from "../state/userStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -260,11 +260,54 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
         throw new Error("No current user");
       }
 
+      let profileHandle = userData?.handle || "";
+      let profileDisplayName = userData?.displayName || "";
+
+      // Detect placeholder identity (from App.tsx safety-net race or old bug)
+      const isPlaceholderIdentity = (
+        !profileHandle ||
+        !profileDisplayName ||
+        profileDisplayName === "Camper" ||
+        profileDisplayName === "User" ||
+        profileDisplayName === "Happy Camper" ||
+        profileDisplayName === "Anonymous User"
+      );
+
+      // Repair damaged profile from users/{uid} canonical source
+      if (isPlaceholderIdentity) {
+        try {
+          const usersDoc = await getDoc(doc(db, "users", userId));
+          const usersData = usersDoc.data();
+          if (usersData) {
+            if (usersData.handle && usersData.handle !== "user") {
+              profileHandle = usersData.handle;
+            }
+            if (usersData.displayName && usersData.displayName !== "Camper" && usersData.displayName !== "User") {
+              profileDisplayName = usersData.displayName;
+            }
+
+            // Merge repairs back into profiles/{uid} — permanent fix for this user
+            const repairs: Record<string, any> = {};
+            if (profileHandle && profileHandle !== (userData?.handle || "")) repairs.handle = profileHandle;
+            if (profileDisplayName && profileDisplayName !== (userData?.displayName || "")) repairs.displayName = profileDisplayName;
+            if (usersData.firstName && !userData?.firstName) repairs.firstName = usersData.firstName;
+
+            if (Object.keys(repairs).length > 0) {
+              repairs.updatedAt = serverTimestamp();
+              await setDoc(doc(db, "profiles", userId), repairs, { merge: true });
+              if (__DEV__) console.log("🔧 [AuthLanding] Repaired profile identity:", Object.keys(repairs));
+            }
+          }
+        } catch (repairErr) {
+          if (__DEV__) console.warn("🔧 [AuthLanding] Identity repair failed (non-blocking):", repairErr);
+        }
+      }
+
       const userProfile = {
         id: userId,
         email: firebaseUser.email || "",
-        handle: userData?.handle || "user",
-        displayName: userData?.displayName || "User",
+        handle: profileHandle || "user",
+        displayName: profileDisplayName || "User",
         avatarUrl: userData?.avatarUrl || firebaseUser.photoURL || undefined,
         createdAt: userData?.joinedAt || new Date().toISOString(),
       };
@@ -277,8 +320,8 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
       const userStoreData = {
         id: userId,
         email: firebaseUser.email || "",
-        handle: userData?.handle || "user",
-        displayName: userData?.displayName || "User",
+        handle: profileHandle || "user",
+        displayName: profileDisplayName || "User",
         photoURL: userData?.avatarUrl || firebaseUser.photoURL,
         coverPhotoURL: userData?.backgroundUrl,
         about: userData?.about,
@@ -478,54 +521,10 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
 
       const firebaseUser = userCredential.user;
 
-      // Load user profile from Firestore
-      const userDoc = await getDoc(doc(db, "profiles", firebaseUser.uid));
-      const userData = userDoc.data();
-
-      const userProfile = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email || email.trim(),
-        handle: userData?.handle || firebaseUser.displayName || "user",
-        displayName: userData?.displayName || firebaseUser.displayName || "User",
-        avatarUrl: userData?.photoURL || firebaseUser.photoURL || undefined,
-        createdAt: userData?.createdAt || new Date().toISOString(),
-      };
-
-      if (__DEV__) console.log("🔐 [AuthLanding - Email] User Profile:", JSON.stringify(userProfile, null, 2));
-      if (__DEV__) console.log("🔐 [AuthLanding - Email] Firebase User Data:", JSON.stringify(userData, null, 2));
-
-      setUser(userProfile);
-      
-      // Also update userStore for components that use it (like HomeScreen)
-      const userStoreData = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email || email.trim(),
-        handle: userData?.handle || firebaseUser.displayName || "user",
-        displayName: userData?.displayName || firebaseUser.displayName || "User",
-        photoURL: userData?.avatarUrl || firebaseUser.photoURL,
-        coverPhotoURL: userData?.backgroundUrl,
-        about: userData?.about,
-        favoriteCampingStyle: userData?.favoriteCampingStyle,
-        favoriteGear: userData?.favoriteGear,
-        role: userData?.role || "user",
-        membershipTier: userData?.membershipTier || "freeMember",
-        isBanned: false,
-        createdAt: userData?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      if (__DEV__) console.log("🔐 [AuthLanding - Email] Setting userStore:", JSON.stringify(userStoreData, null, 2));
-      setCurrentUser(userStoreData);
-      
-      // Identify user in RevenueCat to sync subscription status
-      try {
-        await identifyUser(firebaseUser.uid);
-        if (__DEV__) console.log("🔐 [AuthLanding - Email] RevenueCat user identified:", firebaseUser.uid);
-      } catch (rcError) {
-        if (__DEV__) console.warn("🔐 [AuthLanding - Email] RevenueCat identify failed (non-blocking):", rcError);
-      }
-      
-      navigation.navigate("HomeTabs");
+      // Use canonical loadUserProfile for both signup and signin.
+      // This reads the profile, repairs placeholder identity if needed,
+      // sets both stores, and navigates to HomeTabs.
+      await loadUserProfile(firebaseUser.uid);
     } catch (error: any) {
       if (__DEV__) console.error("Email Auth Error:", error);
       if (__DEV__) console.error("Email Auth Error Code:", error.code);
