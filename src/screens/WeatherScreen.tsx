@@ -673,7 +673,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
             </View>
 
             {/* Trips with Locations */}
-            {trips.filter((t) => t.coordinates?.latitude && t.coordinates?.longitude).length > 0 && (
+            {trips.filter((t) => tripHasLocation(t)).length > 0 && (
               <View style={{ width: "100%", marginTop: spacing.lg }}>
                 <Text
                   style={{
@@ -688,17 +688,19 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                   Or select from your trips
                 </Text>
                 {trips
-                  .filter((t) => t.coordinates?.latitude && t.coordinates?.longitude)
+                  .filter((t) => tripHasLocation(t))
                   .slice(0, 5)
-                  .map((trip) => (
+                  .map((trip) => {
+                    const tripLoc = getTripLocation(trip);
+                    return (
                     <Pressable
                       key={trip.id}
                       onPress={() => {
-                        if (trip.coordinates) {
+                        if (tripLoc) {
                           setSelectedLocation({
-                            name: trip.locationName || trip.name,
-                            latitude: trip.coordinates.latitude,
-                            longitude: trip.coordinates.longitude,
+                            name: tripLoc.name,
+                            latitude: tripLoc.latitude,
+                            longitude: tripLoc.longitude,
                           });
                           setShowLocationPicker(false);
                         }
@@ -727,7 +729,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                         >
                           {trip.name}
                         </Text>
-                        {trip.locationName && (
+                        {(tripLoc?.name || trip.locationName) && (
                           <Text
                             style={{
                               fontFamily: fonts.bodyRegular,
@@ -736,13 +738,13 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                             }}
                             numberOfLines={1}
                           >
-                            {trip.locationName}
+                            {tripLoc?.name || trip.locationName}
                           </Text>
                         )}
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={EARTH_GREEN} />
                     </Pressable>
-                  ))}
+                  );})}
               </View>
             )}
           </View>
@@ -1269,15 +1271,17 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     style={({ pressed }) => ({
                       backgroundColor: hasWeather 
                         ? (pressed ? "rgba(69, 117, 86, 0.9)" : EARTH_GREEN)
-                        : (pressed ? "rgba(69, 117, 86, 0.15)" : "rgba(69, 117, 86, 0.08)"),
+                        : (pressed ? CARD_BACKGROUND_LIGHT : "#FFFFFF"),
                       borderRadius: radius.md,
-                      padding: spacing.md,
+                      paddingVertical: 14,
+                      paddingHorizontal: spacing.md,
                       marginBottom: spacing.sm,
-                      borderWidth: hasWeather ? 0 : 2,
-                      borderColor: EARTH_GREEN,
+                      borderWidth: 1,
+                      borderColor: hasWeather ? EARTH_GREEN : BORDER_SOFT,
                       flexDirection: "row",
                       alignItems: "center",
                       justifyContent: "space-between",
+                      minHeight: 56,
                     })}
                   >
                     <View style={{ flex: 1 }}>
@@ -1315,20 +1319,20 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     <View style={{ 
                       flexDirection: "row", 
                       alignItems: "center",
-                      backgroundColor: hasWeather ? "rgba(255, 255, 255, 0.2)" : EARTH_GREEN,
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 6,
+                      backgroundColor: hasWeather ? "rgba(255, 255, 255, 0.2)" : DEEP_FOREST,
+                      paddingHorizontal: 14,
+                      paddingVertical: 8,
+                      borderRadius: 8,
                     }}>
                       <Text style={{ 
                         fontFamily: fonts.displaySemibold, 
-                        fontSize: fontSizes.xs, 
-                        color: PARCHMENT,
+                        fontSize: fontSizes.sm, 
+                        color: "#FFFFFF",
                         marginRight: 4,
                       }}>
                         {hasWeather ? "Update" : "Add"}
                       </Text>
-                      <Ionicons name="chevron-forward" size={14} color={PARCHMENT} />
+                      <Ionicons name="chevron-forward" size={14} color="#FFFFFF" />
                     </View>
                   </Pressable>
                 );})
