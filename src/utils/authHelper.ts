@@ -113,6 +113,8 @@ export const requireEmailVerification = async (
           text: "Resend Email",
           onPress: async () => {
             try {
+              // Reload user to ensure fresh state before sending verification
+              await user.reload();
               await sendEmailVerification(user);
               Alert.alert(
                 "Verification Email Sent",

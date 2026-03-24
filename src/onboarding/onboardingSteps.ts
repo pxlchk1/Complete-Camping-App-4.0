@@ -77,6 +77,25 @@ const provisionNewAccountFn = httpsCallable<
 >(functions, 'provisionNewAccount');
 
 /**
+ * Small delay helper for retry backoff.
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Checks if a Cloud Functions error code is a transient auth-propagation error.
+ * Brand-new Firebase users can hit UNAUTHENTICATED or INTERNAL briefly
+ * while the token propagates to Cloud Functions infrastructure.
+ */
+function isTransientAuthError(code: string): boolean {
+  return (
+    code === 'functions/unauthenticated' ||
+    code === 'functions/internal'
+  );
+}
+
+/**
  * Bootstraps a new account by calling the backend provisionNewAccount
  * Cloud Function. All Firestore writes happen server-side via Admin SDK.
  * 
@@ -97,84 +116,116 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
     console.log('[Onboarding] Starting bootstrapNewAccount for:', params.userId);
   }
 
-  try {
-    const result = await provisionNewAccountFn({
-      email: params.email,
-      displayName: params.displayName,
-      handle: params.handle,
-      photoURL: params.photoURL || null,
-    });
+  // Retry once for transient auth-propagation errors (brand-new users).
+  // Firebase Cloud Functions can briefly reject the token of a
+  // just-created user with UNAUTHENTICATED before propagation completes.
+  const MAX_ATTEMPTS = 2;
+  let lastError: unknown = null;
 
-    const duration = Date.now() - startTime;
-    if (ONBOARDING_DEBUG) {
-      console.log(`[Onboarding] bootstrapNewAccount completed in ${duration}ms`, result.data);
-    }
-
-    return { success: true };
-
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    // Extract Firebase Functions error details
-    const fnError = error as {
-      code?: string;
-      message?: string;
-      details?: unknown;
-    };
-
-    // The httpsCallable wraps errors as "functions/CODE"
-    const rawCode = fnError.code || '';
-    const message = fnError.message || 'Unknown error';
-
-    if (ONBOARDING_DEBUG) {
-      console.error(`[Onboarding] bootstrapNewAccount FAILED in ${duration}ms:`, {
-        code: rawCode,
-        message,
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const result = await provisionNewAccountFn({
+        email: params.email,
+        displayName: params.displayName,
+        handle: params.handle,
+        photoURL: params.photoURL || null,
       });
-    }
 
-    // Handle taken
-    if (rawCode === 'functions/already-exists' && message.includes('HANDLE_TAKEN')) {
-      return {
-        success: false,
-        error: "That handle is already taken. Please choose a different handle.",
-        handleTaken: true,
-      };
-    }
+      const duration = Date.now() - startTime;
+      if (ONBOARDING_DEBUG) {
+        console.log(`[Onboarding] bootstrapNewAccount completed in ${duration}ms (attempt ${attempt})`, result.data);
+      }
 
-    // Email in use
-    if (rawCode === 'functions/already-exists' && message.includes('EMAIL_IN_USE')) {
-      return {
-        success: false,
-        error: "That email is already in use. Try signing in instead.",
-        emailInUse: true,
-      };
-    }
+      return { success: true };
 
-    // Invalid argument
-    if (rawCode === 'functions/invalid-argument') {
-      return {
-        success: false,
-        error: message,
-        debugInfo: `validation: ${rawCode}`,
-      };
-    }
+    } catch (error) {
+      lastError = error;
+      const fnError = error as { code?: string; message?: string };
+      const rawCode = fnError.code || '';
 
-    // Permission denied (should not happen with Admin SDK, but just in case)
-    if (rawCode === 'functions/permission-denied' || rawCode === 'permission-denied') {
-      return {
-        success: false,
-        error: "We couldn't finish setting up your account. Please try again.",
-        debugInfo: `permission-denied`,
-      };
-    }
+      if (ONBOARDING_DEBUG) {
+        console.warn(`[Onboarding] bootstrapNewAccount attempt ${attempt} failed:`, {
+          code: rawCode,
+          message: fnError.message,
+        });
+      }
 
-    // Generic fallback
+      // Only retry on transient auth-propagation errors, and only once
+      if (attempt < MAX_ATTEMPTS && isTransientAuthError(rawCode)) {
+        if (ONBOARDING_DEBUG) {
+          console.log('[Onboarding] Transient auth error — retrying after delay...');
+        }
+        await delay(1500);
+        continue;
+      }
+
+      // Non-retryable error or final attempt — fall through to error handling
+      break;
+    }
+  }
+
+  // Error handling — uses lastError from the final failed attempt
+  const duration = Date.now() - startTime;
+  // Extract Firebase Functions error details
+  const fnError = lastError as {
+    code?: string;
+    message?: string;
+    details?: unknown;
+  };
+
+  // The httpsCallable wraps errors as "functions/CODE"
+  const rawCode = fnError?.code || '';
+  const message = fnError?.message || 'Unknown error';
+
+  if (ONBOARDING_DEBUG) {
+    console.error(`[Onboarding] bootstrapNewAccount FAILED in ${duration}ms:`, {
+      code: rawCode,
+      message,
+    });
+  }
+
+  // Handle taken
+  if (rawCode === 'functions/already-exists' && message.includes('HANDLE_TAKEN')) {
+    return {
+      success: false,
+      error: "That handle is already taken. Please choose a different handle.",
+      handleTaken: true,
+    };
+  }
+
+  // Email in use
+  if (rawCode === 'functions/already-exists' && message.includes('EMAIL_IN_USE')) {
+    return {
+      success: false,
+      error: "That email is already in use. Try signing in instead.",
+      emailInUse: true,
+    };
+  }
+
+  // Invalid argument
+  if (rawCode === 'functions/invalid-argument') {
+    return {
+      success: false,
+      error: message,
+      debugInfo: `validation: ${rawCode}`,
+    };
+  }
+
+  // Permission denied (should not happen with Admin SDK, but just in case)
+  if (rawCode === 'functions/permission-denied' || rawCode === 'permission-denied') {
     return {
       success: false,
       error: "We couldn't finish setting up your account. Please try again.",
-      debugInfo: `${rawCode}: ${message}`,
+      debugInfo: `permission-denied`,
     };
   }
+
+  // Generic fallback
+  return {
+    success: false,
+    error: "We couldn't finish setting up your account. Please try again.",
+    debugInfo: `${rawCode}: ${message}`,
+  };
 }
 
 /**
