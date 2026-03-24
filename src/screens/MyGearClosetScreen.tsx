@@ -102,11 +102,19 @@ export default function MyGearClosetScreen() {
   );
 
   const applyFilter = (gearList: GearItem[], filter: FilterOption) => {
-    if (filter === "all") {
-      setFilteredGear(gearList);
-    } else {
-      setFilteredGear(gearList.filter(item => item.category === filter));
-    }
+    const items = filter === "all" ? gearList : gearList.filter(item => item.category === filter);
+
+    // Sort: group by category label (alphabetical), then alphabetize by name within each category
+    const sorted = [...items].sort((a, b) => {
+      const catA = getCategoryLabel(a.category || ("" as GearCategory)).toLowerCase();
+      const catB = getCategoryLabel(b.category || ("" as GearCategory)).toLowerCase();
+      if (catA !== catB) return catA.localeCompare(catB);
+      const nameA = (a.name || "").toLowerCase();
+      const nameB = (b.name || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    setFilteredGear(sorted);
   };
 
   const handleFilterChange = (filter: FilterOption) => {
