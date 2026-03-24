@@ -9,13 +9,15 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Image } from "react-native";
+import { View, Text, ScrollView, Pressable, RefreshControl, ActivityIndicator, Image, ImageBackground } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Components
+import AccountButtonHeader from "../components/AccountButtonHeader";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
@@ -55,8 +57,10 @@ import {
   BORDER_SOFT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
+  TEXT_ON_DARK,
   TEXT_MUTED,
 } from "../constants/colors";
+import { HERO_IMAGES } from "../constants/images";
 import { RootStackParamList } from "../navigation/types";
 import { getLearningTrackBadgeImage } from "../assets/images/merit_badges/learningTrackBadgeImages";
 import type { BadgeId } from "../types/learning";
@@ -167,6 +171,63 @@ export default function LearnScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: PARCHMENT_BACKGROUND }}>
+      {/* Hero Image */}
+      <View style={{ height: 200 + insets.top }}>
+        <ImageBackground
+          source={HERO_IMAGES.LEARNING}
+          style={{ flex: 1 }}
+          resizeMode="cover"
+          accessibilityLabel="Learning and education scene"
+        >
+          <LinearGradient
+            colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0.6)"]}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+            }}
+          />
+          <View style={{ flex: 1, paddingTop: insets.top }}>
+            <AccountButtonHeader color={TEXT_ON_DARK} />
+
+            <View style={{ flex: 1, justifyContent: "flex-end", paddingHorizontal: 24, paddingBottom: 16 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Text
+                  style={{
+                    fontFamily: "Raleway_700Bold",
+                    fontSize: 30,
+                    color: TEXT_ON_DARK,
+                    textShadowColor: "rgba(0, 0, 0, 0.5)",
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 4,
+                  }}
+                >
+                  Learn
+                </Text>
+                <Pressable onPress={openModal} style={{ padding: 4 }} accessibilityLabel="Info">
+                  <Ionicons name="information-circle-outline" size={24} color={TEXT_ON_DARK} />
+                </Pressable>
+              </View>
+              <Text
+                style={{
+                  fontFamily: "SourceSans3_400Regular",
+                  fontSize: 15,
+                  color: TEXT_ON_DARK,
+                  marginTop: 8,
+                  textShadowColor: "rgba(0, 0, 0, 0.5)",
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 3,
+                }}
+              >
+                Master camping skills and earn badges
+              </Text>
+            </View>
+          </View>
+        </ImageBackground>
+      </View>
+
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: bottomSpacer }}
@@ -217,9 +278,9 @@ export default function LearnScreen() {
                   >
                     <View
                       style={{
-                        width: 78,
-                        height: 78,
-                        borderRadius: 39,
+                        width: 96,
+                        height: 96,
+                        borderRadius: 48,
                         backgroundColor: isCompleted ? "transparent" : CARD_BACKGROUND_LIGHT,
                         borderWidth: isCompleted ? 0 : isSelected ? 2 : 2,
                         borderColor: isSelected ? DEEP_FOREST : BORDER_SOFT,
@@ -234,8 +295,8 @@ export default function LearnScreen() {
                         <Image
                           source={badgeImage}
                           style={{
-                            width: isCompleted ? 78 : 72,
-                            height: isCompleted ? 78 : 72,
+                            width: isCompleted ? 96 : 72,
+                            height: isCompleted ? 96 : 72,
                           }}
                           resizeMode="contain"
                         />
@@ -254,12 +315,23 @@ export default function LearnScreen() {
                         color: isCompleted ? TEXT_PRIMARY_STRONG : TEXT_MUTED,
                         marginTop: 6,
                         textAlign: "center",
-                        lineHeight: 14,
+                        height: 28,
                       }}
                       numberOfLines={2}
                     >
                       {track.title}
                     </Text>
+                    {isSelected && (
+                      <View
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: 3,
+                          backgroundColor: DEEP_FOREST,
+                          marginTop: 4,
+                        }}
+                      />
+                    )}
                   </Pressable>
                 );
               })}

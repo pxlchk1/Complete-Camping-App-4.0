@@ -22,6 +22,8 @@ import {
   serverTimestamp,
   Timestamp,
   writeBatch,
+  setDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import firebaseApp, { auth, storage } from "../config/firebase";
 import { ref, uploadBytes, getDownloadURL, deleteObject, listAll } from "firebase/storage";
