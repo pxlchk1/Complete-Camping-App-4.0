@@ -225,7 +225,8 @@ export default function ModuleDetailScreen() {
     if (!module) return;
     
     // Check all questions answered
-    const allAnswered = module.quiz.every((q) => quizAnswers[q.id] !== undefined);
+    const quiz = module.quiz || [];
+    const allAnswered = quiz.every((q) => quizAnswers[q.id] !== undefined);
     if (!allAnswered) {
       Alert.alert("Complete the Quiz", "Please answer all questions before submitting.");
       return;
@@ -236,13 +237,13 @@ export default function ModuleDetailScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       
       // Convert answers to array format
-      const answers = module.quiz.map((q) => quizAnswers[q.id]);
+      const answers = quiz.map((q) => quizAnswers[q.id]);
       
       const result = await submitQuizAnswers(
         module.id,
         module.trackId,
         answers,
-        module.quiz
+        quiz
       );
       
       setQuizScore(result.score);
@@ -322,7 +323,7 @@ export default function ModuleDetailScreen() {
     );
   }
 
-  const allQuestionsAnswered = module.quiz.every((q) => quizAnswers[q.id] !== undefined);
+  const allQuestionsAnswered = (module.quiz || []).every((q) => quizAnswers[q.id] !== undefined);
 
   return (
     <View style={{ flex: 1, backgroundColor: PARCHMENT_BACKGROUND }}>
@@ -455,13 +456,13 @@ export default function ModuleDetailScreen() {
                   Knowledge Check
                 </Text>
                 <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 14, color: TEXT_SECONDARY }}>
-                  {module.quiz.length} questions • Score 100% to pass
+                  {module.quiz?.length ?? 0} questions • Score 100% to pass
                 </Text>
               </View>
             </View>
 
             {/* Questions */}
-            {module.quiz.map((question, qIndex) => {
+            {(module.quiz || []).map((question, qIndex) => {
               const selectedAnswer = quizAnswers[question.id];
               // Normalize types to handle Firestore string/number mismatches
               const correctIdx = Number(question.correctAnswerIndex);

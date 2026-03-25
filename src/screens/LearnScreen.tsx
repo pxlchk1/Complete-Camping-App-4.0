@@ -518,7 +518,7 @@ export default function LearnScreen() {
                     
                     <Ionicons name="help-circle-outline" size={14} color={TEXT_MUTED} />
                     <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 13, color: TEXT_MUTED, marginLeft: 4 }}>
-                      {module.quiz.length} quiz questions
+                      {module.quiz?.length ?? 0} quiz questions
                     </Text>
                   </View>
 
