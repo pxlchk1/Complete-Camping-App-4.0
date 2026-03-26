@@ -189,9 +189,16 @@ export function listenToFavoritePark(
 ): Unsubscribe {
   const favRef = doc(db, "users", userId, "favoriteParks", parkId);
   
-  return onSnapshot(favRef, (snap) => {
-    callback(snap.exists());
-  });
+  return onSnapshot(
+    favRef,
+    (snap) => {
+      callback(snap.exists());
+    },
+    (error) => {
+      console.error("[FavoriteParks] Error listening to favorite park:", error);
+      callback(false);
+    }
+  );
 }
 
 /**
@@ -204,12 +211,19 @@ export function listenToFavoriteParks(
   const favsRef = collection(db, "users", userId, "favoriteParks");
   const q = query(favsRef, orderBy("createdAt", "desc"));
   
-  return onSnapshot(q, (snapshot) => {
-    const favorites = snapshot.docs.map((doc) => ({
-      ...doc.data(),
-      parkId: doc.id,
-    })) as FavoritePark[];
-    
-    callback(favorites);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const favorites = snapshot.docs.map((doc) => ({
+        ...doc.data(),
+        parkId: doc.id,
+      })) as FavoritePark[];
+      
+      callback(favorites);
+    },
+    (error) => {
+      console.error("[FavoriteParks] Error listening to favorite parks:", error);
+      callback([]);
+    }
+  );
 }

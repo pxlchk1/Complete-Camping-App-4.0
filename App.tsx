@@ -12,6 +12,7 @@ import {
 } from "@expo-google-fonts/raleway";
 import {
   SourceSans3_400Regular,
+  SourceSans3_500Medium,
   SourceSans3_600SemiBold,
   SourceSans3_700Bold,
 } from "@expo-google-fonts/source-sans-3";
@@ -96,6 +97,7 @@ export default function App() {
     Raleway_700Bold,
     // Body Font: Source Sans 3
     SourceSans3_400Regular,
+    SourceSans3_500Medium,
     SourceSans3_600SemiBold,
     SourceSans3_700Bold,
     // Accent Font: Satisfy (use very sparingly)
