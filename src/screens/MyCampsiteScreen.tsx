@@ -137,6 +137,37 @@ export default function MyCampsiteScreen({ navigation }: any) {
   // Onboarding modal
   const { showModal, currentTooltip, dismissModal, openModal } = useScreenOnboarding("MyCampsite");
 
+  /** Normalize raw Firestore profile data into a safe render shape */
+  const normalizeProfile = (raw: any): UserProfile => {
+    const safeString = (val: any, fallback: string): string =>
+      typeof val === "string" && val.trim().length > 0 ? val.trim() : fallback;
+    const handle = safeString(raw?.handle, "camper").replace(/^@+/, "");
+    return {
+      displayName: safeString(raw?.displayName, "Camper"),
+      handle,
+      email: safeString(raw?.email, ""),
+      avatarUrl: typeof raw?.avatarUrl === "string" ? raw.avatarUrl : null,
+      backgroundUrl: typeof raw?.backgroundUrl === "string" ? raw.backgroundUrl : null,
+      membershipTier: (["free","freeMember","subscribed","weekendCamper","trailLeader","backcountryGuide","isAdmin","isModerator"] as MembershipTier[]).includes(raw?.membershipTier) ? raw.membershipTier : "free",
+      bio: typeof raw?.bio === "string" ? raw.bio : null,
+      about: typeof raw?.about === "string" ? raw.about : null,
+      location: typeof raw?.location === "string" ? raw.location : null,
+      campingStyle: typeof raw?.campingStyle === "string" ? raw.campingStyle : null,
+      favoriteCampingStyle: typeof raw?.favoriteCampingStyle === "string" ? raw.favoriteCampingStyle : undefined,
+      favoriteGear: raw?.favoriteGear && typeof raw.favoriteGear === "object" && !Array.isArray(raw.favoriteGear) ? raw.favoriteGear : undefined,
+      joinedAt: raw?.joinedAt ?? null,
+      stats: {
+        tripsCount: Number(raw?.stats?.tripsCount) || 0,
+        tipsCount: Number(raw?.stats?.tipsCount) || 0,
+        gearReviewsCount: Number(raw?.stats?.gearReviewsCount) || 0,
+        questionsCount: Number(raw?.stats?.questionsCount) || 0,
+        photosCount: Number(raw?.stats?.photosCount) || 0,
+      },
+      meritBadges: Array.isArray(raw?.meritBadges) ? raw.meritBadges.filter((b: any) => b && typeof b.id === "string") : [],
+      isProfileContentPublic: raw?.isProfileContentPublic !== false,
+    };
+  };
+
   const loadProfile = useCallback(async (userId: string) => {
     try {
       setLoading(true);
@@ -144,15 +175,8 @@ export default function MyCampsiteScreen({ navigation }: any) {
       const profileSnap = await getDoc(profileRef);
 
       if (profileSnap.exists()) {
-        const data = profileSnap.data() as UserProfile;
-
-        // Normalize handle - remove any "@" prefix if it exists
-        const normalizedHandle = data.handle?.replace(/^@+/, "") || "";
-
-        setProfile({
-          ...data,
-          handle: normalizedHandle,
-        });
+        const data = profileSnap.data();
+        setProfile(normalizeProfile(data));
 
         // Compute stats if not present
         if (!data.stats) {
@@ -692,7 +716,7 @@ export default function MyCampsiteScreen({ navigation }: any) {
             if (navigation.canGoBack()) {
               navigation.goBack();
             } else {
-              navigation.navigate("Explore" as never);
+              navigation.navigate("HomeTabs");
             }
           }}
         />
@@ -710,12 +734,12 @@ export default function MyCampsiteScreen({ navigation }: any) {
     );
   }
 
-  const initials = profile.displayName
+  const initials = (profile.displayName || "C")
     .split(" ")
-    .map((n) => n[0])
+    .map((n) => n?.[0] || "")
     .join("")
     .slice(0, 2)
-    .toUpperCase();
+    .toUpperCase() || "C";
 
   // Determine if profile content should be visible
   // Content is visible if:
@@ -1311,7 +1335,7 @@ export default function MyCampsiteScreen({ navigation }: any) {
                   <Text
                     style={{ fontFamily: "SourceSans3_400Regular", fontSize: 15, color: TEXT_PRIMARY_STRONG }}
                   >
-                    {profile.favoriteCampingStyle.split('_').map(word => 
+                    {String(profile.favoriteCampingStyle || "").split('_').map(word => 
                       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
                     ).join(' ')}
                   </Text>
@@ -1319,7 +1343,7 @@ export default function MyCampsiteScreen({ navigation }: any) {
               </View>
             )}
 
-            {profile.favoriteGear && Object.keys(profile.favoriteGear).length > 0 && (
+            {profile.favoriteGear && typeof profile.favoriteGear === "object" && !Array.isArray(profile.favoriteGear) && Object.keys(profile.favoriteGear).length > 0 && (
               <View className="mb-2">
                 <View className="flex-row items-start mb-1">
                   <Ionicons name="bag-handle-outline" size={18} color={EARTH_GREEN} style={{ marginTop: 2 }} />
