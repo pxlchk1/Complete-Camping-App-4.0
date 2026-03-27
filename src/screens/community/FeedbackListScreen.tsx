@@ -18,6 +18,8 @@ import { requireAccount } from "../../utils/gating";
 import { shouldShowInFeed } from "../../services/moderationService";
 import { getUser } from "../../services/userService";
 import { getConnectDisplayHandle } from "../../services/handleService";
+import HandleLink from "../../components/HandleLink";
+import VotePill from "../../components/VotePill";
 import { RootStackNavigationProp } from "../../navigation/types";
 import CommunitySectionHeader from "../../components/CommunitySectionHeader";
 import { seedFeedbackIfEmpty } from "../../features/feedback/seedFeedback";
@@ -240,19 +242,32 @@ export default function FeedbackListScreen() {
         {/* Footer: author, date, and comments count */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTopWidth: 1, borderColor: BORDER_SOFT }}>
           <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
-            <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
-              @{authorHandles[item.authorId] || getConnectDisplayHandle(undefined, item.authorId)}
-            </Text>
+            <HandleLink
+              handle={authorHandles[item.authorId] || getConnectDisplayHandle(undefined, item.authorId)}
+              userId={item.authorId}
+              fontSize={12}
+              color={TEXT_MUTED}
+            />
             <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>
             <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 12, color: TEXT_MUTED }}>
               {formatTimeAgo(item.createdAt)}
             </Text>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Ionicons name="chatbubble-outline" size={16} color={TEXT_MUTED} />
-            <Text style={{ marginLeft: 4, fontSize: 12, fontFamily: "SourceSans3_600SemiBold", color: TEXT_MUTED }}>
-              {item.commentCount ?? 0}
-            </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="chatbubble-outline" size={16} color={TEXT_MUTED} />
+              <Text style={{ marginLeft: 4, fontSize: 12, fontFamily: "SourceSans3_600SemiBold", color: TEXT_MUTED }}>
+                {item.commentCount ?? 0}
+              </Text>
+            </View>
+            <VotePill
+              collectionPath="feedbackPosts"
+              itemId={item.id}
+              initialScore={item.karmaScore || 0}
+              initialUserVote={item.userVote}
+              onRequireAccount={() => setShowLoginModal(true)}
+              size="small"
+            />
           </View>
         </View>
       </Pressable>

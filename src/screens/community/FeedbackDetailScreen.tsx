@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput, ActivityIndicator } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import ModalHeader from "../../components/ModalHeader";
@@ -38,6 +38,7 @@ import {
   EARTH_GREEN,
 } from "../../constants/colors";
 import { getConnectDisplayHandle } from "../../services/handleService";
+import HandleLink from "../../components/HandleLink";
 
 type RouteParams = RootStackScreenProps<"FeedbackDetail">;
 
@@ -283,12 +284,13 @@ export default function FeedbackDetailScreen() {
     <View className="flex-1 bg-parchment">
       <ModalHeader title="Feedback" showTitle />
 
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={90}
-      >
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 20 }}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: 20 }}
+          automaticallyAdjustKeyboardInsets
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Post Card */}
           <View className="mx-5 mt-5 rounded-xl p-5 border" style={{ backgroundColor: CARD_BACKGROUND_LIGHT, borderColor: BORDER_SOFT }}>
             {/* Header with tags and actions */}
@@ -397,9 +399,12 @@ export default function FeedbackDetailScreen() {
                     </View>
 
                     <View className="flex-row items-center">
-                      <Text className="text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
-                        @{commentAuthorHandles[comment.authorId] || getConnectDisplayHandle(undefined, comment.authorId)}
-                      </Text>
+                      <HandleLink
+                        handle={commentAuthorHandles[comment.authorId] || getConnectDisplayHandle(undefined, comment.authorId)}
+                        userId={comment.authorId}
+                        fontSize={12}
+                        color={DEEP_FOREST}
+                      />
                       <Text className="text-xs mx-1" style={{ color: TEXT_MUTED }}>{"\u2022"}</Text>
                       <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
                         {formatTimeAgo(comment.createdAt)}
@@ -448,7 +453,6 @@ export default function FeedbackDetailScreen() {
             </View>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
 
       <AccountRequiredModal
         visible={showAccountRequired}

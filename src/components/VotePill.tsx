@@ -145,7 +145,7 @@ export default function VotePill({
       <Pressable
         onPress={() => handleVote("up")}
         disabled={isVoting}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 4 }}
+        hitSlop={{ top: 12, bottom: 12, left: 12, right: 8 }}
         style={({ pressed }) => [
           styles.button,
           pressed && styles.buttonPressed,
@@ -171,7 +171,7 @@ export default function VotePill({
       <Pressable
         onPress={() => handleVote("down")}
         disabled={isVoting}
-        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+        hitSlop={{ top: 12, bottom: 12, left: 8, right: 12 }}
         style={({ pressed }) => [
           styles.button,
           pressed && styles.buttonPressed,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   button: {
-    padding: 2,
+    padding: 6,
   },
   buttonPressed: {
     opacity: 0.6,
