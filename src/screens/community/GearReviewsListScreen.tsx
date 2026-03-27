@@ -301,8 +301,8 @@ export default function GearReviewsListScreen() {
         </View>
       )}
 
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Text style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED }}>
+      <View style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}>
+        <Text numberOfLines={1} style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 12, color: TEXT_MUTED, flexShrink: 1 }}>
           @{getConnectDisplayHandle(item.authorHandle, item.authorId)}
         </Text>
         <Text style={{ marginHorizontal: 6, opacity: 0.7, color: TEXT_MUTED }}>•</Text>

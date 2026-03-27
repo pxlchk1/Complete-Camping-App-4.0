@@ -535,23 +535,25 @@ export default function GearReviewDetailScreen() {
 
         {/* Author and Vote row */}
         <View className="flex-row items-center justify-between py-3 border-t" style={{ borderColor: BORDER_SOFT, marginBottom: 24 }}>
+          <View style={{ flexShrink: 1, marginRight: 8 }}>
           {review.authorId && review.authorHandle ? (
             <Pressable onPress={() => navigation.navigate("MyCampsite", { userId: review.authorId })}>
-              <Text className="text-sm" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
+              <Text className="text-sm" numberOfLines={1} style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
                 @{review.authorHandle}
               </Text>
             </Pressable>
           ) : review.authorId ? (
             <Pressable onPress={() => navigation.navigate("MyCampsite", { userId: review.authorId })}>
-              <Text className="text-sm" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
+              <Text className="text-sm" numberOfLines={1} style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, textDecorationLine: "underline" }}>
                 @{getConnectDisplayHandle(review.authorHandle, review.authorId)}
               </Text>
             </Pressable>
           ) : (
-            <Text className="text-sm" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
+            <Text className="text-sm" numberOfLines={1} style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
               @{getConnectDisplayHandle(review.authorHandle, review.authorId)}
             </Text>
           )}
+          </View>
           <VotePill
             collectionPath="gearReviews"
             itemId={reviewId!}

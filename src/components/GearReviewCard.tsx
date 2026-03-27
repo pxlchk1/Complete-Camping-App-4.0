@@ -83,15 +83,15 @@ export default function GearReviewCard({ review, onPress }: GearReviewCardProps)
 
       {/* Footer */}
       <View className="flex-row items-center justify-between pt-3 border-t border-cream-200">
-        <View className="flex-row items-center">
-          <Text className="text-xs text-stone-600" style={{ fontFamily: "SourceSans3_400Regular" }}>
+        <View className="flex-row items-center flex-1 mr-2" style={{ flexShrink: 1 }}>
+          <Text className="text-xs text-stone-600" numberOfLines={1} style={{ fontFamily: "SourceSans3_400Regular", flexShrink: 1 }}>
             by {review.authorHandle}
           </Text>
           <Text className="text-stone-400 mx-2" style={{ fontFamily: "SourceSans3_400Regular" }}>•</Text>
           <Text className="text-xs text-stone-500" style={{ fontFamily: "SourceSans3_400Regular" }}>{formatDate(review.createdAt)}</Text>
         </View>
 
-        <View className="flex-row items-center">
+        <View className="flex-row items-center" style={{ flexShrink: 0 }}>
           {review.verifiedPurchase && (
             <>
               <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
