@@ -115,7 +115,7 @@ export default function PackingListScreen() {
           }
           return; // Success with Firebase
         } catch (fbError: any) {
-          console.log("Firebase error, falling back to local storage:", fbError);
+          if (__DEV__) console.log("Firebase error, falling back to local storage:", fbError);
           setUseLocalStorage(true);
         }
       }
@@ -132,7 +132,7 @@ export default function PackingListScreen() {
         setPackingItems(items);
       }
     } catch (error: any) {
-      console.error("Failed to load packing list:", error);
+      if (__DEV__) console.error("Failed to load packing list:", error);
       setError("Unable to load packing list. Please try again.");
     } finally {
       setLoading(false);
@@ -158,7 +158,7 @@ export default function PackingListScreen() {
         await togglePackingItem(userId, tripId, item.id, !item.isPacked);
       }
     } catch (error) {
-      console.error("Failed to toggle item:", error);
+      if (__DEV__) console.error("Failed to toggle item:", error);
       // Revert on error
       setPackingItems((prev) =>
         prev.map((i) => (i.id === item.id ? { ...i, isPacked: item.isPacked } : i))
@@ -206,7 +206,7 @@ export default function PackingListScreen() {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error("Failed to add item:", error);
+      if (__DEV__) console.error("Failed to add item:", error);
     }
   };
 
@@ -220,7 +220,7 @@ export default function PackingListScreen() {
       setPackingItems((prev) => prev.filter((i) => i.id !== item.id));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
-      console.error("Failed to delete item:", error);
+      if (__DEV__) console.error("Failed to delete item:", error);
     }
   };
 
@@ -238,6 +238,96 @@ export default function PackingListScreen() {
 
   if (!trip) {
     return null;
+  }
+
+  // Full-screen loading state on initial load (before any content is ready)
+  if (loading && packingItems.length === 0) {
+    return (
+      <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
+        <View style={{ backgroundColor: DEEP_FOREST }}>
+          <SafeAreaView edges={["top"]} style={{ backgroundColor: DEEP_FOREST }}>
+            <View className="px-5 pt-4 pb-3" style={{ borderColor: PARCHMENT }}>
+              <View className="flex-row items-center">
+                <Pressable
+                  onPress={() => navigation.goBack()}
+                  className="mr-2 active:opacity-70"
+                >
+                  <Ionicons name="arrow-back" size={24} color={PARCHMENT} />
+                </Pressable>
+                <Text
+                  className="text-xl font-bold"
+                  style={{ fontFamily: "JosefinSlab_700Bold", color: PARCHMENT }}
+                >
+                  Packing List
+                </Text>
+              </View>
+            </View>
+          </SafeAreaView>
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={DEEP_FOREST} />
+          <Text
+            className="mt-3 text-base"
+            style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+          >
+            Loading packing list...
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // Full-screen error state (when load failed with no cached items)
+  if (error && packingItems.length === 0) {
+    return (
+      <View style={{ flex: 1, backgroundColor: PARCHMENT }}>
+        <View style={{ backgroundColor: DEEP_FOREST }}>
+          <SafeAreaView edges={["top"]} style={{ backgroundColor: DEEP_FOREST }}>
+            <View className="px-5 pt-4 pb-3" style={{ borderColor: PARCHMENT }}>
+              <View className="flex-row items-center">
+                <Pressable
+                  onPress={() => navigation.goBack()}
+                  className="mr-2 active:opacity-70"
+                >
+                  <Ionicons name="arrow-back" size={24} color={PARCHMENT} />
+                </Pressable>
+                <Text
+                  className="text-xl font-bold"
+                  style={{ fontFamily: "JosefinSlab_700Bold", color: PARCHMENT }}
+                >
+                  Packing List
+                </Text>
+              </View>
+            </View>
+          </SafeAreaView>
+        </View>
+        <View className="flex-1 items-center justify-center px-5">
+          <Ionicons name="alert-circle-outline" size={64} color="#B5591D" />
+          <Text
+            className="mt-4 mb-2 text-center text-lg"
+            style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+          >
+            Connection Error
+          </Text>
+          <Text
+            className="text-center mb-6"
+            style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+          >
+            {error}
+          </Text>
+          <Pressable
+            onPress={loadPackingList}
+            className="bg-forest rounded-xl px-6 py-3 active:opacity-90"
+          >
+            <Text
+              style={{ fontFamily: "SourceSans3_600SemiBold", color: PARCHMENT }}
+            >
+              Retry
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    );
   }
 
   // Group items by category

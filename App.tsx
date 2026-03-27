@@ -1,3 +1,4 @@
+import React from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { NavigationContainer, LinkingOptions } from "@react-navigation/native";
@@ -21,8 +22,9 @@ import RootNavigator from "./src/navigation/RootNavigator";
 import { ToastProvider } from "./src/components/ToastManager";
 import { FireflyTimeProvider } from "./src/context/FireflyTimeContext";
 import { OnboardingProvider } from "./src/context/OnboardingContext";
-import { View, ImageBackground } from "react-native";
+import { View, ImageBackground, Text, Pressable, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { initSubscriptions, identifyUser } from "./src/services/subscriptionService";
 import { preloadHeroImages } from "./src/constants/images";
 import { useAuthStore } from "./src/state/authStore";
@@ -32,6 +34,87 @@ import { onAuthStateChanged } from "firebase/auth";
 import { getDoc, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./src/config/firebase";
 import { RootStackParamList } from "./src/navigation/types";
+
+/**
+ * Root-level error boundary.
+ * Catches unhandled JS errors in the component tree and shows a recovery UI
+ * instead of crashing the app.
+ */
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error("[AppErrorBoundary] Uncaught error:", error, info.componentStack);
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={boundaryStyles.container}>
+          <Ionicons name="warning-outline" size={56} color="#B5591D" />
+          <Text style={boundaryStyles.title}>Something went wrong</Text>
+          <Text style={boundaryStyles.message}>
+            {"The app ran into an unexpected error. Tap below to try again."}
+          </Text>
+          <Pressable onPress={this.handleRetry} style={boundaryStyles.retryButton}>
+            <Text style={boundaryStyles.retryText}>Try Again</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const boundaryStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 32,
+    backgroundColor: "#EEE7D9",
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginTop: 16,
+    marginBottom: 8,
+    color: "#3D2817",
+    textAlign: "center",
+  },
+  message: {
+    fontSize: 16,
+    color: "#485951",
+    marginBottom: 24,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  retryButton: {
+    backgroundColor: "#1A4C39",
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+  retryText: {
+    color: "#EEE7D9",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+});
 
 // Deep linking configuration
 const linking: LinkingOptions<RootStackParamList> = {
@@ -106,7 +189,7 @@ export default function App() {
   });
 
   // Log when fonts are loaded for verification
-  if (fontsLoaded) {
+  if (__DEV__ && fontsLoaded) {
     console.log("Fonts loaded: Raleway + SourceSans3 + Satisfy");
   }
 
@@ -116,11 +199,11 @@ export default function App() {
   // Initialize subscriptions ONCE at app launch (anonymous, before auth)
   useEffect(() => {
     if (fontsLoaded && !subscriptionsInitialized) {
-      console.log("[App] Initializing subscriptions anonymously");
+      if (__DEV__) console.log("[App] Initializing subscriptions anonymously");
       initSubscriptions()
         .then(() => {
           setSubscriptionsInitialized(true);
-          console.log("[App] Subscriptions initialized");
+          if (__DEV__) console.log("[App] Subscriptions initialized");
         })
         .catch((error) => {
           console.error("[App] Failed to initialize subscriptions:", error);
@@ -137,11 +220,11 @@ export default function App() {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        console.log("[App] Firebase user signed in:", firebaseUser.uid);
+        if (__DEV__) console.log("[App] Firebase user signed in:", firebaseUser.uid);
         // Identify user in RevenueCat (has its own offline cache)
         try {
           await identifyUser(firebaseUser.uid);
-          console.log("[App] User identified in RevenueCat");
+          if (__DEV__) console.log("[App] User identified in RevenueCat");
         } catch (error) {
           console.error("[App] Failed to identify user in RevenueCat:", error);
         }
@@ -168,13 +251,13 @@ export default function App() {
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp(),
             }, { merge: true });
-            console.log(`[App] Created safety-net profile for uid: ${firebaseUser.uid}`);
+            if (__DEV__) console.log(`[App] Created safety-net profile for uid: ${firebaseUser.uid}`);
           }
         } catch (error) {
-          console.log("[App] Profile safety-net skipped (offline):", (error as any)?.code || error);
+          if (__DEV__) console.log("[App] Profile safety-net skipped (offline):", (error as any)?.code || error);
         }
       } else {
-        console.log("[App] Firebase user signed out");
+        if (__DEV__) console.log("[App] Firebase user signed out");
         // Clear user-specific data from local stores
         useTripsStore.getState().clearTrips();
         useAuthStore.getState().signOut();
@@ -208,27 +291,29 @@ export default function App() {
   }
 
   return (
-    <FireflyTimeProvider>
-      <OnboardingProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <SafeAreaProvider>
-            <ToastProvider>
-              <NavigationContainer
-                linking={linking}
-                onStateChange={(state) => {
-                  console.log('[Navigation] State changed:', state);
-                }}
-                onUnhandledAction={(action) => {
-                  console.error('[Navigation] Unhandled action:', action);
-                }}
-              >
-                <RootNavigator />
-                <StatusBar style="auto" />
-              </NavigationContainer>
-            </ToastProvider>
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
-      </OnboardingProvider>
-    </FireflyTimeProvider>
+    <AppErrorBoundary>
+      <FireflyTimeProvider>
+        <OnboardingProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaProvider>
+              <ToastProvider>
+                <NavigationContainer
+                  linking={linking}
+                  onStateChange={__DEV__ ? (state) => {
+                    console.log('[Navigation] State changed:', state);
+                  } : undefined}
+                  onUnhandledAction={(action) => {
+                    console.error('[Navigation] Unhandled action:', action);
+                  }}
+                >
+                  <RootNavigator />
+                  <StatusBar style="auto" />
+                </NavigationContainer>
+              </ToastProvider>
+            </SafeAreaProvider>
+          </GestureHandlerRootView>
+        </OnboardingProvider>
+      </FireflyTimeProvider>
+    </AppErrorBoundary>
   );
 }
