@@ -37,6 +37,7 @@ import {
   TEXT_MUTED,
   EARTH_GREEN,
 } from "../../constants/colors";
+import { getConnectDisplayHandle } from "../../services/handleService";
 
 type RouteParams = RootStackScreenProps<"FeedbackDetail">;
 
@@ -53,6 +54,7 @@ export default function FeedbackDetailScreen() {
   const [commentText, setCommentText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [authorName, setAuthorName] = useState<string | null>(null);
+  const [commentAuthorHandles, setCommentAuthorHandles] = useState<Record<string, string>>({});
   const [showAccountRequired, setShowAccountRequired] = useState(false);
 
   // Permission checks for content actions
@@ -118,6 +120,23 @@ export default function FeedbackDetailScreen() {
         // Silently ignore - author name is not critical for viewing
         console.log("[FeedbackDetail] Could not load author:", authorErr);
       }
+
+      // Batch-fetch comment author handles
+      const authorIds = [...new Set(commentsData.map(c => c.authorId).filter(Boolean))];
+      const handleMap: Record<string, string> = {};
+      await Promise.all(
+        authorIds.map(async (authorId) => {
+          try {
+            const user = await getUser(authorId);
+            if (user) {
+              handleMap[authorId] = user.handle || user.displayName || getConnectDisplayHandle(undefined, authorId);
+            }
+          } catch {
+            // Will fall back to getConnectDisplayHandle at render time
+          }
+        })
+      );
+      setCommentAuthorHandles(handleMap);
     } catch (err: any) {
       console.error("[FeedbackDetail] Error loading post:", err);
       // Safely extract error message, handling cases where message might be undefined
@@ -377,9 +396,15 @@ export default function FeedbackDetailScreen() {
                       />
                     </View>
 
-                    <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
-                      {formatTimeAgo(comment.createdAt)}
-                    </Text>
+                    <View className="flex-row items-center">
+                      <Text className="text-xs" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
+                        @{commentAuthorHandles[comment.authorId] || getConnectDisplayHandle(undefined, comment.authorId)}
+                      </Text>
+                      <Text className="text-xs mx-1" style={{ color: TEXT_MUTED }}>{"\u2022"}</Text>
+                      <Text className="text-xs" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}>
+                        {formatTimeAgo(comment.createdAt)}
+                      </Text>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -400,8 +425,7 @@ export default function FeedbackDetailScreen() {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
-                className="p-4"
-                style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_PRIMARY_STRONG, minHeight: 100 }}
+                style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_PRIMARY_STRONG, minHeight: 100, padding: 16 }}
               />
               <View className="flex-row justify-end p-3 border-t" style={{ borderColor: BORDER_SOFT }}>
                 <Pressable
