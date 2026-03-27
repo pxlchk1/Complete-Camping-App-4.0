@@ -138,20 +138,19 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         console.log("[App] Firebase user signed in:", firebaseUser.uid);
+        // Identify user in RevenueCat (has its own offline cache)
         try {
-          // Identify user in RevenueCat with Firebase uid
           await identifyUser(firebaseUser.uid);
           console.log("[App] User identified in RevenueCat");
+        } catch (error) {
+          console.error("[App] Failed to identify user in RevenueCat:", error);
+        }
 
-          // --- Bootstrap: Ensure Firestore user profile doc exists ---
-          // NOTE: Profile creation is now handled by bootstrapNewAccount in AuthLanding.
-          // This is only a safety net for edge cases (e.g., Apple Sign In session restore).
-          // CRITICAL: Do NOT include subscription fields (membershipTier, subscriptionStatus, etc.)
-          // as Firestore rules block them on create.
-          // Safety net: ensure a minimal profile doc exists.
-          // CRITICAL: Do NOT include displayName or handle here — those are
-          // canonical identity fields written ONLY by the provisionNewAccount CF.
-          // Using merge:true so this never overwrites CF-written identity data.
+        // --- Bootstrap: Ensure Firestore user profile doc exists ---
+        // NOTE: Profile creation is now handled by bootstrapNewAccount in AuthLanding.
+        // This is only a safety net for edge cases (e.g., Apple Sign In session restore).
+        // Non-critical: skip silently when offline.
+        try {
           const userRef = doc(db, "profiles", firebaseUser.uid);
           const userSnap = await getDoc(userRef);
           if (!userSnap.exists()) {
@@ -172,7 +171,7 @@ export default function App() {
             console.log(`[App] Created safety-net profile for uid: ${firebaseUser.uid}`);
           }
         } catch (error) {
-          console.error("[App] Failed to identify user in RevenueCat or create profile:", error);
+          console.log("[App] Profile safety-net skipped (offline):", (error as any)?.code || error);
         }
       } else {
         console.log("[App] Firebase user signed out");

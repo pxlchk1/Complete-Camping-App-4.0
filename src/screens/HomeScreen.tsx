@@ -297,31 +297,16 @@ export default function HomeScreen() {
         return;
       }
       
-      try {
-        // Check admin status directly from Firestore for reliability
-        const profileDoc = await getDoc(doc(db, "profiles", user.uid));
-        const profileData = profileDoc.data();
-        const isAdmin = profileData?.role === "administrator" || 
-                        profileData?.membershipTier === "isAdmin" ||
-                        currentUser?.role === "administrator" || 
-                        currentUser?.membershipTier === "isAdmin";
-        
-        console.log("[HomeScreen] Admin check:", { 
-          uid: user.uid, 
-          isAdmin,
-          profileRole: profileData?.role,
-          profileTier: profileData?.membershipTier,
-          storeRole: currentUser?.role,
-          storeTier: currentUser?.membershipTier
-        });
-        
-        if (!isAdmin) {
-          console.log("[HomeScreen] Not admin, skipping modal check");
-          return;
-        }
+      // Use store-based currentUser for admin check (works offline)
+      const isAdmin = currentUser?.role === "administrator" || 
+                      currentUser?.membershipTier === "isAdmin";
 
+      if (!isAdmin) {
+        return;
+      }
+
+      try {
         const modalDoc = await getDoc(doc(db, "adminTestModals", user.uid));
-        console.log("[HomeScreen] Modal doc exists:", modalDoc.exists(), modalDoc.data());
         
         if (modalDoc.exists()) {
           const data = modalDoc.data();

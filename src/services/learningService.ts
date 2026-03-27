@@ -138,33 +138,46 @@ export async function getModuleById(moduleId: string): Promise<LearningModule | 
 // USER PROGRESS
 // ============================================
 
+// In-flight dedup: concurrent calls share the same promise to avoid redundant reads
+let _inFlightProgress: Promise<UserLearningProgress | null> | null = null;
+
 /**
  * Get user's learning progress
  */
 export async function getUserLearningProgress(): Promise<UserLearningProgress | null> {
   const user = auth.currentUser;
   if (!user) return null;
-  
-  try {
-    const progressRef = doc(db, "users", user.uid, PROGRESS_COLLECTION, "summary");
-    const progressDoc = await getDoc(progressRef);
-    
-    if (!progressDoc.exists()) {
-      // Return default progress
-      return {
-        totalModulesCompleted: 0,
-        totalQuizzesPassed: 0,
-        earnedBadges: [],
-        moduleProgress: {},
-        trackProgress: {},
-        updatedAt: Timestamp.now(),
-      };
+
+  // Return existing in-flight promise if one is already running
+  if (_inFlightProgress) return _inFlightProgress;
+
+  _inFlightProgress = (async () => {
+    try {
+      const progressRef = doc(db, "users", user.uid, PROGRESS_COLLECTION, "summary");
+      const progressDoc = await getDoc(progressRef);
+
+      if (!progressDoc.exists()) {
+        return {
+          totalModulesCompleted: 0,
+          totalQuizzesPassed: 0,
+          earnedBadges: [],
+          moduleProgress: {},
+          trackProgress: {},
+          updatedAt: Timestamp.now(),
+        };
+      }
+
+      return progressDoc.data() as UserLearningProgress;
+    } catch (error) {
+      console.error("[LearningService] Error fetching user progress:", error);
+      return null;
     }
-    
-    return progressDoc.data() as UserLearningProgress;
-  } catch (error) {
-    console.error("[LearningService] Error fetching user progress:", error);
-    return null;
+  })();
+
+  try {
+    return await _inFlightProgress;
+  } finally {
+    _inFlightProgress = null;
   }
 }
 
