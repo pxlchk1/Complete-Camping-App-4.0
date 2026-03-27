@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "plugins": [],
     "ios": {
-      "buildNumber": "160",
+      "buildNumber": "161",
       "associatedDomains": [
         "applinks:tentlantern.app",
         "applinks:www.tentlantern.app"

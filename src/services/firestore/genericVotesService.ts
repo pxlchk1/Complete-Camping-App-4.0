@@ -88,21 +88,24 @@ export const genericVotesService = {
         prevVote = voteData.voteType || (voteData.value === 1 ? 'up' : voteData.value === -1 ? 'down' : null);
       }
       
+      // Track score delta for karmaScore-based collections
+      let scoreDelta = 0;
+      
       // Toggle behavior: same vote = remove, different vote = switch
       if (prevVote === voteType) {
         // Toggle off - remove vote
-        if (voteType === 'up') upvotes--;
-        if (voteType === 'down') downvotes--;
+        if (voteType === 'up') { upvotes--; scoreDelta = -1; }
+        if (voteType === 'down') { downvotes--; scoreDelta = 1; }
         transaction.delete(voteDocRef);
         finalUserVote = null;
       } else {
         // Remove previous vote effect
-        if (prevVote === 'up') upvotes--;
-        if (prevVote === 'down') downvotes--;
+        if (prevVote === 'up') { upvotes--; scoreDelta--; }
+        if (prevVote === 'down') { downvotes--; scoreDelta++; }
         
         // Add new vote effect
-        if (voteType === 'up') upvotes++;
-        if (voteType === 'down') downvotes++;
+        if (voteType === 'up') { upvotes++; scoreDelta++; }
+        if (voteType === 'down') { downvotes++; scoreDelta--; }
         
         // Write the vote
         transaction.set(voteDocRef, { 
@@ -113,13 +116,27 @@ export const genericVotesService = {
         finalUserVote = voteType;
       }
       
-      // Update the item's vote counts using the appropriate field names
+      // Build update payload
+      const updatePayload: Record<string, number> = {};
       if (usesCountSuffix) {
-        transaction.update(itemDocRef, { upvoteCount: upvotes, downvoteCount: downvotes });
+        updatePayload.upvoteCount = upvotes;
+        updatePayload.downvoteCount = downvotes;
       } else {
-        transaction.update(itemDocRef, { upvotes, downvotes });
+        updatePayload.upvotes = upvotes;
+        updatePayload.downvotes = downvotes;
       }
-      finalScore = upvotes - downvotes;
+      
+      // Sync karmaScore if the document uses it (feedbackPosts)
+      const usesKarmaScore = 'karmaScore' in itemData;
+      if (usesKarmaScore) {
+        const currentKarma = itemData.karmaScore || 0;
+        updatePayload.karmaScore = currentKarma + scoreDelta;
+        finalScore = currentKarma + scoreDelta;
+      } else {
+        finalScore = upvotes - downvotes;
+      }
+      
+      transaction.update(itemDocRef, updatePayload);
       finalDownvotes = downvotes;
     });
     

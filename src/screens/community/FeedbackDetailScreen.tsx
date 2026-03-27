@@ -349,7 +349,7 @@ export default function FeedbackDetailScreen() {
               <VotePill
                 collectionPath="feedbackPosts"
                 itemId={postId}
-                initialScore={post.score || (post.upvoteCount || 0) - (post.downvoteCount || 0)}
+                initialScore={(post as any).karmaScore ?? post.score ?? ((post.upvoteCount || 0) - (post.downvoteCount || 0))}
                 onRequireAccount={() => setShowAccountRequired(true)}
               />
             </View>

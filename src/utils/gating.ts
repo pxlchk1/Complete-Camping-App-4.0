@@ -247,6 +247,23 @@ export async function requireProForAction(
 }
 
 // ============================================
+// CONNECT HANDLE VALIDATION
+// ============================================
+
+/**
+ * Checks if a handle is a system-generated placeholder.
+ * Placeholder handles: "camper" (bare fallback) or "camperXXXXX" (5 digits).
+ * Users with placeholder handles must set a custom handle before posting.
+ */
+export function isPlaceholderHandle(handle: string | null | undefined): boolean {
+  if (!handle) return true;
+  const trimmed = handle.trim().toLowerCase();
+  if (trimmed === "camper") return true;
+  if (/^camper\d{5}$/.test(trimmed)) return true;
+  return false;
+}
+
+// ============================================
 // GATING FUNCTIONS
 // ============================================
 

@@ -7,8 +7,7 @@ import { RootStackParamList } from "./types";
 import CustomBottomTabBar from "../components/CustomBottomTabBar";
 import EmailVerificationGate from "../components/EmailVerificationGate";
 import { useAuthStore } from "../state/authStore";
-import { PAYWALL_ENABLED } from "../config/subscriptions";
-import { useNotificationListeners } from "../hooks/useNotifications";
+import { PAYWALL_ENABLED } from "../config/subscriptions";import ConnectHandleGate from '../components/ConnectHandleGate';import { useNotificationListeners } from "../hooks/useNotifications";
 
 // Screens
 import HomeScreen from "../screens/HomeScreen";
@@ -102,6 +101,15 @@ import MeritBadgeAssetCheck from "../screens/MeritBadgeAssetCheck";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 const PlanStack = createNativeStackNavigator();
+
+// Gated community screens — require valid @handle before posting
+const GatedCreateTip = (props: any) => <ConnectHandleGate><CreateTipScreen {...props} /></ConnectHandleGate>;
+const GatedCreateGearReview = (props: any) => <ConnectHandleGate><CreateGearReviewScreen {...props} /></ConnectHandleGate>;
+const GatedCreateQuestion = (props: any) => <ConnectHandleGate><CreateQuestionScreen {...props} /></ConnectHandleGate>;
+const GatedCreateFeedback = (props: any) => <ConnectHandleGate><CreateFeedbackScreen {...props} /></ConnectHandleGate>;
+const GatedUploadPhoto = (props: any) => <ConnectHandleGate><UploadPhotoScreen {...props} /></ConnectHandleGate>;
+const GatedPhotoComposer = (props: any) => <ConnectHandleGate><PhotoComposerScreen {...props} /></ConnectHandleGate>;
+const GatedAskQuestionModal = (props: any) => <ConnectHandleGate><AskQuestionModal {...props} /></ConnectHandleGate>;
 
 function PlanStackNavigator(props: any) {
   console.log("[PlanStackNavigator] mount");
@@ -245,38 +253,38 @@ export default function RootNavigator() {
       <Stack.Screen name="PackingListCreate" component={PackingListCreateScreen} />
       <Stack.Screen name="PackingListEditor" component={PackingListEditorScreen} />
 
-      {/* Community screens */}
-      <Stack.Screen name="AskQuestionModal" component={AskQuestionModal} />
+      {/* Community screens (gated: require valid @handle) */}
+      <Stack.Screen name="AskQuestionModal" component={GatedAskQuestionModal} />
       <Stack.Screen name="ThreadDetail" component={ThreadDetailScreen} />
 
       {/* Tips */}
       <Stack.Screen name="TipsListScreen" component={TipsListScreen} />
       <Stack.Screen name="TipDetail" component={TipDetailScreen} />
-      <Stack.Screen name="CreateTip" component={CreateTipScreen} />
+      <Stack.Screen name="CreateTip" component={GatedCreateTip} />
 
       {/* Gear Reviews */}
       <Stack.Screen name="GearReviewsListScreen" component={GearReviewsListScreen} />
       <Stack.Screen name="GearReviewDetail" component={GearReviewDetailScreen} />
-      <Stack.Screen name="CreateGearReview" component={CreateGearReviewScreen} />
+      <Stack.Screen name="CreateGearReview" component={GatedCreateGearReview} />
       <Stack.Screen name="EditGearReview" component={EditGearReviewScreen} />
-      <Stack.Screen name="SubmitGearReview" component={CreateGearReviewScreen} />
+      <Stack.Screen name="SubmitGearReview" component={GatedCreateGearReview} />
 
       {/* Questions/Ask */}
       <Stack.Screen name="QuestionsListScreen" component={QuestionsListScreen} />
       <Stack.Screen name="QuestionDetail" component={QuestionDetailScreen} />
-      <Stack.Screen name="CreateQuestion" component={CreateQuestionScreen} />
-      <Stack.Screen name="AskQuestion" component={CreateQuestionScreen} />
+      <Stack.Screen name="CreateQuestion" component={GatedCreateQuestion} />
+      <Stack.Screen name="AskQuestion" component={GatedCreateQuestion} />
 
       {/* Photos */}
       <Stack.Screen name="PhotosListScreen" component={PhotosListScreen} />
       <Stack.Screen name="PhotoDetail" component={PhotoDetailScreen} />
-      <Stack.Screen name="UploadPhoto" component={UploadPhotoScreen} />
-      <Stack.Screen name="PhotoComposer" component={PhotoComposerScreen} />
+      <Stack.Screen name="UploadPhoto" component={GatedUploadPhoto} />
+      <Stack.Screen name="PhotoComposer" component={GatedPhotoComposer} />
 
       {/* Feedback */}
       <Stack.Screen name="FeedbackListScreen" component={FeedbackListScreen} />
       <Stack.Screen name="FeedbackDetail" component={FeedbackDetailScreen} />
-      <Stack.Screen name="CreateFeedback" component={CreateFeedbackScreen} />
+      <Stack.Screen name="CreateFeedback" component={GatedCreateFeedback} />
 
       {/* Gear Closet */}
       <Stack.Screen name="MyGearCloset" component={MyGearClosetScreen} />
