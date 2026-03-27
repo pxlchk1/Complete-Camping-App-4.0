@@ -24,6 +24,7 @@ import { OnboardingProvider } from "./src/context/OnboardingContext";
 import { View, ImageBackground } from "react-native";
 import { useEffect, useState } from "react";
 import { initSubscriptions, identifyUser } from "./src/services/subscriptionService";
+import { preloadHeroImages } from "./src/constants/images";
 import { useAuthStore } from "./src/state/authStore";
 import { useTripsStore } from "./src/state/tripsStore";
 import { auth } from "./src/config/firebase";
@@ -185,9 +186,10 @@ export default function App() {
     return () => unsubscribe();
   }, [subscriptionsInitialized]);
 
-  // Show splash screen for minimum 3 seconds on cold start
+  // Show splash screen for minimum 3 seconds on cold start, preload hero images
   useEffect(() => {
     if (fontsLoaded) {
+      preloadHeroImages();
       const timer = setTimeout(() => {
         setAppReady(true);
       }, 3000);

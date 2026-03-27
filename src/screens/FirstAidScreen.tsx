@@ -55,7 +55,7 @@ export default function FirstAidScreen() {
       <View style={{ height: 200 + insets.top }}>
         <ImageBackground
           source={HERO_IMAGES.FIRST_AID}
-          style={{ flex: 1, transform: [{ scaleX: -1 }] }}
+          style={{ flex: 1, transform: [{ scaleX: -1 }], backgroundColor: DEEP_FOREST }}
           resizeMode="cover"
           accessibilityLabel="First aid and medical supplies"
         >

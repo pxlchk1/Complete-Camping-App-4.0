@@ -153,7 +153,7 @@ export default function MyCampsitePrompt() {
               lineHeight: 19,
             }}
           >
-            {"Take a minute to add your name, photo, and a few details so the app feels more like yours."}
+            {"Add a photo and a few details so this place starts to feel like yours."}
           </Text>
         </View>
 
@@ -180,7 +180,7 @@ export default function MyCampsitePrompt() {
           alignItems: "center",
           opacity: pressed ? 0.85 : 1,
         })}
-        accessibilityLabel="Go to My Campsite"
+        accessibilityLabel="Finish setup"
         accessibilityRole="button"
       >
         <Text
@@ -190,7 +190,7 @@ export default function MyCampsitePrompt() {
             color: PARCHMENT,
           }}
         >
-          Go to My Campsite
+          Finish setup
         </Text>
       </Pressable>
     </View>

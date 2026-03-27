@@ -1326,8 +1326,10 @@ async function sendQueuedNotifications(db: admin.firestore.Firestore): Promise<v
       }
 
       // Send push notification via Expo Push API
-      const tokens = tokensSnapshot.docs.map((t) => t.data().token);
-      const expoTokens = tokens.filter((t: string) => t.startsWith("ExponentPushToken"));
+      const tokens = tokensSnapshot.docs
+        .filter((t) => t.data().disabled !== true)
+        .map((t) => t.data().token);
+      const expoTokens = [...new Set(tokens.filter((t: string) => t.startsWith("ExponentPushToken")))];
 
       if (expoTokens.length === 0) {
         await doc.ref.update({
@@ -2546,12 +2548,14 @@ export const sendAdminTestPush = functions.https.onCall(
         );
       }
 
-      const tokens = tokensSnapshot.docs.map((doc) => doc.data().token);
+      const tokens = tokensSnapshot.docs
+        .filter((d) => d.data().disabled !== true)
+        .map((d) => d.data().token);
       let successCount = 0;
       let failureCount = 0;
 
-      // Filter for Expo push tokens only
-      const expoTokens = tokens.filter((t: string) => t.startsWith("ExponentPushToken"));
+      // Filter for Expo push tokens and deduplicate
+      const expoTokens = [...new Set(tokens.filter((t: string) => t.startsWith("ExponentPushToken")))];
       
       if (expoTokens.length === 0) {
         throw new functions.https.HttpsError(
@@ -3075,10 +3079,12 @@ export const publishAdminPush = functions
           throw new functions.https.HttpsError("failed-precondition", `Too many recipients (${tokenCount}). Maximum is 2000.`);
         }
 
+        const seen = new Set<string>();
         const tokens: { token: string; userId: string }[] = [];
         tokensSnapshot.forEach((doc) => {
           const d = doc.data();
-          if (d.token && d.token.startsWith("ExponentPushToken")) {
+          if (d.token && d.token.startsWith("ExponentPushToken") && !seen.has(d.token)) {
+            seen.add(d.token);
             tokens.push({ token: d.token, userId: d.userId });
           }
         });

@@ -283,7 +283,7 @@ export default function MealsScreen({ onTabChange }: MealsScreenProps) {
       const dayText = `Day ${selectedDay}`;
       const mealTypeText = CATEGORY_LABELS[selectedMealType];
 
-      setToastMessage(`Added to ${tripName} · ${mealTypeText}, ${dayText}`);
+      setToastMessage(`Added to ${tripName} for ${mealTypeText}, ${dayText}. One less thing to think about later.`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
 
@@ -326,7 +326,7 @@ export default function MealsScreen({ onTabChange }: MealsScreenProps) {
     loadLocalRecipes();
 
     // Show toast
-    setToastMessage(`Added "${mealData.name}" to your recipe library`);
+    setToastMessage(`Saved. "${mealData.name}" is ready for future trips.`);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
 
@@ -445,8 +445,8 @@ export default function MealsScreen({ onTabChange }: MealsScreenProps) {
           <View style={{ flex: 1, backgroundColor: "#F4EBD0" }}>
             <EmptyState
               iconName="calendar"
-              title="No Active Trips"
-              message="Your camp stove is so cold."
+              title="No active trips"
+              message="Your camp stove is off duty. Start a trip, and you can plan meals day by day."
               ctaLabel="Plan a New Trip"
               onPress={() => {
                 const canProceed = requirePro({
@@ -673,10 +673,12 @@ export default function MealsScreen({ onTabChange }: MealsScreenProps) {
                 <View className="items-center justify-center py-12">
                   <Ionicons name="book-outline" size={48} color={EARTH_GREEN} />
                   <Text className="text-center mt-4 mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}>
-                    No recipes yet
+                    {recipes.length > 0 ? "No matches" : "No recipes yet"}
                   </Text>
                   <Text className="text-center mb-4 px-8" style={{ fontFamily: "SourceSans3_400Regular", color: "#5a5a5a" }}>
-                    You can start by adding your favorite camp meals. They will show up here for future trips.
+                    {recipes.length > 0
+                      ? "Nothing turned up for that search. Try a simpler word, or browse a bit."
+                      : "Your camp cookbook is still blank. Add a favorite meal now, and it'll be here waiting next trip."}
                   </Text>
                 </View>
               }
@@ -718,6 +720,9 @@ export default function MealsScreen({ onTabChange }: MealsScreenProps) {
                   <Ionicons name="close" size={20} color={PARCHMENT} />
                 </Pressable>
               </View>
+              <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 13, color: "rgba(244, 235, 208, 0.7)", marginTop: 8 }}>
+                {"Pick the trip, meal type, and day, then we'll tuck it into the plan."}
+              </Text>
             </View>
 
             <View className="p-6">

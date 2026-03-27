@@ -4,14 +4,14 @@
  */
 
 import React, { useState } from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
+import { View, Text, Pressable, TextInput, ActivityIndicator } from "react-native";
 import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import ModalHeader from "../../components/ModalHeader";
 import * as Haptics from "expo-haptics";
 import { createFeedbackPost } from "../../services/feedbackService";
-import { useCurrentUser } from "../../state/userStore";
+import { auth } from "../../config/firebase";
 import { requireEmailVerification } from "../../utils/authHelper";
 import { RootStackNavigationProp } from "../../navigation/types";
 import { FeedbackCategory } from "../../types/community";
@@ -19,6 +19,7 @@ import {
   BORDER_SOFT,
   DEEP_FOREST,
   EARTH_GREEN,
+  PARCHMENT,
   PARCHMENT_SOFT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
@@ -60,7 +61,6 @@ const CATEGORIES: { id: FeedbackCategory; label: string; description: string; ic
 
 export default function CreateFeedbackScreen() {
   const navigation = useNavigation<RootStackNavigationProp>();
-  const currentUser = useCurrentUser();
 
   const [category, setCategory] = useState<FeedbackCategory>("feature");
   const [title, setTitle] = useState("");
@@ -68,22 +68,40 @@ export default function CreateFeedbackScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const canSubmit = title.trim().length >= 10 && body.trim().length >= 20;
+
   const handleSubmit = async () => {
-    if (!currentUser || !title.trim() || !body.trim() || submitting) return;
+    if (submitting) return;
+
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      setError("You must be signed in to submit feedback.");
+      return;
+    }
+
+    if (!title.trim()) {
+      setError("Please add a title for your feedback.");
+      return;
+    }
+
+    if (title.trim().length < 10) {
+      setError("Title must be at least 10 characters.");
+      return;
+    }
+
+    if (!body.trim()) {
+      setError("Please add a description.");
+      return;
+    }
+
+    if (body.trim().length < 20) {
+      setError("Description must be at least 20 characters.");
+      return;
+    }
 
     // Require email verification for posting content
     const isVerified = await requireEmailVerification("submit feedback");
     if (!isVerified) return;
-
-    if (title.length < 10) {
-      setError("Title must be at least 10 characters");
-      return;
-    }
-
-    if (body.length < 20) {
-      setError("Description must be at least 20 characters");
-      return;
-    }
 
     try {
       setSubmitting(true);
@@ -94,13 +112,13 @@ export default function CreateFeedbackScreen() {
         title: title.trim(),
         body: body.trim(),
         category,
-        authorId: currentUser.id,
+        authorId: firebaseUser.uid,
       });
 
       // Navigate to the feedback detail
       navigation.replace("FeedbackDetail", { postId });
     } catch (err: any) {
-      setError(err.message || "Failed to submit feedback");
+      setError(err.message || "Failed to submit feedback. Please try again.");
       setSubmitting(false);
     }
   };
@@ -242,6 +260,27 @@ export default function CreateFeedbackScreen() {
             </Text>
           </View>
 
+          {/* Submit Button */}
+          <Pressable
+            onPress={handleSubmit}
+            disabled={submitting}
+            className="rounded-xl py-4 mb-5 flex-row items-center justify-center active:opacity-90"
+            style={{
+              backgroundColor: canSubmit && !submitting ? DEEP_FOREST : DEEP_FOREST + "60",
+            }}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color={PARCHMENT} />
+            ) : (
+              <>
+                <Ionicons name="paper-plane-outline" size={18} color={PARCHMENT} />
+                <Text className="ml-2" style={{ fontFamily: "SourceSans3_600SemiBold", fontSize: 16, color: PARCHMENT }}>
+                  Submit Feedback
+                </Text>
+              </>
+            )}
+          </Pressable>
+
           {/* Guidelines */}
           <View className="rounded-xl p-4 border" style={{ backgroundColor: PARCHMENT_SOFT, borderColor: BORDER_SOFT }}>
             <View className="flex-row items-center mb-3">
@@ -263,7 +302,6 @@ export default function CreateFeedbackScreen() {
               {"\u2022  Check if similar feedback already exists"}
             </Text>
           </View>
-        {/* ...existing code... */}
       </KeyboardAwareScrollView>
     </View>
   );

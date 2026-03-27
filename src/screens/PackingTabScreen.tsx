@@ -198,7 +198,7 @@ export default function PackingTabScreen({ onTabChange }: PackingTabScreenProps)
           <EmptyState
             iconName="bag"
             title="No active trips"
-            message="Create a trip to build a packing list."
+            message="Nothing to pack yet. Start a trip, and we'll help you build the list before the last-minute scramble hits."
             ctaLabel="View Trips"
             onPress={() => onTabChange("trips")}
           />

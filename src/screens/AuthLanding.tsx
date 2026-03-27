@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, Platform, ActivityIndicator, TextInput, KeyboardAvoidingView, ScrollView, Linking, Modal, Alert } from "react-native";
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, Platform, ActivityIndicator, TextInput, KeyboardAvoidingView, ScrollView, Linking, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 import { OAuthProvider, signInWithCredential, signInWithEmailAndPassword, createUserWithEmailAndPassword, fetchSignInMethodsForEmail, linkWithCredential, sendEmailVerification } from "firebase/auth";
 import { auth, db } from "../config/firebase";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, getDocFromServer, setDoc, serverTimestamp } from "firebase/firestore";
 import { useAuthStore } from "../state/authStore";
 import { useUserStore } from "../state/userStore";
 import { Ionicons } from "@expo/vector-icons";
@@ -252,7 +252,10 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      const userDoc = await getDoc(doc(db, "profiles", userId));
+      // Use getDocFromServer to bypass Firestore local cache.
+      // The App.tsx safety-net may have cached a profile WITHOUT
+      // displayName/handle before the CF wrote the real values.
+      const userDoc = await getDocFromServer(doc(db, "profiles", userId));
       const userData = userDoc.data();
       const firebaseUser = auth.currentUser;
 
@@ -391,16 +394,11 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
       console.log("RETRY_ONBOARDING_SUCCESS");
       setPendingOnboardingRetry(null);
       
-      // Send verification email
+      // Send verification email (EmailVerificationGate shows the UI)
       try {
         await sendEmailVerification(currentUser);
-        Alert.alert(
-          "Verify Your Email",
-          "We've sent a verification link to your email address. Please check your inbox.",
-          [{ text: "OK" }]
-        );
       } catch (verifyError) {
-        // Non-blocking
+        // Non-blocking — EmailVerificationGate auto-sends as safety net
       }
       
       // Load profile and navigate to home
@@ -465,6 +463,17 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
         // Force token refresh to ensure Firestore rules see the new auth state
         await userCredential.user.getIdToken(true);
 
+        // Send verification email IMMEDIATELY while auth token is freshest.
+        // Uses userCredential.user directly (guaranteed non-null after create).
+        // Must happen before bootstrapNewAccount which can take 7+ seconds.
+        try {
+          await sendEmailVerification(userCredential.user);
+          console.log("VERIFICATION_EMAIL_SENT");
+        } catch (verifyError: any) {
+          // Log but don't block — EmailVerificationGate auto-sends as safety net
+          console.warn("VERIFICATION_EMAIL_FAILED", { code: verifyError?.code, message: verifyError?.message });
+        }
+
         // Create user profile using protected onboarding layer
         // Normalize handle - remove any @ prefix before saving
         const normalizedHandle = handle.trim().replace(/^@+/, "");
@@ -499,21 +508,6 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
         }
         
         console.log("ONBOARDING_SUCCESS");
-
-        // Send email verification
-        try {
-          await sendEmailVerification(userCredential.user);
-          
-          // Notify user about verification email
-          Alert.alert(
-            "Verify Your Email",
-            "We've sent a verification link to your email address. Please check your inbox and verify your email to complete your account setup.",
-            [{ text: "OK" }]
-          );
-        } catch (verifyError) {
-          console.warn("[Email Auth] Failed to send verification email:", verifyError);
-          // Don't block sign-up if verification email fails
-        }
       } else {
         // Sign in existing user
         userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
@@ -574,7 +568,34 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
               }
               console.log("RECOVERY_BOOTSTRAP_SUCCESS");
             } else {
-              console.log("RECOVERY_PROFILE_EXISTS_USER_ALREADY_SETUP");
+              // Profile doc exists but may have placeholder data from App.tsx safety net.
+              // Re-run bootstrap (idempotent merge) to fill in real identity fields.
+              console.log("RECOVERY_PROFILE_EXISTS_REBOOTSTRAPPING");
+              const normalizedHandle = handle.trim().replace(/^@+/, "");
+              const onboardingParams = {
+                userId: recoveryCredential.user.uid,
+                email: email.trim(),
+                displayName: displayName.trim(),
+                handle: normalizedHandle,
+                photoURL: null,
+              };
+              const result = await bootstrapNewAccount(onboardingParams);
+              if (!result.success) {
+                console.log("RECOVERY_REBOOTSTRAP_FAILED", { error: result.error });
+                // Non-blocking — user can still proceed with placeholder data
+              } else {
+                console.log("RECOVERY_REBOOTSTRAP_SUCCESS");
+              }
+            }
+
+            // Send verification email if not already verified
+            if (!recoveryCredential.user.emailVerified) {
+              try {
+                await sendEmailVerification(recoveryCredential.user);
+                console.log("RECOVERY_VERIFICATION_EMAIL_SENT");
+              } catch (verifyErr) {
+                console.warn("RECOVERY_VERIFICATION_EMAIL_FAILED", verifyErr);
+              }
             }
             
             // Load profile and navigate to home

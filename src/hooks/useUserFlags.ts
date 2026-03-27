@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../config/firebase";
 import { USER_FLAGS, setHomeWelcomeSeen } from "../services/userFlagsService";
 
@@ -38,10 +39,19 @@ export function useUserFlags(): UserFlagsState {
 
   // Track if we've already marked hasSeenWelcomeHome to avoid multiple writes
   const hasMarkedSeen = useRef(false);
+  // Track the current user UID so the effect re-runs on auth state change
+  const [currentUid, setCurrentUid] = useState<string | null>(auth.currentUser?.uid ?? null);
+
+  // Listen for auth state changes so we re-subscribe when a user signs in/out
+  useEffect(() => {
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      setCurrentUid(user?.uid ?? null);
+    });
+    return () => unsubAuth();
+  }, []);
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) {
+    if (!currentUid) {
       setState({
         hasSeenWelcomeHome: false,
         hasSeenStayInLoop: false,
@@ -52,7 +62,7 @@ export function useUserFlags(): UserFlagsState {
       return;
     }
 
-    const userRef = doc(db, "users", user.uid);
+    const userRef = doc(db, "users", currentUid);
 
     const unsubscribe = onSnapshot(
       userRef,
@@ -108,7 +118,7 @@ export function useUserFlags(): UserFlagsState {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [currentUid]);
 
   return state;
 }

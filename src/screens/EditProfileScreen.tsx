@@ -33,8 +33,11 @@ import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from "firebase/firest
 import { reauthenticateWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import * as Notifications from "expo-notifications";
+import * as Device from "expo-device";
 import { useCurrentUser, useUserStore } from "../state/userStore";
 import { reserveHandle } from "../services/handleService";
+import { registerPushToken } from "../services/notificationService";
 import ModalHeader from "../components/ModalHeader";
 import {
   DEEP_FOREST,
@@ -239,7 +242,7 @@ export default function EditProfileScreen() {
   const [deleteRequestSent, setDeleteRequestSent] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [optOutNewsletter, setOptOutNewsletter] = useState(currentUser?.emailSubscribed === false);
-  const [optOutNotifications, setOptOutNotifications] = useState(currentUser?.notificationsEnabled === false);
+  const [pushEnabled, setPushEnabled] = useState(currentUser?.notificationsEnabled === true);
   
   // Privacy state - default to public (true)
   const [isProfileContentPublic, setIsProfileContentPublic] = useState(
@@ -538,16 +541,55 @@ export default function EditProfileScreen() {
     const user = auth.currentUser;
     if (!user) return;
 
-    setOptOutNotifications(value);
-    
-    try {
-      await updateDoc(doc(db, "profiles", user.uid), {
-        notificationsEnabled: !value,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error("[EditProfile] Error updating notifications preference:", error);
-      setOptOutNotifications(!value); // Revert on error
+    if (value) {
+      // Enabling: request OS permission + register token
+      if (!Device.isDevice) {
+        return;
+      }
+
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== "granted") {
+        if (existingStatus === "denied") {
+          // OS previously denied — must go to Settings
+          Linking.openSettings();
+          return;
+        }
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus === "granted") {
+        setPushEnabled(true);
+        await registerPushToken(user.uid);
+        await updateDoc(doc(db, "users", user.uid), {
+          notificationsEnabled: true,
+          updatedAt: serverTimestamp(),
+        });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        // Permission denied at OS level
+        Linking.openSettings();
+      }
+    } else {
+      // Disabling
+      setPushEnabled(false);
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          notificationsEnabled: false,
+          updatedAt: serverTimestamp(),
+        });
+        // Disable token rather than delete (allows easy re-enable)
+        const pushTokenRef = doc(db, "pushTokens", `${user.uid}_${Platform.OS}`);
+        await updateDoc(pushTokenRef, {
+          disabled: true,
+          updatedAt: serverTimestamp(),
+        }).catch(() => {});
+      } catch (error) {
+        console.error("[EditProfile] Error disabling notifications:", error);
+        setPushEnabled(true); // Revert on error
+      }
     }
   };
 
@@ -1094,19 +1136,19 @@ export default function EditProfileScreen() {
                       <Text
                         style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
                       >
-                        Opt out of notifications
+                        Push Notifications
                       </Text>
                       <Text
                         className="text-sm"
                         style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
                       >
-                        Disable all push notifications
+                        Receive trip reminders, weather alerts, and more
                       </Text>
                     </View>
                     <Switch
-                      value={optOutNotifications}
+                      value={pushEnabled}
                       onValueChange={handleToggleNotifications}
-                      trackColor={{ false: BORDER_SOFT, true: "#dc2626" }}
+                      trackColor={{ false: BORDER_SOFT, true: EARTH_GREEN }}
                       thumbColor={PARCHMENT}
                     />
                   </View>

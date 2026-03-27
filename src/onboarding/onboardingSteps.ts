@@ -2,8 +2,8 @@
  * Onboarding Steps Orchestrator
  * 
  * This is the ONLY place where onboarding Firestore writes should happen.
- * All provisioning now routes through a backend Cloud Function
- * (provisionNewAccount) using Admin SDK — no client scatter-writes.
+ * Primary path: backend Cloud Function (provisionNewAccount) using Admin SDK.
+ * Fallback path: direct client SDK writes when CF is unreachable (e.g. Expo Go).
  * 
  * IMPORTANT: This module is designed to be IDEMPOTENT:
  * - Never overwrites existing user/profile docs
@@ -12,7 +12,8 @@
  */
 
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../config/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { functions, db } from '../config/firebase';
 import { ONBOARDING_DEBUG } from './onboardingConfig';
 
 /**
@@ -84,30 +85,9 @@ function delay(ms: number): Promise<void> {
 }
 
 /**
- * Checks if a Cloud Functions error code is a transient auth-propagation error.
- * Brand-new Firebase users can hit UNAUTHENTICATED or INTERNAL briefly
- * while the token propagates to Cloud Functions infrastructure.
- */
-function isTransientAuthError(code: string): boolean {
-  return (
-    code === 'functions/unauthenticated' ||
-    code === 'functions/internal'
-  );
-}
-
-/**
- * Bootstraps a new account by calling the backend provisionNewAccount
- * Cloud Function. All Firestore writes happen server-side via Admin SDK.
- * 
- * This function orchestrates:
- * 1. Handle reservation with atomicity check
- * 2. users/{uid} creation/merge
- * 3. profiles/{uid} creation/merge
- * 4. userEmailIndex/{email} creation
- * 5. emailSubscribers/{uid} creation (optional)
- * 
- * @param params - The user data for creating the account
- * @returns Result indicating success or failure with error details
+ * Bootstraps a new account. Tries the Cloud Function first; if that fails
+ * with an auth-propagation error (common in Expo Go), falls back to direct
+ * client-side Firestore writes which use the already-valid client auth token.
  */
 export async function bootstrapNewAccount(params: BootstrapAccountParams): Promise<BootstrapAccountResult> {
   const startTime = Date.now();
@@ -116,11 +96,11 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
     console.log('[Onboarding] Starting bootstrapNewAccount for:', params.userId);
   }
 
-  // Retry once for transient auth-propagation errors (brand-new users).
-  // Firebase Cloud Functions can briefly reject the token of a
-  // just-created user with UNAUTHENTICATED before propagation completes.
-  const MAX_ATTEMPTS = 2;
+  // --- PRIMARY PATH: Cloud Function ---
+  const MAX_ATTEMPTS = 3;
+  const BACKOFF_DELAYS = [2000, 3000];
   let lastError: unknown = null;
+  let shouldFallback = false;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
@@ -133,7 +113,7 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
 
       const duration = Date.now() - startTime;
       if (ONBOARDING_DEBUG) {
-        console.log(`[Onboarding] bootstrapNewAccount completed in ${duration}ms (attempt ${attempt})`, result.data);
+        console.log(`[Onboarding] CF completed in ${duration}ms (attempt ${attempt})`, result.data);
       }
 
       return { success: true };
@@ -144,88 +124,208 @@ export async function bootstrapNewAccount(params: BootstrapAccountParams): Promi
       const rawCode = fnError.code || '';
 
       if (ONBOARDING_DEBUG) {
-        console.warn(`[Onboarding] bootstrapNewAccount attempt ${attempt} failed:`, {
+        console.warn(`[Onboarding] CF attempt ${attempt} failed:`, {
           code: rawCode,
           message: fnError.message,
         });
       }
 
-      // Only retry on transient auth-propagation errors, and only once
-      if (attempt < MAX_ATTEMPTS && isTransientAuthError(rawCode)) {
+      // Terminal errors — don't retry, don't fallback
+      if (rawCode === 'functions/already-exists' && fnError.message?.includes('HANDLE_TAKEN')) {
+        return {
+          success: false,
+          error: "That handle is already taken. Please choose a different handle.",
+          handleTaken: true,
+        };
+      }
+      if (rawCode === 'functions/already-exists' && fnError.message?.includes('EMAIL_IN_USE')) {
+        return {
+          success: false,
+          error: "That email is already in use. Try signing in instead.",
+          emailInUse: true,
+        };
+      }
+      if (rawCode === 'functions/invalid-argument') {
+        return {
+          success: false,
+          error: fnError.message || 'Invalid input.',
+          debugInfo: `validation: ${rawCode}`,
+        };
+      }
+
+      // Auth-related failures → fallback to client writes after retries exhaust
+      if (
+        rawCode === 'functions/unauthenticated' ||
+        rawCode === 'functions/internal' ||
+        rawCode === 'functions/permission-denied'
+      ) {
+        shouldFallback = true;
+      }
+
+      if (attempt < MAX_ATTEMPTS) {
+        const backoffMs = BACKOFF_DELAYS[attempt - 1] || 3000;
         if (ONBOARDING_DEBUG) {
-          console.log('[Onboarding] Transient auth error — retrying after delay...');
+          console.log(`[Onboarding] Retrying CF after ${backoffMs}ms...`);
         }
-        await delay(1500);
+        await delay(backoffMs);
         continue;
       }
 
-      // Non-retryable error or final attempt — fall through to error handling
       break;
     }
   }
 
-  // Error handling — uses lastError from the final failed attempt
-  const duration = Date.now() - startTime;
-  // Extract Firebase Functions error details
-  const fnError = lastError as {
-    code?: string;
-    message?: string;
-    details?: unknown;
-  };
-
-  // The httpsCallable wraps errors as "functions/CODE"
-  const rawCode = fnError?.code || '';
-  const message = fnError?.message || 'Unknown error';
-
-  if (ONBOARDING_DEBUG) {
-    console.error(`[Onboarding] bootstrapNewAccount FAILED in ${duration}ms:`, {
-      code: rawCode,
-      message,
-    });
+  // --- FALLBACK PATH: Direct client SDK writes ---
+  if (shouldFallback) {
+    if (ONBOARDING_DEBUG) {
+      console.log('[Onboarding] CF unavailable — falling back to client-side writes');
+    }
+    return clientSideProvision(params);
   }
 
-  // Handle taken
-  if (rawCode === 'functions/already-exists' && message.includes('HANDLE_TAKEN')) {
-    return {
-      success: false,
-      error: "That handle is already taken. Please choose a different handle.",
-      handleTaken: true,
-    };
-  }
-
-  // Email in use
-  if (rawCode === 'functions/already-exists' && message.includes('EMAIL_IN_USE')) {
-    return {
-      success: false,
-      error: "That email is already in use. Try signing in instead.",
-      emailInUse: true,
-    };
-  }
-
-  // Invalid argument
-  if (rawCode === 'functions/invalid-argument') {
-    return {
-      success: false,
-      error: message,
-      debugInfo: `validation: ${rawCode}`,
-    };
-  }
-
-  // Permission denied (should not happen with Admin SDK, but just in case)
-  if (rawCode === 'functions/permission-denied' || rawCode === 'permission-denied') {
-    return {
-      success: false,
-      error: "We couldn't finish setting up your account. Please try again.",
-      debugInfo: `permission-denied`,
-    };
-  }
-
-  // Generic fallback
+  // Non-auth CF failure with no fallback
+  const fnError = lastError as { code?: string; message?: string };
   return {
     success: false,
     error: "We couldn't finish setting up your account. Please try again.",
-    debugInfo: `${rawCode}: ${message}`,
+    debugInfo: `${fnError?.code || 'unknown'}: ${fnError?.message || 'unknown'}`,
   };
+}
+
+/**
+ * Client-side fallback provisioning.
+ * Performs the same writes as the Cloud Function but using the client SDK.
+ * Skips userHandlesIndex (no client rule) — handle uniqueness checked at CF
+ * level when available, and at profile/display level otherwise.
+ */
+async function clientSideProvision(params: BootstrapAccountParams): Promise<BootstrapAccountResult> {
+  const { userId, email, displayName, handle, photoURL } = params;
+  const emailNormalized = email.trim().toLowerCase();
+  const normalizedHandle = handle.trim().toLowerCase();
+  const firstName = displayName.trim().split(' ')[0] || displayName.trim();
+  const now = serverTimestamp();
+
+  try {
+    // Step 1: Create/merge users/{uid}
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      await setDoc(userRef, {
+        email: emailNormalized,
+        displayName: displayName.trim(),
+        handle: normalizedHandle,
+        photoURL: photoURL || null,
+        firstName,
+        hasSeenWelcomeHome: false,
+        createdAt: now,
+        updatedAt: now,
+        notificationsEnabled: true,
+        emailSubscribed: true,
+      });
+    } else {
+      await setDoc(userRef, {
+        email: emailNormalized,
+        displayName: displayName.trim(),
+        handle: normalizedHandle,
+        firstName,
+        updatedAt: now,
+      }, { merge: true });
+    }
+
+    // Step 2: Create/merge profiles/{uid}
+    const profileRef = doc(db, 'profiles', userId);
+    const profileSnap = await getDoc(profileRef);
+
+    if (!profileSnap.exists()) {
+      await setDoc(profileRef, {
+        email: emailNormalized,
+        displayName: displayName.trim(),
+        handle: normalizedHandle,
+        photoURL: photoURL || null,
+        avatarUrl: photoURL || null,
+        backgroundUrl: null,
+        coverPhotoURL: null,
+        bio: null,
+        location: null,
+        campingStyle: null,
+        joinedAt: now,
+        createdAt: now,
+        updatedAt: now,
+        role: 'user',
+        stats: {
+          tripsCount: 0,
+          tipsCount: 0,
+          gearReviewsCount: 0,
+          questionsCount: 0,
+          photosCount: 0,
+        },
+      });
+    } else {
+      await setDoc(profileRef, {
+        email: emailNormalized,
+        displayName: displayName.trim(),
+        handle: normalizedHandle,
+        updatedAt: now,
+      }, { merge: true });
+    }
+
+    // Step 3: Create userEmailIndex/{email}
+    if (emailNormalized) {
+      const emailRef = doc(db, 'userEmailIndex', emailNormalized);
+      const emailSnap = await getDoc(emailRef);
+
+      if (emailSnap.exists()) {
+        const existingUserId = emailSnap.data()?.userId;
+        if (existingUserId && existingUserId !== userId) {
+          return {
+            success: false,
+            error: "That email is already in use. Try signing in instead.",
+            emailInUse: true,
+          };
+        }
+      } else {
+        await setDoc(emailRef, {
+          userId,
+          email: emailNormalized,
+          createdAt: now,
+        });
+      }
+    }
+
+    // Step 4: Create emailSubscribers/{uid} (optional, non-blocking)
+    try {
+      const subRef = doc(db, 'emailSubscribers', userId);
+      const subSnap = await getDoc(subRef);
+      if (!subSnap.exists()) {
+        await setDoc(subRef, {
+          emailAddress: emailNormalized,
+          firstname: firstName,
+          subscribedAt: now,
+          subscriptionStatus: 'subscribed',
+        });
+      }
+    } catch {
+      // Non-critical — don't fail onboarding
+    }
+
+    if (ONBOARDING_DEBUG) {
+      console.log('[Onboarding] Client-side provision completed successfully');
+    }
+
+    return { success: true };
+
+  } catch (error) {
+    const firebaseError = error as { code?: string; message?: string };
+    if (ONBOARDING_DEBUG) {
+      console.error('[Onboarding] Client-side provision failed:', firebaseError);
+    }
+    return {
+      success: false,
+      error: "We couldn't finish setting up your account. Please try again.",
+      debugInfo: `client-fallback: ${firebaseError?.code || 'unknown'}: ${firebaseError?.message || 'unknown'}`,
+    };
+  }
 }
 
 /**

@@ -13,6 +13,7 @@ export const USER_FLAGS = {
   HAS_SEEN_MY_CAMPGROUND_INFO: "hasSeenMyCampgroundInfoModal",
   HAS_SEEN_MY_CAMPSITE_WELCOME: "hasSeenMyCampsiteWelcomeModal",
   HAS_SEEN_WELCOME_HOME: "hasSeenWelcomeHome",
+  HAS_SEEN_CAMPSITE_SETUP_PROMPT: "hasSeenCampsiteSetupPrompt",
 } as const;
 
 /**
@@ -111,6 +112,93 @@ export async function setMyCampsiteWelcomeSeen(): Promise<void> {
     console.log("[UserFlags] Marked hasSeenMyCampsiteWelcomeModal = true");
   } catch (error) {
     console.error("[UserFlags] Error setting hasSeenMyCampsiteWelcomeModal:", error);
+  }
+}
+
+// ============================================
+// CAMPSITE SETUP PROMPT (Home Screen onboarding)
+// ============================================
+
+/**
+ * Check if user has customized their My Campsite profile.
+ * Returns true if any personalization field has been set (avatar, bio, etc.).
+ */
+export async function hasCustomizedProfile(): Promise<boolean> {
+  const user = auth.currentUser;
+  if (!user) return false;
+
+  try {
+    const profileRef = doc(db, "profiles", user.uid);
+    const profileSnap = await getDoc(profileRef);
+
+    if (!profileSnap.exists()) return false;
+
+    const data = profileSnap.data();
+    // Any of these fields being set indicates user has personalized their profile
+    return !!(
+      (typeof data?.avatarUrl === "string" && data.avatarUrl.length > 0) ||
+      (typeof data?.backgroundUrl === "string" && data.backgroundUrl.length > 0) ||
+      (typeof data?.bio === "string" && data.bio.length > 0) ||
+      (typeof data?.about === "string" && data.about.length > 0) ||
+      (typeof data?.location === "string" && data.location.length > 0) ||
+      (typeof data?.campingStyle === "string" && data.campingStyle.length > 0) ||
+      (typeof data?.favoriteCampingStyle === "string" && data.favoriteCampingStyle.length > 0)
+    );
+  } catch (error) {
+    console.log("[UserFlags] Error checking hasCustomizedProfile:", error);
+    return true; // On error, assume customized to avoid nagging
+  }
+}
+
+/**
+ * Check if the campsite setup prompt should be suppressed.
+ * Returns true if user has either seen the prompt OR already customized their profile.
+ */
+export async function shouldSuppressCampsitePrompt(): Promise<boolean> {
+  const [seen, customized] = await Promise.all([
+    hasSeenCampsiteSetupPrompt(),
+    hasCustomizedProfile(),
+  ]);
+  return seen || customized;
+}
+
+/**
+ * Check if user has seen the Home Screen campsite setup prompt.
+ * Used for both first-login and returning-user flows.
+ */
+export async function hasSeenCampsiteSetupPrompt(): Promise<boolean> {
+  const user = auth.currentUser;
+  if (!user) return true; // Don't show to unauthenticated users
+
+  try {
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    
+    if (userSnap.exists()) {
+      return userSnap.data()?.[USER_FLAGS.HAS_SEEN_CAMPSITE_SETUP_PROMPT] === true;
+    }
+    return false;
+  } catch (error) {
+    console.log("[UserFlags] Error checking hasSeenCampsiteSetupPrompt:", error);
+    return true; // On error, don't show prompt to avoid blocking
+  }
+}
+
+/**
+ * Mark that user has seen the Home Screen campsite setup prompt
+ */
+export async function setCampsiteSetupPromptSeen(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    const userRef = doc(db, "users", user.uid);
+    await setDoc(userRef, {
+      [USER_FLAGS.HAS_SEEN_CAMPSITE_SETUP_PROMPT]: true,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+  } catch (error) {
+    console.log("[UserFlags] Error setting hasSeenCampsiteSetupPrompt:", error);
   }
 }
 

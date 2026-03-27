@@ -25,6 +25,42 @@ type NotificationData = {
 // Navigation function type that can be passed in
 type NavigateFunction = (screen: string, params?: Record<string, any>) => void;
 
+// Map URL-scheme deep link paths to React Navigation screen names
+const DEEP_LINK_PATH_MAP: Record<string, string> = {
+  trips: "HomeTabs",
+  plan: "HomeTabs",
+  home: "HomeTabs",
+  learn: "HomeTabs",
+  connect: "HomeTabs",
+  paywall: "Paywall",
+  settings: "Settings",
+  account: "Account",
+  notifications: "Notifications",
+};
+
+/**
+ * Resolve a deep link value to a screen name.
+ * Handles both plain screen names ("HomeTabs") and URL-scheme links ("tentandlantern://trips").
+ */
+function resolveDeepLink(deepLink: string): { screen: string; params?: Record<string, any> } | null {
+  // Strip URL scheme prefix if present (e.g. "tentandlantern://trips" → "trips")
+  const stripped = deepLink.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, "").replace(/^\/+/, "").replace(/\/+$/, "");
+  const pathKey = stripped.toLowerCase();
+
+  // Check explicit path mapping first
+  if (DEEP_LINK_PATH_MAP[pathKey]) {
+    return { screen: DEEP_LINK_PATH_MAP[pathKey] };
+  }
+
+  // If original value looks like a URL scheme, fall back to HomeTabs
+  if (deepLink.includes("://")) {
+    return { screen: "HomeTabs" };
+  }
+
+  // Plain screen name — pass through as-is
+  return { screen: deepLink };
+}
+
 /**
  * Hook to manage notification listeners and handle notification responses
  * Should be used in the root App component
@@ -48,7 +84,10 @@ export function useNotificationListeners(
     if (!data?.type) {
       if (data?.deepLink && typeof data.deepLink === "string" && data.deepLink.length > 0) {
         try {
-          navigateFn(data.deepLink);
+          const resolved = resolveDeepLink(data.deepLink);
+          if (resolved) {
+            navigateFn(resolved.screen, resolved.params);
+          }
         } catch (navErr) {
           console.log("[Notifications] deepLink navigation failed:", navErr);
         }
@@ -124,8 +163,10 @@ export function useNotificationListeners(
         }
         // If there's a deepLink in the payload, try to navigate to it
         if (data.deepLink) {
-          // deepLink format: "HomeTabs", "CreateTrip", "LearnTab", etc.
-          navigateFn(data.deepLink as string);
+          const resolved = resolveDeepLink(data.deepLink as string);
+          if (resolved) {
+            navigateFn(resolved.screen, resolved.params);
+          }
           break;
         }
         console.log("[Notifications] Unhandled notification type:", data.type);

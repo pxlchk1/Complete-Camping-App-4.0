@@ -537,7 +537,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 marginBottom: spacing.md,
               }}
             >
-              Select a park, search for a city, or use your location to see weather forecasts.
+              Search a city, choose a park, or use your location to get the forecast before you go.
             </Text>
 
             {/* City/State Search */}
@@ -762,7 +762,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                 marginTop: spacing.sm,
               }}
             >
-              Loading weather...
+              Checking the forecast...
             </Text>
           </View>
         )}
@@ -964,7 +964,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     marginBottom: spacing.sm,
                   }}
                 >
-                  Your current outlook is... Campy ⛺
+                  The forecast still says camp energy.
                 </Text>
                 <Pressable
                   onPress={() => {
@@ -1160,6 +1160,17 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
               </Pressable>
             </View>
 
+            <Text
+              style={{
+                fontFamily: fonts.bodyRegular,
+                fontSize: fontSizes.xs,
+                color: TEXT_SECONDARY,
+                marginBottom: spacing.sm,
+              }}
+            >
+              Choose which trip should keep an eye on this forecast.
+            </Text>
+
             {/* Location Info */}
             {location && (
               <View
@@ -1264,7 +1275,7 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                         navigation.navigate("TripDetail", { tripId: trip.id });
                       } else {
                         // No trip context - just show toast
-                        setToastMessage(`Weather location added to "${trip.name}"`);
+                        setToastMessage(`Forecast added to "${trip.name}". Good call.`);
                         setTimeout(() => setToastMessage(null), 3000);
                       }
                     }}

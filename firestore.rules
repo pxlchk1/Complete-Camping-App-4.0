@@ -470,6 +470,15 @@ service cloud.firestore {
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
+    // User Handles Index (unique handle reservation)
+    // Doc ID is the normalized handle, payload includes userId
+    match /userHandlesIndex/{handle} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow delete: if false;
+    }
+
     // User Email Index (for account lookup/linking)
     // Doc ID is normalized email, payload must include userId field
     // SECURITY: userId field is immutable - prevents email index hijacking
@@ -525,6 +534,33 @@ service cloud.firestore {
       allow read: if isSignedIn() && request.auth.uid == userId;
       allow create, update: if isSignedIn() && request.auth.uid == userId;
       allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Badge Definitions - read-only catalog, writable by admins
+    match /badgeDefinitions/{badgeId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // User Badges - earned badges; owner reads, system/admin writes
+    match /userBadges/{docId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+
+    // Badge Claims - witness flow; claimant and witness can read/write their claims
+    match /badgeClaims/{claimId} {
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.claimantUserId ||
+        request.auth.uid == resource.data.witnessUserId
+      );
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.claimantUserId;
+      allow update: if isSignedIn() && (
+        request.auth.uid == resource.data.claimantUserId ||
+        request.auth.uid == resource.data.witnessUserId
+      );
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.claimantUserId;
     }
 
     // Reports collection - users can create, admins/mods can read and manage

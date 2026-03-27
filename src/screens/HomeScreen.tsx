@@ -69,6 +69,7 @@ import { RootStackParamList } from "../navigation/types";
 import { auth, db } from "../config/firebase";
 import { doc, getDoc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { setCampsiteSetupPromptSeen, shouldSuppressCampsitePrompt } from "../services/userFlagsService";
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Home">;
 
@@ -105,7 +106,7 @@ export default function HomeScreen() {
   const { isLoggedIn: isAuthenticated, isGuest } = useUserStatus();
 
   // User flags for welcome greeting (real-time subscription to Firestore)
-  const { hasSeenWelcomeHome, hasSeenStayInLoop, firstName: userFirstName } = useUserFlags();
+  const { hasSeenWelcomeHome, hasSeenStayInLoop, firstName: userFirstName, loading: userFlagsLoading } = useUserFlags();
 
   // Notification opt-in modal state
   const [showStayInLoopModal, setShowStayInLoopModal] = useState(false);
@@ -158,10 +159,13 @@ export default function HomeScreen() {
   const firstLoginStep = useRef<"idle" | "notifications" | "campsite" | "done">("idle");
   const [showCampsitePrompt, setShowCampsitePrompt] = useState(false);
   const firstLoginChecked = useRef(false);
+  const returningUserChecked = useRef(false);
+  const returningUserNeedsCampsite = useRef(false);
 
   // First-login sequence: detect brand new user and orchestrate steps
   useEffect(() => {
     if (firstLoginChecked.current) return;
+    if (userFlagsLoading) return;
     if (!isAuthenticated || isGuest) return;
     // hasSeenWelcomeHome is false only on the very first Home visit
     if (hasSeenWelcomeHome) {
@@ -179,10 +183,16 @@ export default function HomeScreen() {
 
     const startFirstLoginSequence = async () => {
       try {
+        // Check if user already customized their profile or saw this prompt
+        const suppressCampsite = await shouldSuppressCampsitePrompt();
+
         const eligibility = await checkNotificationModalEligibility(userId);
         if (cancelled) return;
 
         if (eligibility.isEligible && eligibility.cohort) {
+          // Store campsite need for after notification modal dismisses
+          returningUserNeedsCampsite.current = !suppressCampsite;
+
           trackModalEligible(eligibility.cohort);
           setNotificationCohort(eligibility.cohort);
           await recordModalShown(userId, eligibility.cohort);
@@ -193,39 +203,43 @@ export default function HomeScreen() {
               setShowStayInLoopModal(true);
             }
           }, 300);
-        } else {
+        } else if (!suppressCampsite) {
           // Not eligible for notification ask — skip to campsite step
           firstLoginStep.current = "campsite";
           setTimeout(() => {
             if (!cancelled) setShowCampsitePrompt(true);
           }, 300);
+        } else {
+          firstLoginStep.current = "done";
         }
       } catch (error) {
         console.error("[HomeScreen] First-login sequence error:", error);
-        // On error, skip to campsite step
-        firstLoginStep.current = "campsite";
-        setTimeout(() => {
-          if (!cancelled) setShowCampsitePrompt(true);
-        }, 300);
+        // On error, skip entirely
+        firstLoginStep.current = "done";
       }
     };
 
     startFirstLoginSequence();
 
     return () => { cancelled = true; };
-  }, [isAuthenticated, isGuest, hasSeenWelcomeHome]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, isGuest, userFlagsLoading]);
 
   // Show notification opt-in modal for returning users (non-first-login)
   // First-login users get this through the first-login sequence above instead
   useEffect(() => {
     // Skip if first-login sequence is handling this
     if (firstLoginStep.current !== "idle") return;
+    if (returningUserChecked.current) return;
+    if (userFlagsLoading) return;
 
     // Only proceed for authenticated non-guest users
     if (!isAuthenticated || isGuest) return;
     
     const userId = auth.currentUser?.uid;
     if (!userId) return;
+
+    returningUserChecked.current = true;
 
     let cancelled = false;
 
@@ -235,7 +249,13 @@ export default function HomeScreen() {
         
         if (cancelled) return;
 
+        // Pre-check campsite prompt eligibility for after notification modal
+        const suppressCampsite = await shouldSuppressCampsitePrompt();
+
         if (eligibility.isEligible && eligibility.cohort) {
+          // Store campsite need for after notification modal
+          returningUserNeedsCampsite.current = !suppressCampsite;
+
           // Track eligibility
           trackModalEligible(eligibility.cohort);
           setNotificationCohort(eligibility.cohort);
@@ -250,6 +270,11 @@ export default function HomeScreen() {
               setShowStayInLoopModal(true);
             }
           }, 300);
+        } else if (!suppressCampsite) {
+          // Not eligible for notifications — show campsite prompt directly
+          setTimeout(() => {
+            if (!cancelled) setShowCampsitePrompt(true);
+          }, 300);
         }
       } catch (error) {
         console.error("[HomeScreen] Error checking notification eligibility:", error);
@@ -261,7 +286,7 @@ export default function HomeScreen() {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, isGuest]);
+  }, [isAuthenticated, isGuest, userFlagsLoading]);
 
   // Check for admin test modal on mount (admin-only, user-scoped)
   useEffect(() => {
@@ -675,7 +700,7 @@ export default function HomeScreen() {
         <View style={{ height: 200 + insets.top }}>
           <ImageBackground
             source={HERO_IMAGES.WELCOME}
-            style={{ flex: 1 }}
+            style={{ flex: 1, backgroundColor: DEEP_FOREST }}
             resizeMode="cover"
             accessibilityLabel="Welcome to camping - forest scene"
           >
@@ -759,7 +784,7 @@ export default function HomeScreen() {
           {/* Quick Actions */}
           <View className="mb-6">
             <SectionTitle className="mb-4" color={DEEP_FOREST} style={{ fontSize: 18 }}>
-              Quick Actions
+              Get camp-ready
             </SectionTitle>
 
             <View className="space-y-3">
@@ -1103,12 +1128,22 @@ export default function HomeScreen() {
                   <Text
                     className="mt-2 text-center"
                     style={{
+                      fontFamily: "SourceSans3_600SemiBold",
+                      fontSize: 15,
+                      color: TEXT_SECONDARY,
+                    }}
+                  >
+                    No photos yet
+                  </Text>
+                  <Text
+                    className="mt-1 text-center"
+                    style={{
                       fontFamily: "SourceSans3_400Regular",
                       fontSize: 14,
                       color: TEXT_SECONDARY,
                     }}
                   >
-                    No photos yet. Be the first to share!
+                    {"This space is waiting for its first good camp photo."}
                   </Text>
                 </View>
               )}
@@ -1121,7 +1156,7 @@ export default function HomeScreen() {
               <View className="flex-row items-center">
                 <Ionicons name="bulb" size={20} color={GRANITE_GOLD} />
                 <BodyTextMedium className="ml-2" color={TEXT_PRIMARY_STRONG}>
-                  Daily Camping Tip
+                  Field note
                 </BodyTextMedium>
               </View>
             </View>
@@ -1477,10 +1512,15 @@ export default function HomeScreen() {
         visible={showStayInLoopModal}
         onDismiss={() => {
           setShowStayInLoopModal(false);
-          // If this was step 1 of first-login sequence, advance to step 2
-          if (firstLoginStep.current === "notifications") {
-            firstLoginStep.current = "campsite";
-            setTimeout(() => setShowCampsitePrompt(true), 300);
+          // Show campsite prompt if user hasn't customized their profile yet
+          if (firstLoginStep.current === "notifications" || returningUserNeedsCampsite.current) {
+            if (returningUserNeedsCampsite.current) {
+              returningUserNeedsCampsite.current = false;
+              firstLoginStep.current = "campsite";
+              setTimeout(() => setShowCampsitePrompt(true), 300);
+            } else {
+              firstLoginStep.current = "done";
+            }
           }
         }}
         cohort={notificationCohort}
@@ -1494,6 +1534,7 @@ export default function HomeScreen() {
         onRequestClose={() => {
           setShowCampsitePrompt(false);
           firstLoginStep.current = "done";
+          setCampsiteSetupPromptSeen();
         }}
       >
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }}>
@@ -1549,6 +1590,7 @@ export default function HomeScreen() {
                 safeHaptic();
                 setShowCampsitePrompt(false);
                 firstLoginStep.current = "done";
+                setCampsiteSetupPromptSeen();
                 navigation.navigate("MyCampsite" as any);
               }}
               style={{
@@ -1574,6 +1616,7 @@ export default function HomeScreen() {
               onPress={() => {
                 setShowCampsitePrompt(false);
                 firstLoginStep.current = "done";
+                setCampsiteSetupPromptSeen();
               }}
               style={{ paddingVertical: 10, alignItems: "center" }}
             >

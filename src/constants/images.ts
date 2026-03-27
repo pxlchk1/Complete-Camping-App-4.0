@@ -3,6 +3,8 @@
  * All hero images and illustrations
  */
 
+import { Asset } from "expo-asset";
+
 // Hero images (full-width at top of screens)
 export const HERO_IMAGES = {
   WELCOME: require("../../assets/images/welcome.png"),
@@ -15,6 +17,15 @@ export const HERO_IMAGES = {
   MEALS: require("../../assets/images/meals.png"),
   HEADER: require("../../assets/images/header.png"),
 };
+
+/** Pre-download all hero images so they render immediately on tab navigation */
+export async function preloadHeroImages(): Promise<void> {
+  try {
+    await Asset.loadAsync(Object.values(HERO_IMAGES));
+  } catch (e) {
+    console.error("[images] Hero preload failed:", e);
+  }
+}
 
 // Empty state illustrations
 export const EMPTY_STATE_IMAGES = {

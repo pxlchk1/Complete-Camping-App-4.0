@@ -67,7 +67,7 @@ function HeroHeader({ activeTab }: { activeTab: string }) {
     <View style={{ height: 200 + insets.top }}>
       <ImageBackground
         source={heroImage}
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: DEEP_FOREST }}
         resizeMode="cover"
         accessibilityLabel="Community camping scene"
       >

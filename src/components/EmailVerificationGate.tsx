@@ -21,7 +21,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { auth } from "../config/firebase";
-import { sendEmailVerification } from "firebase/auth";
+import { sendEmailVerification, signOut } from "firebase/auth";
 import {
   PARCHMENT,
   DEEP_FOREST,
@@ -38,6 +38,7 @@ export default function EmailVerificationGate() {
   const [verified, setVerified] = useState(false);
   const [message, setMessage] = useState("");
   const appState = useRef(AppState.currentState);
+  const autoSentRef = useRef(false);
 
   const user = auth.currentUser;
 
@@ -88,6 +89,27 @@ export default function EmailVerificationGate() {
     );
     return () => subscription.remove();
   }, [needsVerification, checkVerification]);
+
+  // Safety-net: auto-send verification email shortly after gate mounts.
+  // Only fires once per component lifetime (ref-guarded).
+  useEffect(() => {
+    if (!needsVerification || autoSentRef.current) return;
+    autoSentRef.current = true;
+
+    const timer = setTimeout(async () => {
+      try {
+        const freshUser = auth.currentUser;
+        if (!freshUser || freshUser.emailVerified) return;
+        await sendEmailVerification(freshUser);
+        console.log("GATE_AUTO_SEND_SUCCESS");
+      } catch (err: any) {
+        // Rate-limited or already sent — both are fine
+        console.warn("GATE_AUTO_SEND_SKIPPED", err?.code);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [needsVerification]);
 
   const handleResend = async () => {
     setResending(true);
@@ -265,6 +287,26 @@ export default function EmailVerificationGate() {
               Resend Verification Email
             </Text>
           )}
+        </Pressable>
+
+        {/* Sign out escape hatch */}
+        <Pressable
+          onPress={() => signOut(auth)}
+          style={({ pressed }) => ({
+            marginTop: 20,
+            paddingVertical: 8,
+            opacity: pressed ? 0.7 : 1,
+          })}
+        >
+          <Text
+            style={{
+              fontFamily: "SourceSans3_400Regular",
+              fontSize: 13,
+              color: TEXT_MUTED,
+            }}
+          >
+            Sign out
+          </Text>
         </Pressable>
       </View>
     </View>

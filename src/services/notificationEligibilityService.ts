@@ -80,7 +80,7 @@ const LEGACY_APP_VERSION_CUTOFF = "4.0.0";
  * - Wait 14 days after dismissal before showing again
  * - Maximum of 3 total shows (initial + 2 resurfaces)
  */
-const RESURFACE_DELAY_DAYS = 14;
+const RESURFACE_DELAY_DAYS = 30;
 const MAX_MODAL_SHOWS = 3;
 
 // ============================================

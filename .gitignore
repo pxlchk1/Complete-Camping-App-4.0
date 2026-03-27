@@ -37,3 +37,6 @@ functions/firebase-debug.log
 # Scratch scripts (root-level only, not src/scripts which are needed for the app)
 scripts/**
 !scripts/patch-ios-podspecs.js
+
+# Backup/export artifacts
+backup-*.json
