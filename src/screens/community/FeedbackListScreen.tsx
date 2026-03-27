@@ -234,7 +234,7 @@ export default function FeedbackListScreen() {
           numberOfLines={2}
           style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
         >
-          {item.description}
+          {item.description || (item as any).body}
         </Text>
 
         {/* Footer: author, date, and comments count */}

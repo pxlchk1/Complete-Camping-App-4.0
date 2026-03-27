@@ -304,7 +304,7 @@ export default function FeedbackDetailScreen() {
             </Text>
 
             <Text className="mb-4 leading-6" style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}>
-              {post.body}
+              {post.body || (post as any).description}
             </Text>
 
             <View className="flex-row items-center justify-between pt-4 border-t" style={{ borderColor: BORDER_SOFT }}>
