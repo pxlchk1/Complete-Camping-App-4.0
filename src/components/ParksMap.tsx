@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { Park } from "../types/camping";
 import { DEEP_FOREST, PARCHMENT, BORDER_SOFT, EARTH_GREEN } from "../constants/colors";
@@ -84,14 +84,12 @@ export default function ParksMap({ parks, userLocation, mode, onParkPress }: Par
               latitude: park.latitude,
               longitude: park.longitude,
             }}
+            tracksViewChanges={false}
+            onPress={() => onParkPress?.(park)}
           >
-            <TouchableOpacity
-              onPress={() => onParkPress?.(park)}
-              style={styles.markerContainer}
-              activeOpacity={0.7}
-            >
+            <View style={styles.markerContainer}>
               <View style={styles.marker} />
-            </TouchableOpacity>
+            </View>
           </Marker>
         ))}
       </MapView>
