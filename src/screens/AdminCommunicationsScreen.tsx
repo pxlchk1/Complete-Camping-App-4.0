@@ -77,6 +77,7 @@ export default function AdminCommunicationsScreen() {
   
   const [activeTab, setActiveTab] = useState<ChannelTab>("push");
   const [isSending, setIsSending] = useState(false);
+  const [showScreenPicker, setShowScreenPicker] = useState(false);
   
   // Push debug state
   const [pushPermissionStatus, setPushPermissionStatus] = useState<string>("checking...");
@@ -1052,6 +1053,122 @@ export default function AdminCommunicationsScreen() {
                 >
                   CTA Link / Deep Link
                 </Text>
+
+                {/* Quick Pick: App Screen */}
+                <Pressable
+                  onPress={() => setShowScreenPicker(!showScreenPicker)}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    paddingVertical: 6,
+                  }}
+                >
+                  <Ionicons
+                    name={showScreenPicker ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color={EARTH_GREEN}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    style={{
+                      fontFamily: "SourceSans3_600SemiBold",
+                      fontSize: 14,
+                      color: EARTH_GREEN,
+                    }}
+                  >
+                    Quick Pick: App Screen
+                  </Text>
+                </Pressable>
+
+                {showScreenPicker && (
+                  <View
+                    style={{
+                      backgroundColor: CARD_BACKGROUND_LIGHT,
+                      borderWidth: 1,
+                      borderColor: BORDER_SOFT,
+                      borderRadius: 8,
+                      marginBottom: 10,
+                      maxHeight: 220,
+                    }}
+                  >
+                    <ScrollView nestedScrollEnabled style={{ maxHeight: 220 }}>
+                      {[
+                        { label: "Home", screen: "HomeTabs" },
+                        { label: "Plan (My Trips)", screen: "Plan" },
+                        { label: "Connect Feed", screen: "Connect" },
+                        { label: "Learn", screen: "Learn" },
+                        { label: "First Aid", screen: "FirstAid" },
+                        { label: "Parks Browse", screen: "ParksBrowse" },
+                        { label: "Gear Lists", screen: "GearLists" },
+                        { label: "My Gear Closet", screen: "MyGearCloset" },
+                        { label: "Gear Reviews", screen: "GearReviewsListScreen" },
+                        { label: "Merit Badges", screen: "MeritBadges" },
+                        { label: "My Badges", screen: "MyBadges" },
+                        { label: "Meal Planning", screen: "MealPlanning" },
+                        { label: "Shopping List", screen: "ShoppingList" },
+                        { label: "Photos", screen: "PhotosListScreen" },
+                        { label: "Tips", screen: "TipsListScreen" },
+                        { label: "Questions", screen: "QuestionsListScreen" },
+                        { label: "Feedback", screen: "FeedbackListScreen" },
+                        { label: "Notifications", screen: "Notifications" },
+                        { label: "Settings", screen: "Settings" },
+                        { label: "Account", screen: "Account" },
+                        { label: "Edit Profile", screen: "EditProfile" },
+                      ].map((item) => {
+                        const deepLink = `tentandlantern://${item.screen}`;
+                        const isSelected = draft.ctaLink === deepLink;
+                        return (
+                          <Pressable
+                            key={item.screen}
+                            onPress={() => {
+                              updateCurrentDraft("ctaLink", deepLink);
+                              setShowScreenPicker(false);
+                            }}
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              paddingVertical: 10,
+                              paddingHorizontal: 14,
+                              borderBottomWidth: 1,
+                              borderBottomColor: BORDER_SOFT,
+                              backgroundColor: isSelected ? `${EARTH_GREEN}15` : "transparent",
+                            }}
+                          >
+                            <Ionicons
+                              name={isSelected ? "checkmark-circle" : "link-outline"}
+                              size={18}
+                              color={isSelected ? EARTH_GREEN : TEXT_MUTED}
+                              style={{ marginRight: 10 }}
+                            />
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={{
+                                  fontFamily: "SourceSans3_600SemiBold",
+                                  fontSize: 15,
+                                  color: isSelected ? EARTH_GREEN : TEXT_PRIMARY_STRONG,
+                                }}
+                              >
+                                {item.label}
+                              </Text>
+                              <Text
+                                style={{
+                                  fontFamily: "SourceSans3_400Regular",
+                                  fontSize: 12,
+                                  color: TEXT_MUTED,
+                                  marginTop: 1,
+                                }}
+                              >
+                                {deepLink}
+                              </Text>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
+                )}
+
                 <TextInput
                   value={draft.ctaLink}
                   onChangeText={(text: string) => updateCurrentDraft("ctaLink", text)}
