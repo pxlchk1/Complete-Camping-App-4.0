@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { View, Text, ScrollView, Pressable, ImageBackground, Image, ActivityIndicator, Modal } from "react-native";
+import { View, Text, ScrollView, Pressable, ImageBackground, Image, ActivityIndicator, Modal, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -1273,10 +1273,22 @@ export default function HomeScreen() {
               <Pressable
                 onPress={() => {
                   const shouldOpenPaywall = adminTestModal.ctaMode === "subscription";
+                  const ctaLink = adminTestModal.ctaLink;
                   dismissAdminTestModal();
                   if (shouldOpenPaywall) {
-                    // Navigate to the Paywall screen
                     navigation.navigate("Paywall" as any, { triggerKey: "admin_test_modal" });
+                  } else if (ctaLink) {
+                    // Strip URL scheme prefix to get screen name
+                    const stripped = ctaLink.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, "").replace(/^\/+/, "").replace(/\/+$/, "");
+                    if (stripped && !ctaLink.startsWith("http")) {
+                      try {
+                        navigation.navigate(stripped as any);
+                      } catch (e) {
+                        console.log("[HomeScreen] CTA navigation failed:", e);
+                      }
+                    } else if (ctaLink.startsWith("http")) {
+                      Linking.openURL(ctaLink);
+                    }
                   }
                 }}
                 style={{
@@ -1413,14 +1425,22 @@ export default function HomeScreen() {
                 <Pressable
                   onPress={() => {
                     const shouldOpenPaywall = announcementModal.ctaMode === "subscription";
+                    const ctaLink = announcementModal.ctaLink;
                     dismissAnnouncementModal();
                     if (shouldOpenPaywall) {
                       navigation.navigate("Paywall" as any, { triggerKey: "announcement_modal" });
-                    } else if (announcementModal.ctaMode === "url" && announcementModal.ctaLink) {
-                      // Open URL using Linking
-                      import("react-native").then(({ Linking }) => {
-                        Linking.openURL(announcementModal.ctaLink);
-                      });
+                    } else if (announcementModal.ctaMode === "url" && ctaLink) {
+                      // Strip URL scheme prefix to get screen name for in-app deep links
+                      const stripped = ctaLink.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, "").replace(/^\/+/, "").replace(/\/+$/, "");
+                      if (stripped && !ctaLink.startsWith("http")) {
+                        try {
+                          navigation.navigate(stripped as any);
+                        } catch (e) {
+                          console.log("[HomeScreen] Announcement CTA navigation failed:", e);
+                        }
+                      } else if (ctaLink.startsWith("http")) {
+                        Linking.openURL(ctaLink);
+                      }
                     }
                   }}
                   style={{

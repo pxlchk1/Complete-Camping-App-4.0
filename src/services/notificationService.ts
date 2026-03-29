@@ -127,6 +127,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 // Configure how notifications appear when app is in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
+    shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
     shouldShowBanner: true,
