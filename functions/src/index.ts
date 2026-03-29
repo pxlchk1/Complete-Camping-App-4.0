@@ -2578,17 +2578,43 @@ export const sendAdminTestPush = functions.https.onCall(
       }));
 
       // Call Expo Push API
-      const response = await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(messages),
-      });
+      let response: Response;
+      try {
+        response = await fetch("https://exp.host/--/api/v2/push/send", {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(messages),
+        });
+      } catch (fetchErr) {
+        const fetchMsg = fetchErr instanceof Error ? fetchErr.message : "Network error";
+        functions.logger.error("Expo Push API fetch failed", { adminUid: callerUid, error: fetchMsg });
+        throw new functions.https.HttpsError("unavailable", `Expo Push API unreachable: ${fetchMsg}`);
+      }
 
-      const result = await response.json();
-      
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => "(no body)");
+        functions.logger.error("Expo Push API non-OK response", {
+          adminUid: callerUid,
+          status: response.status,
+          body: errorBody.substring(0, 500),
+        });
+        throw new functions.https.HttpsError(
+          "internal",
+          `Expo Push API returned ${response.status}: ${errorBody.substring(0, 200)}`
+        );
+      }
+
+      let result: any;
+      try {
+        result = await response.json();
+      } catch (parseErr) {
+        functions.logger.error("Expo Push API JSON parse failed", { adminUid: callerUid });
+        throw new functions.https.HttpsError("internal", "Expo Push API returned invalid JSON");
+      }
+
       if (result.data) {
         for (const ticket of result.data) {
           if (ticket.status === "ok") {
@@ -2621,6 +2647,7 @@ export const sendAdminTestPush = functions.https.onCall(
       functions.logger.error("Failed to send admin test push", {
         adminUid: callerUid,
         error: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
       });
       throw new functions.https.HttpsError("internal", `Failed to send push: ${errorMessage}`);
     }

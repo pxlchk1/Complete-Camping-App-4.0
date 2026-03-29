@@ -578,6 +578,38 @@ service cloud.firestore {
       allow update, delete: if canModerateContent();
     }
 
+    // ============================================
+    // ADMIN COMMUNICATIONS COLLECTIONS
+    // ============================================
+
+    // Admin Drafts — admin read/write own drafts only
+    match /adminDrafts/{userId} {
+      allow read, write: if isAdmin() && request.auth.uid == userId;
+    }
+
+    // Admin Push Campaigns — admin can read; Cloud Functions write
+    match /adminPushCampaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // Admin Email Campaigns — admin can read; Cloud Functions write
+    match /adminEmailCampaigns/{campaignId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // Admin Test Modals — admin read/write own test modals only
+    match /adminTestModals/{userId} {
+      allow read, write: if isAdmin() && request.auth.uid == userId;
+    }
+
+    // Announcements — any signed-in user can read; admin can write
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
