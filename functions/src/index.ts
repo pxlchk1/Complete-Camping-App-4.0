@@ -2788,12 +2788,33 @@ export const sendAdminTestEmail = functions
         if (error instanceof functions.https.HttpsError) {
           throw error;
         }
+
+        // SendGrid ResponseError includes HTTP status code
+        const sgError = error as { code?: number; message?: string; response?: { body?: any } };
         const errorMessage = error instanceof Error ? error.message : "Unknown error";
+
         functions.logger.error("Failed to send admin test email", {
           adminUid: callerUid,
           to: data.toEmail,
           error: errorMessage,
+          httpStatus: sgError.code,
+          responseBody: sgError.response?.body ? JSON.stringify(sgError.response.body).substring(0, 500) : undefined,
         });
+
+        // Surface actionable error for SendGrid auth failures
+        if (sgError.code === 401 || errorMessage === "Unauthorized") {
+          throw new functions.https.HttpsError(
+            "unavailable",
+            "SendGrid API key is invalid or expired. Check SENDGRID_API_KEY in Firebase secrets."
+          );
+        }
+        if (sgError.code === 403) {
+          throw new functions.https.HttpsError(
+            "permission-denied",
+            "SendGrid rejected the request. Check sender identity verification and API key permissions."
+          );
+        }
+
         throw new functions.https.HttpsError("internal", `Failed to send email: ${errorMessage}`);
       }
     }
