@@ -183,10 +183,12 @@ export async function getExpoPushToken(): Promise<string | null> {
   }
 
   try {
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      "587deb41-d7a9-474f-8baf-09024d0a6ef1";
     
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: projectId,
+      projectId,
     });
     
     return tokenData.data;
