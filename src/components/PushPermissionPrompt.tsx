@@ -19,6 +19,7 @@ import { auth } from "../config/firebase";
 import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { userActionTracker } from "../services/userActionTrackerService";
 import { requestPushPermission } from "../services/notificationPreferencesService";
+import { registerPushToken } from "../services/notificationService";
 import { trackPermissionPromptShown, trackPermissionResult } from "../services/analyticsService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -101,6 +102,12 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
 
       // Request OS permission (no userId param needed)
       const status = await requestPushPermission();
+
+      // If granted, ensure push token is registered in Firestore
+      // (fire-and-forget — don't block modal dismissal)
+      if (status === "granted") {
+        registerPushToken(user.uid).catch(() => {});
+      }
       
       // Track result
       const analyticsStatus = status === "granted" ? "granted" : status === "denied" ? "denied" : "undetermined";
