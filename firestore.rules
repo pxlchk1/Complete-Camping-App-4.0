@@ -501,10 +501,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Push Tokens
+    // Push Tokens — owner-only read/write
     match /pushTokens/{tokenId} {
-      allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // Notification Preferences — owner-only read/write
+    match /notificationPreferences/{userId} {
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
     // Notification Queue (read by owner, write by functions only)

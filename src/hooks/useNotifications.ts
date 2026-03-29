@@ -218,13 +218,3 @@ export function useNotificationListeners(
     };
   }, [checkInitialNotification, handleNotificationResponse]);
 }
-
-/**
- * Hook to request notification permissions on first launch or when needed
- */
-export function useNotificationPermission() {
-  useEffect(() => {
-    // Could be used to show a permission priming screen
-    // or request permissions at an appropriate time
-  }, []);
-}
