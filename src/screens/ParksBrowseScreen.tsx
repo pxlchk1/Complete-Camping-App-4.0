@@ -1174,7 +1174,7 @@ export default function ParksBrowseScreen({ onTabChange, selectedParkId: selecte
 
         {/* Loader overlay - inside body content area */}
         {isLoading && (
-          <View style={styles.loaderOverlay}>
+          <View pointerEvents="none" style={styles.loaderOverlay}>
             <FireflyLoader />
           </View>
         )}
@@ -1260,7 +1260,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     zIndex: 1000,
     elevation: 1000,
-    pointerEvents: "none",
   },
   modalOverlay: {
     flex: 1,

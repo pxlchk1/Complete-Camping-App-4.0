@@ -296,6 +296,7 @@ export default function PlanTopTabsNavigator() {
             textTransform: "none",
           },
           tabBarScrollEnabled: false,
+          swipeEnabled: false,
         }}
         screenListeners={({ navigation }) => {
           // Capture the navigation object for programmatic navigation
