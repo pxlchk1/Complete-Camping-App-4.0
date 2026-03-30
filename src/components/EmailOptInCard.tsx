@@ -28,14 +28,19 @@ import { auth, db } from "../config/firebase";
 import { doc, updateDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { httpsCallable, getFunctions } from "firebase/functions";
 import {
-  CARD_BACKGROUND_LIGHT,
   BORDER_SOFT,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
   EARTH_GREEN,
   DEEP_FOREST,
+  DEEP_FOREST_PRESSED,
+  PARCHMENT,
+  PARCHMENT_SOFT,
+  DISABLED_BG,
+  DISABLED_TEXT,
 } from "../constants/colors";
+import { fonts, radius } from "../theme/theme";
 
 interface EmailOptInCardProps {
   /** Callback when opt-in completes successfully */
@@ -178,50 +183,39 @@ export default function EmailOptInCard({
   };
 
   return (
-    <View
-      className="rounded-2xl border p-4"
-      style={{
-        backgroundColor: CARD_BACKGROUND_LIGHT,
-        borderColor: BORDER_SOFT,
-      }}
-    >
-      {/* Header with icon */}
-      <View className="flex-row items-center mb-3">
-        <View
-          className="w-10 h-10 rounded-full items-center justify-center mr-3"
-          style={{ backgroundColor: EARTH_GREEN + "20" }}
-        >
-          <Ionicons name="mail" size={20} color={EARTH_GREEN} />
-        </View>
-        <View className="flex-1">
-          <Text
-            className="text-base"
-            style={{
-              fontFamily: "SourceSans3_600SemiBold",
-              color: TEXT_PRIMARY_STRONG,
-            }}
-          >
-            {title}
-          </Text>
-          <Text
-            className="text-sm"
-            style={{
-              fontFamily: "SourceSans3_400Regular",
-              color: TEXT_SECONDARY,
-            }}
-          >
-            {subtitle}
-          </Text>
-        </View>
-      </View>
+    <View>
+      {/* Title + subtitle */}
+      <Text
+        style={{
+          fontFamily: "Raleway_700Bold",
+          fontSize: 21,
+          color: TEXT_PRIMARY_STRONG,
+          lineHeight: 27,
+          marginBottom: 6,
+        }}
+      >
+        {title}
+      </Text>
+      <Text
+        style={{
+          fontFamily: fonts.body,
+          fontSize: 15,
+          color: TEXT_SECONDARY,
+          lineHeight: 22,
+          marginBottom: 20,
+        }}
+      >
+        {subtitle}
+      </Text>
 
       {/* Email Input */}
-      <View className="mb-3">
+      <View style={{ marginBottom: 14 }}>
         <Text
-          className="text-xs mb-1"
           style={{
-            fontFamily: "SourceSans3_600SemiBold",
+            fontFamily: fonts.bodySemi,
+            fontSize: 13,
             color: TEXT_SECONDARY,
+            marginBottom: 5,
           }}
         >
           Email
@@ -235,19 +229,26 @@ export default function EmailOptInCard({
           autoCapitalize="none"
           autoCorrect={false}
           editable={!isSubmitting}
-          className="rounded-lg px-3 py-2 border"
           style={{
             backgroundColor: "#FFFFFF",
+            borderWidth: 1,
             borderColor: email && !isEmailValid ? "#D32F2F" : BORDER_SOFT,
-            fontFamily: "SourceSans3_400Regular",
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            fontFamily: fonts.body,
             color: TEXT_PRIMARY_STRONG,
             fontSize: 16,
           }}
         />
         {email && !isEmailValid && (
           <Text
-            className="text-xs mt-1"
-            style={{ fontFamily: "SourceSans3_400Regular", color: "#D32F2F" }}
+            style={{
+              fontFamily: fonts.body,
+              fontSize: 12,
+              color: "#D32F2F",
+              marginTop: 4,
+            }}
           >
             Please enter a valid email address
           </Text>
@@ -255,12 +256,13 @@ export default function EmailOptInCard({
       </View>
 
       {/* First Name Input (Optional) */}
-      <View className="mb-3">
+      <View style={{ marginBottom: 16 }}>
         <Text
-          className="text-xs mb-1"
           style={{
-            fontFamily: "SourceSans3_600SemiBold",
+            fontFamily: fonts.bodySemi,
+            fontSize: 13,
             color: TEXT_SECONDARY,
+            marginBottom: 5,
           }}
         >
           First name (optional)
@@ -273,11 +275,14 @@ export default function EmailOptInCard({
           autoCapitalize="words"
           autoCorrect={false}
           editable={!isSubmitting}
-          className="rounded-lg px-3 py-2 border"
           style={{
             backgroundColor: "#FFFFFF",
+            borderWidth: 1,
             borderColor: BORDER_SOFT,
-            fontFamily: "SourceSans3_400Regular",
+            borderRadius: 14,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            fontFamily: fonts.body,
             color: TEXT_PRIMARY_STRONG,
             fontSize: 16,
           }}
@@ -292,23 +297,36 @@ export default function EmailOptInCard({
             setIsChecked(!isChecked);
           }
         }}
-        className="flex-row items-start mb-4"
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+          marginBottom: 20,
+        }}
         disabled={isSubmitting}
       >
         <View
-          className="w-5 h-5 rounded border items-center justify-center mr-2 mt-0.5"
           style={{
-            backgroundColor: isChecked ? EARTH_GREEN : "#FFFFFF",
-            borderColor: isChecked ? EARTH_GREEN : BORDER_SOFT,
+            width: 22,
+            height: 22,
+            borderRadius: 6,
+            borderWidth: 1.5,
+            backgroundColor: isChecked ? DEEP_FOREST : "#FFFFFF",
+            borderColor: isChecked ? DEEP_FOREST : BORDER_SOFT,
+            justifyContent: "center",
+            alignItems: "center",
+            marginRight: 10,
+            marginTop: 1,
           }}
         >
           {isChecked && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
         </View>
         <Text
-          className="flex-1 text-sm"
           style={{
-            fontFamily: "SourceSans3_400Regular",
+            flex: 1,
+            fontFamily: fonts.body,
+            fontSize: 14,
             color: TEXT_PRIMARY_STRONG,
+            lineHeight: 20,
           }}
         >
           Yes, email me tips and updates
@@ -317,10 +335,20 @@ export default function EmailOptInCard({
 
       {/* Error Message */}
       {error && (
-        <View className="mb-3 p-2 rounded-lg" style={{ backgroundColor: "#FFEBEE" }}>
+        <View
+          style={{
+            marginBottom: 14,
+            padding: 10,
+            borderRadius: 12,
+            backgroundColor: "#FFEBEE",
+          }}
+        >
           <Text
-            className="text-sm"
-            style={{ fontFamily: "SourceSans3_400Regular", color: "#D32F2F" }}
+            style={{
+              fontFamily: fonts.body,
+              fontSize: 14,
+              color: "#D32F2F",
+            }}
           >
             {error}
           </Text>
@@ -331,20 +359,27 @@ export default function EmailOptInCard({
       <Pressable
         onPress={handleSubmit}
         disabled={!isFormValid || isSubmitting}
-        className="rounded-lg py-3 items-center active:opacity-80"
-        style={{
-          backgroundColor: isFormValid ? DEEP_FOREST : BORDER_SOFT,
+        style={({ pressed }) => ({
+          backgroundColor: isFormValid
+            ? pressed
+              ? DEEP_FOREST_PRESSED
+              : DEEP_FOREST
+            : DISABLED_BG,
+          paddingVertical: 15,
+          borderRadius: radius.pill,
+          alignItems: "center",
+          justifyContent: "center",
           opacity: isSubmitting ? 0.7 : 1,
-        }}
+        })}
       >
         {isSubmitting ? (
           <ActivityIndicator size="small" color="#FFFFFF" />
         ) : (
           <Text
-            className="text-base"
             style={{
-              fontFamily: "SourceSans3_600SemiBold",
-              color: isFormValid ? "#FFFFFF" : TEXT_MUTED,
+              fontFamily: fonts.bodySemi,
+              fontSize: 16,
+              color: isFormValid ? "#FFFFFF" : DISABLED_TEXT,
             }}
           >
             Turn on emails
@@ -354,8 +389,13 @@ export default function EmailOptInCard({
 
       {/* Unsubscribe Note */}
       <Text
-        className="text-xs text-center mt-2"
-        style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_MUTED }}
+        style={{
+          fontFamily: fonts.body,
+          fontSize: 12,
+          color: TEXT_MUTED,
+          textAlign: "center",
+          marginTop: 10,
+        }}
       >
         Unsubscribe anytime.
       </Text>
@@ -367,12 +407,19 @@ export default function EmailOptInCard({
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onDismiss();
           }}
-          className="mt-3 py-2 items-center"
+          style={{
+            marginTop: 8,
+            paddingVertical: 10,
+            alignItems: "center",
+          }}
           disabled={isSubmitting}
         >
           <Text
-            className="text-sm"
-            style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
+            style={{
+              fontFamily: fonts.bodySemi,
+              fontSize: 14,
+              color: EARTH_GREEN,
+            }}
           >
             Not now
           </Text>
