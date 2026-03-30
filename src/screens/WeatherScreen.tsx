@@ -1121,8 +1121,11 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
               backgroundColor: PARCHMENT,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
-              padding: spacing.lg,
+              paddingTop: spacing.lg,
+              paddingHorizontal: spacing.lg,
+              paddingBottom: spacing.lg,
               maxHeight: "70%",
+              flexShrink: 1,
             }}
             onPress={(e) => e.stopPropagation()}
           >
@@ -1200,7 +1203,12 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
             )}
 
             {/* Trips List */}
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ paddingBottom: 4 }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
               {trips.length === 0 ? (
                 <View
                   style={{
