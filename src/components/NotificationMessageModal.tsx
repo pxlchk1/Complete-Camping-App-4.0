@@ -22,14 +22,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { create } from "zustand";
 import {
   PARCHMENT,
+  PARCHMENT_SOFT,
   DEEP_FOREST,
   DEEP_FOREST_PRESSED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   EARTH_GREEN,
-  BORDER_SOFT,
+  GRANITE_GOLD,
 } from "../constants/colors";
-import { fonts, shadows } from "../theme/theme";
+import { fonts, shadows, radius } from "../theme/theme";
 
 // ─────────────────────────────────────────────
 // Zustand store for pending notification
@@ -87,7 +88,7 @@ function ctaLabelFromDeepLink(deepLink: string): string {
 // Modal component
 // ─────────────────────────────────────────────
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 interface Props {
   onNavigate: (screen: string, params?: Record<string, any>) => void;
@@ -101,6 +102,7 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
   if (!pending) return null;
 
   const ctaLabel = pending.ctaLabel || ctaLabelFromDeepLink(pending.deepLink);
+  const hasCTA = pending.deepLink && pending.deepLink.length > 0;
 
   const handleCTA = () => {
     const deepLink = pending.deepLink;
@@ -132,68 +134,96 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: "rgba(26, 47, 28, 0.88)",
+          backgroundColor: "rgba(26, 47, 28, 0.82)",
           justifyContent: "center",
           alignItems: "center",
-          paddingHorizontal: 24,
+          paddingHorizontal: 20,
         }}
         onPress={handleDismiss}
       >
         <Pressable
           onPress={() => {}}
           style={{
-            width: Math.min(SCREEN_WIDTH - 48, 380),
+            width: Math.min(SCREEN_WIDTH * 0.88, 400),
+            maxHeight: SCREEN_HEIGHT * 0.72,
             backgroundColor: PARCHMENT,
             borderRadius: 24,
             overflow: "hidden",
             ...shadows.modal,
           }}
         >
-          {/* Header bar */}
+          {/* ── Header row ── */}
           <View
             style={{
-              backgroundColor: DEEP_FOREST,
-              paddingVertical: 14,
-              paddingHorizontal: 20,
               flexDirection: "row",
               alignItems: "center",
-              gap: 10,
+              paddingTop: 24,
+              paddingBottom: 4,
+              paddingHorizontal: 24,
             }}
           >
-            <Ionicons name="notifications" size={20} color="#FFFFFF" />
+            {/* Icon badge */}
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                backgroundColor: PARCHMENT_SOFT,
+                justifyContent: "center",
+                alignItems: "center",
+                marginRight: 10,
+              }}
+            >
+              <Ionicons name="bonfire-outline" size={20} color={GRANITE_GOLD} />
+            </View>
+
+            {/* Eyebrow label */}
             <Text
               style={{
-                color: "#FFFFFF",
                 fontFamily: fonts.bodySemi,
                 fontSize: 13,
-                letterSpacing: 0.5,
-                textTransform: "uppercase",
+                color: EARTH_GREEN,
+                letterSpacing: 0.3,
                 flex: 1,
               }}
             >
-              New Message
+              Camper tip
             </Text>
+
+            {/* Close */}
             <Pressable
               onPress={handleDismiss}
-              hitSlop={12}
-              style={{ padding: 2 }}
+              hitSlop={14}
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: PARCHMENT_SOFT,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
             >
-              <Ionicons name="close" size={20} color="#FFFFFF" />
+              <Ionicons name="close" size={16} color={EARTH_GREEN} />
             </Pressable>
           </View>
 
-          {/* Content */}
+          {/* ── Content ── */}
           <ScrollView
-            style={{ maxHeight: 300, paddingHorizontal: 20, paddingTop: 20 }}
+            style={{
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              flexShrink: 1,
+            }}
+            contentContainerStyle={{ paddingBottom: 8 }}
             showsVerticalScrollIndicator={false}
           >
             <Text
               style={{
-                fontFamily: "SourceSans3_700Bold",
-                fontSize: 22,
+                fontFamily: "Raleway_700Bold",
+                fontSize: 21,
                 color: TEXT_PRIMARY_STRONG,
-                marginBottom: 12,
-                lineHeight: 28,
+                marginBottom: 10,
+                lineHeight: 27,
               }}
             >
               {pending.title}
@@ -203,36 +233,35 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
                 fontFamily: fonts.body,
                 fontSize: 15,
                 color: TEXT_SECONDARY,
-                lineHeight: 22,
-                marginBottom: 24,
+                lineHeight: 23,
               }}
             >
               {pending.body}
             </Text>
           </ScrollView>
 
-          {/* CTA + Dismiss */}
+          {/* ── Action area ── */}
           <View
             style={{
-              paddingHorizontal: 20,
-              paddingBottom: 20,
-              paddingTop: 8,
-              borderTopWidth: 1,
-              borderTopColor: BORDER_SOFT,
-              gap: 10,
+              paddingHorizontal: 24,
+              paddingBottom: 24,
+              paddingTop: 16,
             }}
           >
-            {pending.deepLink.length > 0 && (
+            {hasCTA && (
               <Pressable
                 onPress={handleCTA}
                 style={({ pressed }) => ({
                   backgroundColor: pressed ? DEEP_FOREST_PRESSED : DEEP_FOREST,
-                  paddingVertical: 14,
-                  borderRadius: 14,
+                  paddingVertical: 15,
+                  borderRadius: radius.pill,
                   alignItems: "center",
+                  flexDirection: "row",
+                  justifyContent: "center",
                 })}
               >
                 <Text
+                  numberOfLines={1}
                   style={{
                     fontFamily: fonts.bodySemi,
                     color: PARCHMENT,
@@ -241,18 +270,25 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
                 >
                   {ctaLabel}
                 </Text>
+                <Ionicons
+                  name="arrow-forward"
+                  size={16}
+                  color={PARCHMENT}
+                  style={{ marginLeft: 6, opacity: 0.8 }}
+                />
               </Pressable>
             )}
             <Pressable
               onPress={handleDismiss}
               style={{
-                paddingVertical: 10,
+                paddingVertical: 12,
                 alignItems: "center",
+                marginTop: hasCTA ? 4 : 0,
               }}
             >
               <Text
                 style={{
-                  fontFamily: "SourceSans3_500Medium",
+                  fontFamily: fonts.bodySemi,
                   color: EARTH_GREEN,
                   fontSize: 14,
                 }}
