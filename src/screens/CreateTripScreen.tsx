@@ -185,32 +185,33 @@ export default function CreateTripScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-parchment" edges={["top"]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: PARCHMENT }} edges={["top"]}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* Header */}
-        <View className="px-5 pt-4 pb-3 border-b border-parchmentDark">
+        <View className="px-5 pt-4 pb-3" style={{ borderBottomWidth: 1, borderBottomColor: PARCHMENT_BORDER }}>
           <View className="flex-row items-center justify-between">
             <Heading2>Plan New Trip</Heading2>
             <View className="flex-row items-center gap-2">
               <Pressable
                 onPress={() => navigation.goBack()}
-                className="w-10 h-10 rounded-full bg-[#f0f9f4] items-center justify-center active:bg-[#dcf3e5]"
+                className="w-10 h-10 rounded-full items-center justify-center"
+                style={{ backgroundColor: "#f0f9f4" }}
               >
-                <Text className="text-forest text-lg" style={{ fontFamily: "SourceSans3_400Regular" }}>✕</Text>
+                <Text style={{ fontFamily: "SourceSans3_400Regular", color: DEEP_FOREST, fontSize: 18 }}>✕</Text>
               </Pressable>
               <AccountButton />
             </View>
           </View>
         </View>
 
-        <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false}>
+        <ScrollView className="flex-1 px-5 pt-6" showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Destination Chip - shown when prefilled from Favorites/Saved Places */}
           {destination && (
             <View className="mb-6">
-              <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Destination</Text>
+              <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, fontSize: 16 }}>Destination</Text>
               <View 
                 className="flex-row items-center justify-between p-4 rounded-xl border"
                 style={{ backgroundColor: "#f0f9f4", borderColor: EARTH_GREEN }}
@@ -254,7 +255,7 @@ export default function CreateTripScreen() {
 
           {/* Trip Name */}
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Trip Name</Text>
+            <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, fontSize: 16 }}>Trip Name</Text>
             <TextInput
               value={tripName}
               onChangeText={(text) => {
@@ -263,8 +264,14 @@ export default function CreateTripScreen() {
               }}
               placeholder="e.g., Yosemite Weekend"
               placeholderTextColor="#999"
-              className="bg-parchment border rounded-xl px-4 py-3 text-base text-[#16492f]"
-              style={{ borderColor: errors.tripName ? "#dc2626" : "#E6E1D6" }}
+              className="px-4 py-3 rounded-xl border"
+              style={{
+                backgroundColor: PARCHMENT,
+                borderColor: errors.tripName ? "#dc2626" : "#E6E1D6",
+                fontFamily: "SourceSans3_400Regular",
+                color: DEEP_FOREST,
+                fontSize: 16,
+              }}
             />
             {errors.tripName && (
               <Text style={{ fontFamily: "SourceSans3_400Regular", fontSize: 13, color: "#dc2626", marginTop: 4 }}>
@@ -275,30 +282,32 @@ export default function CreateTripScreen() {
 
           {/* Dates */}
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Start Date</Text>
+            <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, fontSize: 16 }}>Start Date</Text>
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setShowStartDateModal(true);
               }}
-              className="bg-parchment border border-parchmentDark rounded-xl px-4 py-3"
+              className="px-4 py-3 rounded-xl border"
+              style={{ backgroundColor: PARCHMENT, borderColor: PARCHMENT_BORDER }}
             >
-              <Text className="text-base text-[#16492f]" style={{ fontFamily: "SourceSans3_400Regular" }}>
+              <Text style={{ fontFamily: "SourceSans3_400Regular", color: DEEP_FOREST, fontSize: 16 }}>
                 {startDate.toLocaleDateString()}
               </Text>
             </Pressable>
           </View>
 
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>End Date</Text>
+            <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, fontSize: 16 }}>End Date</Text>
             <Pressable
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 setShowEndDateModal(true);
               }}
-              className="bg-parchment border border-parchmentDark rounded-xl px-4 py-3"
+              className="px-4 py-3 rounded-xl border"
+              style={{ backgroundColor: PARCHMENT, borderColor: PARCHMENT_BORDER }}
             >
-              <Text className="text-base text-[#16492f]" style={{ fontFamily: "SourceSans3_400Regular" }}>
+              <Text style={{ fontFamily: "SourceSans3_400Regular", color: DEEP_FOREST, fontSize: 16 }}>
                 {endDate.toLocaleDateString()}
               </Text>
             </Pressable>
@@ -306,24 +315,25 @@ export default function CreateTripScreen() {
 
           {/* Camping Style */}
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Camping Style</Text>
+            <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, fontSize: 16 }}>Camping Style</Text>
             <View className="flex-row flex-wrap gap-2">
-              {CAMPING_STYLES.map((style) => (
+              {CAMPING_STYLES.map((cs) => (
                 <Pressable
-                  key={style.value}
-                  onPress={() => setCampingStyle(style.value)}
-                  className={`px-4 py-2 rounded-full ${
-                    campingStyle === style.value
-                      ? "bg-forest"
-                      : "bg-[#f0f9f4] active:bg-[#dcf3e5]"
-                  }`}
+                  key={cs.value}
+                  onPress={() => setCampingStyle(cs.value)}
+                  className="px-4 py-2 rounded-full"
+                  style={{
+                    backgroundColor: campingStyle === cs.value ? "#485952" : "#f0f9f4",
+                  }}
                 >
                   <Text
-                    className={`text-sm font-medium ${
-                      campingStyle === style.value ? "text-parchment" : "text-forest"
-                    }`}
+                    style={{
+                      fontFamily: "SourceSans3_500Medium",
+                      fontSize: 14,
+                      color: campingStyle === cs.value ? PARCHMENT : "#485952",
+                    }}
                   >
-                    {style.label}
+                    {cs.label}
                   </Text>
                 </Pressable>
               ))}
@@ -332,20 +342,27 @@ export default function CreateTripScreen() {
 
           {/* Party Size */}
           <View className="mb-6">
-            <Text className="text-[#16492f] text-base font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Party Size</Text>
+            <Text className="mb-2" style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST, fontSize: 16 }}>Party Size</Text>
             <TextInput
               value={partySize}
               onChangeText={setPartySize}
               placeholder="Number of people"
               placeholderTextColor="#999"
               keyboardType="number-pad"
-              className="bg-parchment border border-parchmentDark rounded-xl px-4 py-3 text-base text-[#16492f]"
+              className="px-4 py-3 rounded-xl border"
+              style={{
+                backgroundColor: PARCHMENT,
+                borderColor: PARCHMENT_BORDER,
+                fontFamily: "SourceSans3_400Regular",
+                color: DEEP_FOREST,
+                fontSize: 16,
+              }}
             />
           </View>
         </ScrollView>
 
         {/* Footer */}
-        <View className="px-5 pb-5 pt-3 border-t border-parchmentDark">
+        <View className="px-5 pb-5 pt-3" style={{ borderTopWidth: 1, borderTopColor: PARCHMENT_BORDER }}>
           <Button onPress={handleCreate} fullWidth icon="checkmark-circle" loading={isCreating} disabled={isCreating}>
             Create Trip
           </Button>
@@ -360,15 +377,17 @@ export default function CreateTripScreen() {
         onRequestClose={() => setShowStartDateModal(false)}
       >
         <Pressable
-          className="flex-1 bg-black/50 justify-end"
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           onPress={() => setShowStartDateModal(false)}
         >
           <Pressable
-            className="bg-parchment rounded-t-2xl p-4"
+            className="rounded-t-2xl p-4"
+            style={{ backgroundColor: PARCHMENT }}
             onPress={(e) => e.stopPropagation()}
           >
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl" style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}>
+              <Text style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST, fontSize: 20 }}>
                 Select Start Date
               </Text>
               <Pressable
@@ -404,15 +423,17 @@ export default function CreateTripScreen() {
         onRequestClose={() => setShowEndDateModal(false)}
       >
         <Pressable
-          className="flex-1 bg-black/50 justify-end"
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           onPress={() => setShowEndDateModal(false)}
         >
           <Pressable
-            className="bg-parchment rounded-t-2xl p-4"
+            className="rounded-t-2xl p-4"
+            style={{ backgroundColor: PARCHMENT }}
             onPress={(e) => e.stopPropagation()}
           >
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl" style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST }}>
+              <Text style={{ fontFamily: "Raleway_700Bold", color: DEEP_FOREST, fontSize: 20 }}>
                 Select End Date
               </Text>
               <Pressable
