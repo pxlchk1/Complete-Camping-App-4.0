@@ -25,17 +25,21 @@ type NotificationData = {
 // Navigation function type that can be passed in
 type NavigateFunction = (screen: string, params?: Record<string, any>) => void;
 
-// Map URL-scheme deep link paths to React Navigation screen names
-const DEEP_LINK_PATH_MAP: Record<string, string> = {
-  trips: "HomeTabs",
-  plan: "HomeTabs",
-  home: "HomeTabs",
-  learn: "HomeTabs",
-  connect: "HomeTabs",
-  paywall: "Paywall",
-  settings: "Settings",
-  account: "Account",
-  notifications: "Notifications",
+// Map URL-scheme deep link paths to React Navigation screen + optional tab params
+const DEEP_LINK_PATH_MAP: Record<string, { screen: string; params?: Record<string, any> }> = {
+  trips: { screen: "HomeTabs", params: { screen: "Plan" } },
+  plan: { screen: "HomeTabs", params: { screen: "Plan" } },
+  home: { screen: "HomeTabs" },
+  learn: { screen: "HomeTabs", params: { screen: "Learn" } },
+  connect: { screen: "HomeTabs", params: { screen: "Connect" } },
+  firstaid: { screen: "HomeTabs", params: { screen: "FirstAid" } },
+  paywall: { screen: "Paywall" },
+  settings: { screen: "Settings" },
+  account: { screen: "Account" },
+  notifications: { screen: "Notifications" },
+  mycampsite: { screen: "MyCampsite" },
+  mygearcloset: { screen: "MyGearCloset" },
+  meritbadges: { screen: "MeritBadges" },
 };
 
 /**
@@ -49,7 +53,7 @@ function resolveDeepLink(deepLink: string): { screen: string; params?: Record<st
 
   // Check explicit path mapping first
   if (DEEP_LINK_PATH_MAP[pathKey]) {
-    return { screen: DEEP_LINK_PATH_MAP[pathKey] };
+    return DEEP_LINK_PATH_MAP[pathKey];
   }
 
   // If original value looks like a URL scheme, fall back to HomeTabs

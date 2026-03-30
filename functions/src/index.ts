@@ -2801,17 +2801,37 @@ export const sendAdminTestEmail = functions
           responseBody: sgError.response?.body ? JSON.stringify(sgError.response.body).substring(0, 500) : undefined,
         });
 
+        // Parse SendGrid response body for the actual error message
+        let sgDetailMessage = "";
+        try {
+          const body = sgError.response?.body;
+          if (body?.errors && Array.isArray(body.errors) && body.errors.length > 0) {
+            sgDetailMessage = body.errors[0].message || "";
+          }
+        } catch (_) { /* ignore parse errors */ }
+
         // Surface actionable error for SendGrid auth failures
         if (sgError.code === 401 || errorMessage === "Unauthorized") {
+          // "Maximum credits exceeded" means account quota is used up, not a key issue
+          if (sgDetailMessage.toLowerCase().includes("maximum credits exceeded")) {
+            throw new functions.https.HttpsError(
+              "resource-exhausted",
+              "SendGrid account has exceeded its email sending limit. Upgrade your SendGrid plan or wait for credits to reset."
+            );
+          }
           throw new functions.https.HttpsError(
             "unavailable",
-            "SendGrid API key is invalid or expired. Check SENDGRID_API_KEY in Firebase secrets."
+            sgDetailMessage
+              ? `SendGrid error: ${sgDetailMessage}`
+              : "SendGrid API key is invalid or expired. Check SENDGRID_API_KEY in Firebase secrets."
           );
         }
         if (sgError.code === 403) {
           throw new functions.https.HttpsError(
             "permission-denied",
-            "SendGrid rejected the request. Check sender identity verification and API key permissions."
+            sgDetailMessage
+              ? `SendGrid error: ${sgDetailMessage}`
+              : "SendGrid rejected the request. Check sender identity verification and API key permissions."
           );
         }
 
