@@ -337,7 +337,7 @@ export default function BadgeDetailScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 48 }}
       >
         {/* Hero Badge Image */}
         <View className="items-center mb-5">
@@ -508,7 +508,7 @@ export default function BadgeDetailScreen() {
           <Pressable
             onPress={cta.handler}
             disabled={actionLoading || cta.disabled}
-            className="py-4 rounded-xl items-center flex-row justify-center"
+            className="py-4 rounded-xl items-center flex-row justify-center mt-2"
             style={{
               backgroundColor: cta.disabled ? "#9CA3AF" : DEEP_FOREST,
               opacity: actionLoading ? 0.6 : 1,
