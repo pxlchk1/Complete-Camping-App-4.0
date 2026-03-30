@@ -13,6 +13,7 @@ import {
   getInitialNotification,
   clearBadge,
 } from "../services/notificationService";
+import { useNotificationMessageStore } from "../components/NotificationMessageModal";
 
 type NotificationData = {
   type?: string;
@@ -45,8 +46,9 @@ const DEEP_LINK_PATH_MAP: Record<string, { screen: string; params?: Record<strin
 /**
  * Resolve a deep link value to a screen name.
  * Handles both plain screen names ("HomeTabs") and URL-scheme links ("tentandlantern://trips").
+ * Exported for use by NotificationMessageModal CTA.
  */
-function resolveDeepLink(deepLink: string): { screen: string; params?: Record<string, any> } | null {
+export function resolveDeepLink(deepLink: string): { screen: string; params?: Record<string, any> } | null {
   // Strip URL scheme prefix if present (e.g. "tentandlantern://trips" → "trips")
   const stripped = deepLink.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, "").replace(/^\/+/, "").replace(/\/+$/, "");
   const pathKey = stripped.toLowerCase();
@@ -84,11 +86,24 @@ export function useNotificationListeners(
       return;
     }
 
-    // If no type, check for deepLink before bailing
+    // Admin pushes have no type — show interstitial message card
     if (!data?.type) {
-      if (data?.deepLink && typeof data.deepLink === "string" && data.deepLink.length > 0) {
+      const content = response.notification.request.content;
+      const title = content.title || "";
+      const body = content.body || "";
+      const deepLink = (data?.deepLink as string) || "";
+
+      // Only show modal if there is meaningful content to display
+      if (title || body) {
+        useNotificationMessageStore.getState().setPending({
+          title,
+          body,
+          deepLink,
+        });
+      } else if (deepLink.length > 0) {
+        // No title/body — navigate directly as fallback
         try {
-          const resolved = resolveDeepLink(data.deepLink);
+          const resolved = resolveDeepLink(deepLink);
           if (resolved) {
             navigateFn(resolved.screen, resolved.params);
           }

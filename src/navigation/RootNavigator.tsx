@@ -7,7 +7,8 @@ import { RootStackParamList } from "./types";
 import CustomBottomTabBar from "../components/CustomBottomTabBar";
 import EmailVerificationGate from "../components/EmailVerificationGate";
 import { useAuthStore } from "../state/authStore";
-import { PAYWALL_ENABLED } from "../config/subscriptions";import ConnectHandleGate from '../components/ConnectHandleGate';import { useNotificationListeners } from "../hooks/useNotifications";
+import { PAYWALL_ENABLED } from "../config/subscriptions";import ConnectHandleGate from '../components/ConnectHandleGate';import { useNotificationListeners, resolveDeepLink } from "../hooks/useNotifications";
+import NotificationMessageModal from "../components/NotificationMessageModal";
 
 // Screens
 import HomeScreen from "../screens/HomeScreen";
@@ -305,6 +306,7 @@ export default function RootNavigator() {
       <Stack.Screen name="AdminAnalytics" component={AdminAnalyticsScreen} />
     </Stack.Navigator>
     {user && <EmailVerificationGate />}
+    {user && <NotificationMessageModal onNavigate={navigateFn} resolveDeepLink={resolveDeepLink} />}
     </View>
   );
 }
