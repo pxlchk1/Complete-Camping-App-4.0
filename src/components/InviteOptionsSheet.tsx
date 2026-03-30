@@ -11,8 +11,7 @@ import {
   Pressable,
   ActivityIndicator,
   Alert,
-  Linking,
-  Platform,
+  Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -187,19 +186,9 @@ export default function InviteOptionsSheet({
   };
 
   /**
-   * Handle send text invite (opens native SMS with pre-filled recipient and message)
+   * Handle send text invite (opens native share sheet with invite message)
    */
   const handleTextInvite = async () => {
-    // Validate phone number exists
-    if (!contact.contactPhone) {
-      Alert.alert(
-        "Phone Number Required",
-        "This contact does not have a phone number. Please add a phone number first, or use Copy Invite Link.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-
     try {
       setLoading("text");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -210,60 +199,44 @@ export default function InviteOptionsSheet({
         return;
       }
 
-      // Construct the invite message
-      const inviteMessage = `Join My Campground on The Complete Camping App. Here's your invite link: ${invite.inviteLink}`;
-
-      // Format phone number (remove non-digits for SMS)
-      const phoneDigits = contact.contactPhone.replace(/\D/g, "");
-      
-      // Construct SMS URL with recipient and body
-      // iOS format: sms:+1234567890&body=message
-      // Android format: sms:+1234567890?body=message
-      const separator = Platform.OS === "ios" ? "&" : "?";
-      const encodedMessage = encodeURIComponent(inviteMessage);
-      const smsUrl = `sms:${phoneDigits}${separator}body=${encodedMessage}`;
-
-      console.log("[InviteOptionsSheet] Opening SMS:", {
-        phone: phoneDigits,
-        hasInviteLink: !!invite.inviteLink,
-      });
-
-      // Check if SMS is available
-      const canOpen = await Linking.canOpenURL(smsUrl);
-      if (!canOpen) {
-        console.error("[InviteOptionsSheet] Cannot open SMS URL:", smsUrl);
-        Alert.alert(
-          "SMS Unavailable",
-          "Unable to open the Messages app. Try using Copy Invite Link instead.",
-          [{ text: "OK" }]
-        );
-        setLoading(null);
-        return;
+      // Get inviter first name from profile (same as copy link)
+      const user = auth.currentUser;
+      let inviterName = "A friend";
+      if (user) {
+        const profileDoc = await getDoc(doc(db, "profiles", user.uid));
+        if (profileDoc.exists()) {
+          const displayName = profileDoc.data().displayName || user.displayName || "A friend";
+          inviterName = displayName.trim().split(/\s+/)[0] || "A friend";
+        } else if (user.displayName) {
+          inviterName = user.displayName.trim().split(/\s+/)[0] || "A friend";
+        }
       }
 
-      // Open native SMS composer
-      await Linking.openURL(smsUrl);
+      // Use the same invite text as copy link (includes App Store link)
+      const inviteText = getCopyableInviteText(inviterName, invite.token);
+
+      // Open native share sheet
+      await Share.share({ message: inviteText });
 
       // Track analytics and core action
-      const user = auth.currentUser;
       trackBuddyInviteSent("text");
       if (user?.uid) {
         trackCoreAction(user.uid, "buddy_invited");
       }
-      
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onSuccess?.();
       onClose();
     } catch (error: any) {
-      console.error("[InviteOptionsSheet] Error opening SMS:", {
-        error: error.message,
-        phone: contact.contactPhone,
-      });
-      Alert.alert(
-        "SMS Failed",
-        "Could not open Messages. Please try Copy Invite Link instead.",
-        [{ text: "OK" }]
-      );
+      // Share.share throws if user cancels — not a real error
+      if (error?.message !== "User did not share") {
+        console.error("[InviteOptionsSheet] Error opening share sheet:", error.message);
+        Alert.alert(
+          "Share Failed",
+          "Could not open the share sheet. Please try Copy Invite Link instead.",
+          [{ text: "OK" }]
+        );
+      }
     } finally {
       setLoading(null);
     }
