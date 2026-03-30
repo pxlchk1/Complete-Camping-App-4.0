@@ -26,8 +26,10 @@ import {
   DEEP_FOREST_PRESSED,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
+  EARTH_GREEN,
   BORDER_SOFT,
 } from "../constants/colors";
+import { fonts, shadows } from "../theme/theme";
 
 // ─────────────────────────────────────────────
 // Zustand store for pending notification
@@ -130,7 +132,7 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
       <Pressable
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
+          backgroundColor: "rgba(26, 47, 28, 0.88)",
           justifyContent: "center",
           alignItems: "center",
           paddingHorizontal: 24,
@@ -142,8 +144,9 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
           style={{
             width: Math.min(SCREEN_WIDTH - 48, 380),
             backgroundColor: PARCHMENT,
-            borderRadius: 20,
+            borderRadius: 24,
             overflow: "hidden",
+            ...shadows.modal,
           }}
         >
           {/* Header bar */}
@@ -161,8 +164,8 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
             <Text
               style={{
                 color: "#FFFFFF",
+                fontFamily: fonts.bodySemi,
                 fontSize: 13,
-                fontWeight: "600",
                 letterSpacing: 0.5,
                 textTransform: "uppercase",
                 flex: 1,
@@ -186,17 +189,18 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
           >
             <Text
               style={{
-                fontSize: 20,
-                fontWeight: "700",
+                fontFamily: "SourceSans3_700Bold",
+                fontSize: 22,
                 color: TEXT_PRIMARY_STRONG,
                 marginBottom: 12,
-                lineHeight: 26,
+                lineHeight: 28,
               }}
             >
               {pending.title}
             </Text>
             <Text
               style={{
+                fontFamily: fonts.body,
                 fontSize: 15,
                 color: TEXT_SECONDARY,
                 lineHeight: 22,
@@ -224,15 +228,15 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
                 style={({ pressed }) => ({
                   backgroundColor: pressed ? DEEP_FOREST_PRESSED : DEEP_FOREST,
                   paddingVertical: 14,
-                  borderRadius: 12,
+                  borderRadius: 14,
                   alignItems: "center",
                 })}
               >
                 <Text
                   style={{
-                    color: "#FFFFFF",
+                    fontFamily: fonts.bodySemi,
+                    color: PARCHMENT,
                     fontSize: 16,
-                    fontWeight: "600",
                   }}
                 >
                   {ctaLabel}
@@ -248,9 +252,9 @@ export default function NotificationMessageModal({ onNavigate, resolveDeepLink }
             >
               <Text
                 style={{
-                  color: TEXT_SECONDARY,
+                  fontFamily: "SourceSans3_500Medium",
+                  color: EARTH_GREEN,
                   fontSize: 14,
-                  fontWeight: "500",
                 }}
               >
                 Dismiss
