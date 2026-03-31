@@ -27,6 +27,8 @@ import { listenToFavoriteParks, removeFavoritePark, FavoritePark } from "../serv
 import { listenToSavedPlaces, removeSavedPlace, SavedPlace } from "../services/savedPlacesService";
 import { useUserStatus } from "../utils/authHelper";
 import { useIsModerator, useIsAdministrator } from "../state/userStore";
+import { isPremiumUser } from "../utils/entitlements";
+import { useTripsStore } from "../state/tripsStore";
 import { HERO_IMAGES } from "../constants/images";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
@@ -617,6 +619,16 @@ export default function MyCampsiteScreen({ navigation }: any) {
       return;
     }
 
+    // Gate: Free users can only create 1 trip
+    if (!isPremiumUser() && auth.currentUser?.uid) {
+      const allTrips = useTripsStore.getState().trips;
+      const ownedTrips = allTrips.filter(t => t.userId === auth.currentUser?.uid);
+      if (ownedTrips.length >= 1) {
+        navigation.navigate("Paywall", { triggerKey: "second_trip" });
+        return;
+      }
+    }
+
     const prefillLocation: PrefillLocation = {
       source: "favorites",
       placeType: "park",
@@ -640,6 +652,16 @@ export default function MyCampsiteScreen({ navigation }: any) {
     if (isGuest || !auth.currentUser) {
       navigation.navigate("Auth");
       return;
+    }
+
+    // Gate: Free users can only create 1 trip
+    if (!isPremiumUser() && auth.currentUser?.uid) {
+      const allTrips = useTripsStore.getState().trips;
+      const ownedTrips = allTrips.filter(t => t.userId === auth.currentUser?.uid);
+      if (ownedTrips.length >= 1) {
+        navigation.navigate("Paywall", { triggerKey: "second_trip" });
+        return;
+      }
     }
 
     const prefillLocation: PrefillLocation = {

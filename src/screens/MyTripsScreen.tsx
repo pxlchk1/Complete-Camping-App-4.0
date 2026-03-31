@@ -128,11 +128,10 @@ export default function MyTripsScreen() {
     });
     if (!hasAccount) return;
 
-    // Check if free user already has a trip (using entitlements)
+    // Free users can only create 1 trip — gate on owned trips count
     if (!isPremiumUser() && currentUser?.id) {
-      const freeTripId = await getFreePremiumTripId(currentUser.id);
-      if (freeTripId) {
-        // Free user already has a trip - show paywall
+      const ownedTrips = trips.filter(t => t.userId === currentUser.id);
+      if (ownedTrips.length >= 1) {
         nav.navigate("Paywall", { triggerKey: "second_trip" });
         return;
       }
