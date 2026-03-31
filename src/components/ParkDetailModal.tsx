@@ -480,45 +480,76 @@ export default function ParkDetailModal({
                   </Text>
                 </Pressable>
               </Animated.View>
-            ) : (
+            ) : activeTrip ? (
               /* GENERAL BROWSE CONTEXT: Show "Add to {TripName}" when there's an active trip */
-              activeTrip && (
-                <Animated.View style={{ transform: [{ scale: addedToTripId === activeTrip.id ? successScale : 1 }] }}>
-                  <Pressable
-                    onPress={() => handleAddToTripWithConfirmation(activeTrip.id)}
-                    disabled={addedToTripId === activeTrip.id}
+              <Animated.View style={{ transform: [{ scale: addedToTripId === activeTrip.id ? successScale : 1 }] }}>
+                <Pressable
+                  onPress={() => handleAddToTripWithConfirmation(activeTrip.id)}
+                  disabled={addedToTripId === activeTrip.id}
+                  style={{
+                    backgroundColor: addedToTripId === activeTrip.id ? SUCCESS_GREEN : PARCHMENT,
+                    borderRadius: 16,
+                    paddingVertical: 10,
+                    paddingHorizontal: 20,
+                    borderWidth: 1,
+                    borderColor: addedToTripId === activeTrip.id ? SUCCESS_GREEN : BORDER_SOFT,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: addedToTripId === activeTrip.id ? 1 : 1,
+                  }}
+                >
+                  <Ionicons 
+                    name={addedToTripId === activeTrip.id ? "checkmark-circle" : "add-circle"} 
+                    size={20} 
+                    color={addedToTripId === activeTrip.id ? PARCHMENT : DEEP_FOREST} 
+                  />
+                  <Text
                     style={{
-                      backgroundColor: addedToTripId === activeTrip.id ? SUCCESS_GREEN : PARCHMENT,
-                      borderRadius: 16,
-                      paddingVertical: 10,
-                      paddingHorizontal: 20,
-                      borderWidth: 1,
-                      borderColor: addedToTripId === activeTrip.id ? SUCCESS_GREEN : BORDER_SOFT,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      opacity: addedToTripId === activeTrip.id ? 1 : 1,
+                      fontFamily: "SourceSans3_600SemiBold",
+                      fontSize: 16,
+                      color: addedToTripId === activeTrip.id ? PARCHMENT : DEEP_FOREST,
+                      marginLeft: 8,
                     }}
                   >
-                    <Ionicons 
-                      name={addedToTripId === activeTrip.id ? "checkmark-circle" : "add-circle"} 
-                      size={20} 
-                      color={addedToTripId === activeTrip.id ? PARCHMENT : DEEP_FOREST} 
-                    />
-                    <Text
-                      style={{
-                        fontFamily: "SourceSans3_600SemiBold",
-                        fontSize: 16,
-                        color: addedToTripId === activeTrip.id ? PARCHMENT : DEEP_FOREST,
-                        marginLeft: 8,
-                      }}
-                    >
-                      {addedToTripId === activeTrip.id ? `Added to ${activeTrip.name}!` : `Add to ${activeTrip.name}`}
-                    </Text>
-                  </Pressable>
-                </Animated.View>
-              )
-            )}
+                    {addedToTripId === activeTrip.id ? `Added to ${activeTrip.name}!` : `Add to ${activeTrip.name}`}
+                  </Text>
+                </Pressable>
+              </Animated.View>
+            ) : isGuest ? (
+              /* GUEST WITH NO TRIPS: Show "Start a Trip" CTA that gates to AccountRequiredModal */
+              <Pressable
+                onPress={() => {
+                  if (onRequireAccount) {
+                    onRequireAccount("start_trip");
+                  } else {
+                    onClose();
+                    navigation.navigate("Auth" as never);
+                  }
+                }}
+                style={{
+                  backgroundColor: DEEP_FOREST,
+                  borderRadius: 16,
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="compass" size={20} color={PARCHMENT} />
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_600SemiBold",
+                    fontSize: 16,
+                    color: PARCHMENT,
+                    marginLeft: 8,
+                  }}
+                >
+                  Start a Trip
+                </Text>
+              </Pressable>
+            ) : null}
 
             {/* Reserve a Site - only show if park has a reservation URL (from prop or fetched from Firebase) */}
             {reservationUrl ? (

@@ -48,6 +48,11 @@ const ACCOUNT_MODAL_CONTENT: Record<string, { title: string; body: string }> = {
     title: "Save Favorites",
     body: "Create a free account to save parks and campgrounds for later.",
   },
+  // Start a Trip (from Park Detail browse)
+  start_trip: {
+    title: "Start Planning Your Trip",
+    body: "Create a free account to plan trips, save parks, and get the most out of your camping adventures.",
+  },
   // Packing
   packing_for_trip: {
     title: "Save Your Packing Progress",
