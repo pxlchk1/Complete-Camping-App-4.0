@@ -604,6 +604,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Gate Analytics — authenticated users write impressions; admin reads reports
+    match /gateAnalytics/{gateKey} {
+      allow read: if isAdmin();
+      allow write: if isSignedIn();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
