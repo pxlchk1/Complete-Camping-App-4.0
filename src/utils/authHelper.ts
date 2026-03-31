@@ -5,6 +5,7 @@
 
 import { useAuthStore } from "../state/authStore";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useUserStore } from "../state/userStore";
 import { NavigationProp } from "@react-navigation/native";
 import { RootStackParamList } from "../navigation/types";
 import { auth } from "../config/firebase";
@@ -31,12 +32,14 @@ export const useIsLoggedIn = (): boolean => {
 };
 
 /**
- * Check if user is Pro (must be logged in first)
+ * Check if user has Pro-level access (must be logged in first).
+ * Includes admin bypass: administrators always have Pro access.
  */
 export const useIsPro = (): boolean => {
   const isLoggedIn = useIsLoggedIn();
   const isPro = useSubscriptionStore((state) => state.isPro);
-  return isLoggedIn && isPro;
+  const isAdmin = useUserStore((s) => s.isAdministrator());
+  return isLoggedIn && (isPro || isAdmin);
 };
 
 /**
@@ -173,6 +176,10 @@ export const requirePro = (
     return false;
   }
 
+  // Admin bypass
+  const isAdmin = useUserStore.getState().isAdministrator();
+  if (isAdmin) return true;
+
   // Then check Pro status
   const isPro = useSubscriptionStore.getState().isPro;
 
@@ -223,7 +230,7 @@ export const useRequirePro = () => {
       return false;
     }
 
-    // Gate 2: Pro
+    // Gate 2: Pro (isPro already includes admin bypass via useIsPro)
     if (isFree) {
       console.log(`[ProGate] Pro required for: ${feature || 'feature'}`);
       navigation.navigate("Paywall" as any);

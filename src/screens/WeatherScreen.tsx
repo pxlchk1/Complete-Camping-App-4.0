@@ -978,9 +978,10 @@ export default function WeatherScreen({ onTabChange }: WeatherScreenProps = {}) 
                     // Check if user has used their free trip
                     const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
                     const isPro = useSubscriptionStore.getState().isPro;
+                    const isAdmin = useUserStore.getState().isAdministrator();
                     
-                    // If first trip (not used free trip yet) OR user is Pro, allow
-                    if (!hasUsedFreeTrip || isPro) {
+                    // If first trip (not used free trip yet) OR user is Pro/admin, allow
+                    if (!hasUsedFreeTrip || isPro || isAdmin) {
                       setActivePlanTab("trips");
                       return;
                     }

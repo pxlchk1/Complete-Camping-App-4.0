@@ -1,14 +1,20 @@
 /**
  * Access Control Hook
- * Centralized logic for checking user authentication and Pro status
+ * Centralized logic for checking user authentication and Pro status.
+ *
+ * NOTE: Not currently imported by any screen. The primary runtime gating
+ * layer is src/utils/gating.ts (requirePro, requireAccount, useAccessState).
+ * This hook is kept consistent so it is safe if used in the future.
  */
 
 import { useState } from "react";
-import { useCurrentUser } from "../state/userStore";
+import { useCurrentUser, useUserStore } from "../state/userStore";
+import { useSubscriptionStore } from "../state/subscriptionStore";
 
 interface AccessControl {
   isLoggedIn: boolean;
   isPro: boolean;
+  isAdmin: boolean;
   showAccountModal: boolean;
   showPaywallModal: boolean;
   checkAccess: (requiresPro?: boolean) => boolean;
@@ -23,26 +29,17 @@ export function useAccessControl(): AccessControl {
   const [showPaywallModal, setShowPaywallModal] = useState(false);
 
   const isLoggedIn = !!currentUser;
-  
-  // TODO: Check actual Pro entitlement from RevenueCat
-  // For now, assume all logged-in users are free
-  const isPro = false;
+  const isAdmin = useUserStore((s) => s.isAdministrator());
+  const hasProEntitlement = useSubscriptionStore((s) => s.isPro);
+  // Pro access = RevenueCat entitlement OR admin
+  const isPro = isLoggedIn && (hasProEntitlement || isAdmin);
 
-  /**
-   * Check if user has access to a feature
-   * @param requiresPro - Whether the feature requires Pro subscription
-   * @returns true if user has access, false otherwise
-   */
   const checkAccess = (requiresPro: boolean = false): boolean => {
     if (!isLoggedIn) return false;
     if (requiresPro && !isPro) return false;
     return true;
   };
 
-  /**
-   * Request access to a feature - shows appropriate modal if needed
-   * @param requiresPro - Whether the feature requires Pro subscription
-   */
   const requestAccess = (requiresPro: boolean = false): void => {
     if (!isLoggedIn) {
       setShowAccountModal(true);
@@ -61,6 +58,7 @@ export function useAccessControl(): AccessControl {
   return {
     isLoggedIn,
     isPro,
+    isAdmin,
     showAccountModal,
     showPaywallModal,
     checkAccess,

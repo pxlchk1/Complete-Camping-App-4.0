@@ -5,6 +5,7 @@
 
 import { useNavigation } from "@react-navigation/native";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useUserStore } from "../state/userStore";
 import { SUBSCRIPTIONS_ENABLED, PAYWALL_ENABLED } from "../config/subscriptions";
 import { useAuth } from "../context/AuthContext";
 import { getPaywallVariantAndTrack, type PaywallVariant } from "../services/proAttemptService";
@@ -44,9 +45,13 @@ interface PaywallGateResult {
  */
 export function usePaywallGate(): PaywallGateResult {
   const navigation = useNavigation<RootStackNavigationProp>();
-  const isPro = useSubscriptionStore((s) => s.isPro);
+  const hasProEntitlement = useSubscriptionStore((s) => s.isPro);
   const { user } = useAuth();
   const isAuthenticated = !!user;
+
+  // Admin bypass: administrators always have Pro access
+  const isAdmin = useUserStore((s) => s.isAdministrator());
+  const isPro = hasProEntitlement || isAdmin;
 
   /**
    * Show the paywall modal

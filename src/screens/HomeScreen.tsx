@@ -40,7 +40,6 @@ import { useTripsStore } from "../state/tripsStore";
 import { useGearStore } from "../state/gearStore";
 import { useUserStore, createTestUser } from "../state/userStore";
 import { usePlanTabStore } from "../state/planTabStore";
-import { useSubscriptionStore } from "../state/subscriptionStore";
 import { useUpsellStore, UPSELL_COPY, UPSELL_MODALS_ENABLED } from "../state/upsellStore";
 import UpsellModal from "../components/UpsellModal";
 import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
@@ -103,8 +102,7 @@ export default function HomeScreen() {
   const setCurrentUser = useUserStore((s) => s.setCurrentUser);
   const currentUser = useUserStore((s) => s.currentUser);
   const setActivePlanTab = usePlanTabStore((s) => s.setActiveTab);
-  const isPro = useSubscriptionStore((s) => s.isPro);
-  const { isLoggedIn: isAuthenticated, isGuest } = useUserStatus();
+  const { isLoggedIn: isAuthenticated, isGuest, isPro } = useUserStatus();
 
   // User flags for welcome greeting (real-time subscription to Firestore)
   const { hasSeenWelcomeHome, hasSeenStayInLoop, firstName: userFirstName, loading: userFlagsLoading } = useUserFlags();
@@ -909,10 +907,8 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Evergreen Upgrade Card — logged-in free non-admin users only */}
-          {isAuthenticated && !isGuest && !isPro
-            && currentUser?.role !== "administrator"
-            && currentUser?.membershipTier !== "isAdmin" && (
+          {/* Evergreen Upgrade Card — logged-in free users only (admin bypass is built into isPro) */}
+          {isAuthenticated && !isGuest && !isPro && (
             <View
               className="mb-6 rounded-xl overflow-hidden"
               style={{

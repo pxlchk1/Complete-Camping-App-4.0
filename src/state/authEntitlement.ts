@@ -1,46 +1,50 @@
 import { useEffect, useState, useCallback } from "react";
 import { auth } from "../config/firebase";
-// Assume RevenueCat or similar entitlement service is available
-// Replace with your actual entitlement fetch logic
+import { useSubscriptionStore } from "./subscriptionStore";
+import { useUserStore } from "./userStore";
 
 export type EntitlementStatus = "active" | "inactive" | "loading";
 
+/**
+ * Hook that combines auth state and entitlement status from real stores.
+ * Uses subscriptionStore (RevenueCat) and userStore (admin role) as sources of truth.
+ *
+ * NOTE: Not currently imported by any screen. The primary runtime gating
+ * layer is src/utils/gating.ts (requirePro, requireAccount, useAccessState).
+ * This hook is kept consistent so it is safe if used in the future.
+ */
 export function useAuthAndEntitlement() {
-  const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
-  const [entitlementStatus, setEntitlementStatus] = useState<EntitlementStatus>("loading");
+  const [isSignedIn, setIsSignedIn] = useState<boolean>(!!auth.currentUser);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       setIsSignedIn(!!user);
-      // When auth state changes, entitlement status should be re-fetched
-      setEntitlementStatus("loading");
-      if (user) {
-        // Simulate async entitlement fetch
-        fetchEntitlementStatus(user.uid).then(setEntitlementStatus);
-      } else {
-        setEntitlementStatus("inactive");
-      }
     });
     return () => unsubscribe();
   }, []);
 
-  // Simulated async entitlement fetch (replace with real logic)
-  const fetchEntitlementStatus = useCallback(async (uid: string): Promise<EntitlementStatus> => {
-    // TODO: Replace with RevenueCat or your own logic
-    // For now, always return 'inactive' after 1s
-    return new Promise((resolve) => setTimeout(() => resolve("inactive"), 1000));
-  }, []);
+  const hasProEntitlement = useSubscriptionStore((s) => s.isPro);
+  const subscriptionLoading = useSubscriptionStore((s) => s.subscriptionLoading);
+  const isAdmin = useUserStore((s) => s.isAdministrator());
 
-  const isPro = entitlementStatus === "active";
-  const isEntitlementLoading = entitlementStatus === "loading";
+  // Pro access = RevenueCat entitlement OR admin
+  const isPro = isSignedIn && (hasProEntitlement || isAdmin);
+  const isEntitlementLoading = isSignedIn && subscriptionLoading;
+
+  const entitlementStatus: EntitlementStatus = !isSignedIn
+    ? "inactive"
+    : isEntitlementLoading
+      ? "loading"
+      : isPro
+        ? "active"
+        : "inactive";
 
   return { isSignedIn, entitlementStatus, isPro, isEntitlementLoading };
 }
 
-// Guard helpers
+// Guard helpers (non-hook versions — use store getState for imperative calls)
 export function guardAccount(action: () => void, openAccountRequiredModal: () => void) {
-  const { isSignedIn } = useAuthAndEntitlement();
-  if (!isSignedIn) return openAccountRequiredModal();
+  if (!auth.currentUser) return openAccountRequiredModal();
   return action();
 }
 
@@ -50,15 +54,16 @@ export function guardPro(
   showLightningBug: () => void,
   openProRequiredModal: () => void
 ) {
-  const { isSignedIn, isEntitlementLoading, isPro } = useAuthAndEntitlement();
-  if (!isSignedIn) return openAccountRequiredModal();
-  if (isEntitlementLoading) return showLightningBug();
-  if (!isPro) return openProRequiredModal();
+  if (!auth.currentUser) return openAccountRequiredModal();
+  const loading = useSubscriptionStore.getState().subscriptionLoading;
+  if (loading) return showLightningBug();
+  const isPro = useSubscriptionStore.getState().isPro;
+  const isAdmin = useUserStore.getState().isAdministrator();
+  if (!isPro && !isAdmin) return openProRequiredModal();
   return action();
 }
 
 export function guardSignedIn(action: () => void, openAccountRequiredModal: () => void) {
-  const { isSignedIn } = useAuthAndEntitlement();
-  if (!isSignedIn) return openAccountRequiredModal();
+  if (!auth.currentUser) return openAccountRequiredModal();
   return action();
 }
