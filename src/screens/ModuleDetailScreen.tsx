@@ -53,6 +53,7 @@ import {
 } from "../constants/colors";
 import { getLearningTrackBadgeImage } from "../assets/images/merit_badges/learningTrackBadgeImages";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useIsAdministrator } from "../state/userStore";
 import UpsellModal from "../components/UpsellModal";
 import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
 
@@ -157,6 +158,8 @@ export default function ModuleDetailScreen() {
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const isPro = useSubscriptionStore((s) => s.isPro);
+  const isAdmin = useIsAdministrator();
+  const hasPremiumAccess = isPro || isAdmin;
   
   // Scroll tracking
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
@@ -254,7 +257,7 @@ export default function ModuleDetailScreen() {
         if (result.badgeEarned) {
           setBadgeEarned(result.badgeEarned);
           // Show upsell nudge for non-Pro users after earning a learning badge
-          if (!isPro) {
+          if (!hasPremiumAccess) {
             setTimeout(() => {
               trackUpsellModalViewed("learning_complete");
               setShowUpsellModal(true);

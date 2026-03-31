@@ -49,6 +49,7 @@ import {
 } from "../types/badges";
 import { getWitnessRequirementReason } from "../config/badgeWitnessRequirements";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useIsAdministrator } from "../state/userStore";
 import UpsellModal from "../components/UpsellModal";
 import { trackUpsellModalViewed, trackUpsellCtaClicked, trackUpsellModalDismissed } from "../services/analyticsService";
 import {
@@ -83,6 +84,8 @@ export default function BadgeDetailScreen() {
   const [pendingClaim, setPendingClaim] = useState<BadgeClaim | null>(null);
   const [showUpsellModal, setShowUpsellModal] = useState(false);
   const isPro = useSubscriptionStore((s) => s.isPro);
+  const isAdmin = useIsAdministrator();
+  const hasPremiumAccess = isPro || isAdmin;
   const [displayState, setDisplayState] = useState<BadgeDisplayState>("not_started");
 
   // Photo state
@@ -217,7 +220,7 @@ export default function BadgeDetailScreen() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       
       // Show upsell nudge for non-Pro users
-      if (!isPro) {
+      if (!hasPremiumAccess) {
         trackUpsellModalViewed("badge_earned");
         setShowUpsellModal(true);
       }
