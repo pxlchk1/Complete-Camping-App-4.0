@@ -20,6 +20,7 @@ import StayInLoopModal from "../components/StayInLoopModal";
 // Hooks
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
 import { useUserFlags } from "../hooks/useUserFlags";
+import { useOnboardingSequence } from "../hooks/useOnboardingSequence";
 
 // Services
 import { getPhotoPosts } from "../services/photoPostsService";
@@ -108,6 +109,31 @@ export default function HomeScreen() {
   // User flags for welcome greeting (real-time subscription to Firestore)
   const { hasSeenWelcomeHome, hasSeenStayInLoop, firstName: userFirstName, loading: userFlagsLoading } = useUserFlags();
 
+  // Apple sign-in detection for onboarding orchestrator
+  const isAppleUser = auth.currentUser?.providerData?.some(
+    (p) => p.providerId === "apple.com"
+  ) ?? false;
+
+  // Track email subscription status for orchestrator
+  const [isEmailSubscribed, setIsEmailSubscribed] = useState(false);
+
+  // Onboarding sequence orchestrator
+  const {
+    activeStep: onboardingActiveStep,
+    isOnboardingActive,
+    isComplete: isOnboardingComplete,
+    resolvePush,
+    resolveEmail,
+    resolveMyCampsite,
+  } = useOnboardingSequence({
+    isAuthenticated,
+    isGuest,
+    isBrandNewUser: !hasSeenWelcomeHome,
+    userFlagsLoading,
+    isAppleUser,
+    isEmailSubscribed,
+  });
+
   // Notification opt-in modal state
   const [showStayInLoopModal, setShowStayInLoopModal] = useState(false);
   const [notificationCohort, setNotificationCohort] = useState<NotificationCohort | null>(null);
@@ -154,139 +180,93 @@ export default function HomeScreen() {
   const recordUpsellDismissal = useUpsellStore((s) => s.recordModalDismissal);
   const sessionNudgeChecked = useRef(false);
 
-  // First-login onboarding sequence state
-  // Steps: "idle" (not first-login), "notifications" (step 1), "campsite" (step 2), "done"
-  const firstLoginStep = useRef<"idle" | "notifications" | "campsite" | "done">("idle");
+  // Campsite prompt visibility (driven by orchestrator activeStep)
   const [showCampsitePrompt, setShowCampsitePrompt] = useState(false);
-  const firstLoginChecked = useRef(false);
-  const returningUserChecked = useRef(false);
-  const returningUserNeedsCampsite = useRef(false);
 
-  // First-login sequence: detect brand new user and orchestrate steps
+  // Onboarding orchestrator: show push modal when activeStep is "push"
+  const pushModalTriggered = useRef(false);
   useEffect(() => {
-    if (firstLoginChecked.current) return;
-    if (userFlagsLoading) return;
-    if (!isAuthenticated || isGuest) return;
-    // hasSeenWelcomeHome is false only on the very first Home visit
-    if (hasSeenWelcomeHome) {
-      firstLoginStep.current = "idle";
-      return;
+    if (onboardingActiveStep === "push" && !pushModalTriggered.current) {
+      pushModalTriggered.current = true;
+      const userId = auth.currentUser?.uid;
+      if (!userId) return;
+
+      let cancelled = false;
+      const triggerPush = async () => {
+        try {
+          const eligibility = await checkNotificationModalEligibility(userId);
+          if (cancelled) return;
+
+          if (eligibility.isEligible && eligibility.cohort) {
+            trackModalEligible(eligibility.cohort);
+            setNotificationCohort(eligibility.cohort);
+            await recordModalShown(userId, eligibility.cohort);
+            setTimeout(() => {
+              if (!cancelled) {
+                trackModalShown(eligibility.cohort!);
+                setShowStayInLoopModal(true);
+              }
+            }, 300);
+          } else {
+            // Not eligible for notification ask — resolve as completed (already granted)
+            resolvePush("completed");
+          }
+        } catch (error) {
+          console.error("[HomeScreen] Push modal trigger error:", error);
+          resolvePush("dismissed");
+        }
+      };
+      triggerPush();
+      return () => { cancelled = true; };
     }
+  }, [onboardingActiveStep, resolvePush]);
 
-    firstLoginChecked.current = true;
-    firstLoginStep.current = "notifications";
-
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-
-    let cancelled = false;
-
-    const startFirstLoginSequence = async () => {
-      try {
-        // Check if user already customized their profile or saw this prompt
-        const suppressCampsite = await shouldSuppressCampsitePrompt();
-
-        const eligibility = await checkNotificationModalEligibility(userId);
-        if (cancelled) return;
-
-        if (eligibility.isEligible && eligibility.cohort) {
-          // Store campsite need for after notification modal dismisses
-          returningUserNeedsCampsite.current = !suppressCampsite;
-
-          trackModalEligible(eligibility.cohort);
-          setNotificationCohort(eligibility.cohort);
-          await recordModalShown(userId, eligibility.cohort);
-
-          setTimeout(() => {
-            if (!cancelled) {
-              trackModalShown(eligibility.cohort!);
-              setShowStayInLoopModal(true);
-            }
-          }, 300);
-        } else if (!suppressCampsite) {
-          // Not eligible for notification ask — skip to campsite step
-          firstLoginStep.current = "campsite";
-          setTimeout(() => {
-            if (!cancelled) setShowCampsitePrompt(true);
-          }, 300);
-        } else {
-          firstLoginStep.current = "done";
-        }
-      } catch (error) {
-        console.error("[HomeScreen] First-login sequence error:", error);
-        // On error, skip entirely
-        firstLoginStep.current = "done";
-      }
-    };
-
-    startFirstLoginSequence();
-
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, isGuest, userFlagsLoading]);
-
-  // Show notification opt-in modal for returning users (non-first-login)
-  // First-login users get this through the first-login sequence above instead
+  // Onboarding orchestrator: show email opt-in when activeStep is "email"
+  const emailModalTriggered = useRef(false);
   useEffect(() => {
-    // Skip if first-login sequence is handling this
-    if (firstLoginStep.current !== "idle") return;
-    if (returningUserChecked.current) return;
-    if (userFlagsLoading) return;
+    if (onboardingActiveStep === "email" && !emailModalTriggered.current) {
+      emailModalTriggered.current = true;
+      setTimeout(() => setShowEmailOptIn(true), 300);
+    }
+  }, [onboardingActiveStep]);
 
-    // Only proceed for authenticated non-guest users
-    if (!isAuthenticated || isGuest) return;
-    
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
+  // Onboarding orchestrator: show campsite prompt when activeStep is "myCampsite"
+  const campsiteTriggered = useRef(false);
+  useEffect(() => {
+    if (onboardingActiveStep === "myCampsite" && !campsiteTriggered.current) {
+      campsiteTriggered.current = true;
 
-    returningUserChecked.current = true;
-
-    let cancelled = false;
-
-    const checkEligibility = async () => {
-      try {
-        const eligibility = await checkNotificationModalEligibility(userId);
-        
+      let cancelled = false;
+      const checkAndShow = async () => {
+        const suppress = await shouldSuppressCampsitePrompt();
         if (cancelled) return;
-
-        // Pre-check campsite prompt eligibility for after notification modal
-        const suppressCampsite = await shouldSuppressCampsitePrompt();
-
-        if (eligibility.isEligible && eligibility.cohort) {
-          // Store campsite need for after notification modal
-          returningUserNeedsCampsite.current = !suppressCampsite;
-
-          // Track eligibility
-          trackModalEligible(eligibility.cohort);
-          setNotificationCohort(eligibility.cohort);
-          
-          // Record that we showed the modal
-          await recordModalShown(userId, eligibility.cohort);
-          
-          // Show modal immediately (small delay for UI stability)
-          setTimeout(() => {
-            if (!cancelled) {
-              trackModalShown(eligibility.cohort!);
-              setShowStayInLoopModal(true);
-            }
-          }, 300);
-        } else if (!suppressCampsite) {
-          // Not eligible for notifications — show campsite prompt directly
+        if (suppress) {
+          resolveMyCampsite("completed");
+        } else {
           setTimeout(() => {
             if (!cancelled) setShowCampsitePrompt(true);
           }, 300);
         }
-      } catch (error) {
-        console.error("[HomeScreen] Error checking notification eligibility:", error);
-      }
-    };
+      };
+      checkAndShow();
+      return () => { cancelled = true; };
+    }
+  }, [onboardingActiveStep, resolveMyCampsite]);
 
-    checkEligibility();
-
-    return () => {
-      cancelled = true;
+  // Check user email subscription status on mount (for orchestrator)
+  useEffect(() => {
+    const checkSub = async () => {
+      const user = auth.currentUser;
+      if (!user || isGuest) return;
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists() && userDoc.data()?.emailSubscribed === true) {
+          setIsEmailSubscribed(true);
+        }
+      } catch { /* ignore */ }
     };
-  }, [isAuthenticated, isGuest, userFlagsLoading]);
+    checkSub();
+  }, [isGuest]);
 
   // Check for admin test modal on mount (admin-only, user-scoped)
   useEffect(() => {
@@ -345,7 +325,10 @@ export default function HomeScreen() {
 
   // Check for published announcement modal (for all users)
   // Uses consolidated dismissal storage: announcement_dismissals_v1 = { [versionId]: timestamp }
+  // Suppressed during onboarding sequence
   useEffect(() => {
+    if (isOnboardingActive) return;
+
     const DISMISSALS_KEY = "announcement_dismissals_v1";
     const MAX_ENTRIES = 75;
     const KEEP_RECENT = 25;
@@ -432,7 +415,7 @@ export default function HomeScreen() {
     };
 
     checkAnnouncementModal();
-  }, []);
+  }, [isOnboardingActive]);
 
   // Dismiss announcement modal and mark as dismissed
   const dismissAnnouncementModal = async () => {
@@ -455,66 +438,39 @@ export default function HomeScreen() {
     setAnnouncementModal(null);
   };
 
-  // Check if user should see email opt-in modal
-  // Show after 3rd app open if user is logged in and hasn't opted in
+  // Check if user should see email opt-in modal (legacy 3rd-app-open path)
+  // Only fires when onboarding is complete — during onboarding, the orchestrator handles email
   useEffect(() => {
+    // Skip during onboarding sequence
+    if (isOnboardingActive) return;
+
     const checkEmailOptIn = async () => {
       const user = auth.currentUser;
-      if (!user || isGuest) {
-        console.log("[HomeScreen] No auth user or guest, skipping email opt-in check");
-        return;
-      }
+      if (!user || isGuest) return;
 
       try {
-        // Check if already shown too recently (don't show more than once per week)
         const lastShownKey = "email_optin_last_shown";
         const lastShown = await AsyncStorage.getItem(lastShownKey);
         if (lastShown) {
-          const lastShownDate = new Date(lastShown);
-          const daysSinceLastShown = (Date.now() - lastShownDate.getTime()) / (1000 * 60 * 60 * 24);
-          if (daysSinceLastShown < 7) {
-            console.log("[HomeScreen] Email opt-in shown recently, skipping");
-            return;
-          }
+          const daysSince = (Date.now() - new Date(lastShown).getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSince < 7) return;
         }
 
-        // Check if user already subscribed to emails
         const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData?.emailSubscribed === true) {
-            console.log("[HomeScreen] User already subscribed to emails");
-            return;
-          }
-        }
+        if (userDoc.exists() && userDoc.data()?.emailSubscribed === true) return;
 
-        // Check how many times app has been opened
         const openCountKey = "app_open_count";
         const currentCountStr = await AsyncStorage.getItem(openCountKey);
         const currentCount = currentCountStr ? parseInt(currentCountStr, 10) : 0;
         const newCount = currentCount + 1;
         await AsyncStorage.setItem(openCountKey, String(newCount));
 
-        // Show opt-in modal on 3rd app open (or later, if not dismissed permanently)
         if (newCount >= 3) {
-          // Check if permanently dismissed
-          const dismissedKey = "email_optin_dismissed_permanently";
-          const dismissed = await AsyncStorage.getItem(dismissedKey);
-          if (dismissed === "true") {
-            console.log("[HomeScreen] Email opt-in permanently dismissed");
-            return;
-          }
+          const dismissed = await AsyncStorage.getItem("email_optin_dismissed_permanently");
+          if (dismissed === "true") return;
 
-          console.log("[HomeScreen] Showing email opt-in modal");
-          // Small delay to let other modals settle
           setTimeout(() => {
-            // Block during first-login sequence (ref is always current)
-            if (firstLoginStep.current === "notifications" || firstLoginStep.current === "campsite") {
-              console.log("[HomeScreen] Email opt-in deferred — first-login sequence in progress");
-              return;
-            }
-            // Only show if no other modals are active
-            if (!adminTestModal && !announcementModal && !showAccountModal) {
+            if (!adminTestModal && !announcementModal && !showAccountModal && !isOnboardingActive) {
               setShowEmailOptIn(true);
               AsyncStorage.setItem(lastShownKey, new Date().toISOString());
             }
@@ -526,11 +482,10 @@ export default function HomeScreen() {
     };
 
     checkEmailOptIn();
-  }, [isGuest, adminTestModal, announcementModal, showAccountModal]);
+  }, [isGuest, isOnboardingActive, adminTestModal, announcementModal, showAccountModal]);
 
   // Session soft upsell nudge — once per session, after other modals settle
   useEffect(() => {
-    // Only check once per component mount; session flag prevents re-show anyway
     if (sessionNudgeChecked.current) return;
     if (!isAuthenticated || isGuest) return;
     if (!UPSELL_MODALS_ENABLED || !PAYWALL_ENABLED) return;
@@ -538,10 +493,8 @@ export default function HomeScreen() {
     sessionNudgeChecked.current = true;
 
     const timer = setTimeout(() => {
-      // Block during first-login sequence (ref is always current, avoids stale closures)
-      if (firstLoginStep.current === "notifications" || firstLoginStep.current === "campsite") {
-        return;
-      }
+      // Block during onboarding sequence
+      if (isOnboardingActive) return;
       // Don't stack on top of other active modals
       if (
         showStayInLoopModal ||
@@ -557,13 +510,13 @@ export default function HomeScreen() {
 
       if (canShowSessionNudge()) {
         markSessionUpsellShown();
-        trackUpsellModalViewed("learning_complete"); // reuse closest analytics type for session browse
+        trackUpsellModalViewed("learning_complete");
         setShowSessionNudge(true);
       }
-    }, 5000); // 5s delay to let other modals settle
+    }, 5000);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, isGuest, canShowSessionNudge, markSessionUpsellShown,
+  }, [isAuthenticated, isGuest, isOnboardingActive, canShowSessionNudge, markSessionUpsellShown,
       showStayInLoopModal, adminTestModal, announcementModal, showEmailOptIn, showAccountModal, showModal, showCampsitePrompt]);
 
   // Fetch a random featured photo on screen focus
@@ -677,8 +630,8 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-forest">
-      {/* Push Permission Soft Prompt - suppressed during first-login onboarding sequence */}
-      <PushPermissionPrompt suppressed={firstLoginStep.current !== "idle" && firstLoginStep.current !== "done"} />
+      {/* Push Permission Soft Prompt - suppressed during onboarding sequence */}
+      <PushPermissionPrompt suppressed={isOnboardingActive} />
       
       <View className="flex-1" style={{ backgroundColor: PARCHMENT_BACKGROUND }}>
         {/* Welcome Hero Image - full bleed */}
@@ -1487,9 +1440,17 @@ export default function HomeScreen() {
       {/* Email Opt-In Modal */}
       <EmailOptInModal
         visible={showEmailOptIn}
-        onClose={() => setShowEmailOptIn(false)}
+        onClose={() => {
+          setShowEmailOptIn(false);
+          if (onboardingActiveStep === "email") {
+            resolveEmail("dismissed");
+          }
+        }}
         onOptInComplete={() => {
-          console.log("[HomeScreen] Email opt-in completed");
+          setIsEmailSubscribed(true);
+          if (onboardingActiveStep === "email") {
+            resolveEmail("completed");
+          }
         }}
       />
 
@@ -1505,40 +1466,31 @@ export default function HomeScreen() {
         triggerKey={accountModalTriggerKey}
       />
 
-      {/* Onboarding Modal — suppressed during first-login sequence to avoid collision */}
+      {/* Onboarding Modal — suppressed during onboarding sequence */}
       <OnboardingModal
-        visible={showModal && firstLoginStep.current === "idle"}
+        visible={showModal && !isOnboardingActive}
         tooltip={currentTooltip}
         onDismiss={dismissModal}
       />
 
-      {/* Stay in the Loop Modal - shown once after first login */}
+      {/* Stay in the Loop Modal - push notification permission */}
       <StayInLoopModal
         visible={showStayInLoopModal}
         onDismiss={() => {
           setShowStayInLoopModal(false);
-          // Show campsite prompt if user hasn't customized their profile yet
-          if (firstLoginStep.current === "notifications" || returningUserNeedsCampsite.current) {
-            if (returningUserNeedsCampsite.current) {
-              returningUserNeedsCampsite.current = false;
-              firstLoginStep.current = "campsite";
-              setTimeout(() => setShowCampsitePrompt(true), 300);
-            } else {
-              firstLoginStep.current = "done";
-            }
-          }
+          resolvePush("dismissed");
         }}
         cohort={notificationCohort}
       />
 
-      {/* First-Login Step 2: My Campsite Setup Prompt */}
+      {/* Onboarding Step: My Campsite Setup Prompt */}
       <Modal
         visible={showCampsitePrompt}
         transparent
         animationType="fade"
         onRequestClose={() => {
           setShowCampsitePrompt(false);
-          firstLoginStep.current = "done";
+          resolveMyCampsite("dismissed");
           setCampsiteSetupPromptSeen();
         }}
       >
@@ -1594,7 +1546,7 @@ export default function HomeScreen() {
               onPress={() => {
                 safeHaptic();
                 setShowCampsitePrompt(false);
-                firstLoginStep.current = "done";
+                resolveMyCampsite("completed");
                 setCampsiteSetupPromptSeen();
                 navigation.navigate("MyCampsite" as any);
               }}
@@ -1620,7 +1572,7 @@ export default function HomeScreen() {
             <Pressable
               onPress={() => {
                 setShowCampsitePrompt(false);
-                firstLoginStep.current = "done";
+                resolveMyCampsite("dismissed");
                 setCampsiteSetupPromptSeen();
               }}
               style={{ paddingVertical: 10, alignItems: "center" }}
