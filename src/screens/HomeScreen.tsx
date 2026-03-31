@@ -1444,6 +1444,7 @@ export default function HomeScreen() {
           setShowEmailOptIn(false);
           if (onboardingActiveStep === "email") {
             resolveEmail("dismissed");
+            AsyncStorage.setItem("email_optin_dismissed_permanently", "true");
           }
         }}
         onOptInComplete={() => {
@@ -1479,6 +1480,10 @@ export default function HomeScreen() {
         onDismiss={() => {
           setShowStayInLoopModal(false);
           resolvePush("dismissed");
+        }}
+        onComplete={() => {
+          setShowStayInLoopModal(false);
+          resolvePush("completed");
         }}
         cohort={notificationCohort}
       />

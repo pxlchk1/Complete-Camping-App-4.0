@@ -62,6 +62,7 @@ import {
 interface StayInLoopModalProps {
   visible: boolean;
   onDismiss: () => void;
+  onComplete?: () => void;
   cohort?: NotificationCohort | null;
 }
 
@@ -70,6 +71,7 @@ const { width } = Dimensions.get("window");
 export default function StayInLoopModal({
   visible,
   onDismiss,
+  onComplete,
   cohort,
 }: StayInLoopModalProps) {
   const [loading, setLoading] = useState(false);
@@ -177,6 +179,14 @@ export default function StayInLoopModal({
           userId: user.uid,
           cohort,
         });
+
+        // Signal grant to caller via onComplete if provided, else onDismiss
+        if (onComplete) {
+          onComplete();
+        } else {
+          onDismiss();
+        }
+        return;
       } else if (result === "denied") {
         // Track permission denied
         if (cohort) {
@@ -192,7 +202,7 @@ export default function StayInLoopModal({
         });
       }
 
-      // Close modal after operation completes
+      // Close modal after non-grant paths
       onDismiss();
     } catch (error) {
       console.error("[StayInLoopModal] Error during notification setup:", error);
