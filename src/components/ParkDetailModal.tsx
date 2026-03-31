@@ -9,6 +9,7 @@ import { Park } from "../types/camping";
 import { useTripsStore } from "../state/tripsStore";
 import { useUserStatus } from "../utils/authHelper";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useIsAdministrator } from "../state/userStore";
 import { auth, db } from "../config/firebase";
 import { 
   isParkFavorited, 
@@ -54,6 +55,7 @@ export default function ParkDetailModal({
   const navigation = useNavigation();
   const { isGuest } = useUserStatus();
   const isPro = useSubscriptionStore((s) => s.isPro);
+  const isAdmin = useIsAdministrator();
   const trips = useTripsStore((s) => s.trips);
   
   // Favorites state
@@ -245,7 +247,7 @@ export default function ParkDetailModal({
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         // Adding favorite - check limit for FREE users (first 5 free, 6+ requires Pro)
-        if (!isPro) {
+        if (!isPro && !isAdmin) {
           const currentCount = await getFavoritesCount(user.uid);
           if (currentCount >= FREE_FAVORITES_LIMIT) {
             // FREE user at limit - track Pro attempt and show PaywallModal

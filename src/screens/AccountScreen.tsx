@@ -348,7 +348,7 @@ export default function AccountScreen() {
         {activeTab === "posts" && (
           <View className="bg-white">
             {/* Upgrade to Pro Card */}
-            {!isPro && (
+            {!isPro && !isAdministrator && (
               <View className="px-4 pt-4">
                 <Pressable
                   onPress={() => {

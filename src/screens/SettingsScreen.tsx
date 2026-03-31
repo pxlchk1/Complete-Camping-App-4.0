@@ -32,6 +32,7 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, serv
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { useSubscriptionStore } from "../state/subscriptionStore";
+import { useIsAdministrator } from "../state/userStore";
 import { restorePurchases } from "../services/subscriptionService";
 import ModalHeader from "../components/ModalHeader";
 import {
@@ -179,6 +180,8 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const isPro = useSubscriptionStore((s) => s.isPro);
+  const isAdminUser = useIsAdministrator();
+  const effectivelyPro = isPro || isAdminUser;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -913,29 +916,29 @@ export default function SettingsScreen() {
                 <View className="flex-1 mr-4">
                   <View className="flex-row items-center">
                     <Ionicons 
-                      name={isPro ? "star" : "star-outline"} 
+                      name={effectivelyPro ? "star" : "star-outline"} 
                       size={20} 
-                      color={isPro ? GRANITE_GOLD : EARTH_GREEN} 
+                      color={effectivelyPro ? GRANITE_GOLD : EARTH_GREEN} 
                     />
                     <Text
                       className="ml-3"
                       style={{ fontFamily: "SourceSans3_600SemiBold", color: TEXT_PRIMARY_STRONG }}
                     >
-                      {isPro ? "Pro Member" : "Upgrade to Pro"}
+                      {effectivelyPro ? "Pro Member" : "Upgrade to Pro"}
                     </Text>
                   </View>
                   <Text
                     className="ml-8 mt-1"
                     style={{ fontFamily: "SourceSans3_400Regular", color: TEXT_SECONDARY }}
                   >
-                    {isPro ? "Manage your subscription" : "Unlock all premium features"}
+                    {effectivelyPro ? "Manage your subscription" : "Unlock all premium features"}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={TEXT_SECONDARY} />
               </Pressable>
 
               {/* Restore Purchases (shown for non-Pro users) */}
-              {!isPro && (
+              {!effectivelyPro && (
                 <Pressable
                   onPress={async () => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
