@@ -58,6 +58,7 @@ import {
   PARCHMENT,
   CARD_BACKGROUND_LIGHT,
   BORDER_SOFT,
+  RIVER_ROCK,
   TEXT_PRIMARY_STRONG,
   TEXT_SECONDARY,
   TEXT_MUTED,
@@ -68,8 +69,8 @@ import ErrorModal from "../components/ErrorModal";
 type RoutePropType = RouteProp<RootStackParamList, "BadgeDetail">;
 type NavProp = NativeStackNavigationProp<RootStackParamList>;
 
-// Hero badge size from UX spec
-const BADGE_HERO_SIZE = 210;
+// Hero badge size — refined for tighter composition
+const BADGE_HERO_SIZE = 176;
 
 export default function BadgeDetailScreen() {
   const navigation = useNavigation<NavProp>();
@@ -340,10 +341,10 @@ export default function BadgeDetailScreen() {
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 48 }}
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: insets.bottom + 48 }}
       >
         {/* Hero Badge Image */}
-        <View className="items-center mb-5">
+        <View className="items-center mb-3">
           <View
             style={{
               width: BADGE_HERO_SIZE,
@@ -352,10 +353,10 @@ export default function BadgeDetailScreen() {
               overflow: "hidden",
               backgroundColor: CARD_BACKGROUND_LIGHT,
               shadowColor: "#000",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.2,
-              shadowRadius: 6,
-              elevation: 5,
+              shadowOffset: { width: 0, height: 3 },
+              shadowOpacity: 0.14,
+              shadowRadius: 5,
+              elevation: 4,
             }}
           >
             <Image
@@ -368,8 +369,8 @@ export default function BadgeDetailScreen() {
 
         {/* Badge Title */}
         <Text
-          className="font-source-bold text-2xl text-center mb-2"
-          style={{ color: TEXT_PRIMARY_STRONG }}
+          className="font-source-bold text-2xl text-center mb-1.5"
+          style={{ color: TEXT_PRIMARY_STRONG, letterSpacing: -0.3 }}
         >
           {badge.name}
         </Text>
@@ -377,7 +378,7 @@ export default function BadgeDetailScreen() {
         {/* Completed Date */}
         {isEarned && completedDate && (
           <Text
-            className="font-source-medium text-sm text-center mb-4"
+            className="font-source-medium text-[13px] text-center mb-3"
             style={{ color: EARTH_GREEN }}
           >
             Completed on {completedDate}
@@ -387,8 +388,8 @@ export default function BadgeDetailScreen() {
         {/* Description */}
         {badge.description && (
           <Text
-            className="font-source-regular text-base text-center mb-6 leading-relaxed"
-            style={{ color: TEXT_SECONDARY }}
+            className="font-source-regular text-[14px] text-center mb-5 px-2"
+            style={{ color: TEXT_SECONDARY, lineHeight: 21 }}
           >
             {badge.description}
           </Text>
@@ -397,15 +398,15 @@ export default function BadgeDetailScreen() {
         {/* Witness Requirement Notice */}
         {requiresWitness && !isEarned && (
           <View
-            className="rounded-xl p-3.5 mb-5 flex-row items-start"
-            style={{ backgroundColor: "#EEF2FF" }}
+            className="rounded-xl px-3.5 py-3 mb-4 flex-row items-start"
+            style={{ backgroundColor: RIVER_ROCK }}
           >
-            <Ionicons name="people" size={18} color="#4F46E5" style={{ marginTop: 1 }} />
+            <Ionicons name="people" size={17} color={DEEP_FOREST} style={{ marginTop: 1 }} />
             <View className="ml-2.5 flex-1">
-              <Text className="font-source-semibold text-sm mb-0.5" style={{ color: "#4F46E5" }}>
+              <Text className="font-source-semibold text-[13px] mb-0.5" style={{ color: DEEP_FOREST }}>
                 Witness Required
               </Text>
-              <Text className="font-source-regular text-[13px] leading-[18px]" style={{ color: "#6366F1" }}>
+              <Text className="font-source-regular text-[12.5px] leading-[17px]" style={{ color: EARTH_GREEN }}>
                 {getWitnessRequirementReason(badge.id)}
               </Text>
             </View>
@@ -414,30 +415,30 @@ export default function BadgeDetailScreen() {
 
         {/* Requirements Card */}
         <View
-          className="rounded-xl p-4 mb-6"
+          className="rounded-xl px-4 py-3.5 mb-5"
           style={{
             backgroundColor: CARD_BACKGROUND_LIGHT,
-            borderWidth: 1,
+            borderWidth: 0.5,
             borderColor: BORDER_SOFT,
           }}
         >
           <Text
-            className="font-source-semibold text-sm mb-3"
-            style={{ color: TEXT_PRIMARY_STRONG }}
+            className="font-source-semibold text-[13px] mb-2.5"
+            style={{ color: TEXT_PRIMARY_STRONG, letterSpacing: 0.2 }}
           >
             Requirements
           </Text>
           {badge.requirements.map((req, i) => (
-            <View key={i} className="flex-row items-start mb-2">
+            <View key={i} className="flex-row items-start" style={{ marginBottom: i < badge.requirements.length - 1 ? 10 : 0 }}>
               <Ionicons
                 name={isEarned ? "checkmark-circle" : "ellipse-outline"}
-                size={18}
+                size={17}
                 color={isEarned ? EARTH_GREEN : TEXT_MUTED}
-                style={{ marginRight: 10, marginTop: 1 }}
+                style={{ marginRight: 10, marginTop: 1.5 }}
               />
               <Text
-                className="font-source-regular text-sm flex-1 leading-5"
-                style={{ color: TEXT_PRIMARY_STRONG }}
+                className="font-source-regular text-[13px] flex-1"
+                style={{ color: TEXT_PRIMARY_STRONG, lineHeight: 19 }}
               >
                 {req}
               </Text>
@@ -447,7 +448,7 @@ export default function BadgeDetailScreen() {
 
         {/* Pending Status Banner */}
         {isPending && (
-          <View className="rounded-xl p-4 mb-5" style={{ backgroundColor: "#FEF3C7" }}>
+          <View className="rounded-xl px-4 py-3.5 mb-4" style={{ backgroundColor: "#FEF3C7" }}>
             <View className="flex-row items-center mb-1">
               <Ionicons name="time-outline" size={16} color="#92400E" />
               <Text className="font-source-semibold text-sm ml-2" style={{ color: "#92400E" }}>
@@ -493,7 +494,7 @@ export default function BadgeDetailScreen() {
         {/* Seasonal Locked Notice */}
         {isSeasonalLocked && (
           <View
-            className="rounded-xl p-4 mb-5 flex-row items-center"
+            className="rounded-xl px-4 py-3 mb-4 flex-row items-center"
             style={{ backgroundColor: "#F3F4F6" }}
           >
             <Ionicons name="lock-closed" size={18} color={TEXT_MUTED} />
@@ -511,7 +512,7 @@ export default function BadgeDetailScreen() {
           <Pressable
             onPress={cta.handler}
             disabled={actionLoading || cta.disabled}
-            className="py-4 rounded-xl items-center flex-row justify-center mt-2"
+            className="py-3.5 rounded-xl items-center flex-row justify-center mt-4"
             style={{
               backgroundColor: cta.disabled ? "#9CA3AF" : DEEP_FOREST,
               opacity: actionLoading ? 0.6 : 1,
