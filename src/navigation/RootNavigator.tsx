@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -9,6 +9,8 @@ import EmailVerificationGate from "../components/EmailVerificationGate";
 import { useAuthStore } from "../state/authStore";
 import { PAYWALL_ENABLED } from "../config/subscriptions";import ConnectHandleGate from '../components/ConnectHandleGate';import { useNotificationListeners, resolveDeepLink } from "../hooks/useNotifications";
 import NotificationMessageModal from "../components/NotificationMessageModal";
+import SetupFlowScreen from "../screens/SetupFlowScreen";
+import { useOnboardingStore, CURRENT_ONBOARDING_VERSION } from "../state/onboardingStore";
 
 // Screens
 import HomeScreen from "../screens/HomeScreen";
@@ -170,7 +172,38 @@ export default function RootNavigator() {
 
   // Register notification listeners (tap handler, badge clear, push token)
   useNotificationListeners(navigateFn);
-  
+
+  // ─── Setup Flow trigger for users who missed onboarding ─────────────
+  const setupFlowTriggered = useRef(false);
+  const progressByVersion = useOnboardingStore((s) => s.progressByVersion);
+
+  useEffect(() => {
+    if (setupFlowTriggered.current) return;
+    if (!user) return;
+
+    const progress = progressByVersion[CURRENT_ONBOARDING_VERSION];
+    if (!progress || progress.sequenceComplete) return;
+
+    // Only trigger for returning users (non-brand-new) who have pending push or myCampsite
+    if (progress.isBrandNewUser) return;
+
+    const pushPending = progress.steps.push.status === "pending";
+    const campsitePending = progress.steps.myCampsite.status === "pending";
+
+    if (pushPending || campsitePending) {
+      setupFlowTriggered.current = true;
+      // Small delay to let navigation mount settle
+      const timer = setTimeout(() => {
+        try {
+          (navigation as any).navigate("SetupFlow");
+        } catch {
+          // Navigation not ready — safe to swallow
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [user, progressByVersion, navigation]);
+
   return (
     <View style={{ flex: 1 }}>
     <Stack.Navigator
@@ -304,6 +337,18 @@ export default function RootNavigator() {
       <Stack.Screen name="AdminGatingReport" component={AdminGatingReportScreen} />
       <Stack.Screen name="AdminCommunications" component={AdminCommunicationsScreen} />
       <Stack.Screen name="AdminAnalytics" component={AdminAnalyticsScreen} />
+
+      {/* Setup Flow — catch-up onboarding for push + campsite */}
+      <Stack.Screen
+        name="SetupFlow"
+        component={SetupFlowScreen}
+        options={{
+          presentation: "formSheet",
+          headerShown: false,
+          sheetAllowedDetents: [0.65, 0.85],
+          gestureEnabled: true,
+        }}
+      />
     </Stack.Navigator>
     {user && <EmailVerificationGate />}
     {user && <NotificationMessageModal onNavigate={navigateFn} resolveDeepLink={resolveDeepLink} />}
