@@ -9,7 +9,8 @@ import { Park } from "../types/camping";
 import { useTripsStore } from "../state/tripsStore";
 import { useUserStatus } from "../utils/authHelper";
 import { useSubscriptionStore } from "../state/subscriptionStore";
-import { useIsAdministrator } from "../state/userStore";
+import { useIsAdministrator, useUserStore } from "../state/userStore";
+import { PrefillLocation } from "../navigation/types";
 import { auth, db } from "../config/firebase";
 import { 
   isParkFavorited, 
@@ -551,7 +552,56 @@ export default function ParkDetailModal({
                   Start a Trip
                 </Text>
               </Pressable>
-            ) : null}
+            ) : (
+              /* LOGGED IN, NO ACTIVE TRIP: Show "Start a Trip" → CreateTrip with park pre-filled */
+              <Pressable
+                onPress={() => {
+                  const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
+                  const userIsPro = isPro || isAdmin;
+
+                  if (hasUsedFreeTrip && !userIsPro) {
+                    onClose();
+                    navigation.navigate("Paywall" as any, { triggerKey: "second_trip" });
+                    return;
+                  }
+
+                  const prefill: PrefillLocation = {
+                    source: "favorites",
+                    placeType: "park",
+                    placeId: park.id,
+                    name: park.name,
+                    subtitle: park.address,
+                    state: park.state,
+                    address: park.address,
+                    lat: park.latitude,
+                    lng: park.longitude,
+                  };
+                  onClose();
+                  navigation.navigate("CreateTrip" as any, { prefillLocation: prefill });
+                }}
+                style={{
+                  backgroundColor: DEEP_FOREST,
+                  borderRadius: 16,
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="compass" size={20} color={PARCHMENT} />
+                <Text
+                  style={{
+                    fontFamily: "SourceSans3_600SemiBold",
+                    fontSize: 16,
+                    color: PARCHMENT,
+                    marginLeft: 8,
+                  }}
+                >
+                  Start a Trip
+                </Text>
+              </Pressable>
+            )}
 
             {/* Reserve a Site - only show if park has a reservation URL (from prop or fetched from Firebase) */}
             {reservationUrl ? (
