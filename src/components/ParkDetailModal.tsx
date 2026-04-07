@@ -519,43 +519,20 @@ export default function ParkDetailModal({
                   </Text>
                 </Pressable>
               </Animated.View>
-            ) : isGuest ? (
-              /* GUEST: Show "Plan new trip" CTA that gates to AccountRequiredModal */
-              <Pressable
-                onPress={() => {
-                  if (onRequireAccount) {
-                    onRequireAccount("start_trip");
-                  } else {
-                    onClose();
-                    navigation.navigate("Auth" as never);
-                  }
-                }}
-                style={{
-                  backgroundColor: DEEP_FOREST,
-                  borderRadius: 16,
-                  paddingVertical: 14,
-                  paddingHorizontal: 20,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="compass" size={20} color={PARCHMENT} />
-                <Text
-                  style={{
-                    fontFamily: "SourceSans3_600SemiBold",
-                    fontSize: 16,
-                    color: PARCHMENT,
-                    marginLeft: 8,
-                  }}
-                >
-                  Plan new trip
-                </Text>
-              </Pressable>
             ) : (
-              /* LOGGED IN, NO ACTIVE TRIP: Show "Start a Trip" → CreateTrip with park pre-filled */
+              /* NO ACTIVE TRIP: Always show button — auth gated on tap, not render */
               <Pressable
                 onPress={() => {
+                  if (isGuest) {
+                    if (onRequireAccount) {
+                      onRequireAccount("start_trip");
+                    } else {
+                      onClose();
+                      navigation.navigate("Auth" as never);
+                    }
+                    return;
+                  }
+
                   const hasUsedFreeTrip = useUserStore.getState().hasUsedFreeTrip;
                   const userIsPro = isPro || isAdmin;
 
@@ -598,7 +575,7 @@ export default function ParkDetailModal({
                     marginLeft: 8,
                   }}
                 >
-                  Start a Trip
+                  Plan new trip
                 </Text>
               </Pressable>
             )}
