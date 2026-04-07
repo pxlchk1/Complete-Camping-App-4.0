@@ -137,7 +137,9 @@ export const PushPermissionPrompt: React.FC<PushPermissionPromptProps> = ({
     onComplete?.(false);
   };
 
-  if (!visible) return null;
+  // Don't render if not visible OR if suppressed by onboarding orchestrator
+  // (covers the race where visible was set before suppressed became true)
+  if (!visible || suppressed) return null;
 
   return (
     <Modal
