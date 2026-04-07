@@ -520,7 +520,7 @@ export default function ParkDetailModal({
                 </Pressable>
               </Animated.View>
             ) : isGuest ? (
-              /* GUEST WITH NO TRIPS: Show "Start a Trip" CTA that gates to AccountRequiredModal */
+              /* GUEST: Show "Plan new trip" CTA that gates to AccountRequiredModal */
               <Pressable
                 onPress={() => {
                   if (onRequireAccount) {
@@ -549,7 +549,7 @@ export default function ParkDetailModal({
                     marginLeft: 8,
                   }}
                 >
-                  Start a Trip
+                  Plan new trip
                 </Text>
               </Pressable>
             ) : (
