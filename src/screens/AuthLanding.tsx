@@ -463,16 +463,11 @@ export default function AuthLanding({ navigation }: { navigation: any }) {
         // Force token refresh to ensure Firestore rules see the new auth state
         await userCredential.user.getIdToken(true);
 
-        // Send verification email IMMEDIATELY while auth token is freshest.
-        // Uses userCredential.user directly (guaranteed non-null after create).
-        // Must happen before bootstrapNewAccount which can take 7+ seconds.
-        try {
-          await sendEmailVerification(userCredential.user);
-          console.log("VERIFICATION_EMAIL_SENT");
-        } catch (verifyError: any) {
-          // Log but don't block — EmailVerificationGate auto-sends as safety net
-          console.warn("VERIFICATION_EMAIL_FAILED", { code: verifyError?.code, message: verifyError?.message });
-        }
+        // NOTE: Verification email is NOT sent here intentionally.
+        // Sending it during sign-up triggers a Gmail/iOS notification while
+        // the user is still on this screen (bootstrapNewAccount takes 7+ sec),
+        // which causes confusion. EmailVerificationGate auto-sends 500ms
+        // after it mounts on the home screen — contextually correct timing.
 
         // Create user profile using protected onboarding layer
         // Normalize handle - remove any @ prefix before saving
