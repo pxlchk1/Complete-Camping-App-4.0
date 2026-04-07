@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { View, Text, ScrollView, Pressable, ImageBackground, Image, ActivityIndicator, Modal, Linking } from "react-native";
+import { View, Text, ScrollView, Pressable, ImageBackground, Image, ActivityIndicator, Linking } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
@@ -15,7 +15,7 @@ import HandleLink from "../components/HandleLink";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
 import EmailOptInModal from "../components/EmailOptInModal";
-import StayInLoopModal from "../components/StayInLoopModal";
+import OnboardingWalkthroughModal from "../components/OnboardingWalkthroughModal";
 
 // Hooks
 import { useScreenOnboarding } from "../hooks/useScreenOnboarding";
@@ -27,13 +27,7 @@ import { getPhotoPosts } from "../services/photoPostsService";
 import { getUser } from "../services/userService";
 import { getConnectDisplayHandle } from "../services/handleService";
 import { PhotoPost } from "../types/photoPost";
-import {
-  checkNotificationModalEligibility,
-  recordModalShown,
-  trackModalEligible,
-  trackModalShown,
-  NotificationCohort,
-} from "../services/notificationEligibilityService";
+import { useOnboardingStore, CURRENT_ONBOARDING_VERSION } from "../state/onboardingStore";
 
 // State
 import { useTripsStore } from "../state/tripsStore";
@@ -69,7 +63,7 @@ import { RootStackParamList } from "../navigation/types";
 import { auth, db } from "../config/firebase";
 import { doc, getDoc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { setCampsiteSetupPromptSeen, shouldSuppressCampsitePrompt } from "../services/userFlagsService";
+
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Home">;
 
@@ -132,9 +126,10 @@ export default function HomeScreen() {
     isEmailSubscribed,
   });
 
-  // Notification opt-in modal state
-  const [showStayInLoopModal, setShowStayInLoopModal] = useState(false);
-  const [notificationCohort, setNotificationCohort] = useState<NotificationCohort | null>(null);
+  // Onboarding walkthrough modal state
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const progressByVersion = useOnboardingStore((s) => s.progressByVersion);
+  const onboardingProgress = progressByVersion[CURRENT_ONBOARDING_VERSION];
 
   // Featured Community Photo state
   const [featuredPhoto, setFeaturedPhoto] = useState<PhotoPost | null>(null);
@@ -178,78 +173,25 @@ export default function HomeScreen() {
   const recordUpsellDismissal = useUpsellStore((s) => s.recordModalDismissal);
   const sessionNudgeChecked = useRef(false);
 
-  // Campsite prompt visibility (driven by orchestrator activeStep)
-  const [showCampsitePrompt, setShowCampsitePrompt] = useState(false);
+  // Onboarding walkthrough: single trigger replaces individual modal effects
+  const walkthroughTriggered = useRef(false);
+  const walkthroughPendingSteps = useMemo(() => {
+    if (!onboardingProgress) return [] as ("push" | "email" | "myCampsite")[];
+    const steps: ("push" | "email" | "myCampsite")[] = [];
+    if (onboardingProgress.steps.push.status === "pending") steps.push("push");
+    if (onboardingProgress.steps.email.status === "pending") steps.push("email");
+    if (onboardingProgress.steps.myCampsite.status === "pending") steps.push("myCampsite");
+    return steps;
+  }, [onboardingProgress]);
 
-  // Onboarding orchestrator: show push modal when activeStep is "push"
-  const pushModalTriggered = useRef(false);
   useEffect(() => {
-    if (onboardingActiveStep === "push" && !pushModalTriggered.current) {
-      pushModalTriggered.current = true;
-      const userId = auth.currentUser?.uid;
-      if (!userId) return;
+    if (walkthroughTriggered.current) return;
+    if (!onboardingActiveStep) return;
+    if (onboardingActiveStep === "verifyEmail") return;
 
-      let cancelled = false;
-      const triggerPush = async () => {
-        try {
-          const eligibility = await checkNotificationModalEligibility(userId);
-          if (cancelled) return;
-
-          if (eligibility.isEligible && eligibility.cohort) {
-            trackModalEligible(eligibility.cohort);
-            setNotificationCohort(eligibility.cohort);
-            await recordModalShown(userId, eligibility.cohort);
-            setTimeout(() => {
-              if (!cancelled) {
-                trackModalShown(eligibility.cohort!);
-                setShowStayInLoopModal(true);
-              }
-            }, 300);
-          } else {
-            // Not eligible for notification ask — resolve as completed (already granted)
-            resolvePush("completed");
-          }
-        } catch (error) {
-          console.error("[HomeScreen] Push modal trigger error:", error);
-          resolvePush("dismissed");
-        }
-      };
-      triggerPush();
-      return () => { cancelled = true; };
-    }
-  }, [onboardingActiveStep, resolvePush]);
-
-  // Onboarding orchestrator: show email opt-in when activeStep is "email"
-  const emailModalTriggered = useRef(false);
-  useEffect(() => {
-    if (onboardingActiveStep === "email" && !emailModalTriggered.current) {
-      emailModalTriggered.current = true;
-      setTimeout(() => setShowEmailOptIn(true), 300);
-    }
+    walkthroughTriggered.current = true;
+    setTimeout(() => setShowWalkthrough(true), 300);
   }, [onboardingActiveStep]);
-
-  // Onboarding orchestrator: show campsite prompt when activeStep is "myCampsite"
-  const campsiteTriggered = useRef(false);
-  useEffect(() => {
-    if (onboardingActiveStep === "myCampsite" && !campsiteTriggered.current) {
-      campsiteTriggered.current = true;
-
-      let cancelled = false;
-      const checkAndShow = async () => {
-        const suppress = await shouldSuppressCampsitePrompt();
-        if (cancelled) return;
-        if (suppress) {
-          resolveMyCampsite("completed");
-        } else {
-          setTimeout(() => {
-            if (!cancelled) setShowCampsitePrompt(true);
-          }, 300);
-        }
-      };
-      checkAndShow();
-      return () => { cancelled = true; };
-    }
-  }, [onboardingActiveStep, resolveMyCampsite]);
 
   // Check user email subscription status on mount (for orchestrator)
   useEffect(() => {
@@ -495,13 +437,12 @@ export default function HomeScreen() {
       if (isOnboardingActive) return;
       // Don't stack on top of other active modals
       if (
-        showStayInLoopModal ||
+        showWalkthrough ||
         adminTestModal ||
         announcementModal ||
         showEmailOptIn ||
         showAccountModal ||
-        showModal ||
-        showCampsitePrompt
+        showModal
       ) {
         return;
       }
@@ -515,7 +456,7 @@ export default function HomeScreen() {
 
     return () => clearTimeout(timer);
   }, [isAuthenticated, isGuest, isOnboardingActive, canShowSessionNudge, markSessionUpsellShown,
-      showStayInLoopModal, adminTestModal, announcementModal, showEmailOptIn, showAccountModal, showModal, showCampsitePrompt]);
+      showWalkthrough, adminTestModal, announcementModal, showEmailOptIn, showAccountModal, showModal]);
 
   // Fetch a random featured photo on screen focus
   useFocusEffect(
@@ -1433,21 +1374,31 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Email Opt-In Modal */}
+      {/* Onboarding Walkthrough — unified 3-screen modal */}
+      <OnboardingWalkthroughModal
+        visible={showWalkthrough}
+        pendingSteps={walkthroughPendingSteps}
+        onResolvePush={resolvePush}
+        onResolveEmail={resolveEmail}
+        onResolveMyCampsite={resolveMyCampsite}
+        onClose={() => setShowWalkthrough(false)}
+        onNavigateToCampsite={() => {
+          setShowWalkthrough(false);
+          setTimeout(() => navigation.navigate("MyCampsite" as any), 300);
+        }}
+        onEmailSubscribed={() => setIsEmailSubscribed(true)}
+      />
+
+      {/* Email Opt-In Modal — non-onboarding re-engagement (after 3 opens) */}
       <EmailOptInModal
         visible={showEmailOptIn}
         onClose={() => {
           setShowEmailOptIn(false);
-          if (onboardingActiveStep === "email") {
-            resolveEmail("dismissed");
-            AsyncStorage.setItem("email_optin_dismissed_permanently", "true");
-          }
+          AsyncStorage.setItem("email_optin_dismissed_permanently", "true");
         }}
         onOptInComplete={() => {
           setIsEmailSubscribed(true);
-          if (onboardingActiveStep === "email") {
-            resolveEmail("completed");
-          }
+          setShowEmailOptIn(false);
         }}
       />
 
@@ -1469,128 +1420,6 @@ export default function HomeScreen() {
         tooltip={currentTooltip}
         onDismiss={dismissModal}
       />
-
-      {/* Stay in the Loop Modal - push notification permission */}
-      <StayInLoopModal
-        visible={showStayInLoopModal}
-        onDismiss={() => {
-          setShowStayInLoopModal(false);
-          resolvePush("dismissed");
-        }}
-        onComplete={() => {
-          setShowStayInLoopModal(false);
-          resolvePush("completed");
-        }}
-        cohort={notificationCohort}
-      />
-
-      {/* Onboarding Step: My Campsite Setup Prompt */}
-      <Modal
-        visible={showCampsitePrompt}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          setShowCampsitePrompt(false);
-          resolveMyCampsite("dismissed");
-          setCampsiteSetupPromptSeen();
-        }}
-      >
-        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }}>
-          <View
-            style={{
-              backgroundColor: CARD_BACKGROUND_LIGHT,
-              borderRadius: 20,
-              padding: 28,
-              marginHorizontal: 32,
-              maxWidth: 360,
-              width: "100%",
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                backgroundColor: EARTH_GREEN + "20",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 16,
-              }}
-            >
-              <Ionicons name="person-circle-outline" size={26} color={EARTH_GREEN} />
-            </View>
-            <Text
-              style={{
-                fontFamily: "Raleway_700Bold",
-                fontSize: 20,
-                color: TEXT_PRIMARY_STRONG,
-                textAlign: "center",
-                marginBottom: 8,
-              }}
-            >
-              {"Set up My Campsite"}
-            </Text>
-            <Text
-              style={{
-                fontFamily: "SourceSans3_400Regular",
-                fontSize: 15,
-                color: TEXT_SECONDARY,
-                textAlign: "center",
-                lineHeight: 22,
-                marginBottom: 24,
-              }}
-            >
-              {"Add your name, handle, and a few details so people can recognize you, and so your camping profile feels like yours from the start."}
-            </Text>
-            <Pressable
-              onPress={() => {
-                safeHaptic();
-                setShowCampsitePrompt(false);
-                resolveMyCampsite("completed");
-                setCampsiteSetupPromptSeen();
-                navigation.navigate("MyCampsite" as any);
-              }}
-              style={{
-                backgroundColor: DEEP_FOREST,
-                paddingVertical: 14,
-                borderRadius: 10,
-                alignItems: "center",
-                width: "100%",
-                marginBottom: 12,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: "SourceSans3_600SemiBold",
-                  fontSize: 15,
-                  color: "#FFFFFF",
-                }}
-              >
-                {"Set Up My Campsite"}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                setShowCampsitePrompt(false);
-                resolveMyCampsite("dismissed");
-                setCampsiteSetupPromptSeen();
-              }}
-              style={{ paddingVertical: 10, alignItems: "center" }}
-            >
-              <Text
-                style={{
-                  fontFamily: "SourceSans3_400Regular",
-                  fontSize: 14,
-                  color: TEXT_SECONDARY,
-                }}
-              >
-                {"Maybe Later"}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
 
       {/* Session Soft Upsell Nudge - once per session for eligible free users */}
       <UpsellModal

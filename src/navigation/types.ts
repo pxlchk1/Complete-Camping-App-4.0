@@ -137,9 +137,6 @@ export type RootStackParamList = {
   WitnessRequests: undefined;
   MyBadges: { userId?: string } | undefined;
 
-  // Setup Flow (onboarding catch-up for push + campsite)
-  SetupFlow: undefined;
-
   // Dev-only screens
   MeritBadgeAssetCheck: undefined;
 
