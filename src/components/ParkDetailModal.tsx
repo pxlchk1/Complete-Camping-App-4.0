@@ -224,14 +224,17 @@ export default function ParkDetailModal({
   const handleToggleFavorite = async () => {
     const user = auth.currentUser;
     
-    // GUEST: Show AccountRequiredModal (saving favorites requires account)
+    // GUEST: Close pageSheet first, then show AccountRequiredModal
+    // iOS cannot reliably present a second Modal while a pageSheet is active
     if (!user || isGuest) {
-      if (onRequireAccount) {
-        onRequireAccount("save_favorite");
-      } else {
-        onClose();
-        navigation.navigate("Auth" as any);
-      }
+      onClose();
+      setTimeout(() => {
+        if (onRequireAccount) {
+          onRequireAccount("save_favorite");
+        } else {
+          navigation.navigate("Auth" as any);
+        }
+      }, 350);
       return;
     }
     
@@ -524,12 +527,16 @@ export default function ParkDetailModal({
               <Pressable
                 onPress={() => {
                   if (isGuest) {
-                    if (onRequireAccount) {
-                      onRequireAccount("start_trip");
-                    } else {
-                      onClose();
-                      navigation.navigate("Auth" as never);
-                    }
+                    // Must close this pageSheet modal first, then show account modal
+                    // iOS cannot reliably present a second Modal while a pageSheet is active
+                    onClose();
+                    setTimeout(() => {
+                      if (onRequireAccount) {
+                        onRequireAccount("start_trip");
+                      } else {
+                        navigation.navigate("Auth" as never);
+                      }
+                    }, 350);
                     return;
                   }
 
