@@ -4,7 +4,7 @@
  * Single source of truth for versioned, one-time onboarding sequence state.
  * Persisted via AsyncStorage so it survives app relaunch.
  *
- * CURRENT VERSION: "2026-03-onboarding-v1"
+ * CURRENT VERSION: "2026-04-onboarding-v2"
  *
  * Steps (in order):
  *   1. verifyEmail  — brand new email/password accounts only
@@ -25,7 +25,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ─── Version & Types ────────────────────────────────────────────────────────
 
-export const CURRENT_ONBOARDING_VERSION = "2026-03-onboarding-v1";
+export const CURRENT_ONBOARDING_VERSION = "2026-04-onboarding-v2";
 
 export type OnboardingStepId = "verifyEmail" | "push" | "email" | "myCampsite";
 
