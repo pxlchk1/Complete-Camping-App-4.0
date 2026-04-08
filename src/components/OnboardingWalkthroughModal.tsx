@@ -336,10 +336,7 @@ export default function OnboardingWalkthroughModal({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <View style={styles.backdrop}>
-          {/* Top spacer — overlay area above the card */}
-          <View style={{ height: insets.top + 44 }} />
-
-          {/* Card — bottom-sheet style */}
+          {/* Card — bottom-sheet anchored at bottom */}
           <View style={styles.card}>
             {/* Handle bar */}
             <View style={styles.handle} />
@@ -372,7 +369,6 @@ export default function OnboardingWalkthroughModal({
 
             {/* Scrollable page content */}
             <ScrollView
-              style={{ flex: 1 }}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
@@ -555,14 +551,17 @@ export default function OnboardingWalkthroughModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+    justifyContent: "flex-end",
   },
   card: {
-    flex: 1,
     backgroundColor: PARCHMENT,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     overflow: "hidden",
+    // Sized by content, not flex — avoids the giant dead-space problem.
+    // Email form is tallest; maxHeight prevents full-screen on very short devices.
+    maxHeight: "88%",
   },
   handle: {
     width: 36,
@@ -571,30 +570,31 @@ const styles = StyleSheet.create({
     backgroundColor: BORDER_SOFT,
     alignSelf: "center",
     marginTop: 10,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingTop: 6,
+    paddingBottom: 2,
   },
   headerTitle: {
     fontFamily: "Raleway_600SemiBold",
-    fontSize: 17,
-    color: TEXT_PRIMARY_STRONG,
+    fontSize: 16,
+    color: TEXT_SECONDARY,
     textAlign: "center",
+    letterSpacing: 0.2,
   },
   skipBtn: {
     width: 48,
     alignItems: "flex-end",
   },
   skipText: {
-    fontFamily: "SourceSans3_500Medium",
+    fontFamily: "SourceSans3_600SemiBold",
     fontSize: 15,
-    color: TEXT_MUTED,
+    color: EARTH_GREEN,
   },
 
   // ── Progress dots (active = pill, others = circle) ──
@@ -602,59 +602,59 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 14,
+    paddingTop: 8,
+    paddingBottom: 6,
     gap: 8,
   },
   dot: {
-    height: 8,
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
   },
   dotActive: {
-    width: 24,
+    width: 20,
     backgroundColor: DEEP_FOREST,
   },
   dotComplete: {
-    width: 8,
+    width: 6,
     backgroundColor: DEEP_FOREST,
-    opacity: 0.4,
+    opacity: 0.35,
   },
   dotInactive: {
-    width: 8,
+    width: 6,
     backgroundColor: BORDER_SOFT,
   },
 
   // ── Content ──
   scrollContent: {
-    flexGrow: 1,
     paddingHorizontal: 24,
+    paddingBottom: 4,
   },
   pageCenter: {
-    flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 24,
+    paddingTop: 28,
+    paddingBottom: 8,
   },
   pageFill: {
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 20,
+    paddingBottom: 8,
   },
   iconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: DEEP_FOREST + "12",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 24,
+    marginBottom: 18,
   },
   emailIconRow: {
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 14,
   },
   emailIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: EARTH_GREEN + "15",
     alignItems: "center",
     justifyContent: "center",
@@ -664,7 +664,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: DEEP_FOREST,
     textAlign: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   pageBody: {
     fontFamily: "SourceSans3_400Regular",
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
     color: TEXT_SECONDARY,
     textAlign: "center",
     lineHeight: 22,
-    maxWidth: 300,
+    maxWidth: 290,
     alignSelf: "center",
   },
 
@@ -684,8 +684,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3C7",
     borderRadius: 10,
     padding: 12,
-    marginTop: 20,
-    maxWidth: 320,
+    marginTop: 16,
+    maxWidth: 310,
   },
   warningText: {
     flex: 1,
@@ -722,7 +722,7 @@ const styles = StyleSheet.create({
   checkboxRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    marginBottom: 16,
+    marginBottom: 14,
   },
   checkbox: {
     width: 22,
@@ -769,27 +769,36 @@ const styles = StyleSheet.create({
   // ── Bottom actions ──
   actionsContainer: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: BORDER_SOFT,
   },
   primaryBtn: {
     backgroundColor: DEEP_FOREST,
-    paddingVertical: 15,
-    borderRadius: 12,
+    paddingVertical: 16,
+    borderRadius: 14,
     alignItems: "center",
     width: "100%" as const,
+    // Subtle shadow to lift the CTA
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
   },
   primaryBtnText: {
-    fontFamily: "SourceSans3_600SemiBold",
-    fontSize: 16,
+    fontFamily: "SourceSans3_700Bold",
+    fontSize: 17,
     color: "#FFFFFF",
+    letterSpacing: 0.3,
   },
   secondaryBtn: {
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: "center",
   },
   secondaryBtnText: {
-    fontFamily: "SourceSans3_400Regular",
+    fontFamily: "SourceSans3_500Medium",
     fontSize: 15,
-    color: TEXT_MUTED,
+    color: EARTH_GREEN,
   },
 });
