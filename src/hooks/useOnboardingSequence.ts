@@ -67,12 +67,17 @@ export function useOnboardingSequence({
   const getCurrentProgress = useOnboardingStore((s) => s.getCurrentProgress);
   const isSequenceComplete = useOnboardingStore((s) => s.isSequenceComplete);
   const progressByVersion = useOnboardingStore((s) => s.progressByVersion);
+  const hasHydrated = useOnboardingStore((s) => s._hasHydrated);
 
   const enrolled = useRef(false);
 
   // ─── Enrollment ─────────────────────────────────────────────────────────
+  // Gate on hasHydrated: Zustand persist reads AsyncStorage asynchronously.
+  // Without this guard, enrollment can create v2 progress in-memory before
+  // hydration finishes, and the hydrated (stale) data then overwrites it.
   useEffect(() => {
     if (enrolled.current) return;
+    if (!hasHydrated) return;
     if (userFlagsLoading) return;
     if (!isAuthenticated || isGuest) return;
 
@@ -109,6 +114,7 @@ export function useOnboardingSequence({
     isBrandNewUser,
     isAppleUser,
     isEmailSubscribed,
+    hasHydrated,
     enrollIfNeeded,
     resolveStep,
     getCurrentProgress,

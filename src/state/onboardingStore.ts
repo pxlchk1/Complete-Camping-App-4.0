@@ -79,6 +79,9 @@ function freshProgress(isBrandNew: boolean): OnboardingVersionProgress {
 // ─── Store Interface ────────────────────────────────────────────────────────
 
 interface OnboardingStore {
+  /** Whether the persisted store has finished hydrating from AsyncStorage */
+  _hasHydrated: boolean;
+
   /** Progress keyed by onboarding version */
   progressByVersion: Record<string, OnboardingVersionProgress>;
 
@@ -106,6 +109,7 @@ interface OnboardingStore {
 export const useOnboardingStore = create<OnboardingStore>()(
   persist(
     (set, get) => ({
+      _hasHydrated: false,
       progressByVersion: {},
 
       enrollIfNeeded: (isBrandNewUser: boolean) => {
@@ -199,8 +203,11 @@ export const useOnboardingStore = create<OnboardingStore>()(
     {
       name: "onboarding-sequence-store",
       storage: createJSONStorage(() => AsyncStorage),
-      // Only persist progressByVersion
+      // Only persist progressByVersion (_hasHydrated is ephemeral)
       partialize: (state) => ({ progressByVersion: state.progressByVersion }),
+      onRehydrateStorage: () => () => {
+        useOnboardingStore.setState({ _hasHydrated: true });
+      },
     }
   )
 );
