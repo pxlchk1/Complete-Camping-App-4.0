@@ -1,10 +1,9 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback } from "react";
 import { View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "./types";
-import { PARCHMENT } from "../constants/colors";
 import CustomBottomTabBar from "../components/CustomBottomTabBar";
 import EmailVerificationGate from "../components/EmailVerificationGate";
 import { useAuthStore } from "../state/authStore";

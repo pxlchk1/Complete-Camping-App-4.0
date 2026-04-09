@@ -19,7 +19,6 @@ import {
   AppState,
   AppStateStatus,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { EmailVerificationIcon } from "./icons/OnboardingIcons";
 import { auth } from "../config/firebase";
 import { sendEmailVerification, signOut } from "firebase/auth";

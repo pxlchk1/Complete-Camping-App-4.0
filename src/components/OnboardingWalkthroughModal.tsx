@@ -11,7 +11,7 @@
  * experience and pill-dot progress indicator.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -20,7 +20,6 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   ActivityIndicator,
   ScrollView,
   StyleSheet,
@@ -53,9 +52,7 @@ import {
   DISABLED_BG,
   DISABLED_TEXT,
 } from "../constants/colors";
-import { fonts, radius } from "../theme/theme";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type StepId = "push" | "email" | "myCampsite";
