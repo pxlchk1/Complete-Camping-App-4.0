@@ -41,16 +41,26 @@ export function useUserFlags(): UserFlagsState {
   const hasMarkedSeen = useRef(false);
   // Track the current user UID so the effect re-runs on auth state change
   const [currentUid, setCurrentUid] = useState<string | null>(auth.currentUser?.uid ?? null);
+  // Track whether Firebase auth has resolved (auth uses AsyncStorage, so
+  // auth.currentUser is null on first render until persistence restores).
+  // Without this guard, loading becomes false with wrong defaults before
+  // the real user flags arrive, causing enrollment with wrong isBrandNewUser.
+  const [authResolved, setAuthResolved] = useState(auth.currentUser != null);
 
   // Listen for auth state changes so we re-subscribe when a user signs in/out
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUid(user?.uid ?? null);
+      setAuthResolved(true);
     });
     return () => unsubAuth();
   }, []);
 
   useEffect(() => {
+    // Wait for Firebase auth to resolve before setting loading: false.
+    // This prevents premature enrollment with wrong hasSeenWelcomeHome defaults.
+    if (!authResolved) return;
+
     if (!currentUid) {
       setState({
         hasSeenWelcomeHome: false,
@@ -118,7 +128,7 @@ export function useUserFlags(): UserFlagsState {
     );
 
     return () => unsubscribe();
-  }, [currentUid]);
+  }, [currentUid, authResolved]);
 
   return state;
 }
