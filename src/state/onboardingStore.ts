@@ -25,7 +25,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ─── Version & Types ────────────────────────────────────────────────────────
 
-export const CURRENT_ONBOARDING_VERSION = "2026-04-onboarding-v2";
+export const CURRENT_ONBOARDING_VERSION = "2026-04-onboarding-v3";
 
 export type OnboardingStepId = "verifyEmail" | "push" | "email" | "myCampsite";
 
