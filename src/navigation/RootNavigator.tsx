@@ -36,6 +36,7 @@ import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
 import PackingListCreateScreen from "../screens/PackingListCreateScreen";
 import PackingListEditorScreen from "../screens/PackingListEditorScreen";
 import MealPlanningScreen from "../screens/MealPlanningScreen";
+import CreateTripScreen from "../screens/CreateTripScreen";
 import ShoppingListScreen from "../screens/ShoppingListScreen";
 import PaywallScreen from "../screens/PaywallScreen";
 import ModuleDetailScreen from "../screens/ModuleDetailScreen";
@@ -128,17 +129,6 @@ function PlanStackNavigator(props: any) {
   );
 }
 
-/**
- * Redirect: all "CreateTrip" navigations now land on Plan > Plan tab
- * instead of the removed standalone CreateTripScreen.
- */
-function CreateTripRedirect({ navigation }: any) {
-  useEffect(() => {
-    navigation.navigate("HomeTabs", { screen: "Plan" });
-  }, [navigation]);
-  return <View style={{ flex: 1, backgroundColor: PARCHMENT }} />;
-}
-
 function CommunityStackNavigator(props: any) {
   console.log("[CommunityStackNavigator] mount");
   // Extract screen param to pass as initialRouteName to the top tabs
@@ -194,7 +184,7 @@ export default function RootNavigator() {
       <Stack.Screen name="Auth" component={AuthLanding} options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="HomeTabs" component={HomeTabs} />
-      <Stack.Screen name="CreateTrip" component={CreateTripRedirect} />
+      <Stack.Screen name="CreateTrip" component={CreateTripScreen} />
       <Stack.Screen name="TripDetail" component={TripDetailScreen} />
       <Stack.Screen name="GearLists" component={GearListsScreen} />
       <Stack.Screen name="CreateGearList" component={CreateGearListScreen} />
