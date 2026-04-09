@@ -1,9 +1,10 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "./types";
+import { PARCHMENT } from "../constants/colors";
 import CustomBottomTabBar from "../components/CustomBottomTabBar";
 import EmailVerificationGate from "../components/EmailVerificationGate";
 import { useAuthStore } from "../state/authStore";
@@ -19,7 +20,6 @@ import PlanTopTabsNavigator from "./PlanTopTabsNavigator";
 import { PlanErrorBoundary } from "../components/PlanErrorBoundary";
 import { CommunityErrorBoundary } from "../components/CommunityErrorBoundary";
 import FirstAidScreen from "../screens/FirstAidScreen";
-import CreateTripScreen from "../screens/CreateTripScreen";
 import TripDetailScreen from "../screens/TripDetailScreen";
 import ParksBrowseScreen from "../screens/ParksBrowseScreen";
 import GearListsScreen from "../screens/GearListsScreen";
@@ -128,6 +128,17 @@ function PlanStackNavigator(props: any) {
   );
 }
 
+/**
+ * Redirect: all "CreateTrip" navigations now land on Plan > Plan tab
+ * instead of the removed standalone CreateTripScreen.
+ */
+function CreateTripRedirect({ navigation }: any) {
+  useEffect(() => {
+    navigation.navigate("HomeTabs", { screen: "Plan" });
+  }, [navigation]);
+  return <View style={{ flex: 1, backgroundColor: PARCHMENT }} />;
+}
+
 function CommunityStackNavigator(props: any) {
   console.log("[CommunityStackNavigator] mount");
   // Extract screen param to pass as initialRouteName to the top tabs
@@ -183,7 +194,7 @@ export default function RootNavigator() {
       <Stack.Screen name="Auth" component={AuthLanding} options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false, presentation: 'card' }} />
       <Stack.Screen name="HomeTabs" component={HomeTabs} />
-      <Stack.Screen name="CreateTrip" component={CreateTripScreen} />
+      <Stack.Screen name="CreateTrip" component={CreateTripRedirect} />
       <Stack.Screen name="TripDetail" component={TripDetailScreen} />
       <Stack.Screen name="GearLists" component={GearListsScreen} />
       <Stack.Screen name="CreateGearList" component={CreateGearListScreen} />

@@ -14,7 +14,7 @@ import PushPermissionPrompt from "../components/PushPermissionPrompt";
 import HandleLink from "../components/HandleLink";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
-import EmailOptInModal from "../components/EmailOptInModal";
+
 import OnboardingWalkthroughModal from "../components/OnboardingWalkthroughModal";
 
 // Hooks
@@ -129,6 +129,7 @@ export default function HomeScreen() {
   // Onboarding walkthrough modal state
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const progressByVersion = useOnboardingStore((s) => s.progressByVersion);
+  const onboardingHasHydrated = useOnboardingStore((s) => s._hasHydrated);
   const onboardingProgress = progressByVersion[CURRENT_ONBOARDING_VERSION];
 
   // Featured Community Photo state
@@ -163,8 +164,6 @@ export default function HomeScreen() {
     ctaLink: string;
   } | null>(null);
 
-  // Email opt-in modal state
-  const [showEmailOptIn, setShowEmailOptIn] = useState(false);
 
   // Session soft upsell nudge state
   const [showSessionNudge, setShowSessionNudge] = useState(false);
@@ -265,8 +264,10 @@ export default function HomeScreen() {
 
   // Check for published announcement modal (for all users)
   // Uses consolidated dismissal storage: announcement_dismissals_v1 = { [versionId]: timestamp }
-  // Suppressed during onboarding sequence
+  // Suppressed during onboarding sequence AND until store hydration completes
+  // (prevents announcements firing before enrollment determines isOnboardingActive)
   useEffect(() => {
+    if (!onboardingHasHydrated) return;
     if (isOnboardingActive) return;
 
     const DISMISSALS_KEY = "announcement_dismissals_v1";
@@ -355,7 +356,7 @@ export default function HomeScreen() {
     };
 
     checkAnnouncementModal();
-  }, [isOnboardingActive]);
+  }, [isOnboardingActive, onboardingHasHydrated]);
 
   // Dismiss announcement modal and mark as dismissed
   const dismissAnnouncementModal = async () => {
@@ -378,51 +379,7 @@ export default function HomeScreen() {
     setAnnouncementModal(null);
   };
 
-  // Check if user should see email opt-in modal (legacy 3rd-app-open path)
-  // Only fires when onboarding is complete — during onboarding, the orchestrator handles email
-  useEffect(() => {
-    // Skip during onboarding sequence
-    if (isOnboardingActive) return;
 
-    const checkEmailOptIn = async () => {
-      const user = auth.currentUser;
-      if (!user || isGuest) return;
-
-      try {
-        const lastShownKey = "email_optin_last_shown";
-        const lastShown = await AsyncStorage.getItem(lastShownKey);
-        if (lastShown) {
-          const daysSince = (Date.now() - new Date(lastShown).getTime()) / (1000 * 60 * 60 * 24);
-          if (daysSince < 7) return;
-        }
-
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists() && userDoc.data()?.emailSubscribed === true) return;
-
-        const openCountKey = "app_open_count";
-        const currentCountStr = await AsyncStorage.getItem(openCountKey);
-        const currentCount = currentCountStr ? parseInt(currentCountStr, 10) : 0;
-        const newCount = currentCount + 1;
-        await AsyncStorage.setItem(openCountKey, String(newCount));
-
-        if (newCount >= 3) {
-          const dismissed = await AsyncStorage.getItem("email_optin_dismissed_permanently");
-          if (dismissed === "true") return;
-
-          setTimeout(() => {
-            if (!adminTestModal && !announcementModal && !showAccountModal && !isOnboardingActive) {
-              setShowEmailOptIn(true);
-              AsyncStorage.setItem(lastShownKey, new Date().toISOString());
-            }
-          }, 1500);
-        }
-      } catch (error) {
-        console.log("[HomeScreen] Error checking email opt-in:", error);
-      }
-    };
-
-    checkEmailOptIn();
-  }, [isGuest, isOnboardingActive, adminTestModal, announcementModal, showAccountModal]);
 
   // Session soft upsell nudge — once per session, after other modals settle
   useEffect(() => {
@@ -440,7 +397,6 @@ export default function HomeScreen() {
         showWalkthrough ||
         adminTestModal ||
         announcementModal ||
-        showEmailOptIn ||
         showAccountModal ||
         showModal
       ) {
@@ -456,7 +412,7 @@ export default function HomeScreen() {
 
     return () => clearTimeout(timer);
   }, [isAuthenticated, isGuest, isOnboardingActive, canShowSessionNudge, markSessionUpsellShown,
-      showWalkthrough, adminTestModal, announcementModal, showEmailOptIn, showAccountModal, showModal]);
+      showWalkthrough, adminTestModal, announcementModal, showAccountModal, showModal]);
 
   // Fetch a random featured photo on screen focus
   useFocusEffect(
@@ -1043,7 +999,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Admin Test Modal (for Communications screen testing) */}
-      {adminTestModal && (
+      {adminTestModal && !showWalkthrough && !announcementModal && (
         <View
           style={{
             position: "absolute",
@@ -1204,7 +1160,7 @@ export default function HomeScreen() {
       )}
 
       {/* Published Announcement Modal (for all users) */}
-      {announcementModal && (
+      {announcementModal && !showWalkthrough && (
         <View
           style={{
             position: "absolute",
@@ -1389,18 +1345,6 @@ export default function HomeScreen() {
         onEmailSubscribed={() => setIsEmailSubscribed(true)}
       />
 
-      {/* Email Opt-In Modal — non-onboarding re-engagement (after 3 opens) */}
-      <EmailOptInModal
-        visible={showEmailOptIn}
-        onClose={() => {
-          setShowEmailOptIn(false);
-          AsyncStorage.setItem("email_optin_dismissed_permanently", "true");
-        }}
-        onOptInComplete={() => {
-          setIsEmailSubscribed(true);
-          setShowEmailOptIn(false);
-        }}
-      />
 
       {/* Account Required Modal for Quick Actions */}
       <AccountRequiredModal

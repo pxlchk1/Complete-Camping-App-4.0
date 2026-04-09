@@ -304,7 +304,6 @@ export default function OnboardingWalkthroughModal({
   let primaryLabel = "";
   let primaryHandler = () => {};
   let primaryDisabled = false;
-  let secondaryLabel = "Not Now";
   const isLoading = pushLoading || emailLoading;
 
   if (currentStep === "push") {
@@ -315,11 +314,9 @@ export default function OnboardingWalkthroughModal({
     primaryLabel = "Turn on emails";
     primaryHandler = handleEmailSubmit;
     primaryDisabled = !emailFormReady || emailLoading;
-    secondaryLabel = "Not now";
   } else if (currentStep === "myCampsite") {
     primaryLabel = "Set Up My Campsite";
     primaryHandler = handleCampsiteGo;
-    secondaryLabel = "Maybe Later";
   }
 
   // ─── Render ────────────────────────────────────────────────────────
@@ -343,10 +340,12 @@ export default function OnboardingWalkthroughModal({
 
             {/* Header */}
             <View style={styles.header}>
-              <View style={{ width: 48 }} />
+              <Pressable onPress={handleSecondary} hitSlop={12} style={styles.skipBtn}>
+                <Text style={styles.skipText}>{isLast ? "" : "Skip"}</Text>
+              </Pressable>
               <Text style={styles.headerTitle}>Getting Started</Text>
-              <Pressable onPress={handleSkipAll} hitSlop={12} style={styles.skipBtn}>
-                <Text style={styles.skipText}>Skip</Text>
+              <Pressable onPress={handleSkipAll} hitSlop={12} style={styles.closeBtn}>
+                <Ionicons name="close" size={22} color={TEXT_MUTED} />
               </Pressable>
             </View>
 
@@ -531,13 +530,6 @@ export default function OnboardingWalkthroughModal({
                 )}
               </Pressable>
 
-              <Pressable
-                onPress={handleSecondary}
-                hitSlop={8}
-                style={styles.secondaryBtn}
-              >
-                <Text style={styles.secondaryBtnText}>{secondaryLabel}</Text>
-              </Pressable>
             </View>
           </View>
         </View>
@@ -589,12 +581,16 @@ const styles = StyleSheet.create({
   },
   skipBtn: {
     width: 48,
-    alignItems: "flex-end",
+    alignItems: "flex-start",
   },
   skipText: {
     fontFamily: "SourceSans3_600SemiBold",
     fontSize: 15,
     color: EARTH_GREEN,
+  },
+  closeBtn: {
+    width: 48,
+    alignItems: "flex-end",
   },
 
   // ── Progress dots (active = pill, others = circle) ──
@@ -792,13 +788,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     letterSpacing: 0.3,
   },
-  secondaryBtn: {
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  secondaryBtnText: {
-    fontFamily: "SourceSans3_500Medium",
-    fontSize: 15,
-    color: EARTH_GREEN,
-  },
+
 });
