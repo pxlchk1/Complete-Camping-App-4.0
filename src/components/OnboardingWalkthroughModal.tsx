@@ -37,6 +37,11 @@ import { httpsCallable, getFunctions } from "firebase/functions";
 import { registerPushToken } from "../services/notificationService";
 import { setCampsiteSetupPromptSeen } from "../services/userFlagsService";
 import {
+  PushNotificationIcon,
+  EmailTipsIcon,
+  MyCampsiteIcon,
+} from "./icons/OnboardingIcons";
+import {
   DEEP_FOREST,
   DEEP_FOREST_PRESSED,
   PARCHMENT,
@@ -375,9 +380,8 @@ export default function OnboardingWalkthroughModal({
             >
               {currentStep === "push" && (
                 <View style={styles.pageCenter}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="notifications" size={32} color={DEEP_FOREST} />
-                  </View>
+                  <PushNotificationIcon />
+                  <View style={{ height: 18 }} />
                   <Text style={styles.pageTitle}>Stay in the loop</Text>
                   <Text style={styles.pageBody}>
                     {"Get helpful reminders for upcoming trips, weather changes, and updates that matter to your camping plans."}
@@ -400,9 +404,7 @@ export default function OnboardingWalkthroughModal({
               {currentStep === "email" && (
                 <View style={styles.pageFill}>
                   <View style={styles.emailIconRow}>
-                    <View style={styles.emailIconCircle}>
-                      <Ionicons name="mail-outline" size={24} color={EARTH_GREEN} />
-                    </View>
+                    <EmailTipsIcon />
                   </View>
 
                   <Text style={styles.pageTitle}>
@@ -489,9 +491,8 @@ export default function OnboardingWalkthroughModal({
 
               {currentStep === "myCampsite" && (
                 <View style={styles.pageCenter}>
-                  <View style={[styles.iconCircle, { backgroundColor: EARTH_GREEN + "15" }]}>
-                    <Ionicons name="person-circle-outline" size={32} color={EARTH_GREEN} />
-                  </View>
+                  <MyCampsiteIcon />
+                  <View style={{ height: 18 }} />
                   <Text style={styles.pageTitle}>Set up My Campsite</Text>
                   <Text style={styles.pageBody}>
                     {"Add your name, handle, and a few details so people can recognize you, and so your camping profile feels like yours from the start."}

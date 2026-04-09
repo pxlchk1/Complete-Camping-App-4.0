@@ -40,6 +40,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { auth } from "../config/firebase";
 import { registerPushToken } from "../services/notificationService";
+import { PushNotificationIcon } from "./icons/OnboardingIcons";
 import {
   recordModalDismissed,
   recordModalCompleted,
@@ -312,10 +313,7 @@ export default function StayInLoopModal({
           {/* Icon + Title centered */}
           <View style={styles.iconTitleContainer}>
             <View style={styles.bellIconContainer}>
-              <Ionicons name="notifications" size={32} color={DEEP_FOREST} />
-              <View style={styles.alertBadge}>
-                <Ionicons name="warning" size={14} color="#B45309" />
-              </View>
+              <PushNotificationIcon />
             </View>
             <Text
               style={styles.title}

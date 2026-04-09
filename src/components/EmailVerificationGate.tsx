@@ -20,6 +20,7 @@ import {
   AppStateStatus,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { EmailVerificationIcon } from "./icons/OnboardingIcons";
 import { auth } from "../config/firebase";
 import { sendEmailVerification, signOut } from "firebase/auth";
 import {
@@ -158,18 +159,8 @@ export default function EmailVerificationGate() {
         }}
       >
         {/* Icon */}
-        <View
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 32,
-            backgroundColor: "#E8F5E9",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-          <Ionicons name="mail-outline" size={32} color={EARTH_GREEN} />
+        <View style={{ marginBottom: 16 }}>
+          <EmailVerificationIcon />
         </View>
 
         {/* Title */}

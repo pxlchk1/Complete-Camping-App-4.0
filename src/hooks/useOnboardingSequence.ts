@@ -17,6 +17,7 @@
  */
 
 import { useEffect, useRef, useCallback } from "react";
+import * as Notifications from "expo-notifications";
 import { auth } from "../config/firebase";
 import {
   useOnboardingStore,
@@ -68,6 +69,8 @@ export function useOnboardingSequence({
   const isSequenceComplete = useOnboardingStore((s) => s.isSequenceComplete);
   const progressByVersion = useOnboardingStore((s) => s.progressByVersion);
   const hasHydrated = useOnboardingStore((s) => s._hasHydrated);
+  const incrementWalkthroughShowCount = useOnboardingStore((s) => s.incrementWalkthroughShowCount);
+  const resetDismissedForReshow = useOnboardingStore((s) => s.resetDismissedForReshow);
 
   const enrolled = useRef(false);
 
@@ -106,6 +109,24 @@ export function useOnboardingSequence({
     // If user already subscribed to emails, skip the email step
     if (isEmailSubscribed && progress.steps.email.status === "pending") {
       resolveStep("email", "skipped");
+    }
+
+    // ─── Re-show logic: show walkthrough up to 3 times if push is undecided ──
+    // If the user dismissed the modal without granting/denying OS notifications,
+    // reset dismissed steps so the modal re-appears on the next app open.
+    const MAX_WALKTHROUGH_SHOWS = 3;
+    const showCount = progress.walkthroughShowCount ?? 0;
+
+    if (showCount < MAX_WALKTHROUGH_SHOWS && progress.sequenceComplete) {
+      Notifications.getPermissionsAsync()
+        .then(({ status }) => {
+          if (status === "undetermined") {
+            // User never engaged with the OS prompt — re-show the walkthrough
+            resetDismissedForReshow();
+            incrementWalkthroughShowCount();
+          }
+        })
+        .catch(() => {});
     }
   }, [
     isAuthenticated,

@@ -47,6 +47,8 @@ export interface OnboardingVersionProgress {
   sequenceComplete: boolean;
   enrolledAt: number;
   completedAt: number | null;
+  /** How many times the walkthrough modal has been shown (for re-show logic) */
+  walkthroughShowCount: number;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -73,6 +75,7 @@ function freshProgress(isBrandNew: boolean): OnboardingVersionProgress {
     sequenceComplete: false,
     enrolledAt: Date.now(),
     completedAt: null,
+    walkthroughShowCount: 0,
   };
 }
 
@@ -99,6 +102,12 @@ interface OnboardingStore {
 
   /** Compute the active step for the current version, given email verification status */
   getActiveStep: (isEmailVerified: boolean) => OnboardingStepId | null;
+
+  /** Increment the walkthrough show count for the current version */
+  incrementWalkthroughShowCount: () => void;
+
+  /** Reset dismissed walkthrough steps (push/email/myCampsite) back to pending for re-show */
+  resetDismissedForReshow: () => void;
 
   /** Reset (for testing only) */
   _reset: () => void;
@@ -194,6 +203,51 @@ export const useOnboardingStore = create<OnboardingStore>()(
         }
 
         return null;
+      },
+
+      incrementWalkthroughShowCount: () => {
+        const progress = get().progressByVersion[CURRENT_ONBOARDING_VERSION];
+        if (!progress) return;
+
+        set((state) => ({
+          progressByVersion: {
+            ...state.progressByVersion,
+            [CURRENT_ONBOARDING_VERSION]: {
+              ...progress,
+              walkthroughShowCount: (progress.walkthroughShowCount ?? 0) + 1,
+            },
+          },
+        }));
+      },
+
+      resetDismissedForReshow: () => {
+        const progress = get().progressByVersion[CURRENT_ONBOARDING_VERSION];
+        if (!progress) return;
+
+        const walkSteps: OnboardingStepId[] = ["push", "email", "myCampsite"];
+        const updatedSteps = { ...progress.steps };
+        let anyReset = false;
+
+        for (const id of walkSteps) {
+          if (updatedSteps[id].status === "dismissed") {
+            updatedSteps[id] = { status: "pending", resolvedAt: null };
+            anyReset = true;
+          }
+        }
+
+        if (!anyReset) return;
+
+        set((state) => ({
+          progressByVersion: {
+            ...state.progressByVersion,
+            [CURRENT_ONBOARDING_VERSION]: {
+              ...progress,
+              steps: updatedSteps,
+              sequenceComplete: false,
+              completedAt: null,
+            },
+          },
+        }));
       },
 
       _reset: () => {

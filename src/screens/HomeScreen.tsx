@@ -192,6 +192,13 @@ export default function HomeScreen() {
     setTimeout(() => setShowWalkthrough(true), 300);
   }, [onboardingActiveStep]);
 
+  // Reset walkthrough trigger when modal closes so re-show logic can fire
+  useEffect(() => {
+    if (!showWalkthrough) {
+      walkthroughTriggered.current = false;
+    }
+  }, [showWalkthrough]);
+
   // Check user email subscription status on mount (for orchestrator)
   useEffect(() => {
     const checkSub = async () => {
