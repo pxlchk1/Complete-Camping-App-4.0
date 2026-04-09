@@ -16,6 +16,8 @@ export interface UserFlagsState {
   hasSeenWelcomeHome: boolean;
   /** Whether user has seen the stay-in-the-loop modal */
   hasSeenStayInLoop: boolean;
+  /** Whether the user has completed the onboarding walkthrough (Firestore authority) */
+  onboardingCompleted: boolean;
   /** User's first name from users collection */
   firstName: string | null;
   /** Whether the data is still loading */
@@ -32,6 +34,7 @@ export function useUserFlags(): UserFlagsState {
   const [state, setState] = useState<UserFlagsState>({
     hasSeenWelcomeHome: false,
     hasSeenStayInLoop: false,
+    onboardingCompleted: false,
     firstName: null,
     loading: true,
     error: null,
@@ -65,6 +68,7 @@ export function useUserFlags(): UserFlagsState {
       setState({
         hasSeenWelcomeHome: false,
         hasSeenStayInLoop: false,
+        onboardingCompleted: false,
         firstName: null,
         loading: false,
         error: null,
@@ -82,6 +86,11 @@ export function useUserFlags(): UserFlagsState {
           const hasSeenWelcome = data?.[USER_FLAGS.HAS_SEEN_WELCOME_HOME] === true;
           const hasSeenStayInLoop = data?.hasSeenStayInLoop === true;
           const firstName = data?.firstName || null;
+          // Firestore is the authority for onboarding completion.
+          // Legacy fallback: existing users who already have profile data
+          // (hasSeenWelcomeHome) are treated as completed even without
+          // the explicit field, so they never see the onboarding modal.
+          const onboardingCompleted = data?.onboardingCompleted === true || hasSeenWelcome;
 
           // If this is the first time seeing the Home screen, mark it as seen
           // Use a ref guard to ensure this only fires once
@@ -96,6 +105,7 @@ export function useUserFlags(): UserFlagsState {
           setState({
             hasSeenWelcomeHome: hasSeenWelcome,
             hasSeenStayInLoop: hasSeenStayInLoop,
+            onboardingCompleted,
             firstName,
             loading: false,
             error: null,
@@ -111,6 +121,7 @@ export function useUserFlags(): UserFlagsState {
           setState({
             hasSeenWelcomeHome: false,
             hasSeenStayInLoop: false,
+            onboardingCompleted: false,
             firstName: null,
             loading: false,
             error: null,

@@ -27,7 +27,6 @@ import { getPhotoPosts } from "../services/photoPostsService";
 import { getUser } from "../services/userService";
 import { getConnectDisplayHandle } from "../services/handleService";
 import { PhotoPost } from "../types/photoPost";
-import { useOnboardingStore, CURRENT_ONBOARDING_VERSION } from "../state/onboardingStore";
 
 // State
 import { useTripsStore } from "../state/tripsStore";
@@ -61,7 +60,7 @@ import {
 import { HERO_IMAGES, LOGOS } from "../constants/images";
 import { RootStackParamList } from "../navigation/types";
 import { auth, db } from "../config/firebase";
-import { doc, getDoc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, deleteDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
@@ -99,7 +98,7 @@ export default function HomeScreen() {
   const { isLoggedIn: isAuthenticated, isGuest, isPro } = useUserStatus();
 
   // User flags for welcome greeting (real-time subscription to Firestore)
-  const { hasSeenWelcomeHome, hasSeenStayInLoop, firstName: userFirstName, loading: userFlagsLoading } = useUserFlags();
+  const { hasSeenWelcomeHome, hasSeenStayInLoop, onboardingCompleted, firstName: userFirstName, loading: userFlagsLoading } = useUserFlags();
 
   // Apple sign-in detection for onboarding orchestrator
   const isAppleUser = auth.currentUser?.providerData?.some(
@@ -111,9 +110,6 @@ export default function HomeScreen() {
 
   // Onboarding sequence orchestrator
   const {
-    activeStep: onboardingActiveStep,
-    isOnboardingActive,
-    isComplete: isOnboardingComplete,
     resolvePush,
     resolveEmail,
     resolveMyCampsite,
@@ -128,9 +124,9 @@ export default function HomeScreen() {
 
   // Onboarding walkthrough modal state
   const [showWalkthrough, setShowWalkthrough] = useState(false);
-  const progressByVersion = useOnboardingStore((s) => s.progressByVersion);
-  const onboardingHasHydrated = useOnboardingStore((s) => s._hasHydrated);
-  const onboardingProgress = progressByVersion[CURRENT_ONBOARDING_VERSION];
+
+  // Onboarding incomplete = suppress all other auto-modals (GATE 3)
+  const onboardingIncomplete = isAuthenticated && !isGuest && !userFlagsLoading && !onboardingCompleted;
 
   // Featured Community Photo state
   const [featuredPhoto, setFeaturedPhoto] = useState<PhotoPost | null>(null);
@@ -172,32 +168,47 @@ export default function HomeScreen() {
   const recordUpsellDismissal = useUpsellStore((s) => s.recordModalDismissal);
   const sessionNudgeChecked = useRef(false);
 
-  // Onboarding walkthrough: single trigger replaces individual modal effects
+  // Onboarding walkthrough: show once if not completed (Firestore authority)
   const walkthroughTriggered = useRef(false);
-  const walkthroughPendingSteps = useMemo(() => {
-    if (!onboardingProgress) return [] as ("push" | "email" | "myCampsite")[];
-    const steps: ("push" | "email" | "myCampsite")[] = [];
-    if (onboardingProgress.steps.push.status === "pending") steps.push("push");
-    if (onboardingProgress.steps.email.status === "pending") steps.push("email");
-    if (onboardingProgress.steps.myCampsite.status === "pending") steps.push("myCampsite");
-    return steps;
-  }, [onboardingProgress]);
+  // Always present all 3 panels fresh each time the modal opens
+  const walkthroughPendingSteps: ("push" | "email" | "myCampsite")[] = ["push", "email", "myCampsite"];
 
   useEffect(() => {
     if (walkthroughTriggered.current) return;
-    if (!onboardingActiveStep) return;
-    if (onboardingActiveStep === "verifyEmail") return;
+    if (userFlagsLoading) return;
+    if (!isAuthenticated || isGuest) return;
+    // GATE 2: only show if Firestore says onboarding not completed
+    if (onboardingCompleted) return;
 
     walkthroughTriggered.current = true;
     setTimeout(() => setShowWalkthrough(true), 300);
-  }, [onboardingActiveStep]);
+  }, [userFlagsLoading, isAuthenticated, isGuest, onboardingCompleted]);
 
-  // Reset walkthrough trigger when modal closes so re-show logic can fire
+  // Reset trigger when modal closes so it can re-fire on next Home visit
+  // (if user dismissed without completing, modal reappears next time)
   useEffect(() => {
     if (!showWalkthrough) {
       walkthroughTriggered.current = false;
     }
   }, [showWalkthrough]);
+
+  // Atomic completion: write Firestore, then navigate to MyCampsite
+  const handleOnboardingComplete = useCallback(async () => {
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          onboardingCompleted: true,
+          onboardingCompletedAt: serverTimestamp(),
+        });
+      } catch {
+        // Best-effort Firestore write; the real-time listener in
+        // useUserFlags will pick it up once connectivity resumes.
+      }
+    }
+    setShowWalkthrough(false);
+    setTimeout(() => navigation.navigate("MyCampsite" as any), 300);
+  }, [navigation]);
 
   // Check user email subscription status on mount (for orchestrator)
   useEffect(() => {
@@ -270,12 +281,10 @@ export default function HomeScreen() {
   };
 
   // Check for published announcement modal (for all users)
-  // Uses consolidated dismissal storage: announcement_dismissals_v1 = { [versionId]: timestamp }
-  // Suppressed during onboarding sequence AND until store hydration completes
-  // (prevents announcements firing before enrollment determines isOnboardingActive)
+  // Suppressed while onboarding is incomplete (GATE 3)
   useEffect(() => {
-    if (!onboardingHasHydrated) return;
-    if (isOnboardingActive) return;
+    if (onboardingIncomplete) return;
+    if (userFlagsLoading) return;
 
     const DISMISSALS_KEY = "announcement_dismissals_v1";
     const MAX_ENTRIES = 75;
@@ -363,7 +372,7 @@ export default function HomeScreen() {
     };
 
     checkAnnouncementModal();
-  }, [isOnboardingActive, onboardingHasHydrated]);
+  }, [onboardingIncomplete, userFlagsLoading]);
 
   // Dismiss announcement modal and mark as dismissed
   const dismissAnnouncementModal = async () => {
@@ -397,8 +406,8 @@ export default function HomeScreen() {
     sessionNudgeChecked.current = true;
 
     const timer = setTimeout(() => {
-      // Block during onboarding sequence
-      if (isOnboardingActive) return;
+      // Block during onboarding (GATE 3)
+      if (onboardingIncomplete) return;
       // Don't stack on top of other active modals
       if (
         showWalkthrough ||
@@ -418,7 +427,7 @@ export default function HomeScreen() {
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [isAuthenticated, isGuest, isOnboardingActive, canShowSessionNudge, markSessionUpsellShown,
+  }, [isAuthenticated, isGuest, onboardingIncomplete, canShowSessionNudge, markSessionUpsellShown,
       showWalkthrough, adminTestModal, announcementModal, showAccountModal, showModal]);
 
   // Fetch a random featured photo on screen focus
@@ -532,8 +541,8 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-forest">
-      {/* Push Permission Soft Prompt - suppressed during onboarding sequence */}
-      <PushPermissionPrompt suppressed={isOnboardingActive} />
+      {/* Push Permission Soft Prompt - suppressed during onboarding */}
+      <PushPermissionPrompt suppressed={onboardingIncomplete} />
       
       <View className="flex-1" style={{ backgroundColor: PARCHMENT_BACKGROUND }}>
         {/* Welcome Hero Image - full bleed */}
@@ -1350,6 +1359,7 @@ export default function HomeScreen() {
           setTimeout(() => navigation.navigate("MyCampsite" as any), 300);
         }}
         onEmailSubscribed={() => setIsEmailSubscribed(true)}
+        onComplete={handleOnboardingComplete}
       />
 
 
@@ -1365,9 +1375,9 @@ export default function HomeScreen() {
         triggerKey={accountModalTriggerKey}
       />
 
-      {/* Onboarding Modal — suppressed during onboarding sequence */}
+      {/* Onboarding Modal — suppressed while onboarding incomplete (GATE 3) */}
       <OnboardingModal
-        visible={showModal && !isOnboardingActive}
+        visible={showModal && !onboardingIncomplete}
         tooltip={currentTooltip}
         onDismiss={dismissModal}
       />

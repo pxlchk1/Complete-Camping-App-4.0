@@ -66,6 +66,8 @@ interface Props {
   onClose: () => void;
   onNavigateToCampsite: () => void;
   onEmailSubscribed?: () => void;
+  /** Atomic completion: persist onboardingCompleted to Firestore and navigate */
+  onComplete?: () => void;
 }
 
 export default function OnboardingWalkthroughModal({
@@ -77,6 +79,7 @@ export default function OnboardingWalkthroughModal({
   onClose,
   onNavigateToCampsite,
   onEmailSubscribed,
+  onComplete,
 }: Props) {
   const insets = useSafeAreaInsets();
 
@@ -262,8 +265,13 @@ export default function OnboardingWalkthroughModal({
     haptic();
     onResolveMyCampsite("completed");
     setCampsiteSetupPromptSeen();
-    onNavigateToCampsite();
-  }, [onResolveMyCampsite, onNavigateToCampsite, haptic]);
+    // Atomic completion: persist to Firestore before navigating
+    if (onComplete) {
+      onComplete();
+    } else {
+      onNavigateToCampsite();
+    }
+  }, [onResolveMyCampsite, onNavigateToCampsite, onComplete, haptic]);
 
   const handleCampsiteSkip = useCallback(() => {
     onResolveMyCampsite("dismissed");
