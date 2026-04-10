@@ -10,7 +10,6 @@ import * as Haptics from "expo-haptics";
 // Components
 import AccountButtonHeader from "../components/AccountButtonHeader";
 import { SectionTitle, BodyText, BodyTextMedium } from "../components/Typography";
-import PushPermissionPrompt from "../components/PushPermissionPrompt";
 import HandleLink from "../components/HandleLink";
 import AccountRequiredModal from "../components/AccountRequiredModal";
 import OnboardingModal from "../components/OnboardingModal";
@@ -541,9 +540,6 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-forest">
-      {/* Push Permission Soft Prompt - suppressed during onboarding */}
-      <PushPermissionPrompt suppressed={onboardingIncomplete} />
-      
       <View className="flex-1" style={{ backgroundColor: PARCHMENT_BACKGROUND }}>
         {/* Welcome Hero Image - full bleed */}
         <View style={{ height: 200 + insets.top }}>

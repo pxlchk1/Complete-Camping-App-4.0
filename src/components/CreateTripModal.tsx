@@ -1,16 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as Haptics from "expo-haptics";
 import { useCreateTrip } from "../state/tripsStore";
-import { CampingStyle } from "../types/camping";
+import { CampingStyle, TripDestination } from "../types/camping";
+import { PrefillLocation } from "../navigation/types";
 import { DEEP_FOREST, EARTH_GREEN, GRANITE_GOLD, RIVER_ROCK, SIERRA_SKY, PARCHMENT, PARCHMENT_BORDER } from "../constants/colors";
 
 interface CreateTripModalProps {
   visible: boolean;
   onClose: () => void;
   onTripCreated: (tripId: string) => void;
+  prefillLocation?: PrefillLocation;
 }
 
 const CAMPING_STYLES: { value: CampingStyle; label: string; emoji: string }[] = [
@@ -26,7 +28,7 @@ const CAMPING_STYLES: { value: CampingStyle; label: string; emoji: string }[] = 
   { value: "DISPERSED", label: "Dispersed", emoji: "🏞️" },
 ];
 
-export default function CreateTripModal({ visible, onClose, onTripCreated }: CreateTripModalProps) {
+export default function CreateTripModal({ visible, onClose, onTripCreated, prefillLocation }: CreateTripModalProps) {
   const createTrip = useCreateTrip();
 
   const [tripName, setTripName] = useState("");
@@ -38,6 +40,22 @@ export default function CreateTripModal({ visible, onClose, onTripCreated }: Cre
   const [partySize, setPartySize] = useState("4");
   const [description, setDescription] = useState("");
   const [campingStyle, setCampingStyle] = useState<CampingStyle | undefined>(undefined);
+
+  // Destination from prefill (when navigating from ParkDetail, MyCampsite, etc.)
+  const [destination, setDestination] = useState<PrefillLocation | null>(null);
+
+  // Sync prefill when modal opens with a prefilled location
+  useEffect(() => {
+    if (visible && prefillLocation) {
+      setDestination(prefillLocation);
+      setTripName(`Trip to ${prefillLocation.name}`);
+    }
+  }, [visible, prefillLocation]);
+
+  const handleClearDestination = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setDestination(null);
+  };
 
   const getDuration = () => {
     const diff = endDate.getTime() - startDate.getTime();
@@ -74,16 +92,31 @@ export default function CreateTripModal({ visible, onClose, onTripCreated }: Cre
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      // NOTE: No destination set here - users set destination via Plan > Parks after trip creation
+      // Build trip destination from prefill location if available
+      const tripDestination: TripDestination | undefined = destination ? {
+        sourceType: destination.placeType === "park" ? "parks" : "custom",
+        placeId: destination.placeId,
+        name: destination.name,
+        addressLine1: destination.address,
+        city: null,
+        state: destination.state,
+        lat: destination.lat,
+        lng: destination.lng,
+        formattedAddress: destination.address,
+        parkType: destination.placeType === "park" ? "State Park" : null,
+      } : undefined;
+
       const tripId = await createTrip({
         name: tripName.trim(),
         startDate: startDate.toISOString().split("T")[0],
         endDate: endDate.toISOString().split("T")[0],
         campingStyle,
         partySize: size,
-        description: description.trim() || "", // Use empty string, not undefined (Firestore rejects undefined)
+        description: description.trim() || "",
         status: "planning",
         season,
+        tripDestination,
+        parkId: destination?.placeType === "park" && destination?.placeId ? destination.placeId : undefined,
       });
 
       // Reset form
@@ -93,6 +126,7 @@ export default function CreateTripModal({ visible, onClose, onTripCreated }: Cre
       setPartySize("4");
       setDescription("");
       setCampingStyle(undefined);
+      setDestination(null);
 
       onTripCreated(tripId);
     } catch (error) {
@@ -157,6 +191,50 @@ export default function CreateTripModal({ visible, onClose, onTripCreated }: Cre
           </View>
 
           <ScrollView className="px-5 pt-4" showsVerticalScrollIndicator={false}>
+            {/* Destination Chip - shown when prefilled from Park/Favorites */}
+            {destination && (
+              <View className="mb-4">
+                <Text className="text-forest text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Destination</Text>
+                <View
+                  className="flex-row items-center justify-between p-3 rounded-xl border"
+                  style={{ backgroundColor: "#f0f9f4", borderColor: EARTH_GREEN }}
+                >
+                  <View className="flex-row items-center flex-1">
+                    <Ionicons
+                      name={destination.placeType === "park" ? "leaf" : "location"}
+                      size={18}
+                      color={EARTH_GREEN}
+                    />
+                    <View className="ml-2 flex-1">
+                      <Text
+                        className="text-sm"
+                        style={{ fontFamily: "SourceSans3_600SemiBold", color: DEEP_FOREST }}
+                        numberOfLines={1}
+                      >
+                        {destination.name}
+                      </Text>
+                      {destination.subtitle && (
+                        <Text
+                          className="text-xs"
+                          style={{ fontFamily: "SourceSans3_400Regular", color: EARTH_GREEN }}
+                          numberOfLines={1}
+                        >
+                          {destination.subtitle}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={handleClearDestination}
+                    className="w-7 h-7 rounded-full items-center justify-center active:opacity-70"
+                    style={{ backgroundColor: "rgba(0,0,0,0.1)" }}
+                  >
+                    <Ionicons name="close" size={16} color={DEEP_FOREST} />
+                  </Pressable>
+                </View>
+              </View>
+            )}
+
             {/* Trip Name */}
             <View className="mb-4">
               <Text className="text-forest text-sm font-semibold mb-2" style={{ fontFamily: "SourceSans3_600SemiBold" }}>Trip Name *</Text>
@@ -231,8 +309,6 @@ export default function CreateTripModal({ visible, onClose, onTripCreated }: Cre
                 {getDuration()} {getDuration() === 1 ? "day" : "days"}
               </Text>
             </View>
-
-            {/* NOTE: Destination field removed - users set destination via Plan > Parks after trip creation */}
 
             {/* Party Size */}
             <View className="mb-4">
