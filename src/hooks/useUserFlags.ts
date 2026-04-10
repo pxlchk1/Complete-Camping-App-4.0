@@ -6,10 +6,10 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../config/firebase";
-import { USER_FLAGS, setHomeWelcomeSeen } from "../services/userFlagsService";
+import { USER_FLAGS } from "../services/userFlagsService";
 
 export interface UserFlagsState {
   /** Whether user has seen the first-time Home welcome */
@@ -87,17 +87,27 @@ export function useUserFlags(): UserFlagsState {
           const hasSeenStayInLoop = data?.hasSeenStayInLoop === true;
           const firstName = data?.firstName || null;
           // Firestore is the authority for onboarding completion.
-          // Legacy fallback: existing users who already have profile data
-          // (hasSeenWelcomeHome) are treated as completed even without
-          // the explicit field, so they never see the onboarding modal.
-          const onboardingCompleted = data?.onboardingCompleted === true || hasSeenWelcome;
+          // Legacy fallback: if the onboardingCompleted field is completely
+          // ABSENT from the document, the user predates this feature — treat
+          // as completed via hasSeenWelcomeHome. New users always get an
+          // explicit onboardingCompleted: false written alongside
+          // hasSeenWelcomeHome, so the field-absent check never misfires.
+          const hasOnboardingField = data != null && "onboardingCompleted" in data;
+          const onboardingCompleted = hasOnboardingField
+            ? data.onboardingCompleted === true
+            : hasSeenWelcome;
 
           // If this is the first time seeing the Home screen, mark it as seen
-          // Use a ref guard to ensure this only fires once
+          // AND explicitly set onboardingCompleted: false so the legacy
+          // fallback (field-absent) cannot misfire for new users.
           if (!hasSeenWelcome && !hasMarkedSeen.current) {
             hasMarkedSeen.current = true;
-            // Fire and forget - don't block on this
-            setHomeWelcomeSeen().catch((err) => {
+            setDoc(userRef, {
+              [USER_FLAGS.HAS_SEEN_WELCOME_HOME]: true,
+              homeWelcomeLastShownAt: serverTimestamp(),
+              onboardingCompleted: false,
+              updatedAt: serverTimestamp(),
+            }, { merge: true }).catch((err) => {
               console.warn("[useUserFlags] Failed to mark home welcome seen:", err);
             });
           }
@@ -114,7 +124,12 @@ export function useUserFlags(): UserFlagsState {
           // Document doesn't exist yet - treat as first time user
           if (!hasMarkedSeen.current) {
             hasMarkedSeen.current = true;
-            setHomeWelcomeSeen().catch((err) => {
+            setDoc(userRef, {
+              [USER_FLAGS.HAS_SEEN_WELCOME_HOME]: true,
+              homeWelcomeLastShownAt: serverTimestamp(),
+              onboardingCompleted: false,
+              updatedAt: serverTimestamp(),
+            }, { merge: true }).catch((err) => {
               console.warn("[useUserFlags] Failed to mark home welcome seen:", err);
             });
           }
